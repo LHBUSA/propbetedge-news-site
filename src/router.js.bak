@@ -1,6 +1,5 @@
 /**
  * src/router.js
- * v3.10 — adds /games (live scoreboard hub) and /games/:sport/:gameId (game detail)
  */
 
 import { renderHome } from './pages/home.js';
@@ -8,9 +7,8 @@ import { renderNewsIndex } from './pages/news-index.js';
 import { renderSport } from './pages/sport.js';
 import { renderArticle } from './pages/article.js';
 import { renderAuthor } from './pages/author.js';
+import { renderEditorialStandards } from './pages/editorial-standards.js';
 import { renderNotFound } from './pages/404.js';
-import { renderGamesHub } from './pages/games-hub.js';      // 🆕
-import { renderGameDetail } from './pages/game-detail.js';  // 🆕
 
 const VALID_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl']);
 
@@ -65,30 +63,6 @@ function clearAndRoute() {
     return renderHome(root);
   }
 
-  // 🆕 Live games hub
-  if (path === '/games') {
-    setMeta({
-      title: '🔴 Live Games — PropBetEdge',
-      description: 'Live scores, box scores, and game details across MLB, NBA, NHL, and NFL. Powered by PropSports API.',
-      canonical: 'https://propbetedge.ai/games',
-    });
-    return renderGamesHub(root);
-  }
-
-  // 🆕 Game detail: /games/:sport/:gameId
-  const gameMatch = path.match(/^\/games\/([a-z]+)\/([\w-]+)$/);
-  if (gameMatch) {
-    const sport = gameMatch[1].toLowerCase();
-    const gameId = gameMatch[2];
-    if (!VALID_SPORTS.has(sport)) return renderNotFound(root);
-    setMeta({
-      title: `Live Game · ${sport.toUpperCase()} — PropBetEdge`,
-      description: `Live ${sport.toUpperCase()} game with box score, plays, and PropBetEdge analysis.`,
-      canonical: `https://propbetedge.ai/games/${sport}/${gameId}`,
-    });
-    return renderGameDetail(root, sport, gameId);
-  }
-
   if (path === '/news') {
     setMeta({
       title: 'All Sports News — PropBetEdge',
@@ -119,10 +93,16 @@ function clearAndRoute() {
     return renderArticle(root, sport, slug, setMeta);
   }
 
+  // 🆕 Author profile: /authors/:slug
   const authorMatch = path.match(/^\/authors\/([a-z0-9-]+)$/);
   if (authorMatch) {
     const slug = authorMatch[1];
     return renderAuthor(root, slug, setMeta);
+  }
+
+  // 🆕 Editorial Standards page (referenced by Org schema policy URLs)
+  if (path === '/editorial-standards') {
+    return renderEditorialStandards(root, setMeta);
   }
 
   setMeta({ title: 'Not found — PropBetEdge', description: 'Page not found.' });
