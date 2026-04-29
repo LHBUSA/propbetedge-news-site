@@ -1,0 +1,20 @@
+{
+  "rewrites": [
+    { "source": "/news/rss.xml", "destination": "https://propbet-news-rss.sales-fd3.workers.dev/" },
+    { "source": "/news/breaking/rss.xml", "destination": "https://propbet-news-rss.sales-fd3.workers.dev/breaking" },
+    { "source": "/news/:sport(mlb|nfl|nba|nhl)/rss.xml", "destination": "https://propbet-news-rss.sales-fd3.workers.dev/?sport=:sport" },
+    { "source": "/sitemap.xml", "destination": "https://propbet-news-sitemap.sales-fd3.workers.dev/" },
+    { "source": "/news-sitemap.xml", "destination": "https://propbet-news-sitemap.sales-fd3.workers.dev/news" },
+    { "source": "/news/:path*", "destination": "/index.html" },
+    { "source": "/authors/:path*", "destination": "/index.html" },
+    { "source": "/editorial-standards", "destination": "/index.html" },
+    { "source": "/((?!api|_next|_vercel|favicon|logo|src|public|assets|manifest|robots|.*\\..*).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "X-Frame-Options", "value": "DENY" },
+      { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+    ]}
+  ]
+}

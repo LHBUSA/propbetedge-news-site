@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://propbetedge.ai/sitemap.xml
+Sitemap: https://propbetedge.ai/news-sitemap.xml

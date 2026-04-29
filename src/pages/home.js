@@ -1,0 +1,227 @@
+/**
+ * src/pages/home.js
+ * Editorial homepage — magazine layout (v3.9 layout cleanup)
+ *
+ *  Structure:
+ *  ┌─────────────────────────────────────────────────────┐
+ *  │ Breaking ribbon (impact 5/5 only)                  │
+ *  └─────────────────────────────────────────────────────┘
+ *  ┌─────────────────────────┬───────────────────────────┐
+ *  │  LEAD STORY             │  Top Stories sidebar     │
+ *  │  (big photo + headline) │  (4 plain text)          │
+ *  └─────────────────────────┴───────────────────────────┘
+ *  ─── Latest ──────────────────────────────────────────
+ *  ┌──────┬──────┬──────┐
+ *  │ card │ card │ card │   3-up grid, ALL same size
+ *  ├──────┼──────┼──────┤   (no random featured)
+ *  │ card │ card │ card │
+ *  └──────┴──────┴──────┘
+ *  ─── MLB ── All MLB → ────────────────────────────────
+ *  ┌──────┬──────┬──────┬──────┐
+ *  │ card │ card │ card │ card │   4-up rail
+ *  └──────┴──────┴──────┴──────┘
+ *  (repeat for NFL / NBA / NHL)
+ */
+
+import { api } from '../api.js';
+import { renderHeader } from '../components/header.js';
+import { renderFooter } from '../components/footer.js';
+import { renderArticleCard, renderSidebarStory, escapeHtml, escapeAttr, formatRelative } from '../components/article-card.js';
+import { renderBreakingBanner } from '../components/breaking-banner.js';
+import { proxyImage } from '../ads-config.js';
+import { organizationSchema, websiteSchema, homePageSchema, injectSchemas } from '../schema.js';
+
+const SPORT_FALLBACK = { mlb: '⚾', nfl: '🏈', nba: '🏀', nhl: '🏒' };
+const SPORT_LABELS   = { mlb: 'Baseball', nfl: 'Football', nba: 'Basketball', nhl: 'Hockey' };
+
+export async function renderHome(root) {
+  root.innerHTML = `
+    ${renderHeader()}
+    <main>
+      <div id="breaking-slot"></div>
+
+      <div class="container">
+        <!-- Lead + sidebar -->
+        <section class="lead-section">
+          <div class="lead-grid">
+            <div id="lead-slot">${leadSkeleton()}</div>
+            <aside id="sidebar-slot" class="lead-sidebar">
+              <div class="sidebar-header">Top Stories</div>
+              ${sidebarSkeleton(4)}
+            </aside>
+          </div>
+        </section>
+
+        <!-- Latest grid -->
+        <section class="latest-section">
+          <div class="section-heading">
+            <h2>📰 Latest</h2>
+            <a href="/news" class="more-link">All news →</a>
+          </div>
+          <div id="latest-grid" class="article-grid uniform-grid fade-stagger">${cardSkeleton(6)}</div>
+        </section>
+
+        <!-- Per-sport rails -->
+        <div id="sport-rails"></div>
+      </div>
+    </main>
+    ${renderFooter()}
+  `;
+
+  // Fetch in parallel
+  const [breaking, homepage] = await Promise.all([
+    api.breaking().catch(() => ({ articles: [] })),
+    api.homepage().catch(() => ({ articles: [] })),
+  ]);
+
+  // Breaking ribbon
+  if (breaking.articles?.length) {
+    document.getElementById('breaking-slot').innerHTML = renderBreakingBanner(breaking.articles[0]);
+  }
+
+  const all = homepage.articles || [];
+
+  // 🆕 v3.9.6: Inject homepage schema (Org + WebSite + CollectionPage with featured items)
+  injectSchemas([
+    organizationSchema(),
+    websiteSchema(),
+    homePageSchema(all),
+  ], 'jsonld-home');
+
+  if (!all.length) {
+    document.getElementById('lead-slot').innerHTML = `
+      <div class="empty">
+        <h3>News engine warming up</h3>
+        <p>First articles will appear within minutes.</p>
+      </div>
+    `;
+    document.getElementById('sidebar-slot').innerHTML = '';
+    document.getElementById('latest-grid').innerHTML = '';
+    return;
+  }
+
+  // 1. Lead story = highest-impact recent article with an image
+  const lead = pickLead(all);
+  document.getElementById('lead-slot').innerHTML = renderLeadStory(lead);
+
+  // 2. Sidebar = next 4 high-impact stories, mixed sports (text-only)
+  const remaining = all.filter((a) => a.id !== lead.id);
+  const sidebarStories = remaining.slice(0, 4);
+  document.getElementById('sidebar-slot').innerHTML = `
+    <div class="sidebar-header">Top Stories</div>
+    ${sidebarStories.map(renderSidebarStory).join('')}
+  `;
+
+  // 3. Latest grid = next 6 articles, ALL SAME SIZE (no random featured card)
+  const latest = remaining.slice(4, 10);
+  document.getElementById('latest-grid').innerHTML = latest.length
+    ? latest.map((a) => renderArticleCard(a)).join('')   // 🔥 no featured flag
+    : `<div class="empty" style="grid-column:1/-1"><h3>That's all for now</h3><p>More stories incoming.</p></div>`;
+
+  // 4. Per-sport rails — 4 cards each, same size, with proper heading
+  const railsEl = document.getElementById('sport-rails');
+  const bySport = {};
+  for (const a of all) {
+    if (!bySport[a.sport]) bySport[a.sport] = [];
+    bySport[a.sport].push(a);
+  }
+  const sportsToShow = ['mlb', 'nfl', 'nba', 'nhl'].filter((s) => (bySport[s] || []).length > 0);
+  railsEl.innerHTML = sportsToShow.map((sport) => {
+    const articles = bySport[sport].slice(0, 4);
+    const total = bySport[sport].length;
+    return `
+      <section class="sport-rail-section">
+        <div class="sport-rail-heading">
+          <h2 class="sport-rail-title">
+            <span class="sport-rail-emoji">${SPORT_FALLBACK[sport]}</span>
+            ${sport.toUpperCase()}
+            <span class="sport-rail-meta">· ${SPORT_LABELS[sport]} · ${total} ${total === 1 ? 'story' : 'stories'}</span>
+          </h2>
+          <a href="/news/${sport}" class="sport-rail-more">All ${sport.toUpperCase()} →</a>
+        </div>
+        <div class="article-grid uniform-grid fade-stagger">
+          ${articles.map((a) => renderArticleCard(a)).join('')}
+        </div>
+      </section>
+    `;
+  }).join('');
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────
+function pickLead(articles) {
+  const withImage = articles.filter((a) => a.image_url);
+  if (withImage.length) {
+    const sorted = withImage.sort((a, b) => (b.take?.impact_score || 0) - (a.take?.impact_score || 0));
+    return sorted[0];
+  }
+  return articles[0];
+}
+
+function renderLeadStory(article) {
+  const url = article.url || `/news/${article.sport}/${article.slug}`;
+  const date = new Date(article.published_at);
+  const sport = article.sport;
+  const dek = article.take?.summary || article.summary;
+
+  const imgBlock = article.image_url
+    ? `<div class="lead-image">
+         <img src="${escapeAttr(proxyImage(article.image_url))}" alt="${escapeAttr(article.title)}" class="hero-image-img" onerror="this.classList.add('img-broken')" />
+         <div class="img-fallback">${SPORT_FALLBACK[sport] || '◆'}</div>
+       </div>`
+    : `<div class="lead-image"><div class="img-fallback">${SPORT_FALLBACK[sport] || '◆'}</div></div>`;
+
+  return `
+    <a href="${escapeAttr(url)}" class="lead-story fade-in">
+      ${imgBlock}
+      <div class="lead-meta">
+        <span class="sport-tag">${escapeHtml(sport.toUpperCase())}</span>
+        <span class="dot">·</span>
+        <span class="timestamp">${formatRelative(date)}</span>
+      </div>
+      <h1 class="lead-headline">${escapeHtml(article.title)}</h1>
+      ${dek ? `<p class="lead-dek">${escapeHtml(dek)}</p>` : ''}
+      <div class="lead-byline">
+        <span>By <strong style="color:var(--paper)">${escapeHtml(article.author || 'PropBetEdge Staff')}</strong></span>
+      </div>
+    </a>
+  `;
+}
+
+function leadSkeleton() {
+  return `
+    <div>
+      <div class="skel skel-card-img"></div>
+      <div class="skel skel-line" style="width:30%;height:10px"></div>
+      <div class="skel skel-line" style="width:90%;height:36px;margin-top:14px"></div>
+      <div class="skel skel-line" style="width:75%;height:36px"></div>
+      <div class="skel skel-line" style="width:80%;height:18px;margin-top:12px"></div>
+    </div>
+  `;
+}
+function sidebarSkeleton(n) {
+  let out = '';
+  for (let i = 0; i < n; i++) {
+    out += `
+      <div style="padding:14px 0;border-bottom:1px solid var(--line)">
+        <div class="skel skel-line" style="width:25%;height:10px"></div>
+        <div class="skel skel-line" style="width:90%;height:18px;margin-top:8px"></div>
+        <div class="skel skel-line" style="width:60%;height:18px"></div>
+      </div>
+    `;
+  }
+  return out;
+}
+function cardSkeleton(n) {
+  let out = '';
+  for (let i = 0; i < n; i++) {
+    out += `
+      <div class="skel-card">
+        <div class="skel skel-card-img"></div>
+        <div class="skel skel-line" style="width:25%;height:10px"></div>
+        <div class="skel skel-line" style="width:90%;height:22px;margin-top:8px"></div>
+        <div class="skel skel-line" style="width:75%;height:22px"></div>
+      </div>
+    `;
+  }
+  return out;
+}
