@@ -1,0 +1,259 @@
+/* ──────────────────────────────────────────────────────────────────────
+   Stat Leaders v3.12 additions
+   APPEND TO main.css — does NOT replace v3.11 leaders styles, extends them.
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ── Sport tab strip — make tabs <a> instead of <button> ─────────────── */
+a.leaders-sport-tab {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Rich leader rows (v3.12) ─────────────────────────────────────────── */
+.leader-row-rich {
+  padding: 10px 14px;
+  gap: 12px;
+}
+
+.leader-photo-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+.leader-photo-wrap .leader-photo {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(20, 17, 13, 0.1);
+}
+.leader-photo-wrap .leader-photo-top {
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.35);
+}
+.leader-team-overlay {
+  position: absolute;
+  bottom: -2px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--paper);
+  padding: 1px;
+  border: 1px solid rgba(20, 17, 13, 0.15);
+  object-fit: contain;
+}
+
+.leader-name-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.leader-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+.leader-meta-sep {
+  color: rgba(20, 17, 13, 0.25);
+  font-size: 10px;
+}
+.leader-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(20, 17, 13, 0.55);
+  letter-spacing: 0.3px;
+}
+
+.leader-trend {
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 4px;
+}
+.leader-trend-up { color: #5FD38D; }
+.leader-trend-down { color: #FF6B6B; }
+
+/* ── Premium upsell card (CORS-blocked stats) ─────────────────────────── */
+.leader-card-premium {
+  background:
+    linear-gradient(135deg, rgba(212, 175, 55, 0.06), rgba(193, 39, 61, 0.04)),
+    var(--paper);
+  border: 1px dashed rgba(20, 17, 13, 0.18);
+  position: relative;
+  overflow: hidden;
+}
+.leader-card-premium::before {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(212, 175, 55, 0.08), transparent 60%);
+  pointer-events: none;
+}
+.premium-tag {
+  background: var(--gold);
+  color: var(--ink);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 9px;
+}
+.premium-card-body {
+  padding: 24px 16px 18px;
+  position: relative;
+  text-align: center;
+}
+.premium-stat-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.premium-dek {
+  font-size: 12px;
+  color: rgba(20, 17, 13, 0.6);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.premium-cta {
+  display: inline-block;
+  padding: 8px 14px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.premium-cta:hover {
+  background: var(--crimson);
+  transform: translateY(-1px);
+}
+
+/* ── NFL offseason placeholder ────────────────────────────────────────── */
+.nfl-offseason {
+  background: var(--paper);
+  border: 1px solid rgba(20, 17, 13, 0.08);
+  border-radius: 12px;
+  padding: 40px 32px;
+  margin: 24px 0 28px;
+  text-align: center;
+}
+.nfl-offseason-icon {
+  font-size: 56px;
+  margin-bottom: 18px;
+}
+.nfl-offseason-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 32px;
+  margin: 0 0 14px;
+  color: var(--ink);
+}
+.nfl-offseason-dek {
+  max-width: 560px;
+  margin: 0 auto 28px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(20, 17, 13, 0.65);
+}
+.nfl-offseason-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.nfl-offseason-link {
+  display: block;
+  padding: 18px 16px;
+  background: rgba(20, 17, 13, 0.025);
+  border: 1px solid rgba(20, 17, 13, 0.06);
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: all 0.15s;
+}
+.nfl-offseason-link:hover {
+  border-color: var(--gold);
+  background: rgba(212, 175, 55, 0.05);
+  transform: translateY(-1px);
+}
+.nfl-offseason-link-icon { font-size: 28px; margin-bottom: 8px; }
+.nfl-offseason-link-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.nfl-offseason-link-dek {
+  font-size: 11px;
+  color: rgba(20, 17, 13, 0.55);
+  line-height: 1.4;
+}
+
+/* ── Teaser rich rows (v3.12 upgrade to /games teaser) ────────────────── */
+.teaser-row-rich {
+  gap: 8px;
+  padding: 5px 0;
+}
+.teaser-photo-wrap {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+}
+.teaser-photo-wrap .teaser-photo {
+  width: 26px;
+  height: 26px;
+}
+.teaser-team-overlay {
+  position: absolute;
+  bottom: -3px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--paper);
+  padding: 0;
+  border: 1px solid rgba(20, 17, 13, 0.12);
+  object-fit: contain;
+}
+.teaser-photo-fallback {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(20, 17, 13, 0.06);
+}
+.teaser-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.teaser-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  color: rgba(20, 17, 13, 0.5);
+  letter-spacing: 0.3px;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .leader-row-rich { padding: 8px 12px; gap: 10px; }
+  .leader-photo-wrap { width: 36px; height: 36px; }
+  .leader-photo-wrap .leader-photo { width: 36px; height: 36px; }
+  .nfl-offseason { padding: 28px 20px; }
+  .nfl-offseason-title { font-size: 24px; }
+  .premium-card-body { padding: 18px 12px 14px; }
+  .premium-stat-name { font-size: 15px; }
+}
