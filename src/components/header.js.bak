@@ -1,6 +1,8 @@
 /**
  * src/components/header.js
  * Editorial masthead with PBE chrome logo + header banner ad
+ *
+ * v3.10: 🆕 added 🔴 Live link pointing to /games scoreboard hub
  */
 
 import { ad_header_banner } from '../ads-config.js';
@@ -13,6 +15,8 @@ export function renderHeader() {
   const time = new Date().toLocaleTimeString('en-US', {
     hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York',
   });
+
+  const isLive = path === '/games' || path.startsWith('/games/');
 
   return `
     <div class="topbar">
@@ -46,6 +50,7 @@ export function renderHeader() {
         <div class="masthead-right">
           <a href="/news/nba" class="nav-link ${path.startsWith('/news/nba') ? 'active' : ''}">NBA</a>
           <a href="/news/nhl" class="nav-link ${path.startsWith('/news/nhl') ? 'active' : ''}">NHL</a>
+          <a href="/games" class="nav-link live-link ${isLive ? 'active' : ''}">Live</a>
           <a href="https://mlb.propbetedge.ai" class="nav-link cta">Picks →</a>
         </div>
       </div>

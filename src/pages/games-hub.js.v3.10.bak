@@ -2,18 +2,27 @@
  * src/pages/games-hub.js — /games
  * Multi-sport live scoreboard, free public layer.
  *
- * v3.11 changes:
- *   - Wires in the Stat Leaders compact teaser (renderLeadersTeaserSlot + loadLeadersTeaser)
- *   - Teaser placed between scoreboard and edge strip
- *   - Teaser updates when sport tab changes; hidden on "All" and "NFL"
- *
  * Powered by PropSports API (propsports.proptechusa.ai)
+ *
+ * Layout:
+ *   ┌─────────────────────────────────────────────────────┐
+ *   │ Hero strip — LIVE NOW count, today's date           │
+ *   ├─────────────────────────────────────────────────────┤
+ *   │ Sport tabs — All · MLB · NBA · NHL · NFL            │
+ *   ├─────────────────────────────────────────────────────┤
+ *   │ Live games (red dot, "in progress")                 │
+ *   ├─────────────────────────────────────────────────────┤
+ *   │ Final games (today's results)                       │
+ *   ├─────────────────────────────────────────────────────┤
+ *   │ Upcoming games (scheduled, time)                    │
+ *   ├─────────────────────────────────────────────────────┤
+ *   │ "PropBetEdge Storylines" tease — links to picks     │
+ *   └─────────────────────────────────────────────────────┘
  */
 
 import { sports } from '../api-sports.js';
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
-import { renderLeadersTeaserSlot, loadLeadersTeaser } from '../components/leaders-teaser.js';
 
 export async function renderGamesHub(root) {
   const today = new Date().toLocaleDateString('en-US', {
@@ -59,9 +68,6 @@ export async function renderGamesHub(root) {
             <div class="games-loading-dot"></div>
           </div>
         </div>
-
-        <!-- Compact Stat Leaders teaser (sport-aware, hidden on "All" + "NFL") -->
-        ${renderLeadersTeaserSlot()}
 
         <!-- PropBetEdge angle / API plug -->
         <section class="games-edge-strip">
@@ -132,10 +138,6 @@ export async function renderGamesHub(root) {
   // Render the games content
   renderGamesList(all, 'all');
 
-  // Initial leaders teaser load — default to MLB on "All" tab so something shows.
-  // (When user clicks a sport tab the teaser updates to that sport.)
-  loadLeadersTeaser('mlb');
-
   // Wire up tabs
   document.querySelectorAll('.games-tab').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -143,8 +145,6 @@ export async function renderGamesHub(root) {
       btn.classList.add('active');
       const sport = btn.dataset.sport;
       renderGamesList(all, sport);
-      // Update leaders teaser to match sport — default to MLB on "All"
-      loadLeadersTeaser(sport === 'all' ? 'mlb' : sport);
     });
   });
 

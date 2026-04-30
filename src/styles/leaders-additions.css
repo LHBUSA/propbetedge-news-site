@@ -1,0 +1,367 @@
+/* ──────────────────────────────────────────────────────────────────────
+   Stat Leaders — /leaders page + /games compact teaser
+   Appended to main.css. Uses editorial tokens (--ink, --paper, --gold).
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ── Hero ─────────────────────────────────────────────────────────── */
+.leaders-hero {
+  position: relative;
+  margin: 24px 0 28px;
+  padding: 38px 32px 34px;
+  background: linear-gradient(135deg, var(--ink) 0%, #1a1612 100%);
+  border-radius: 14px;
+  overflow: hidden;
+  color: var(--paper);
+}
+.leaders-hero-mesh {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 80% 0%, rgba(212, 175, 55, 0.18), transparent 70%),
+    radial-gradient(ellipse 50% 50% at 10% 100%, rgba(193, 39, 61, 0.12), transparent 70%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+.leaders-hero-inner { position: relative; z-index: 1; max-width: 720px; }
+.leaders-hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  background: rgba(193, 39, 61, 0.15);
+  border: 1px solid rgba(193, 39, 61, 0.4);
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #ff8a96;
+  margin-bottom: 18px;
+}
+.leaders-hero-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  margin: 0 0 14px;
+  color: var(--paper);
+}
+.leaders-hero-dek {
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(245, 241, 235, 0.72);
+  margin: 0;
+  max-width: 560px;
+}
+.live-dot-big {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: #ff3b3b;
+  box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.7);
+  animation: livePulse 1.8s infinite;
+}
+@keyframes livePulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.7); }
+  70%  { box-shadow: 0 0 0 9px rgba(255, 59, 59, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0); }
+}
+
+/* ── Sport tabs ───────────────────────────────────────────────────── */
+.leaders-sport-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 18px;
+  padding: 4px;
+  background: rgba(20, 17, 13, 0.04);
+  border: 1px solid rgba(20, 17, 13, 0.08);
+  border-radius: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.leaders-sport-tabs::-webkit-scrollbar { display: none; }
+.leaders-sport-tab {
+  flex: 1;
+  min-width: 90px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(20, 17, 13, 0.55);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.leaders-sport-tab:hover { color: var(--ink); background: rgba(20, 17, 13, 0.04); }
+.leaders-sport-tab.active {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 2px 8px rgba(20, 17, 13, 0.2);
+}
+
+/* ── Sub-tabs (Batting/Pitching, Skaters/Goalies) ─────────────────── */
+.leaders-subtabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.leaders-subtabs:empty { display: none; }
+.leaders-subtab {
+  padding: 7px 16px;
+  background: rgba(20, 17, 13, 0.04);
+  border: 1px solid rgba(20, 17, 13, 0.1);
+  border-radius: 7px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: rgba(20, 17, 13, 0.6);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.leaders-subtab:hover { background: rgba(20, 17, 13, 0.08); color: var(--ink); }
+.leaders-subtab.active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--ink);
+}
+
+/* ── Banner (fallback season notice) ──────────────────────────────── */
+.leaders-banner {
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: rgba(20, 17, 13, 0.8);
+}
+
+/* ── Leader cards grid ────────────────────────────────────────────── */
+.leaders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.leader-card {
+  background: var(--paper);
+  border: 1px solid rgba(20, 17, 13, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(20, 17, 13, 0.04);
+  transition: all 0.15s;
+}
+.leader-card:hover {
+  box-shadow: 0 4px 12px rgba(20, 17, 13, 0.08);
+  border-color: rgba(20, 17, 13, 0.14);
+}
+
+.leader-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  background: rgba(20, 17, 13, 0.03);
+  border-bottom: 2px solid;
+}
+.leader-card-stat {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.leader-card-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(20, 17, 13, 0.5);
+  letter-spacing: 0.5px;
+}
+
+/* ── Leader rows ──────────────────────────────────────────────────── */
+.leader-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(20, 17, 13, 0.04);
+  text-decoration: none;
+  color: var(--ink);
+  transition: background 0.1s;
+}
+.leader-row:hover { background: rgba(20, 17, 13, 0.03); }
+.leader-row:last-child { border-bottom: none; }
+.leader-row.is-top { background: rgba(212, 175, 55, 0.04); }
+.leader-row.is-top:hover { background: rgba(212, 175, 55, 0.08); }
+
+.leader-rank {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  width: 20px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.leader-photo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(20, 17, 13, 0.1);
+  background: rgba(20, 17, 13, 0.04);
+  flex-shrink: 0;
+}
+.leader-photo-fallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(20, 17, 13, 0.06);
+  flex-shrink: 0;
+}
+.leader-info {
+  flex: 1;
+  min-width: 0;
+}
+.leader-name {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.leader-team {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(20, 17, 13, 0.55);
+  letter-spacing: 0.5px;
+  margin-top: 1px;
+}
+.leader-value {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+.leader-empty {
+  padding: 26px 16px;
+  text-align: center;
+  color: rgba(20, 17, 13, 0.4);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* ── Compact teaser on /games ─────────────────────────────────────── */
+.games-leaders-teaser {
+  margin: 24px 0;
+  padding: 20px 24px;
+  background: var(--paper);
+  border: 1px solid rgba(20, 17, 13, 0.08);
+  border-radius: 12px;
+}
+.games-leaders-teaser-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.games-leaders-teaser-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--ink);
+}
+.games-leaders-teaser-subtitle {
+  font-size: 11px;
+  color: rgba(20, 17, 13, 0.55);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.games-leaders-teaser-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--crimson);
+  text-decoration: none;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.games-leaders-teaser-link:hover { text-decoration: underline; }
+
+.games-leaders-teaser-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.teaser-card {
+  background: rgba(20, 17, 13, 0.025);
+  border: 1px solid rgba(20, 17, 13, 0.06);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.teaser-card-stat {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.teaser-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  text-decoration: none;
+  color: var(--ink);
+}
+.teaser-row + .teaser-row { border-top: 1px solid rgba(20, 17, 13, 0.04); }
+.teaser-rank {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  width: 14px;
+  text-align: center;
+  color: rgba(20, 17, 13, 0.4);
+  flex-shrink: 0;
+}
+.teaser-photo {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(20, 17, 13, 0.08);
+}
+.teaser-name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.teaser-value {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .leaders-hero { padding: 26px 20px 24px; }
+  .leaders-hero-title { font-size: 32px; }
+  .leaders-hero-dek { font-size: 14px; }
+  .leaders-grid { grid-template-columns: 1fr; }
+  .games-leaders-teaser { padding: 16px 18px; }
+  .games-leaders-teaser-title { font-size: 18px; }
+}
