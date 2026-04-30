@@ -4291,3 +4291,560 @@ a.leaders-sport-tab {
   .premium-card-body { padding: 18px 12px 14px; }
   .premium-stat-name { font-size: 15px; }
 }
+/* ──────────────────────────────────────────────────────────────────────
+   Player Pages v3.13 Drop 1 — bet-focused design
+   APPEND TO main.css
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ── Hero band ───────────────────────────────────────────────────────── */
+.player-hero {
+  position: relative;
+  margin: 24px 0 28px;
+  padding: 36px 36px 32px;
+  border-radius: 14px;
+  overflow: hidden;
+  color: var(--paper);
+}
+.player-hero-mesh {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 100% 0%, rgba(255, 255, 255, 0.1), transparent 70%),
+    radial-gradient(ellipse 50% 50% at 0% 100%, rgba(0, 0, 0, 0.3), transparent 70%);
+  pointer-events: none;
+}
+.player-hero-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.player-hero-photo-wrap {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+}
+.player-hero-photo {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.1);
+  border: 4px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+.player-hero-photo-fallback {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 4px solid rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--paper);
+}
+.player-hero-team-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--paper);
+  padding: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  object-fit: contain;
+}
+
+.player-hero-content {
+  flex: 1;
+  min-width: 0;
+}
+.player-hero-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.sport-pill {
+  padding: 4px 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+.player-hero-team {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-weight: 600;
+}
+.player-hero-team:hover { text-decoration: underline; }
+
+.player-hero-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(34px, 5vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  margin: 0 0 18px;
+  color: var(--paper);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.player-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+.player-meta-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.player-meta-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.player-meta-value {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.player-hero-game-status {
+  margin-top: 16px;
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--paper);
+}
+
+/* ── Section kicker (consistent label) ───────────────────────────────── */
+.player-section-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: rgba(20, 17, 13, 0.5);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+/* ── Stat ribbon ─────────────────────────────────────────────────────── */
+.player-stat-ribbon {
+  margin-bottom: 24px;
+}
+.player-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  gap: 0;
+  background: var(--paper);
+  border: 1px solid rgba(20, 17, 13, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(20, 17, 13, 0.04);
+}
+.player-stat-cell {
+  padding: 16px 14px;
+  text-align: center;
+  border-right: 1px solid rgba(20, 17, 13, 0.06);
+}
+.player-stat-cell:last-child { border-right: none; }
+.player-stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(20, 17, 13, 0.5);
+  margin-bottom: 6px;
+}
+.player-stat-value {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+}
+.player-stat-arrow {
+  font-size: 13px;
+  font-weight: 700;
+  margin-left: 2px;
+  vertical-align: super;
+}
+.player-stat-arrow.up { color: #5FD38D; }
+.player-stat-arrow.down { color: #FF6B6B; }
+.player-stat-delta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(20, 17, 13, 0.55);
+  margin-top: 4px;
+}
+
+/* ── Prop angle (the wedge) ──────────────────────────────────────────── */
+.player-prop-angle {
+  background:
+    linear-gradient(135deg, rgba(193, 39, 61, 0.05), rgba(212, 175, 55, 0.04)),
+    var(--paper);
+  border: 1px solid rgba(193, 39, 61, 0.2);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.player-prop-angle::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 100% 0%, rgba(212, 175, 55, 0.08), transparent 50%);
+  pointer-events: none;
+}
+.player-prop-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  position: relative;
+}
+.player-prop-icon {
+  font-size: 32px;
+}
+.player-prop-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--crimson);
+  margin-bottom: 2px;
+}
+.player-prop-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.player-prop-body {
+  position: relative;
+}
+.player-prop-locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 20px;
+  background: rgba(20, 17, 13, 0.03);
+  border: 1px dashed rgba(20, 17, 13, 0.18);
+  border-radius: 10px;
+}
+.player-prop-lock-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.player-prop-lock-content {
+  flex: 1;
+  min-width: 0;
+}
+.player-prop-lock-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.player-prop-lock-dek {
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(20, 17, 13, 0.65);
+  margin-bottom: 14px;
+}
+.player-prop-cta {
+  display: inline-block;
+  padding: 10px 18px;
+  background: var(--crimson);
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 7px;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.player-prop-cta:hover {
+  background: var(--ink);
+  transform: translateY(-1px);
+}
+
+/* ── Generic player section ──────────────────────────────────────────── */
+.player-section {
+  margin-bottom: 28px;
+}
+.player-empty-card {
+  padding: 22px 24px;
+  background: var(--paper);
+  border: 1px dashed rgba(20, 17, 13, 0.15);
+  border-radius: 10px;
+  color: rgba(20, 17, 13, 0.6);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* ── Recent form ─────────────────────────────────────────────────────── */
+.player-form-card {
+  background: var(--paper);
+  border: 1px solid rgba(20, 17, 13, 0.08);
+  border-radius: 12px;
+  padding: 20px;
+}
+.player-form-spark {
+  text-align: center;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(20, 17, 13, 0.06);
+}
+.player-form-spark-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: rgba(20, 17, 13, 0.5);
+  margin-top: 6px;
+}
+.player-sparkline {
+  display: block;
+  margin: 0 auto;
+}
+.player-form-table {
+  overflow-x: auto;
+}
+.player-form-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.player-form-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(20, 17, 13, 0.5);
+  border-bottom: 1px solid rgba(20, 17, 13, 0.1);
+}
+.player-form-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(20, 17, 13, 0.04);
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink);
+}
+.player-form-table th:first-child,
+.player-form-table td:first-child {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+}
+
+.stat-hot {
+  color: #5FD38D !important;
+  font-weight: 700;
+  background: rgba(95, 211, 141, 0.08);
+  border-radius: 4px;
+}
+.stat-cold {
+  color: #FF6B6B !important;
+  background: rgba(255, 107, 107, 0.06);
+  border-radius: 4px;
+}
+
+/* ── Splits ──────────────────────────────────────────────────────────── */
+.player-splits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.player-split-card {
+  background: var(--paper);
+  border: 1px solid rgba(20, 17, 13, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.player-split-title {
+  padding: 12px 16px;
+  background: rgba(20, 17, 13, 0.03);
+  border-bottom: 1px solid rgba(20, 17, 13, 0.06);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.player-split-rows {
+  padding: 8px 0;
+}
+.player-split-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  gap: 14px;
+}
+.player-split-row + .player-split-row { border-top: 1px solid rgba(20, 17, 13, 0.04); }
+.player-split-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.player-split-stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.player-split-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.player-split-stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: rgba(20, 17, 13, 0.5);
+}
+.player-split-stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* ── Game log ────────────────────────────────────────────────────────── */
+.player-gamelog-wrap {
+  background: var(--paper);
+  border: 1px solid rgba(20, 17, 13, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.player-gamelog {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.player-gamelog thead {
+  background: rgba(20, 17, 13, 0.03);
+}
+.player-gamelog th {
+  text-align: center;
+  padding: 10px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(20, 17, 13, 0.55);
+  border-bottom: 1px solid rgba(20, 17, 13, 0.08);
+}
+.player-gamelog th:first-child,
+.player-gamelog th:nth-child(2) { text-align: left; }
+.player-gamelog td {
+  padding: 8px 12px;
+  text-align: center;
+  border-bottom: 1px solid rgba(20, 17, 13, 0.04);
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink);
+}
+.player-gamelog td:first-child,
+.player-gamelog td:nth-child(2) {
+  text-align: left;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+}
+.player-gamelog tbody tr:hover {
+  background: rgba(20, 17, 13, 0.02);
+}
+
+/* ── News tease ──────────────────────────────────────────────────────── */
+.player-news-tease {
+  background: var(--paper);
+  border: 1px solid rgba(20, 17, 13, 0.08);
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+.player-news-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+}
+.player-news-link:hover { color: var(--crimson); }
+
+/* ── Loading + error ─────────────────────────────────────────────────── */
+.player-loading {
+  padding: 60px 20px;
+  text-align: center;
+}
+.player-loading-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: rgba(20, 17, 13, 0.5);
+  margin-top: 14px;
+  text-transform: uppercase;
+}
+.player-error {
+  margin: 32px 0;
+  padding: 40px 32px;
+  background: var(--paper);
+  border: 1px solid rgba(20, 17, 13, 0.08);
+  border-radius: 12px;
+  text-align: center;
+}
+.player-error h2 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 26px;
+  margin: 0 0 10px;
+}
+.player-error p {
+  color: rgba(20, 17, 13, 0.65);
+  margin: 6px 0;
+}
+.player-error a {
+  color: var(--crimson);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* ── Mobile ──────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .player-hero { padding: 24px 20px; }
+  .player-hero-inner { flex-direction: column; gap: 20px; align-items: flex-start; }
+  .player-hero-photo-wrap, .player-hero-photo, .player-hero-photo-fallback { width: 120px; height: 120px; }
+  .player-hero-photo-fallback { font-size: 40px; }
+  .player-hero-team-badge { width: 38px; height: 38px; }
+  .player-hero-name { font-size: 32px; margin-bottom: 12px; }
+  .player-stat-cell { padding: 12px 8px; }
+  .player-stat-value { font-size: 22px; }
+  .player-prop-angle { padding: 18px 18px; }
+  .player-prop-locked { flex-direction: column; gap: 10px; }
+  .player-form-card { padding: 16px; }
+  .player-split-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .player-split-stats { justify-content: flex-start; }
+}
