@@ -1,162 +1,122 @@
 /**
  * src/pages/sport.js
- * Sport-section landing — like a magazine section front
+ * v3.15: paginated per-sport news listing
  */
 
 import { api } from '../api.js';
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
-import { renderArticleCard, renderSidebarStory, escapeHtml, formatRelative } from '../components/article-card.js';
-import { proxyImage } from '../ads-config.js';
-import {
-  organizationSchema, websiteSchema, breadcrumbSchema,
-  collectionPageSchema, injectSchemas,
-} from '../schema.js';
+import { renderArticleCard } from '../components/article-card.js';
+import { renderPagination, injectPaginationLinkTags } from '../components/pagination.js';
 
-const SPORT_FALLBACK = { mlb: '⚾', nfl: '🏈', nba: '🏀', nhl: '🏒' };
-const SPORT_TAGLINES = {
-  mlb: 'Strikeouts, home runs, hits, total bases — all the angles for tonight\'s diamond.',
-  nfl: 'Yards, touchdowns, anytime scorers — the Sunday slate broken down.',
-  nba: 'Points, assists, rebounds, threes — every angle on the hardwood.',
-  nhl: 'Shots on goal, goals, saves — the ice-level edge.',
+const PAGE_SIZE = 20;
+
+const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', nhl: 'NHL' };
+const SPORT_DESCRIPTIONS = {
+  mlb: 'Major League Baseball news, injuries, and prop-bet edges.',
+  nfl: 'NFL news, snap counts, and player prop analysis.',
+  nba: 'NBA news, rotations, and prop-bet edges.',
+  nhl: 'NHL news, line changes, and goalie matchup analysis.',
 };
-const SECTIONS = ['mlb', 'nfl', 'nba', 'nhl'];
 
-export async function renderSport(root, sport) {
-  const tagline = SPORT_TAGLINES[sport] || '';
+export async function renderSport(root, sport, page = 1, setMeta) {
+  page = Math.max(1, parseInt(page) || 1);
+  const sportLabel = SPORT_LABELS[sport] || sport.toUpperCase();
+  const baseHref = `/news/${sport}`;
+  const baseUrl = `https://propbetedge.ai/news/${sport}`;
+  const canonicalUrl = page === 1 ? baseUrl : `${baseUrl}/page/${page}`;
 
   root.innerHTML = `
     ${renderHeader()}
     <main>
-      <div class="section-bar">
-        <div class="container section-bar-inner">
-          <a href="/news" class="section-link">All News</a>
-          ${SECTIONS.map((s) => `
-            <a href="/news/${s}" class="section-link ${s === sport ? 'active' : ''}">${s.toUpperCase()}</a>
-          `).join('')}
+      <div class="container">
+        <header class="news-header">
+          <a href="/news" class="article-back">&larr; All News</a>
+          <h1>${sportLabel} News</h1>
+        </header>
+        <div class="article-grid">
+          ${Array.from({ length: 8 }).map(() => `<div class="skel skel-article-card"></div>`).join('')}
         </div>
-      </div>
-
-      <div class="container" style="padding-top:40px">
-        <div style="border-bottom:2px solid var(--gold);padding-bottom:18px;margin-bottom:32px">
-          <div class="kicker kicker-gold" style="margin-bottom:8px">${escapeHtml(sport.toUpperCase())} · The Section</div>
-          <h1 class="serif" style="font-family:var(--font-serif);font-size:clamp(36px,5vw,52px);font-weight:900;letter-spacing:-0.025em;margin:0 0 10px;line-height:1.05">${escapeHtml(sport.toUpperCase())} News & Notes</h1>
-          <p style="font-family:var(--font-serif);font-style:italic;font-size:18px;color:var(--paper-dim);max-width:680px;margin:0">${escapeHtml(tagline)}</p>
-        </div>
-
-        <div id="lead-slot">${cardSkeleton(1, true)}</div>
-        <div id="rest-slot">${cardSkeleton(8)}</div>
       </div>
     </main>
-    ${renderFooter()}
   `;
 
-  const data = await api.newsBySport(sport, 40).catch(() => ({ articles: [] }));
-  const articles = data.articles || [];
-  const sportLabel = sport.toUpperCase();
-
-  // 🆕 v3.9.6: Schema for sport landing pages
-  injectSchemas([
-    organizationSchema(),
-    websiteSchema(),
-    collectionPageSchema({
-      url: `/news/${sport}`,
-      name: `${sportLabel} News — PropBetEdge`,
-      description: `Latest ${sportLabel} news with AI prop-bet impact analysis.`,
-      articles,
-    }),
-    breadcrumbSchema([
-      { name: 'Home', url: '/' },
-      { name: 'News', url: '/news' },
-      { name: `${sportLabel} News` },
-    ]),
-  ], 'jsonld-sport');
-
-  if (!articles.length) {
-    document.getElementById('lead-slot').innerHTML = '';
-    document.getElementById('rest-slot').innerHTML = `
-      <div class="empty" style="margin-top:32px">
-        <h3>No ${sport.toUpperCase()} articles yet</h3>
-        <p>The news engine pulls every 30 minutes — check back shortly.</p>
+  let resp;
+  try {
+    resp = await api.newsBySport(sport, PAGE_SIZE, page);
+  } catch (e) {
+    root.querySelector('main').innerHTML = `
+      <div class="container">
+        <div class="empty">
+          <h3>Failed to load ${sportLabel} news</h3>
+          <p>${escapeHtml(e.message)}</p>
+        </div>
       </div>
     `;
     return;
   }
 
-  // Lead = first article (or one with image preferred)
-  const lead = pickLead(articles);
-  const rest = articles.filter((a) => a.id !== lead.id);
+  const articles = resp.articles || [];
+  const totalPages = resp.totalPages || 1;
+  const currentPage = resp.page || page;
 
-  document.getElementById('lead-slot').innerHTML = `
-    <div class="lead-grid" style="margin-bottom:48px">
-      ${renderLeadStory(lead, sport)}
-      <aside class="lead-sidebar">
-        <div class="sidebar-header">More ${sport.toUpperCase()}</div>
-        ${rest.slice(0, 4).map(renderSidebarStory).join('')}
-      </aside>
-    </div>
-  `;
-
-  const remaining = rest.slice(4);
-  document.getElementById('rest-slot').innerHTML = remaining.length ? `
-    <div class="section-heading">
-      <h2>More Stories</h2>
-    </div>
-    <div class="article-grid fade-stagger">
-      ${remaining.map((a) => renderArticleCard(a)).join('')}
-    </div>
-  ` : '';
-}
-
-function pickLead(articles) {
-  const withImage = articles.filter((a) => a.image_url);
-  if (withImage.length) {
-    return withImage.sort((a, b) => (b.take?.impact_score || 0) - (a.take?.impact_score || 0))[0];
-  }
-  return articles[0];
-}
-
-function renderLeadStory(article, sport) {
-  const url = article.url || `/news/${article.sport}/${article.slug}`;
-  const date = new Date(article.published_at);
-  const dek = article.take?.summary || article.summary;
-  const imgBlock = article.image_url
-    ? `<div class="lead-image">
-         <img src="${escapeAttr(proxyImage(article.image_url))}" alt="${escapeAttr(article.title)}" class="hero-image-img" onerror="this.classList.add('img-broken')" />
-         <div class="img-fallback">${SPORT_FALLBACK[sport] || '◆'}</div>
-       </div>`
-    : `<div class="lead-image"><div class="img-fallback">${SPORT_FALLBACK[sport] || '◆'}</div></div>`;
-
-  return `
-    <a href="${escapeAttr(url)}" class="lead-story fade-in">
-      ${imgBlock}
-      <div class="lead-meta">
-        <span class="sport-tag">${escapeHtml(sport.toUpperCase())}</span>
-        <span class="dot">·</span>
-        <span class="timestamp">${formatRelative(date)}</span>
-      </div>
-      <h2 class="lead-headline">${escapeHtml(article.title)}</h2>
-      ${dek ? `<p class="lead-dek">${escapeHtml(dek)}</p>` : ''}
-    </a>
-  `;
-}
-
-function cardSkeleton(n, large = false) {
-  let out = large ? '<div class="lead-grid" style="margin-bottom:48px"><div>' : '<div class="article-grid">';
-  for (let i = 0; i < n; i++) {
-    out += `
-      <div class="skel-card">
-        <div class="skel skel-card-img"></div>
-        <div class="skel skel-line" style="width:30%;height:10px"></div>
-        <div class="skel skel-line" style="width:90%;height:24px;margin-top:8px"></div>
-      </div>
+  if (page > totalPages && totalPages > 0) {
+    root.innerHTML = `
+      ${renderHeader()}
+      <main>
+        <div class="container">
+          <div class="empty">
+            <h3>Page ${page} doesn't exist</h3>
+            <p>${sportLabel} News has ${totalPages} ${totalPages === 1 ? 'page' : 'pages'}.</p>
+            <a href="${baseHref}" class="btn btn-primary">Back to ${sportLabel} latest</a>
+          </div>
+        </div>
+      </main>
+      ${renderFooter()}
     `;
+    return;
   }
-  out += large ? '</div><div></div></div>' : '</div>';
-  return out;
+
+  if (setMeta) {
+    setMeta({
+      title: page === 1
+        ? `${sportLabel} News & Prop-Bet Analysis — PropBetEdge`
+        : `${sportLabel} News · Page ${page} — PropBetEdge`,
+      description: SPORT_DESCRIPTIONS[sport] || `Latest ${sportLabel} news with AI prop-bet impact analysis.`,
+      canonical: canonicalUrl,
+    });
+  }
+
+  root.innerHTML = `
+    ${renderHeader()}
+    <main>
+      <div class="container">
+        <header class="news-header">
+          <a href="/news" class="article-back">&larr; All News</a>
+          <h1>${sportLabel} News${page > 1 ? ` · Page ${page}` : ''}</h1>
+          <p class="news-dek">${SPORT_DESCRIPTIONS[sport] || ''}</p>
+        </header>
+
+        ${articles.length === 0 ? `
+          <div class="empty">
+            <h3>No ${sportLabel} articles yet</h3>
+            <p>Check back shortly.</p>
+          </div>
+        ` : `
+          <div class="article-grid fade-stagger">
+            ${articles.map((a) => renderArticleCard(a)).join('')}
+          </div>
+          ${renderPagination({ currentPage, totalPages, baseHref })}
+        `}
+      </div>
+    </main>
+    ${renderFooter()}
+  `;
+
+  injectPaginationLinkTags({ currentPage, totalPages, baseUrl });
 }
 
-function escapeAttr(s) {
+function escapeHtml(s) {
   if (s == null) return '';
-  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
