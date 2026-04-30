@@ -3,12 +3,14 @@
     { "source": "/news/rss.xml", "destination": "https://propbet-news-rss.sales-fd3.workers.dev/" },
     { "source": "/news/breaking/rss.xml", "destination": "https://propbet-news-rss.sales-fd3.workers.dev/breaking" },
     { "source": "/news/:sport(mlb|nfl|nba|nhl)/rss.xml", "destination": "https://propbet-news-rss.sales-fd3.workers.dev/?sport=:sport" },
-    { "source": "/sitemap.xml", "destination": "https://propbet-news-sitemap.sales-fd3.workers.dev/" },
-    { "source": "/news-sitemap.xml", "destination": "https://propbet-news-sitemap.sales-fd3.workers.dev/news" },
+    { "source": "/sitemap.xml", "destination": "https://propbet-news-sitemap.sales-fd3.workers.dev/sitemap.xml" },
+    { "source": "/news-sitemap.xml", "destination": "https://propbet-news-sitemap.sales-fd3.workers.dev/news-sitemap.xml" },
+    { "source": "/robots.txt", "destination": "https://propbet-news-sitemap.sales-fd3.workers.dev/robots.txt" },
     { "source": "/news/:path*", "destination": "/index.html" },
     { "source": "/authors/:path*", "destination": "/index.html" },
+    { "source": "/author/:path*", "destination": "/index.html" },
     { "source": "/editorial-standards", "destination": "/index.html" },
-    { "source": "/((?!api|_next|_vercel|favicon|logo|src|public|assets|manifest|robots|.*\\..*).*)", "destination": "/index.html" }
+    { "source": "/((?!api|_next|_vercel|favicon|logo|src|public|assets|manifest|sitemap|robots|.*\\..*).*)", "destination": "/index.html" }
   ],
   "headers": [
     { "source": "/(.*)", "headers": [
