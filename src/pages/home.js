@@ -1,6 +1,8 @@
 /**
  * src/pages/home.js
- * Editorial homepage — magazine layout (v3.9 layout cleanup)
+ * Editorial homepage — magazine layout
+ * v3.10: per-sport rails fetch independently so counts are accurate
+ *        (was: grouping limited homepage feed → rails showed wrong totals)
  *
  *  Structure:
  *  ┌─────────────────────────────────────────────────────┐
@@ -13,14 +15,14 @@
  *  ─── Latest ──────────────────────────────────────────
  *  ┌──────┬──────┬──────┐
  *  │ card │ card │ card │   3-up grid, ALL same size
- *  ├──────┼──────┼──────┤   (no random featured)
+ *  ├──────┼──────┼──────┤
  *  │ card │ card │ card │
  *  └──────┴──────┴──────┘
  *  ─── MLB ── All MLB → ────────────────────────────────
  *  ┌──────┬──────┬──────┬──────┐
  *  │ card │ card │ card │ card │   4-up rail
  *  └──────┴──────┴──────┴──────┘
- *  (repeat for NFL / NBA / NHL)
+ *  (repeat for NFL / NBA / NHL — counts pulled from real DB totals)
  */
 
 import { api } from '../api.js';
@@ -68,10 +70,14 @@ export async function renderHome(root) {
     ${renderFooter()}
   `;
 
-  // Fetch in parallel
-  const [breaking, homepage] = await Promise.all([
+  // Fetch breaking + homepage feed (for lead/sidebar/Latest) + each sport independently for rails
+  const [breaking, homepage, mlbData, nflData, nbaData, nhlData] = await Promise.all([
     api.breaking().catch(() => ({ articles: [] })),
     api.homepage().catch(() => ({ articles: [] })),
+    api.newsBySport('mlb', 4, 1).catch(() => ({ articles: [], total: 0 })),
+    api.newsBySport('nfl', 4, 1).catch(() => ({ articles: [], total: 0 })),
+    api.newsBySport('nba', 4, 1).catch(() => ({ articles: [], total: 0 })),
+    api.newsBySport('nhl', 4, 1).catch(() => ({ articles: [], total: 0 })),
   ]);
 
   // Breaking ribbon
@@ -81,7 +87,7 @@ export async function renderHome(root) {
 
   const all = homepage.articles || [];
 
-  // 🆕 v3.9.6: Inject homepage schema (Org + WebSite + CollectionPage with featured items)
+  // Inject homepage schema
   injectSchemas([
     organizationSchema(),
     websiteSchema(),
@@ -112,23 +118,27 @@ export async function renderHome(root) {
     ${sidebarStories.map(renderSidebarStory).join('')}
   `;
 
-  // 3. Latest grid = next 6 articles, ALL SAME SIZE (no random featured card)
+  // 3. Latest grid = next 6 articles, all same size
   const latest = remaining.slice(4, 10);
   document.getElementById('latest-grid').innerHTML = latest.length
-    ? latest.map((a) => renderArticleCard(a)).join('')   // 🔥 no featured flag
+    ? latest.map((a) => renderArticleCard(a)).join('')
     : `<div class="empty" style="grid-column:1/-1"><h3>That's all for now</h3><p>More stories incoming.</p></div>`;
 
-  // 4. Per-sport rails — 4 cards each, same size, with proper heading
+  // 4. Per-sport rails — each sport fetched independently so counts reflect actual DB totals
+  const sportData = {
+    mlb: mlbData,
+    nfl: nflData,
+    nba: nbaData,
+    nhl: nhlData,
+  };
+
   const railsEl = document.getElementById('sport-rails');
-  const bySport = {};
-  for (const a of all) {
-    if (!bySport[a.sport]) bySport[a.sport] = [];
-    bySport[a.sport].push(a);
-  }
-  const sportsToShow = ['mlb', 'nfl', 'nba', 'nhl'].filter((s) => (bySport[s] || []).length > 0);
+  const sportsToShow = ['mlb', 'nfl', 'nba', 'nhl'].filter((s) => (sportData[s].articles || []).length > 0);
+
   railsEl.innerHTML = sportsToShow.map((sport) => {
-    const articles = bySport[sport].slice(0, 4);
-    const total = bySport[sport].length;
+    const data = sportData[sport];
+    const articles = (data.articles || []).slice(0, 4);
+    const total = data.total || articles.length;  // ← real DB total, not group count
     return `
       <section class="sport-rail-section">
         <div class="sport-rail-heading">
