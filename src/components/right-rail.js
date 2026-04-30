@@ -49,20 +49,45 @@ function injectStyles() {
   const s = document.createElement('style')
   s.id = 'pbe-article-rail-styles'
   s.textContent = `
-    /* Grid wrapper — turns article+rail into 2-column on desktop, single column on mobile */
+    /* Outer wrapper — flexbox layout that keeps the article at its natural
+       container-narrow reading width and adds the rail beside it on desktop.
+       Below 1100px, single column with article on top and rail below. */
     .article-with-rail {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       gap: 32px;
-      align-items: start;
+      padding: 0 16px;
+      width: 100%;
+      max-width: 100%;
     }
+    .article-with-rail > .article-page {
+      width: 100%;
+      max-width: 720px;  /* matches container-narrow reading width */
+    }
+    .article-with-rail > #pbe-article-rail {
+      width: 100%;
+      max-width: 720px;
+    }
+
     @media (min-width: 1100px) {
       .article-with-rail {
-        grid-template-columns: minmax(0, 1fr) 320px;
+        flex-direction: row;
+        align-items: flex-start;
         gap: 40px;
+        max-width: 1140px;
+        margin: 0 auto;
       }
-      .article-with-rail .article-page {
-        max-width: none;
+      .article-with-rail > .article-page {
+        flex: 1 1 720px;
+        max-width: 720px;
+        min-width: 0;
+        margin: 0;  /* override container-narrow's auto margin so flex layout works */
+      }
+      .article-with-rail > #pbe-article-rail {
+        flex: 0 0 320px;
+        width: 320px;
+        max-width: 320px;
       }
     }
 
