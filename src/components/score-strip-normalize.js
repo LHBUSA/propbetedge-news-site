@@ -89,9 +89,10 @@ export function normalizeNBA(games) {
 
 export function normalizeNHL(games) {
   return games.map((g) => {
-    const state = ['LIVE', 'CRIT'].includes(g.status) ? 'live'
-                : ['OFF', 'FINAL'].includes(g.status) ? 'final'
-                : 'pre'
+    const status = String(g.status || '').toUpperCase()
+    const state = ['LIVE', 'CRIT'].includes(status) ? 'live'
+                : ['OFF', 'FINAL', 'OVER'].includes(status) ? 'final'
+                : 'pre'  // FUT, PRE, etc. all map to pre-game
     return {
       sport: 'nhl',
       sportLabel: '🏒 NHL',
@@ -101,11 +102,11 @@ export function normalizeNHL(games) {
                 : state === 'final' ? 'Final'
                 : formatTime(g.date),
       home: {
-        name: g.home, abbr: teamAbbr(g.home), logo: null,
+        name: g.home, abbr: g.homeAbbr || teamAbbr(g.home), logo: g.homeLogo || null,
         score: g.homeScore ?? '', record: '',
       },
       away: {
-        name: g.away, abbr: teamAbbr(g.away), logo: null,
+        name: g.away, abbr: g.awayAbbr || teamAbbr(g.away), logo: g.awayLogo || null,
         score: g.awayScore ?? '', record: '',
       },
       detailUrl: null,
