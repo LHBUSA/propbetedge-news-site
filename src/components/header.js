@@ -4,25 +4,33 @@
  *
  * v3.10: 🆕 added 🔴 Live link pointing to /games scoreboard hub
  * v3.11: renamed "Live" → "Live Games" + added Leaders nav link
+ * v3.14: 🆕 Replaced thin topbar with sticky multi-sport SCORE STRIP
+ *        (ESPN-pattern). Same vertical real estate, way more conversion value.
+ *        Auto-fetches from PropSports API, refreshes every 60s.
+ *        MLB tiles → /games/mlb/{id} (paywall funnel via game-detail page)
+ *        NFL/NBA/NHL tiles → their respective subdomains.
  */
 import { ad_header_banner } from '../ads-config.js';
+import { renderScoreStripShell, mountScoreStrip } from './score-strip.js';
+
 export function renderHeader() {
   const path = window.location.pathname;
-  const todayLong = new Date().toLocaleDateString('en-US', {
-    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
-  });
-  const time = new Date().toLocaleTimeString('en-US', {
-    hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York',
-  });
   const isLive    = path === '/games'   || path.startsWith('/games/');
   const isLeaders = path === '/leaders' || path.startsWith('/leaders/');
+
+  // Schedule the score-strip mount for the next tick — by then the header HTML
+  // is in the DOM. Idempotent: mountScoreStrip() guards against double-wiring.
+  // Using queueMicrotask so it fires before the next paint, no flash of empty rail.
+  if (typeof window !== 'undefined') {
+    queueMicrotask(() => {
+      if (document.getElementById('pbe-score-strip')) {
+        mountScoreStrip().catch(err => console.warn('[header] score strip mount failed:', err));
+      }
+    });
+  }
+
   return `
-    <div class="topbar">
-      <div class="container topbar-inner">
-        <span><span class="live-dot"></span>Live · ${time} ET</span>
-        <span>${todayLong}</span>
-      </div>
-    </div>
+    ${renderScoreStripShell()}
     ${ad_header_banner()}
     <header class="masthead">
       <div class="container masthead-inner">
