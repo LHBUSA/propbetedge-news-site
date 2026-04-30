@@ -1,39 +1,35 @@
 /**
  * src/components/score-strip.js
- * ESPN-pattern sticky score strip for the news site.
+ * ESPN-pattern sticky score strip — MOBILE-FIRST + AUTO-SCROLL (v2)
  *
- * Sits where the old <div class="topbar"> used to live. Same vertical space,
- * way more conversion value. Reuses sports.allTodayScoreboards() from api-sports.js
- * — same data source as games-hub.js, no duplicate fetching logic.
+ * v2 changes:
+ *   - Mobile-first sizing (designed for 360px viewport, scales up)
+ *   - Auto-scroll the rail every ~5s so bettors see every game without
+ *     having to manually swipe. Pauses on hover/touch/focus and on
+ *     filter change. Resumes when interaction ends.
+ *   - Slightly taller strip on mobile (60px) so tile content breathes
+ *   - Inline date/time stamp shrinks to icon-only on small screens
+ *   - Reduced-motion users get no auto-scroll (respected via media query)
  *
  * Tile click routing (the funnel):
  *   • MLB live/final → /games/mlb/{gameId}  (your existing game-detail.js page)
- *   • MLB pre-game   → /games/mlb/{gameId}  (still detail page, future picks teaser)
- *   • NBA / NHL / NFL → nba/nhl/nfl.propbetedge.ai (their subdomains, paywall funnel)
+ *   • MLB pre-game   → /games/mlb/{gameId}
+ *   • NBA / NHL / NFL → nba/nhl/nfl.propbetedge.ai
  *
  * CTA badge per tile:
  *   • MLB → 🔒 Picks live   (gold, the conversion lever)
- *   • Other sports → ○ Lock in free  (muted, future product)
- *
- * Auto-refresh: 60s. Filter pills: All / MLB / NBA / NHL / NFL.
- *
- * Usage from header.js:
- *   import { renderScoreStripShell, mountScoreStrip } from './score-strip.js'
- *   ...
- *   ${renderScoreStripShell()}    // synchronous — drops the empty shell into HTML
- *   ...
- *   // Then call mountScoreStrip() once after the page renders to fetch + populate.
- *   // header.js handles this automatically (see updated header.js).
+ *   • Other sports → ○ Free access  (muted, future product)
  */
 
-const REFRESH_MS = 60_000
+const REFRESH_MS  = 60_000   // data refresh
+const SCROLL_MS   = 4_500    // auto-scroll: how often we step
+const SCROLL_PAUSE_AFTER_INTERACT_MS = 8_000
 
-// Per-sport CTA targets — matches your subdomain plan
 const SPORT_TARGETS = {
-  mlb: { label: 'Picks live',   live: true,  base: null /* uses /games/mlb/{id} */ },
-  nfl: { label: 'Lock in free', live: false, base: 'https://nfl.propbetedge.ai' },
-  nba: { label: 'Lock in free', live: false, base: 'https://nba.propbetedge.ai' },
-  nhl: { label: 'Lock in free', live: false, base: 'https://nhl.propbetedge.ai' },
+  mlb: { label: 'Picks live',   live: true,  base: null },
+  nfl: { label: 'Free access',  live: false, base: 'https://nfl.propbetedge.ai' },
+  nba: { label: 'Free access',  live: false, base: 'https://nba.propbetedge.ai' },
+  nhl: { label: 'Free access',  live: false, base: 'https://nhl.propbetedge.ai' },
 }
 
 const SPORT_ACCENTS = {
@@ -48,20 +44,25 @@ const SPORT_ORDER = ['mlb', 'nba', 'nhl', 'nfl']
 let _activeFilter = 'all'
 let _games = []
 let _refreshTimer = null
+let _scrollTimer = null
+let _resumeScrollTimer = null
+let _userInteracting = false
+let _scrollPaused = false
 
 /* ─────────────────────────────────────────────────────────────────────────
- * STYLES — injected once, scoped under #pbe-score-strip
+ * STYLES — mobile-first
  * ────────────────────────────────────────────────────────────────────────*/
 function injectStyles() {
   if (document.getElementById('pbe-score-strip-styles')) return
   const s = document.createElement('style')
   s.id = 'pbe-score-strip-styles'
   s.textContent = `
+    /* ── Mobile baseline (default) ─────────────────────────────────────── */
     #pbe-score-strip {
       position: sticky;
       top: 0;
       z-index: 100;
-      height: 48px;
+      height: 60px;
       background: linear-gradient(180deg, #0a0f1a 0%, #0f1626 100%);
       border-bottom: 1px solid rgba(255, 210, 74, 0.18);
       box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
@@ -74,13 +75,12 @@ function injectStyles() {
       contain: layout style;
     }
 
-    /* Filter rail — leftmost */
     .pss-filter {
       flex-shrink: 0;
       display: flex;
       align-items: center;
-      padding: 0 10px;
-      gap: 3px;
+      padding: 0 6px;
+      gap: 2px;
       border-right: 1px solid rgba(255, 255, 255, 0.06);
       background: rgba(0, 0, 0, 0.3);
     }
@@ -88,16 +88,17 @@ function injectStyles() {
       background: transparent;
       border: 1px solid rgba(255, 255, 255, 0.1);
       color: #94a3b8;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
-      padding: 4px 9px;
+      padding: 4px 6px;
       border-radius: 4px;
       cursor: pointer;
       transition: all 0.15s ease;
       font-family: inherit;
       -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
     }
     .pss-filter-btn:hover {
       color: #f5f8ff;
@@ -109,10 +110,9 @@ function injectStyles() {
       color: #ffd24a;
     }
 
-    /* Date stamp — only visible when there's room */
     .pss-date {
+      display: none;
       flex-shrink: 0;
-      display: flex;
       align-items: center;
       padding: 0 12px;
       font-size: 10px;
@@ -136,7 +136,6 @@ function injectStyles() {
       50% { opacity: 0.55; }
     }
 
-    /* Scroll rail */
     .pss-rail-wrap {
       flex: 1;
       overflow-x: auto;
@@ -154,13 +153,12 @@ function injectStyles() {
       height: 100%;
     }
 
-    /* Game tile */
     .pss-tile {
       flex-shrink: 0;
       display: flex;
       align-items: center;
-      gap: 9px;
-      padding: 0 12px;
+      gap: 7px;
+      padding: 0 9px;
       height: 100%;
       border-right: 1px solid rgba(255, 255, 255, 0.05);
       text-decoration: none;
@@ -168,7 +166,7 @@ function injectStyles() {
       transition: background 0.15s ease;
       cursor: pointer;
       position: relative;
-      min-width: 215px;
+      min-width: 175px;
     }
     .pss-tile:hover { background: rgba(255, 255, 255, 0.04); }
     .pss-tile:hover .pss-cta { opacity: 1; }
@@ -179,13 +177,12 @@ function injectStyles() {
       height: 100%;
     }
 
-    /* Status badge */
     .pss-status {
-      font-size: 9px;
+      font-size: 8.5px;
       font-weight: 700;
-      letter-spacing: 0.07em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
-      padding: 2px 6px;
+      padding: 2px 5px;
       border-radius: 3px;
       white-space: nowrap;
       flex-shrink: 0;
@@ -199,7 +196,6 @@ function injectStyles() {
     }
     .pss-status.final { color: #94a3b8; background: rgba(148, 163, 184, 0.08); }
 
-    /* Teams + scores */
     .pss-teams {
       display: flex;
       flex-direction: column;
@@ -211,8 +207,8 @@ function injectStyles() {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      font-size: 11.5px;
+      gap: 6px;
+      font-size: 11px;
       line-height: 1.2;
     }
     .pss-team-name {
@@ -221,7 +217,7 @@ function injectStyles() {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 95px;
+      max-width: 70px;
     }
     .pss-team-row.winner .pss-team-name { color: #ffd24a; font-weight: 700; }
     .pss-team-row.winner .pss-team-score { color: #ffd24a; }
@@ -229,20 +225,19 @@ function injectStyles() {
       font-weight: 700;
       color: #f5f8ff;
       font-variant-numeric: tabular-nums;
-      min-width: 22px;
+      min-width: 20px;
       text-align: right;
     }
 
-    /* CTA pill */
     .pss-cta {
-      display: flex;
+      display: none;
       align-items: center;
-      gap: 4px;
-      font-size: 8.5px;
+      gap: 3px;
+      font-size: 8px;
       font-weight: 700;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
-      padding: 3px 6px;
+      padding: 2px 5px;
       border-radius: 3px;
       white-space: nowrap;
       flex-shrink: 0;
@@ -260,7 +255,20 @@ function injectStyles() {
       border: 1px solid rgba(148, 163, 184, 0.2);
     }
 
-    /* Empty state */
+    /* Mini lock icon shown on tightest mobile in place of full CTA pill */
+    .pss-lock-mini {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      font-size: 10px;
+      flex-shrink: 0;
+      opacity: 0.85;
+    }
+    .pss-lock-mini.locked { color: #ffd24a; }
+    .pss-lock-mini.soon { color: #64748b; }
+
     .pss-empty {
       display: flex;
       align-items: center;
@@ -270,27 +278,41 @@ function injectStyles() {
       color: #64748b;
       font-style: italic;
       min-width: 200px;
+      flex: 1;
     }
 
-    /* Right edge fade — hint scrollable */
     .pss-fade-r {
       position: absolute;
       top: 0; right: 0; bottom: 0;
-      width: 24px;
+      width: 18px;
       background: linear-gradient(90deg, transparent, #0f1626);
       pointer-events: none;
       z-index: 2;
     }
 
-    /* Mobile */
-    @media (max-width: 640px) {
-      #pbe-score-strip { height: 44px; }
-      .pss-tile { min-width: 175px; padding: 0 9px; gap: 7px; }
-      .pss-team-row { font-size: 11px; }
-      .pss-team-name { max-width: 78px; }
-      .pss-cta { font-size: 8px; padding: 2px 5px; }
-      .pss-filter-btn { padding: 3px 6px; font-size: 9px; }
-      .pss-date { display: none; }
+    /* ── 480px+ — large phone / small tablet ─────────────────────── */
+    @media (min-width: 480px) {
+      .pss-tile { min-width: 195px; padding: 0 10px; gap: 8px; }
+      .pss-team-name { max-width: 80px; }
+      .pss-cta { display: flex; }
+      .pss-lock-mini { display: none; }
+    }
+
+    /* ── 700px+ — full date stamp + bigger tiles ─────────────────── */
+    @media (min-width: 700px) {
+      #pbe-score-strip { height: 52px; }
+      .pss-date { display: flex; }
+      .pss-tile { min-width: 215px; padding: 0 12px; gap: 9px; }
+      .pss-team-name { max-width: 95px; }
+      .pss-team-row { font-size: 11.5px; }
+      .pss-cta { font-size: 8.5px; padding: 3px 6px; }
+      .pss-filter-btn { padding: 4px 9px; font-size: 10px; letter-spacing: 0.06em; }
+      .pss-filter { padding: 0 10px; gap: 3px; }
+    }
+
+    /* ── 1024px+ — desktop ───────────────────────────────────────── */
+    @media (min-width: 1024px) {
+      #pbe-score-strip { height: 48px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -303,7 +325,6 @@ function injectStyles() {
 
 /* ─────────────────────────────────────────────────────────────────────────
  * GAME → TILE
- * Reuses the normalized game shape that games-hub.js already produces.
  * ────────────────────────────────────────────────────────────────────────*/
 function escape(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({
@@ -314,16 +335,14 @@ function escape(s) {
 function tileHref(g) {
   const target = SPORT_TARGETS[g.sport]
   if (!target) return '#'
-  // MLB games → existing /games/mlb/{id} detail page (the funnel into picks teaser)
   if (g.sport === 'mlb' && g.gameId) return `/games/mlb/${g.gameId}`
-  // Other sports → their subdomain
   return target.base || '#'
 }
 
 function tileTitle(g) {
   const target = SPORT_TARGETS[g.sport]
   if (target?.live) return 'View game · see tonight\'s picks'
-  return 'Coming soon · Lock in free access before May 15'
+  return 'Coming soon · Free access while in beta'
 }
 
 function tileHTML(g) {
@@ -332,7 +351,6 @@ function tileHTML(g) {
   const ctaClass = target.live ? 'locked' : 'soon'
   const ctaIcon = target.live ? '🔒' : '○'
 
-  // Status text
   let statusText = ''
   let statusClass = 'pre'
   if (g.state === 'live') {
@@ -346,7 +364,6 @@ function tileHTML(g) {
     statusClass = 'pre'
   }
 
-  // Score display — only if scores exist
   const awayScoreShown = g.away.score !== '' && g.away.score !== null && g.away.score !== undefined
   const homeScoreShown = g.home.score !== '' && g.home.score !== null && g.home.score !== undefined
   const showScores = awayScoreShown || homeScoreShown
@@ -372,6 +389,7 @@ function tileHTML(g) {
           ${showScores ? `<span class="pss-team-score">${escape(g.home.score ?? '')}</span>` : ''}
         </div>
       </div>
+      <span class="pss-lock-mini ${ctaClass}" aria-hidden="true">${ctaIcon}</span>
       <span class="pss-cta ${ctaClass}">
         <span>${ctaIcon}</span>
         <span>${target.label || ''}</span>
@@ -391,7 +409,6 @@ function paint() {
     ? _games
     : _games.filter(g => g.sport === _activeFilter)
 
-  // Sort: live first → upcoming (by time) → final
   const ordered = [...filtered].sort((a, b) => {
     const stateOrder = { live: 0, pre: 1, final: 2 }
     if (stateOrder[a.state] !== stateOrder[b.state]) return stateOrder[a.state] - stateOrder[b.state]
@@ -406,10 +423,12 @@ function paint() {
       ? 'No games today — check back tomorrow'
       : `No ${_activeFilter.toUpperCase()} games today`
     railEl.innerHTML = `<div class="pss-empty">${msg}</div>`
+    stopAutoScroll()
     return
   }
 
   railEl.innerHTML = ordered.map(tileHTML).join('')
+  startAutoScroll() // restart after every paint so timer stays in sync with content
 }
 
 function paintFilters() {
@@ -418,15 +437,65 @@ function paintFilters() {
   })
 }
 
+/* ── Auto-scroll ───────────────────────────────────────────────────────── */
+function startAutoScroll() {
+  if (_scrollTimer) clearInterval(_scrollTimer)
+  if (_scrollPaused) return
+
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  if (reduceMotion) return
+
+  _scrollTimer = setInterval(stepScroll, SCROLL_MS)
+}
+
+function stopAutoScroll() {
+  if (_scrollTimer) {
+    clearInterval(_scrollTimer)
+    _scrollTimer = null
+  }
+}
+
+function stepScroll() {
+  if (_userInteracting) return
+  const wrap = document.querySelector('.pss-rail-wrap')
+  if (!wrap) return
+
+  const railEl = document.getElementById('pss-rail')
+  if (!railEl) return
+
+  // Nothing to scroll if rail isn't overflowing
+  if (railEl.scrollWidth <= wrap.clientWidth + 4) return
+
+  const firstTile = railEl.querySelector('.pss-tile')
+  const stepBy = firstTile?.offsetWidth || 200
+
+  const atEnd = wrap.scrollLeft + wrap.clientWidth >= railEl.scrollWidth - 4
+
+  if (atEnd) {
+    // Snap back to start without animation (no backwards scroll jank)
+    const prevBehavior = wrap.style.scrollBehavior
+    wrap.style.scrollBehavior = 'auto'
+    wrap.scrollLeft = 0
+    requestAnimationFrame(() => { wrap.style.scrollBehavior = prevBehavior || '' })
+  } else {
+    wrap.scrollBy({ left: stepBy, behavior: 'smooth' })
+  }
+}
+
+function pauseScrollOnInteract() {
+  _userInteracting = true
+  stopAutoScroll()
+  if (_resumeScrollTimer) clearTimeout(_resumeScrollTimer)
+  _resumeScrollTimer = setTimeout(() => {
+    _userInteracting = false
+    if (!_scrollPaused) startAutoScroll()
+  }, SCROLL_PAUSE_AFTER_INTERACT_MS)
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
  * PUBLIC API
  * ────────────────────────────────────────────────────────────────────────*/
 
-/**
- * Render the empty shell synchronously. Drop this into the header HTML
- * where the topbar used to be. mountScoreStrip() populates it after the
- * page renders.
- */
 export function renderScoreStripShell() {
   const time = new Date().toLocaleTimeString('en-US', {
     hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York',
@@ -434,7 +503,7 @@ export function renderScoreStripShell() {
   const filterButtons = ['all', ...SPORT_ORDER].map(sp => {
     const label = sp === 'all' ? 'All' : sp.toUpperCase()
     const cls = sp === 'all' ? 'pss-filter-btn active' : 'pss-filter-btn'
-    return `<button class="${cls}" data-filter="${sp}">${label}</button>`
+    return `<button class="${cls}" data-filter="${sp}" type="button">${label}</button>`
   }).join('')
 
   return `
@@ -454,15 +523,12 @@ export function renderScoreStripShell() {
   `
 }
 
-/**
- * Fetch + populate. Call once after page renders. Auto-refreshes every 60s.
- */
 export async function mountScoreStrip() {
   injectStyles()
 
-  // Wire filter buttons (delegate from the strip element so re-renders survive)
   const strip = document.getElementById('pbe-score-strip')
   if (strip && !strip.dataset.wired) {
+    // Filter clicks
     strip.addEventListener('click', e => {
       const btn = e.target.closest('.pss-filter-btn')
       if (!btn) return
@@ -470,28 +536,51 @@ export async function mountScoreStrip() {
       _activeFilter = btn.dataset.filter
       paintFilters()
       paint()
+      // Reset rail to start so user sees from beginning of new filter
+      const wrap = strip.querySelector('.pss-rail-wrap')
+      if (wrap) {
+        const prev = wrap.style.scrollBehavior
+        wrap.style.scrollBehavior = 'auto'
+        wrap.scrollLeft = 0
+        requestAnimationFrame(() => { wrap.style.scrollBehavior = prev || '' })
+      }
     })
+
+    // Pause auto-scroll on user interaction
+    const wrap = strip.querySelector('.pss-rail-wrap')
+    if (wrap) {
+      const pauseEvents = ['mouseenter', 'touchstart', 'pointerdown', 'wheel', 'focusin']
+      pauseEvents.forEach(ev => {
+        wrap.addEventListener(ev, pauseScrollOnInteract, { passive: true })
+      })
+    }
+
+    // Pause when tab is hidden — saves battery, no mid-step on return
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        _scrollPaused = true
+        stopAutoScroll()
+      } else {
+        _scrollPaused = false
+        startAutoScroll()
+      }
+    })
+
     strip.dataset.wired = '1'
   }
 
   await loadAndPaint()
 
-  // Refresh loop
   if (_refreshTimer) clearInterval(_refreshTimer)
   _refreshTimer = setInterval(loadAndPaint, REFRESH_MS)
 }
 
 async function loadAndPaint() {
   try {
-    // Dynamic import — keeps score-strip lazy on pages that don't need it,
-    // and reuses games-hub's existing normalizers via a shared helper.
     const { sports } = await import('../api-sports.js')
     const data = await sports.allTodayScoreboards()
-
-    // Normalize using the same logic games-hub.js already uses.
     const { normalizeAll } = await import('./score-strip-normalize.js')
     _games = normalizeAll(data)
-
     paint()
   } catch (err) {
     console.warn('[score-strip] load failed:', err)
@@ -503,8 +592,7 @@ async function loadAndPaint() {
 }
 
 export function unmountScoreStrip() {
-  if (_refreshTimer) {
-    clearInterval(_refreshTimer)
-    _refreshTimer = null
-  }
+  if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null }
+  stopAutoScroll()
+  if (_resumeScrollTimer) { clearTimeout(_resumeScrollTimer); _resumeScrollTimer = null }
 }
