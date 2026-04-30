@@ -2,9 +2,8 @@
  * src/pages/article.js
  * Editorial long-form article — magazine layout with in-content ads
  *
- * v3.14: 🆕 Added ESPN-pattern right rail (Top Headlines + Model Notes + soft CTA)
- *        on desktop ≥1100px. Single column on mobile/tablet. Zero new API endpoints —
- *        rail filters api.homepage() client-side using existing take.advice field.
+ * v3.15: 🆕 Media embeds rendered after take callout (MLB.tv + YouTube)
+ * v3.14: ESPN-pattern right rail
  */
 
 import { api } from '../api.js';
@@ -67,7 +66,6 @@ export async function renderArticle(root, sport, slug, setMeta) {
     });
   }
 
-  // 🆕 v3.9.6: Rich schema injection — article + breadcrumbs + org + website
   const sportLabel = sport.toUpperCase();
   injectSchemas([
     organizationSchema(),
@@ -122,6 +120,8 @@ export async function renderArticle(root, sport, slug, setMeta) {
 
           ${renderTakeCallout(article)}
 
+          ${renderMediaEmbeds(article)}
+
           ${ad_in_article_after_take(articleContext)}
 
           ${bodyHtml}
@@ -139,7 +139,6 @@ export async function renderArticle(root, sport, slug, setMeta) {
     ${renderFooter()}
   `;
 
-  // Mount the rail — fetches in background, swaps skeletons for live content
   mountArticleRail({
     currentSlug: article.slug,
     currentSport: article.sport,
@@ -148,10 +147,59 @@ export async function renderArticle(root, sport, slug, setMeta) {
   loadRelated(article);
 }
 
-/**
- * Splits the article body and injects a mid-article ad after the 3rd paragraph.
- * Falls back to no ad if body is too short.
- */
+// 🆕 v3.15: Render legal video/social embeds (MLB.tv + YouTube official)
+function renderMediaEmbeds(article) {
+  const embeds = Array.isArray(article.media_embeds) ? article.media_embeds : [];
+  if (!embeds.length) return '';
+
+  const cards = embeds.map((e) => {
+    if (e.type === 'youtube') {
+      return `
+        <div class="media-card media-youtube">
+          <div class="media-youtube-frame">
+            <iframe
+              src="${escapeAttr(e.embedUrl)}"
+              title="${escapeAttr(e.title)}"
+              loading="lazy"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
+          </div>
+          <div class="media-meta">
+            <span class="media-source">${escapeHtml(e.channelName || 'YouTube')}</span>
+            <span class="media-title">${escapeHtml(e.title)}</span>
+          </div>
+        </div>
+      `;
+    }
+    if (e.type === 'mlbtv') {
+      return `
+        <a href="${escapeAttr(e.url)}" target="_blank" rel="noopener" class="media-card media-mlbtv">
+          <div class="mlbtv-icon">📺</div>
+          <div class="mlbtv-text">
+            <div class="mlbtv-title">${escapeHtml(e.title)}</div>
+            <div class="mlbtv-cta">${escapeHtml(e.cta || 'Watch official highlights')} →</div>
+          </div>
+        </a>
+      `;
+    }
+    return '';
+  }).filter(Boolean).join('');
+
+  if (!cards) return '';
+
+  return `
+    <section class="article-media">
+      <div class="article-media-header">
+        <h3 class="article-media-heading">📺 Watch & Share</h3>
+        <span class="article-media-sub">Official highlights & live game access</span>
+      </div>
+      <div class="article-media-grid">${cards}</div>
+      <div class="article-media-disclaimer">Videos hosted by official sources (MLB, YouTube). PropBetEdge does not own or distribute the underlying video content.</div>
+    </section>
+  `;
+}
+
 function renderBodyWithMidAd(article, ctx) {
   const html = article.body_html
     ? article.body_html
@@ -164,9 +212,7 @@ function renderBodyWithMidAd(article, ctx) {
 
   if (!html) return '';
 
-  // Split body into paragraphs
   const paragraphs = html.split(/(<\/p>)/);
-  // Find the index after the 3rd </p>
   let pCount = 0;
   let injectIdx = -1;
   for (let i = 0; i < paragraphs.length; i++) {
@@ -179,7 +225,6 @@ function renderBodyWithMidAd(article, ctx) {
     }
   }
 
-  // If body has fewer than 5 paragraphs, skip the mid-ad to avoid stuffing
   const totalParagraphs = (html.match(/<\/p>/g) || []).length;
   if (injectIdx === -1 || totalParagraphs < 5) {
     return `<div class="article-body">${html}</div>`;
@@ -288,7 +333,6 @@ async function loadRelated(article) {
   } catch (e) { /* silent */ }
 }
 
-// Convert any author name to its profile URL
 function authorHref(name) {
   if (!name) return '/authors/propbetedge-editorial-team';
   const slug = String(name).toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
@@ -315,9 +359,31 @@ function formatPropType(p) {
     altprop_total_bases: 'Total Bases',
     altprop_doubles: 'Doubles',
     altprop_rbi: 'RBI',
+    altprop_runs: 'Runs',
+    altprop_walks: 'Walks',
+    stolen_bases: 'Stolen Bases',
     team_total: 'Team Total',
     spread: 'Spread',
     moneyline: 'Moneyline',
+    first_5_innings: 'First 5 Innings',
+    nrfi: 'NRFI',
+    passing_yards: 'Passing Yards',
+    passing_tds: 'Passing TDs',
+    rushing_yards: 'Rushing Yards',
+    rushing_tds: 'Rushing TDs',
+    receiving_yards: 'Receiving Yards',
+    receptions: 'Receptions',
+    receiving_tds: 'Receiving TDs',
+    anytime_td: 'Anytime TD',
+    sacks: 'Sacks',
+    points: 'Points',
+    rebounds: 'Rebounds',
+    assists: 'Assists',
+    threes_made: '3PM',
+    pra: 'PRA',
+    shots_on_goal: 'Shots on Goal',
+    goals: 'Goals',
+    saves: 'Saves',
   };
   return map[p] || p.replace(/_/g, ' ');
 }
