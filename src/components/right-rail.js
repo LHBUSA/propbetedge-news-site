@@ -63,7 +63,7 @@ function injectStyles() {
     }
     .article-with-rail > .article-page {
       width: 100%;
-      max-width: 720px;  /* matches container-narrow reading width */
+      max-width: 720px;
     }
     .article-with-rail > #pbe-article-rail {
       width: 100%;
@@ -82,12 +82,16 @@ function injectStyles() {
         flex: 1 1 720px;
         max-width: 720px;
         min-width: 0;
-        margin: 0;  /* override container-narrow's auto margin so flex layout works */
+        margin: 0;
       }
       .article-with-rail > #pbe-article-rail {
         flex: 0 0 320px;
         width: 320px;
         max-width: 320px;
+        /* Drop the rail down so it aligns with the article body, not the
+           kicker/back-link. Roughly the height of the article-back link
+           plus meta row + half the title. */
+        margin-top: 80px;
       }
     }
 
@@ -178,7 +182,7 @@ function injectStyles() {
       font-size: 9.5px;
       font-weight: 700;
       letter-spacing: 0.08em;
-      color: var(--paper-subtle, rgba(245, 245, 247, 0.5));
+      color: #b8c2d4;  /* readable instead of near-invisible */
       text-transform: uppercase;
       margin-bottom: 6px;
     }
@@ -187,7 +191,7 @@ function injectStyles() {
       font-weight: 800;
     }
     .par-headline-dot {
-      color: var(--paper-subtle, rgba(245, 245, 247, 0.4));
+      color: #64748b;
     }
     .par-headline-title {
       font-size: 14px;
@@ -228,38 +232,41 @@ function injectStyles() {
       font-size: 9px;
       font-weight: 700;
       letter-spacing: 0.08em;
-      color: var(--paper-subtle, rgba(245, 245, 247, 0.5));
+      color: #b8c2d4;
       text-transform: uppercase;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .par-note-tag {
       color: #ffd24a;
-      background: rgba(255, 210, 74, 0.1);
-      padding: 1px 6px;
+      background: rgba(255, 210, 74, 0.14);
+      padding: 2px 7px;
       border-radius: 3px;
       font-size: 8.5px;
       letter-spacing: 0.1em;
+      font-weight: 800;
     }
     .par-note-impact {
-      color: var(--paper-subtle, rgba(245, 245, 247, 0.5));
+      color: #b8c2d4;
     }
     .par-note-advice {
       font-size: 13px;
       font-weight: 500;
       font-style: italic;
-      line-height: 1.5;
-      color: var(--paper, #f5f5f7);
-      margin: 0 0 6px;
+      line-height: 1.55;
+      color: #f5f8ff;  /* full white for max contrast against dark bg */
+      margin: 0 0 8px;
     }
     .par-note-source {
-      font-size: 10px;
+      font-size: 10.5px;
       font-weight: 500;
-      color: var(--paper-subtle, rgba(245, 245, 247, 0.5));
+      color: #b8c2d4;  /* readable mid-gray instead of near-invisible */
       margin: 0;
+      line-height: 1.4;
     }
     .par-note-source-arrow {
-      color: rgba(255, 210, 74, 0.7);
-      margin-left: 2px;
+      color: #ffd24a;
+      margin-left: 3px;
+      font-weight: 700;
     }
 
     /* ── Picks CTA ───────────────────────────────────────────────── */
