@@ -1,20 +1,12 @@
 /**
  * src/router.js
  *
- * v3.11 additions:
- *   /games                     → live scoreboard hub
- *   /games/:sport/:gameId      → game detail
- *   /leaders                   → ESPN-style stat leaders
- *   /team/:sport/:teamId       → v2 stub
- *   /standings/:sport          → v2 stub
+ * v3.15 additions:
+ *   /news/page/N              → paginated all-news
+ *   /news/:sport/page/N       → paginated per-sport
+ *   Page 1 redirects to bare URL (canonicalization)
  *
- * v3.12 additions:
- *   /leaders/:sport            → per-sport deep leaderboards (mlb/nhl/nba/nfl)
- *
- * v3.13 Drop 1 additions:
- *   /player/:sport/:playerId   → real bet-focused player profiles (replaces stub)
- *
- * Everything pre-existing is unchanged.
+ * Pre-existing routes unchanged.
  */
 
 import { renderHome } from './pages/home.js';
@@ -27,12 +19,10 @@ import { renderNotFound } from './pages/404.js';
 import { renderGamesHub } from './pages/games-hub.js';
 import { renderGameDetail } from './pages/game-detail.js';
 import { renderLeadersPage } from './pages/leaders.js';
-// v3.12 — per-sport leader pages
 import { renderMlbLeadersPage } from './pages/leaders-mlb.js';
 import { renderNhlLeadersPage } from './pages/leaders-nhl.js';
 import { renderNbaLeadersPage } from './pages/leaders-nba.js';
 import { renderNflLeadersPage } from './pages/leaders-nfl.js';
-// v3.13 Drop 1 — player profile pages
 import { renderMlbPlayerPage } from './pages/player-mlb.js';
 import { renderNhlPlayerPage } from './pages/player-nhl.js';
 import { renderNbaPlayerPage } from './pages/player-nba.js';
@@ -91,13 +81,32 @@ function clearAndRoute() {
     return renderHome(root);
   }
 
+  // 🆕 v3.15 — /news/page/N (paginated all-news)
+  const newsPageMatch = path.match(/^\/news\/page\/(\d+)$/);
+  if (newsPageMatch) {
+    const page = parseInt(newsPageMatch[1], 10);
+    if (page === 1) {
+      window.history.replaceState({}, '', '/news');
+      return renderNewsIndex(root, 1, setMeta);
+    }
+    return renderNewsIndex(root, page, setMeta);
+  }
+
+  // 🆕 v3.15 — /news/:sport/page/N (paginated per-sport)
+  const sportPageMatch = path.match(/^\/news\/([a-z]+)\/page\/(\d+)$/);
+  if (sportPageMatch) {
+    const sport = sportPageMatch[1].toLowerCase();
+    const page = parseInt(sportPageMatch[2], 10);
+    if (!VALID_SPORTS.has(sport)) return renderNotFound(root);
+    if (page === 1) {
+      window.history.replaceState({}, '', `/news/${sport}`);
+      return renderSport(root, sport, 1, setMeta);
+    }
+    return renderSport(root, sport, page, setMeta);
+  }
+
   if (path === '/news') {
-    setMeta({
-      title: 'All Sports News — PropBetEdge',
-      description: 'Latest sports news across MLB, NFL, NBA, and NHL with AI prop-bet impact analysis.',
-      canonical: 'https://propbetedge.ai/news',
-    });
-    return renderNewsIndex(root);
+    return renderNewsIndex(root, 1, setMeta);
   }
 
   // 🆕 Live Games hub
@@ -110,7 +119,6 @@ function clearAndRoute() {
     return renderGamesHub(root);
   }
 
-  // 🆕 Stat Leaders page (root — redirects to /leaders/mlb)
   if (path === '/leaders') {
     setMeta({
       title: 'Stat Leaders — PropBetEdge',
@@ -120,7 +128,6 @@ function clearAndRoute() {
     return renderLeadersPage(root);
   }
 
-  // 🆕 v3.12 — Per-sport leaderboards: /leaders/mlb, /leaders/nhl, /leaders/nba, /leaders/nfl
   const leadersMatch = path.match(/^\/leaders\/(mlb|nhl|nba|nfl)$/);
   if (leadersMatch) {
     const sport = leadersMatch[1].toLowerCase();
@@ -136,26 +143,12 @@ function clearAndRoute() {
     if (sport === 'nfl') return renderNflLeadersPage(root);
   }
 
-  // 🆕 Game detail: /games/:sport/:gameId
   const gameMatch = path.match(/^\/games\/([a-z]+)\/([\w-]+)$/);
   if (gameMatch) {
     const sport = gameMatch[1].toLowerCase();
     const gameId = gameMatch[2];
     if (!VALID_SPORTS.has(sport)) return renderNotFound(root);
     return renderGameDetail(root, sport, gameId);
-  }
-
-  const sportMatch = path.match(/^\/news\/([a-z]+)$/);
-  if (sportMatch) {
-    const sport = sportMatch[1].toLowerCase();
-    if (!VALID_SPORTS.has(sport)) return renderNotFound(root);
-    const sportLabel = sport.toUpperCase();
-    setMeta({
-      title: `${sportLabel} News — PropBetEdge`,
-      description: `Latest ${sportLabel} news with AI prop-bet impact analysis.`,
-      canonical: `https://propbetedge.ai/news/${sport}`,
-    });
-    return renderSport(root, sport);
   }
 
   const articleMatch = path.match(/^\/news\/([a-z]+)\/([^\/]+)$/);
@@ -166,20 +159,22 @@ function clearAndRoute() {
     return renderArticle(root, sport, slug, setMeta);
   }
 
-  // 🆕 Author profile: /authors/:slug
+  const sportMatch = path.match(/^\/news\/([a-z]+)$/);
+  if (sportMatch) {
+    const sport = sportMatch[1].toLowerCase();
+    if (!VALID_SPORTS.has(sport)) return renderNotFound(root);
+    return renderSport(root, sport, 1, setMeta);
+  }
+
   const authorMatch = path.match(/^\/authors\/([a-z0-9-]+)$/);
   if (authorMatch) {
     const slug = authorMatch[1];
     return renderAuthor(root, slug, setMeta);
   }
 
-  // 🆕 Editorial Standards page (referenced by Org schema policy URLs)
   if (path === '/editorial-standards') {
     return renderEditorialStandards(root, setMeta);
   }
-
-  // ── v2 stub routes (added v3.11) ─────────────────────────────────────
-  // Team + standings stubs remain — those are Drop 2 + Drop 3.
 
   const teamMatch = path.match(/^\/team\/([a-z]+)\/([\w-]+)$/);
   if (teamMatch) {
@@ -213,7 +208,6 @@ function clearAndRoute() {
     });
   }
 
-  // 🆕 v3.13 Drop 1 — Real player pages (replaces v3.11 stub)
   const playerMatch = path.match(/^\/player\/([a-z]+)\/([\w-]+)$/);
   if (playerMatch) {
     const sport = playerMatch[1].toLowerCase();
@@ -229,7 +223,6 @@ function clearAndRoute() {
   return renderNotFound(root);
 }
 
-// "Coming soon" renderer for v2 stub routes. Uses the leaders-hero styles.
 function renderComingSoon(root, opts) {
   root.innerHTML = `
     <main>
