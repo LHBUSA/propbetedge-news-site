@@ -1,26 +1,21 @@
 /**
- * src/api-sports.js — v2
+ * src/api-sports.js — v3
  *
  * Direct public API calls (matches the pattern used in pbecast.js,
  * mlb-api.js, and other parts of the propbetedge stack).
  *
  *   MLB → statsapi.mlb.com           (CORS open)
  *   NBA → site.api.espn.com          (CORS open)
- *   NHL → api-web.nhle.com           (CORS open)
+ *   NHL → api-web.nhle.com           (CORS BLOCKED → proxied through propbetedge-cors)
  *   NFL → site.api.espn.com          (CORS open)
  *
- * Why direct, not via propsports.proptechusa.ai:
- *   The PropSports API at propsports.proptechusa.ai works perfectly for
- *   server-to-server and curl, but the browser was hitting a CORS wall on
- *   www.propbetedge.ai → propsports.proptechusa.ai (likely a Pages /
- *   subdomain redirect strips CORS headers before the worker responds).
- *
- *   Fix: hit the underlying public APIs directly, the same way pbecast.js
- *   already does. PropSports API stays as the paid/server-side product.
- *
- * The "Powered by PropSports API" credit on the page is preserved — these
- * are the same data sources the API exposes, just called from the browser.
+ * v3 fix: NHL is hit through propbetedge-cors.sales-fd3.workers.dev because
+ * api-web.nhle.com does not send Access-Control-Allow-Origin headers.
+ * The proxy worker has an allowlist (only NHL hosts, only propbetedge origins)
+ * so it's not an open relay.
  */
+
+const NHL_PROXY = 'https://propbetedge-cors.sales-fd3.workers.dev';
 
 // Today in ET (matches MLB API's date format)
 function todayET() {
@@ -45,14 +40,12 @@ async function mlbScheduleRaw(date) {
   const d = date || todayET();
   const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${d}&hydrate=probablePitcher,venue,team,linescore`;
   const data = await fetchJson(url);
-  // Normalize to { games: [...] } so games-hub.js code keeps working unchanged
   return { date: d, games: data?.dates?.[0]?.games || [] };
 }
 
 // ─── NBA (ESPN scoreboard — public, CORS open) ─────────────────────────────
 async function nbaScheduleRaw(date) {
   const d = date || todayESPN();
-  // Try playoffs first, fall back to regular season
   let events = [];
   try {
     const playoff = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${d}&seasontype=3`);
@@ -62,8 +55,6 @@ async function nbaScheduleRaw(date) {
     const reg = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${d}`).catch(() => ({ events: [] }));
     events = reg.events || [];
   }
-  // Map ESPN shape into the simplified shape games-hub.js expects (matches
-  // the PropSports API's /nba/schedule output)
   const games = events.map((e) => {
     const comp = e.competitions?.[0] || {};
     const home = comp.competitors?.find((c) => c.homeAway === 'home') || {};
@@ -92,7 +83,6 @@ async function nbaScheduleRaw(date) {
 
 async function nbaSummaryRaw(gameId) {
   const summary = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${gameId}`);
-  // Build the same { header, boxscore, plays } shape as the PropSports API
   const comp = summary?.header?.competitions?.[0] || {};
   const competitors = comp.competitors || [];
   const home = competitors.find((c) => c.homeAway === 'home') || competitors[0] || {};
@@ -132,16 +122,27 @@ async function nbaSummaryRaw(gameId) {
   };
 }
 
-// ─── NHL (api-web.nhle.com — public, CORS open) ────────────────────────────
+// ─── NHL (proxied through propbetedge-cors — NHL API blocks browser CORS) ──
 async function nhlScheduleRaw(date) {
   const d = date || todayET();
-  const data = await fetchJson(`https://api-web.nhle.com/v1/schedule/${d}`);
-  const games = (data?.gameWeek?.[0]?.games || []).map((g) => ({
+  const target = `https://api-web.nhle.com/v1/schedule/${d}`;
+  const proxied = `${NHL_PROXY}/?url=${encodeURIComponent(target)}`;
+  const data = await fetchJson(proxied);
+
+  // gameWeek is an array of days. Find today's day specifically (not just [0])
+  // because the API may return today + future days.
+  const today = (data?.gameWeek || []).find(w => w.date === d) || data?.gameWeek?.[0] || { games: [] };
+
+  const games = (today.games || []).map((g) => ({
     id: g.id,
     date: g.startTimeUTC,
     status: g.gameState,
-    away: g.awayTeam?.commonName?.default,
-    home: g.homeTeam?.commonName?.default,
+    away: g.awayTeam?.commonName?.default || g.awayTeam?.placeName?.default,
+    awayAbbr: g.awayTeam?.abbrev,
+    awayLogo: g.awayTeam?.logo,
+    home: g.homeTeam?.commonName?.default || g.homeTeam?.placeName?.default,
+    homeAbbr: g.homeTeam?.abbrev,
+    homeLogo: g.homeTeam?.logo,
     awayScore: g.awayTeam?.score,
     homeScore: g.homeTeam?.score,
     venue: g.venue?.default,
