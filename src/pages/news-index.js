@@ -1,7 +1,7 @@
 /**
  * src/pages/news-index.js
- * v3.15: page 1 = editorial (Top Stories + 4 sport rails)
- *        pages 2+ = simple paginated archive
+ * v3.16: editorial /news page with Breaking strip + Top Stories + Latest +
+ *        4 sport rails, plus rich paginated archive on pages 2+.
  */
 
 import { api } from '../api.js';
@@ -24,7 +24,7 @@ export async function renderNewsIndex(root, page = 1, setMeta) {
   return renderArchivePage(root, page, setMeta);
 }
 
-/* ── PAGE 1: Editorial layout (Top Stories + sport rails) ──────────── */
+/* ── PAGE 1: Full editorial layout ─────────────────────────────────── */
 async function renderEditorialPage1(root, setMeta) {
   // Skeleton
   root.innerHTML = `
@@ -46,11 +46,13 @@ async function renderEditorialPage1(root, setMeta) {
     });
   }
 
-  // Fetch homepage (top stories) + each sport in parallel
-  let homepage, mlb, nfl, nba, nhl;
+  // Fetch everything in parallel
+  let breaking, homepage, latest, mlb, nfl, nba, nhl;
   try {
-    [homepage, mlb, nfl, nba, nhl] = await Promise.all([
+    [breaking, homepage, latest, mlb, nfl, nba, nhl] = await Promise.all([
+      api.breaking().catch(() => ({ articles: [] })),
       api.homepage().catch(() => ({ articles: [] })),
+      api.newsAll(20, 1).catch(() => ({ articles: [] })),
       api.newsBySport('mlb', 4, 1).catch(() => ({ articles: [] })),
       api.newsBySport('nfl', 4, 1).catch(() => ({ articles: [] })),
       api.newsBySport('nba', 4, 1).catch(() => ({ articles: [] })),
@@ -59,23 +61,35 @@ async function renderEditorialPage1(root, setMeta) {
   } catch (e) {
     root.querySelector('main').innerHTML = `
       <div class="container">
-        <div class="empty">
-          <h3>Failed to load news</h3>
-          <p>${escapeHtml(e.message)}</p>
-        </div>
+        <div class="empty"><h3>Failed to load news</h3><p>${escapeHtml(e.message)}</p></div>
       </div>
     `;
     return;
   }
 
+  const breakingTop = (breaking.articles || [])[0];
   const topStories = (homepage.articles || []).slice(0, 6);
+  const latestArticles = (latest.articles || []).slice(0, 12);
 
   root.innerHTML = `
     ${renderHeader()}
+
+    ${breakingTop ? `
+      <div class="breaking">
+        <div class="container">
+          <div class="breaking-inner">
+            <div class="breaking-tag"><span class="blink"></span> Breaking · ${escapeHtml(breakingTop.sport.toUpperCase())}</div>
+            <div class="breaking-text">
+              <a href="/news/${escapeHtml(breakingTop.sport)}/${escapeHtml(breakingTop.slug)}">${escapeHtml(breakingTop.title)}</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    ` : ''}
+
     <main>
       <div class="container">
 
-        <!-- Top Stories -->
         ${topStories.length ? `
           <section class="news-section" style="margin-top:32px">
             <div class="section-heading">
@@ -93,12 +107,22 @@ async function renderEditorialPage1(root, setMeta) {
         ${renderSportRail('nba', nba.articles || [])}
         ${renderSportRail('nhl', nhl.articles || [])}
 
-        <!-- Browse all archive link -->
-        <div style="text-align:center;margin:48px 0 24px">
-          <a href="/news/page/2" class="btn btn-ghost" style="font-family:var(--font-mono);font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;padding:14px 28px">
-            Browse All News Archive →
-          </a>
-        </div>
+        ${latestArticles.length ? `
+          <section class="news-section">
+            <div class="section-heading">
+              <h2>📰 Latest</h2>
+              <span class="section-meta">Newest first · all sports</span>
+            </div>
+            <div class="article-grid uniform-grid fade-stagger">
+              ${latestArticles.map((a) => renderArticleCard(a)).join('')}
+            </div>
+            <div style="text-align:center;margin:32px 0 8px">
+              <a href="/news/page/2" class="btn btn-ghost" style="font-family:var(--font-mono);font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;padding:14px 28px">
+                Browse the Full Archive →
+              </a>
+            </div>
+          </section>
+        ` : ''}
 
       </div>
     </main>
@@ -126,7 +150,7 @@ function renderSportRail(sport, articles) {
   `;
 }
 
-/* ── PAGES 2+: Simple paginated archive ────────────────────────────── */
+/* ── PAGES 2+: Rich paginated archive ──────────────────────────────── */
 async function renderArchivePage(root, page, setMeta) {
   const baseHref = '/news';
   const baseUrl = 'https://propbetedge.ai/news';
@@ -148,10 +172,7 @@ async function renderArchivePage(root, page, setMeta) {
   } catch (e) {
     root.querySelector('main').innerHTML = `
       <div class="container">
-        <div class="empty">
-          <h3>Failed to load news</h3>
-          <p>${escapeHtml(e.message)}</p>
-        </div>
+        <div class="empty"><h3>Failed to load archive</h3><p>${escapeHtml(e.message)}</p></div>
       </div>
     `;
     return;
@@ -160,6 +181,7 @@ async function renderArchivePage(root, page, setMeta) {
   const articles = resp.articles || [];
   const totalPages = resp.totalPages || 1;
   const currentPage = resp.page || page;
+  const total = resp.total || 0;
 
   if (page > totalPages && totalPages > 0) {
     root.innerHTML = `
@@ -181,24 +203,56 @@ async function renderArchivePage(root, page, setMeta) {
   if (setMeta) {
     setMeta({
       title: `News Archive · Page ${page} — PropBetEdge`,
-      description: `PropBetEdge news archive, page ${page} of ${totalPages}. MLB, NFL, NBA, and NHL coverage with AI prop-bet impact analysis.`,
+      description: `Page ${page} of ${totalPages} of PropBetEdge's news archive. ${total}+ stories with AI prop-bet impact analysis across MLB, NFL, NBA, and NHL.`,
       canonical: `${baseUrl}/page/${page}`,
     });
   }
 
   root.innerHTML = `
     ${renderHeader()}
+
+    <!-- Archive hero band — same gravitas as Stat Leaders/Live Games heroes -->
     <main>
       <div class="container">
-        <section class="news-section" style="margin-top:32px">
+        <div class="leaders-hero" style="margin-top:24px">
+          <div class="leaders-hero-mesh"></div>
+          <div class="leaders-hero-inner">
+            <div class="leaders-hero-kicker">
+              <span class="live-dot-big" style="background:var(--gold);box-shadow:0 0 0 0 rgba(212,175,55,0.5)"></span>
+              <span>News Archive</span>
+            </div>
+            <h1 class="leaders-hero-title">Every story we've published.</h1>
+            <p class="leaders-hero-dek">
+              ${total}+ articles across MLB, NFL, NBA, and NHL — every headline written with prop-bet impact in mind, every take logged for accountability. Page ${page} of ${totalPages}.
+            </p>
+            <p style="margin-top:18px">
+              <a href="/news" style="color:var(--gold);font-size:13px;font-weight:600;text-decoration:none;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase">← Back to today's news</a>
+            </p>
+          </div>
+        </div>
+
+        <section class="news-section">
           <div class="section-heading">
-            <h2>📰 News Archive</h2>
-            <span class="section-meta">Page ${page} of ${totalPages} · All sports, newest first</span>
+            <h2>📰 Page ${page}</h2>
+            <span class="section-meta">${articles.length} of ${total} stories · newest first</span>
           </div>
           <div class="article-grid uniform-grid fade-stagger">
             ${articles.map((a) => renderArticleCard(a)).join('')}
           </div>
           ${renderPagination({ currentPage, totalPages, baseHref })}
+        </section>
+
+        <!-- Sport-jump strip at the bottom of the archive -->
+        <section style="margin:48px 0 16px;padding:28px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+          <div style="text-align:center">
+            <div style="font-family:var(--font-mono);font-size:10px;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:var(--paper-faint);margin-bottom:14px">Browse by sport</div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center">
+              <a href="/news/mlb" class="btn btn-ghost" style="padding:10px 18px;font-size:12px">⚾ MLB</a>
+              <a href="/news/nfl" class="btn btn-ghost" style="padding:10px 18px;font-size:12px">🏈 NFL</a>
+              <a href="/news/nba" class="btn btn-ghost" style="padding:10px 18px;font-size:12px">🏀 NBA</a>
+              <a href="/news/nhl" class="btn btn-ghost" style="padding:10px 18px;font-size:12px">🏒 NHL</a>
+            </div>
+          </div>
         </section>
       </div>
     </main>
