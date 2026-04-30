@@ -1,6 +1,7 @@
 /**
  * src/pages/sport.js
- * v3.15: paginated per-sport news listing
+ * v3.15: paginated per-sport — wraps each page in news-section/section-heading
+ *        so it gets the same dividers + section-meta look as page 1
  */
 
 import { api } from '../api.js';
@@ -12,6 +13,7 @@ import { renderPagination, injectPaginationLinkTags } from '../components/pagina
 const PAGE_SIZE = 20;
 
 const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', nhl: 'NHL' };
+const SPORT_EMOJI = { mlb: '⚾', nfl: '🏈', nba: '🏀', nhl: '🏒' };
 const SPORT_DESCRIPTIONS = {
   mlb: 'Major League Baseball news, injuries, and prop-bet edges.',
   nfl: 'NFL news, snap counts, and player prop analysis.',
@@ -22,19 +24,17 @@ const SPORT_DESCRIPTIONS = {
 export async function renderSport(root, sport, page = 1, setMeta) {
   page = Math.max(1, parseInt(page) || 1);
   const sportLabel = SPORT_LABELS[sport] || sport.toUpperCase();
+  const emoji = SPORT_EMOJI[sport] || '◆';
   const baseHref = `/news/${sport}`;
   const baseUrl = `https://propbetedge.ai/news/${sport}`;
   const canonicalUrl = page === 1 ? baseUrl : `${baseUrl}/page/${page}`;
 
+  // Skeleton
   root.innerHTML = `
     ${renderHeader()}
     <main>
       <div class="container">
-        <header class="news-header">
-          <a href="/news" class="article-back">&larr; All News</a>
-          <h1>${sportLabel} News</h1>
-        </header>
-        <div class="article-grid">
+        <div class="article-grid uniform-grid" style="margin-top:32px">
           ${Array.from({ length: 8 }).map(() => `<div class="skel skel-article-card"></div>`).join('')}
         </div>
       </div>
@@ -65,9 +65,9 @@ export async function renderSport(root, sport, page = 1, setMeta) {
       ${renderHeader()}
       <main>
         <div class="container">
-          <div class="empty">
+          <div class="empty" style="margin-top:32px">
             <h3>Page ${page} doesn't exist</h3>
-            <p>${sportLabel} News has ${totalPages} ${totalPages === 1 ? 'page' : 'pages'}.</p>
+            <p>${sportLabel} has ${totalPages} ${totalPages === 1 ? 'page' : 'pages'} of articles.</p>
             <a href="${baseHref}" class="btn btn-primary">Back to ${sportLabel} latest</a>
           </div>
         </div>
@@ -87,27 +87,31 @@ export async function renderSport(root, sport, page = 1, setMeta) {
     });
   }
 
+  const headingMeta = page === 1
+    ? SPORT_DESCRIPTIONS[sport]
+    : `Page ${page} of ${totalPages}`;
+
   root.innerHTML = `
     ${renderHeader()}
     <main>
       <div class="container">
-        <header class="news-header">
-          <a href="/news" class="article-back">&larr; All News</a>
-          <h1>${sportLabel} News${page > 1 ? ` · Page ${page}` : ''}</h1>
-          <p class="news-dek">${SPORT_DESCRIPTIONS[sport] || ''}</p>
-        </header>
-
-        ${articles.length === 0 ? `
-          <div class="empty">
-            <h3>No ${sportLabel} articles yet</h3>
-            <p>Check back shortly.</p>
+        <section class="news-section" style="margin-top:32px">
+          <div class="section-heading">
+            <h2>${emoji} ${sportLabel} News${page > 1 ? ` · Page ${page}` : ''}</h2>
+            <span class="section-meta">${escapeHtml(headingMeta || '')}</span>
           </div>
-        ` : `
-          <div class="article-grid fade-stagger">
-            ${articles.map((a) => renderArticleCard(a)).join('')}
-          </div>
-          ${renderPagination({ currentPage, totalPages, baseHref })}
-        `}
+          ${articles.length === 0 ? `
+            <div class="empty">
+              <h3>No ${sportLabel} articles yet</h3>
+              <p>Check back shortly.</p>
+            </div>
+          ` : `
+            <div class="article-grid uniform-grid fade-stagger">
+              ${articles.map((a) => renderArticleCard(a)).join('')}
+            </div>
+            ${renderPagination({ currentPage, totalPages, baseHref })}
+          `}
+        </section>
       </div>
     </main>
     ${renderFooter()}
