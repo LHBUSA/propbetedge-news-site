@@ -41,6 +41,13 @@ const SPORT_ACCENTS = {
 
 const SPORT_ORDER = ['mlb', 'nba', 'nhl', 'nfl']
 
+// ⚠ NHL temporarily disabled — api-web.nhle.com does NOT send CORS headers
+// (despite the comment in api-sports.js claiming it does). Until either
+// PropSports API exposes NHL or a CORS proxy worker is deployed, NHL stays
+// hidden from the score strip to prevent the 4-sport Promise.allSettled
+// from logging errors on every page load.
+const HIDDEN_SPORTS = new Set(['nhl'])
+
 let _activeFilter = 'all'
 let _games = []
 let _refreshTimer = null
@@ -500,7 +507,8 @@ export function renderScoreStripShell() {
   const time = new Date().toLocaleTimeString('en-US', {
     hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York',
   })
-  const filterButtons = ['all', ...SPORT_ORDER].map(sp => {
+  const visibleSports = SPORT_ORDER.filter(s => !HIDDEN_SPORTS.has(s))
+  const filterButtons = ['all', ...visibleSports].map(sp => {
     const label = sp === 'all' ? 'All' : sp.toUpperCase()
     const cls = sp === 'all' ? 'pss-filter-btn active' : 'pss-filter-btn'
     return `<button class="${cls}" data-filter="${sp}" type="button">${label}</button>`
@@ -580,7 +588,9 @@ async function loadAndPaint() {
     const { sports } = await import('../api-sports.js')
     const data = await sports.allTodayScoreboards()
     const { normalizeAll } = await import('./score-strip-normalize.js')
-    _games = normalizeAll(data)
+    const all = normalizeAll(data)
+    // Drop hidden sports (e.g. NHL until CORS is fixed) so the strip stays clean
+    _games = all.filter(g => !HIDDEN_SPORTS.has(g.sport))
     paint()
   } catch (err) {
     console.warn('[score-strip] load failed:', err)
