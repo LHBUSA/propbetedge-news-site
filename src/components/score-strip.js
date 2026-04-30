@@ -41,12 +41,10 @@ const SPORT_ACCENTS = {
 
 const SPORT_ORDER = ['mlb', 'nba', 'nhl', 'nfl']
 
-// ⚠ NHL temporarily disabled — api-web.nhle.com does NOT send CORS headers
-// (despite the comment in api-sports.js claiming it does). Until either
-// PropSports API exposes NHL or a CORS proxy worker is deployed, NHL stays
-// hidden from the score strip to prevent the 4-sport Promise.allSettled
-// from logging errors on every page load.
-const HIDDEN_SPORTS = new Set(['nhl'])
+// NHL proxied through propbetedge-cors.sales-fd3.workers.dev — no hidden sports.
+// To temporarily hide a sport (e.g. during data outages), add it back here:
+//   const HIDDEN_SPORTS = new Set(['nhl'])
+const HIDDEN_SPORTS = new Set()
 
 let _activeFilter = 'all'
 let _games = []
