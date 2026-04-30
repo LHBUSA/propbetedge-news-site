@@ -2,19 +2,18 @@
  * Vercel Edge Middleware
  *
  * Runs at the edge BEFORE serving index.html. Looks at the URL pattern
- * and rewrites <link rel="canonical">, <title>, and <meta property="og:*">
- * in the HTML response so first-pass crawlers (Googlebot pre-render)
- * see the correct per-page metadata.
+ * and rewrites <link rel="canonical">, <title>, <meta property="og:*">
+ * and <meta name="robots"> in the HTML response so first-pass crawlers
+ * (Googlebot pre-render) see the correct per-page metadata.
  *
- * Without this, every page's first-pass HTML says canonical = homepage,
- * which kills indexability for an SPA.
+ * v2 changes:
+ *   ✅ Pagination canonicals — pages 2+ canonical to page 1, robots noindex
+ *   ✅ Same for /news/page/N and /news/:sport/page/N
  */
 
 import { next } from '@vercel/edge';
 
 export const config = {
-  // Only run on routes that need canonical injection.
-  // Skip API, assets, sitemap, robots, and anything with a file extension.
   matcher: [
     '/((?!api|_next|_vercel|favicon|logo|src|public|assets|manifest|sitemap|news-sitemap|robots|.*\\..*).*)',
   ],
@@ -29,15 +28,12 @@ export default async function middleware(request) {
   const url = new URL(request.url);
   const pathname = url.pathname.replace(/\/+$/, '') || '/';
 
-  // Determine canonical metadata for this URL
   const meta = await resolveMeta(pathname);
   if (!meta) return next();
 
-  // Fetch the static index.html from origin
   const response = await fetch(request);
   const contentType = response.headers.get('content-type') || '';
-  
-  // Only rewrite HTML responses
+
   if (!contentType.includes('text/html')) {
     return response;
   }
@@ -65,7 +61,7 @@ async function resolveMeta(pathname) {
     };
   }
 
-  // News index
+  // News index — page 1
   if (pathname === '/news') {
     return {
       canonical: `${SITE}/news`,
@@ -75,7 +71,20 @@ async function resolveMeta(pathname) {
     };
   }
 
-  // Sport pages
+  // 🆕 News index — paginated (page 2+) → canonical to page 1, noindex
+  const newsPagedMatch = pathname.match(/^\/news\/page\/(\d+)$/);
+  if (newsPagedMatch) {
+    const page = parseInt(newsPagedMatch[1], 10);
+    return {
+      canonical: `${SITE}/news`,
+      title: `Latest Sports News (Page ${page}) — PropBetEdge`,
+      description: 'Breaking sports news with AI prop-bet impact analysis across MLB, NFL, NBA, and NHL.',
+      image: `${SITE}/logo/pbe-full-600.png`,
+      robots: 'noindex, follow',
+    };
+  }
+
+  // Sport pages — page 1
   const sportMatch = pathname.match(/^\/news\/(mlb|nfl|nba|nhl)$/);
   if (sportMatch) {
     const sport = sportMatch[1];
@@ -85,6 +94,21 @@ async function resolveMeta(pathname) {
       title: `${label} News — PropBetEdge`,
       description: `Latest ${label} news with AI prop-bet impact analysis.`,
       image: `${SITE}/logo/pbe-full-600.png`,
+    };
+  }
+
+  // 🆕 Sport pages — paginated (page 2+) → canonical to page 1, noindex
+  const sportPagedMatch = pathname.match(/^\/news\/(mlb|nfl|nba|nhl)\/page\/(\d+)$/);
+  if (sportPagedMatch) {
+    const sport = sportPagedMatch[1];
+    const page = parseInt(sportPagedMatch[2], 10);
+    const label = SPORT_LABELS[sport];
+    return {
+      canonical: `${SITE}/news/${sport}`,
+      title: `${label} News (Page ${page}) — PropBetEdge`,
+      description: `Latest ${label} news with AI prop-bet impact analysis.`,
+      image: `${SITE}/logo/pbe-full-600.png`,
+      robots: 'noindex, follow',
     };
   }
 
@@ -111,9 +135,8 @@ async function resolveMeta(pathname) {
         }
       }
     } catch (e) {
-      // fall through to default
+      // fall through
     }
-    // Fallback if API fails — at least canonical and title are correct
     return {
       canonical: `${SITE}/news/${sport}/${slug}`,
       title: `${SPORT_LABELS[sport]} News — PropBetEdge`,
@@ -166,7 +189,7 @@ async function resolveMeta(pathname) {
     };
   }
 
-  // Default — return canonical at least so we don't leak homepage canonical
+  // Default fallback
   return {
     canonical: `${SITE}${pathname}`,
     title: 'PropBetEdge — Sports News & Prop-Bet Intelligence',
@@ -231,6 +254,21 @@ function injectMeta(html, meta) {
     /<meta\s+name="twitter:image"[^>]*>/i,
     `<meta name="twitter:image" content="${escapeAttr(meta.image)}" />`
   );
+
+  // 🆕 Inject robots meta if specified (e.g. for paginated pages)
+  if (meta.robots) {
+    if (/<meta\s+name="robots"[^>]*>/i.test(html)) {
+      html = html.replace(
+        /<meta\s+name="robots"[^>]*>/i,
+        `<meta name="robots" content="${escapeAttr(meta.robots)}" />`
+      );
+    } else {
+      html = html.replace(
+        /<\/head>/i,
+        `  <meta name="robots" content="${escapeAttr(meta.robots)}" />\n</head>`
+      );
+    }
+  }
 
   return html;
 }
