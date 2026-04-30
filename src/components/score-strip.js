@@ -22,8 +22,6 @@
  */
 
 const REFRESH_MS  = 60_000   // data refresh
-const SCROLL_MS   = 4_500    // auto-scroll: how often we step
-const SCROLL_PAUSE_AFTER_INTERACT_MS = 8_000
 
 const SPORT_TARGETS = {
   mlb: { label: 'Picks live',   live: true,  base: null },
@@ -49,10 +47,6 @@ const HIDDEN_SPORTS = new Set()
 let _activeFilter = 'all'
 let _games = []
 let _refreshTimer = null
-let _scrollTimer = null
-let _resumeScrollTimer = null
-let _userInteracting = false
-let _scrollPaused = false
 
 /* ─────────────────────────────────────────────────────────────────────────
  * STYLES — mobile-first
@@ -156,6 +150,25 @@ function injectStyles() {
       display: flex;
       align-items: stretch;
       height: 100%;
+    }
+
+    /* CSS marquee — auto-scrolls when content overflows. Tiles are
+       duplicated in JS for seamless loop. Pauses on hover/touch.
+       Only activates when .pss-rail has class .pss-marquee-on. */
+    .pss-rail.pss-marquee-on {
+      animation: pss-marquee 60s linear infinite;
+      width: max-content;
+    }
+    .pss-rail-wrap:hover .pss-rail.pss-marquee-on,
+    .pss-rail-wrap:focus-within .pss-rail.pss-marquee-on {
+      animation-play-state: paused;
+    }
+    @keyframes pss-marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .pss-rail.pss-marquee-on { animation: none; }
     }
 
     .pss-tile {
@@ -428,73 +441,35 @@ function paint() {
       ? 'No games today — check back tomorrow'
       : `No ${_activeFilter.toUpperCase()} games today`
     railEl.innerHTML = `<div class="pss-empty">${msg}</div>`
-    stopAutoScroll()
+    railEl.classList.remove('pss-marquee-on')
     return
   }
 
-  railEl.innerHTML = ordered.map(tileHTML).join('')
-  startAutoScroll() // restart after every paint so timer stays in sync with content
+  const tiles = ordered.map(tileHTML).join('')
+
+  // Marquee activation: only enable when content actually overflows.
+  // We render once, measure, then decide whether to duplicate + animate.
+  railEl.classList.remove('pss-marquee-on')
+  railEl.innerHTML = tiles
+
+  // Use rAF to wait for layout, then check overflow and enable marquee
+  requestAnimationFrame(() => {
+    const wrap = document.querySelector('.pss-rail-wrap')
+    if (!wrap) return
+    const overflows = railEl.scrollWidth > wrap.clientWidth + 4
+    if (overflows) {
+      // Duplicate the tiles so the marquee loops seamlessly. The animation
+      // translates by -50% which lands exactly at the start of the duplicate.
+      railEl.innerHTML = tiles + tiles
+      railEl.classList.add('pss-marquee-on')
+    }
+  })
 }
 
 function paintFilters() {
   document.querySelectorAll('.pss-filter-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.filter === _activeFilter)
   })
-}
-
-/* ── Auto-scroll ───────────────────────────────────────────────────────── */
-function startAutoScroll() {
-  if (_scrollTimer) clearInterval(_scrollTimer)
-  if (_scrollPaused) return
-
-  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-  if (reduceMotion) return
-
-  _scrollTimer = setInterval(stepScroll, SCROLL_MS)
-}
-
-function stopAutoScroll() {
-  if (_scrollTimer) {
-    clearInterval(_scrollTimer)
-    _scrollTimer = null
-  }
-}
-
-function stepScroll() {
-  if (_userInteracting) return
-  const wrap = document.querySelector('.pss-rail-wrap')
-  if (!wrap) return
-
-  const railEl = document.getElementById('pss-rail')
-  if (!railEl) return
-
-  // Nothing to scroll if rail isn't overflowing
-  if (railEl.scrollWidth <= wrap.clientWidth + 4) return
-
-  const firstTile = railEl.querySelector('.pss-tile')
-  const stepBy = firstTile?.offsetWidth || 200
-
-  const atEnd = wrap.scrollLeft + wrap.clientWidth >= railEl.scrollWidth - 4
-
-  if (atEnd) {
-    // Snap back to start without animation (no backwards scroll jank)
-    const prevBehavior = wrap.style.scrollBehavior
-    wrap.style.scrollBehavior = 'auto'
-    wrap.scrollLeft = 0
-    requestAnimationFrame(() => { wrap.style.scrollBehavior = prevBehavior || '' })
-  } else {
-    wrap.scrollBy({ left: stepBy, behavior: 'smooth' })
-  }
-}
-
-function pauseScrollOnInteract() {
-  _userInteracting = true
-  stopAutoScroll()
-  if (_resumeScrollTimer) clearTimeout(_resumeScrollTimer)
-  _resumeScrollTimer = setTimeout(() => {
-    _userInteracting = false
-    if (!_scrollPaused) startAutoScroll()
-  }, SCROLL_PAUSE_AFTER_INTERACT_MS)
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -542,36 +517,7 @@ export async function mountScoreStrip() {
       _activeFilter = btn.dataset.filter
       paintFilters()
       paint()
-      // Reset rail to start so user sees from beginning of new filter
-      const wrap = strip.querySelector('.pss-rail-wrap')
-      if (wrap) {
-        const prev = wrap.style.scrollBehavior
-        wrap.style.scrollBehavior = 'auto'
-        wrap.scrollLeft = 0
-        requestAnimationFrame(() => { wrap.style.scrollBehavior = prev || '' })
-      }
     })
-
-    // Pause auto-scroll on user interaction
-    const wrap = strip.querySelector('.pss-rail-wrap')
-    if (wrap) {
-      const pauseEvents = ['mouseenter', 'touchstart', 'pointerdown', 'wheel', 'focusin']
-      pauseEvents.forEach(ev => {
-        wrap.addEventListener(ev, pauseScrollOnInteract, { passive: true })
-      })
-    }
-
-    // Pause when tab is hidden — saves battery, no mid-step on return
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        _scrollPaused = true
-        stopAutoScroll()
-      } else {
-        _scrollPaused = false
-        startAutoScroll()
-      }
-    })
-
     strip.dataset.wired = '1'
   }
 
@@ -601,6 +547,4 @@ async function loadAndPaint() {
 
 export function unmountScoreStrip() {
   if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null }
-  stopAutoScroll()
-  if (_resumeScrollTimer) { clearTimeout(_resumeScrollTimer); _resumeScrollTimer = null }
 }
