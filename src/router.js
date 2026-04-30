@@ -7,7 +7,12 @@
  *   /leaders                   → ESPN-style stat leaders
  *   /team/:sport/:teamId       → v2 stub
  *   /standings/:sport          → v2 stub
- *   /player/:sport/:playerId   → v2 stub
+ *
+ * v3.12 additions:
+ *   /leaders/:sport            → per-sport deep leaderboards (mlb/nhl/nba/nfl)
+ *
+ * v3.13 Drop 1 additions:
+ *   /player/:sport/:playerId   → real bet-focused player profiles (replaces stub)
  *
  * Everything pre-existing is unchanged.
  */
@@ -22,6 +27,16 @@ import { renderNotFound } from './pages/404.js';
 import { renderGamesHub } from './pages/games-hub.js';
 import { renderGameDetail } from './pages/game-detail.js';
 import { renderLeadersPage } from './pages/leaders.js';
+// v3.12 — per-sport leader pages
+import { renderMlbLeadersPage } from './pages/leaders-mlb.js';
+import { renderNhlLeadersPage } from './pages/leaders-nhl.js';
+import { renderNbaLeadersPage } from './pages/leaders-nba.js';
+import { renderNflLeadersPage } from './pages/leaders-nfl.js';
+// v3.13 Drop 1 — player profile pages
+import { renderMlbPlayerPage } from './pages/player-mlb.js';
+import { renderNhlPlayerPage } from './pages/player-nhl.js';
+import { renderNbaPlayerPage } from './pages/player-nba.js';
+import { renderNflPlayerPage } from './pages/player-nfl.js';
 
 const VALID_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl']);
 
@@ -95,7 +110,7 @@ function clearAndRoute() {
     return renderGamesHub(root);
   }
 
-  // 🆕 Stat Leaders page
+  // 🆕 Stat Leaders page (root — redirects to /leaders/mlb)
   if (path === '/leaders') {
     setMeta({
       title: 'Stat Leaders — PropBetEdge',
@@ -103,6 +118,22 @@ function clearAndRoute() {
       canonical: 'https://propbetedge.ai/leaders',
     });
     return renderLeadersPage(root);
+  }
+
+  // 🆕 v3.12 — Per-sport leaderboards: /leaders/mlb, /leaders/nhl, /leaders/nba, /leaders/nfl
+  const leadersMatch = path.match(/^\/leaders\/(mlb|nhl|nba|nfl)$/);
+  if (leadersMatch) {
+    const sport = leadersMatch[1].toLowerCase();
+    const sportLabel = sport.toUpperCase();
+    setMeta({
+      title: `${sportLabel} Stat Leaders — PropBetEdge`,
+      description: `${sportLabel} leaders — basic + advanced stats, prop-bet impact analysis.`,
+      canonical: `https://propbetedge.ai/leaders/${sport}`,
+    });
+    if (sport === 'mlb') return renderMlbLeadersPage(root);
+    if (sport === 'nhl') return renderNhlLeadersPage(root);
+    if (sport === 'nba') return renderNbaLeadersPage(root);
+    if (sport === 'nfl') return renderNflLeadersPage(root);
   }
 
   // 🆕 Game detail: /games/:sport/:gameId
@@ -148,8 +179,7 @@ function clearAndRoute() {
   }
 
   // ── v2 stub routes (added v3.11) ─────────────────────────────────────
-  // Leader rows + scoreboard team logos link here. Until real pages ship,
-  // render a polished "Coming soon" page.
+  // Team + standings stubs remain — those are Drop 2 + Drop 3.
 
   const teamMatch = path.match(/^\/team\/([a-z]+)\/([\w-]+)$/);
   if (teamMatch) {
@@ -183,20 +213,16 @@ function clearAndRoute() {
     });
   }
 
+  // 🆕 v3.13 Drop 1 — Real player pages (replaces v3.11 stub)
   const playerMatch = path.match(/^\/player\/([a-z]+)\/([\w-]+)$/);
   if (playerMatch) {
     const sport = playerMatch[1].toLowerCase();
+    const playerId = playerMatch[2];
     if (!VALID_SPORTS.has(sport)) return renderNotFound(root);
-    setMeta({
-      title: `${sport.toUpperCase()} Player — PropBetEdge`,
-      description: 'Player page coming soon — bio, season stats, gamelog, splits.',
-    });
-    return renderComingSoon(root, {
-      kicker: `${sport.toUpperCase()} PLAYER PAGE`,
-      title: 'Player pages launching soon',
-      dek: 'Bio, season stats, gamelog, splits, and trends — all on one page. Coming in the next release.',
-      cta: { href: '/leaders', label: '← Back to leaders' },
-    });
+    if (sport === 'mlb') return renderMlbPlayerPage(root, playerId, setMeta);
+    if (sport === 'nhl') return renderNhlPlayerPage(root, playerId, setMeta);
+    if (sport === 'nba') return renderNbaPlayerPage(root, playerId, setMeta);
+    if (sport === 'nfl') return renderNflPlayerPage(root, playerId, setMeta);
   }
 
   setMeta({ title: 'Not found — PropBetEdge', description: 'Page not found.' });
