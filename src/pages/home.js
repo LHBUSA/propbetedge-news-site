@@ -1,8 +1,8 @@
 /**
  * src/pages/home.js
  * Editorial homepage — magazine layout
- * v3.10: per-sport rails fetch independently so counts are accurate
- *        (was: grouping limited homepage feed → rails showed wrong totals)
+ * v3.11: trust API ordering for lead/sidebar (was: client-side re-sort by impact_score
+ *        only, which buried fresh news under yesterday's high-impact bangers)
  *
  *  Structure:
  *  ┌─────────────────────────────────────────────────────┐
@@ -106,11 +106,11 @@ export async function renderHome(root) {
     return;
   }
 
-  // 1. Lead story = highest-impact recent article with an image
+  // 1. Lead story = first article with image (API already sorted by recency_score)
   const lead = pickLead(all);
   document.getElementById('lead-slot').innerHTML = renderLeadStory(lead);
 
-  // 2. Sidebar = next 4 high-impact stories, mixed sports (text-only)
+  // 2. Sidebar = next 4 stories in API order (recency-weighted)
   const remaining = all.filter((a) => a.id !== lead.id);
   const sidebarStories = remaining.slice(0, 4);
   document.getElementById('sidebar-slot').innerHTML = `
@@ -158,13 +158,12 @@ export async function renderHome(root) {
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────
+// v3.11: API now returns articles sorted by recency-weighted homepage_score.
+// Trust that ordering. Just pick the first article that has an image for the lead.
+// (Old version re-sorted by impact_score only, which buried fresh news.)
 function pickLead(articles) {
-  const withImage = articles.filter((a) => a.image_url);
-  if (withImage.length) {
-    const sorted = withImage.sort((a, b) => (b.take?.impact_score || 0) - (a.take?.impact_score || 0));
-    return sorted[0];
-  }
-  return articles[0];
+  const firstWithImage = articles.find((a) => a.image_url);
+  return firstWithImage || articles[0];
 }
 
 function renderLeadStory(article) {
