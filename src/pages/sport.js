@@ -1,293 +1,226 @@
 /**
  * src/pages/sport.js
- * v3.16: per-sport editorial layout matching /news quality.
- *        Page 1 = sport hero + Top stories + Latest + cross-sport strip
- *        Pages 2+ = paginated archive with hero band
+ * Sport-section landing — like a magazine section front
+ * v3.15: pagination added (?page=N), everything else unchanged
  */
 
 import { api } from '../api.js';
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
-import { renderArticleCard } from '../components/article-card.js';
-import { renderPagination, injectPaginationLinkTags } from '../components/pagination.js';
+import { renderArticleCard, renderSidebarStory, escapeHtml, formatRelative } from '../components/article-card.js';
+import { proxyImage } from '../ads-config.js';
+import {
+  organizationSchema, websiteSchema, breadcrumbSchema,
+  collectionPageSchema, injectSchemas,
+} from '../schema.js';
 
+const SPORT_FALLBACK = { mlb: '⚾', nfl: '🏈', nba: '🏀', nhl: '🏒' };
+const SPORT_TAGLINES = {
+  mlb: 'Strikeouts, home runs, hits, total bases — all the angles for tonight\'s diamond.',
+  nfl: 'Yards, touchdowns, anytime scorers — the Sunday slate broken down.',
+  nba: 'Points, assists, rebounds, threes — every angle on the hardwood.',
+  nhl: 'Shots on goal, goals, saves — the ice-level edge.',
+};
+const SECTIONS = ['mlb', 'nfl', 'nba', 'nhl'];
 const PAGE_SIZE = 20;
 
-const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', nhl: 'NHL' };
-const SPORT_EMOJI = { mlb: '⚾', nfl: '🏈', nba: '🏀', nhl: '🏒' };
-const SPORT_DESCRIPTIONS = {
-  mlb: 'Strikeouts, home runs, hits, total bases — every angle on tonight\'s diamond.',
-  nfl: 'Snap counts, target shares, rushing volume — the props that move on Sundays.',
-  nba: 'Points, assists, rebounds, threes — every angle on the hardwood.',
-  nhl: 'Goals, assists, shots on goal, goalie matchups — the ice props worth backing.',
-};
-
-export async function renderSport(root, sport, page = 1, setMeta) {
-  page = Math.max(1, parseInt(page) || 1);
-
-  if (!SPORT_LABELS[sport]) {
-    root.innerHTML = `${renderHeader()}<main><div class="container"><div class="empty"><h3>Unknown sport</h3></div></div></main>${renderFooter()}`;
-    return;
-  }
-
-  if (page === 1) {
-    return renderSportPage1(root, sport, setMeta);
-  }
-  return renderSportArchive(root, sport, page, setMeta);
+function getPageFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const p = parseInt(params.get('page'), 10);
+  return p > 0 ? p : 1;
 }
 
-/* ── PAGE 1: Editorial sport home ──────────────────────────────────── */
-async function renderSportPage1(root, sport, setMeta) {
-  const sportLabel = SPORT_LABELS[sport];
-  const emoji = SPORT_EMOJI[sport];
-  const dek = SPORT_DESCRIPTIONS[sport];
-  const baseUrl = `https://propbetedge.ai/news/${sport}`;
+export async function renderSport(root, sport) {
+  const tagline = SPORT_TAGLINES[sport] || '';
+  const currentPage = getPageFromUrl();
 
   root.innerHTML = `
     ${renderHeader()}
     <main>
-      <div class="container">
-        <div class="article-grid uniform-grid" style="margin-top:32px">
-          ${Array.from({ length: 8 }).map(() => `<div class="skel skel-article-card"></div>`).join('')}
-        </div>
-      </div>
-    </main>
-  `;
-
-  if (setMeta) {
-    setMeta({
-      title: `${sportLabel} News & Prop-Bet Analysis — PropBetEdge`,
-      description: dek,
-      canonical: baseUrl,
-    });
-  }
-
-  // Fetch breaking + latest in parallel; filter breaking client-side to this sport
-  let breakingResp, latestResp;
-  try {
-    [breakingResp, latestResp] = await Promise.all([
-      api.breaking().catch(() => ({ articles: [] })),
-      api.newsBySport(sport, 24, 1).catch(() => ({ articles: [] })),
-    ]);
-  } catch (e) {
-    root.querySelector('main').innerHTML = `
-      <div class="container"><div class="empty"><h3>Failed to load ${sportLabel} news</h3><p>${escapeHtml(e.message)}</p></div></div>
-    `;
-    return;
-  }
-
-  const allArticles = latestResp.articles || [];
-  const total = latestResp.total || allArticles.length;
-  const totalPages = latestResp.totalPages || 1;
-
-  // Top stories = highest-impact articles for this sport (impact_score 4+)
-  const topStories = allArticles
-    .filter((a) => (a.take?.impact_score || 0) >= 4)
-    .slice(0, 4);
-
-  // Latest = the rest, in order
-  const topIds = new Set(topStories.map((a) => a.id));
-  const latest = allArticles.filter((a) => !topIds.has(a.id)).slice(0, 12);
-
-  // Also pull the breaking story IF it's for this sport
-  const sportBreaking = (breakingResp.articles || []).find((a) => a.sport === sport);
-
-  root.innerHTML = `
-    ${renderHeader()}
-
-    ${sportBreaking ? `
-      <div class="breaking">
-        <div class="container">
-          <div class="breaking-inner">
-            <div class="breaking-tag"><span class="blink"></span> Breaking · ${escapeHtml(sportLabel)}</div>
-            <div class="breaking-text">
-              <a href="/news/${escapeHtml(sportBreaking.sport)}/${escapeHtml(sportBreaking.slug)}">${escapeHtml(sportBreaking.title)}</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    ` : ''}
-
-    <main>
-      <div class="container">
-
-        <!-- Sport hero -->
-        <div class="leaders-hero" style="margin-top:24px">
-          <div class="leaders-hero-mesh"></div>
-          <div class="leaders-hero-inner">
-            <div class="leaders-hero-kicker">
-              <span style="font-size:18px;line-height:1">${emoji}</span>
-              <span>${sportLabel} · The Section</span>
-            </div>
-            <h1 class="leaders-hero-title">${sportLabel} News &amp; Notes</h1>
-            <p class="leaders-hero-dek">${escapeHtml(dek)}</p>
-            <p style="margin-top:16px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--paper-faint)">
-              ${total} ${total === 1 ? 'story' : 'stories'} indexed · updated continuously
-            </p>
-          </div>
-        </div>
-
-        ${topStories.length ? `
-          <section class="news-section" style="margin-top:32px">
-            <div class="section-heading">
-              <h2>🔥 Top ${sportLabel} Stories</h2>
-              <span class="section-meta">Highest-impact ${sportLabel} news right now</span>
-            </div>
-            <div class="article-grid uniform-grid fade-stagger">
-              ${topStories.map((a) => renderArticleCard(a)).join('')}
-            </div>
-          </section>
-        ` : ''}
-
-        <section class="news-section">
-          <div class="section-heading">
-            <h2>📰 Latest ${sportLabel}</h2>
-            <span class="section-meta">Newest first · all ${sportLabel} coverage</span>
-          </div>
-          ${latest.length === 0 ? `
-            <div class="empty"><h3>No ${sportLabel} articles yet</h3><p>Check back shortly.</p></div>
-          ` : `
-            <div class="article-grid uniform-grid fade-stagger">
-              ${latest.map((a) => renderArticleCard(a)).join('')}
-            </div>
-            ${totalPages > 1 ? `
-              <div style="text-align:center;margin:32px 0 8px">
-                <a href="/news/${sport}/page/2" class="btn btn-ghost" style="font-family:var(--font-mono);font-size:11px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;padding:14px 28px">
-                  Browse Full ${sportLabel} Archive →
-                </a>
-              </div>
-            ` : ''}
-          `}
-        </section>
-
-        ${renderCrossSportStrip(sport)}
-
-      </div>
-    </main>
-    ${renderFooter()}
-  `;
-}
-
-/* ── PAGES 2+: Sport archive with hero band ────────────────────────── */
-async function renderSportArchive(root, sport, page, setMeta) {
-  const sportLabel = SPORT_LABELS[sport];
-  const emoji = SPORT_EMOJI[sport];
-  const baseHref = `/news/${sport}`;
-  const baseUrl = `https://propbetedge.ai/news/${sport}`;
-
-  root.innerHTML = `
-    ${renderHeader()}
-    <main>
-      <div class="container">
-        <div class="article-grid uniform-grid" style="margin-top:32px">
-          ${Array.from({ length: 8 }).map(() => `<div class="skel skel-article-card"></div>`).join('')}
-        </div>
-      </div>
-    </main>
-  `;
-
-  let resp;
-  try {
-    resp = await api.newsBySport(sport, PAGE_SIZE, page);
-  } catch (e) {
-    root.querySelector('main').innerHTML = `
-      <div class="container"><div class="empty"><h3>Failed to load ${sportLabel} archive</h3><p>${escapeHtml(e.message)}</p></div></div>
-    `;
-    return;
-  }
-
-  const articles = resp.articles || [];
-  const totalPages = resp.totalPages || 1;
-  const currentPage = resp.page || page;
-  const total = resp.total || 0;
-
-  if (page > totalPages && totalPages > 0) {
-    root.innerHTML = `
-      ${renderHeader()}
-      <main>
-        <div class="container">
-          <div class="empty" style="margin-top:32px">
-            <h3>Page ${page} doesn't exist</h3>
-            <p>${sportLabel} has ${totalPages} ${totalPages === 1 ? 'page' : 'pages'} of articles.</p>
-            <a href="${baseHref}" class="btn btn-primary">Back to ${sportLabel} latest</a>
-          </div>
-        </div>
-      </main>
-      ${renderFooter()}
-    `;
-    return;
-  }
-
-  if (setMeta) {
-    setMeta({
-      title: `${sportLabel} Archive · Page ${page} — PropBetEdge`,
-      description: `Page ${page} of ${totalPages} of PropBetEdge's ${sportLabel} archive. ${total} stories with prop-bet impact analysis.`,
-      canonical: `${baseUrl}/page/${page}`,
-    });
-  }
-
-  root.innerHTML = `
-    ${renderHeader()}
-    <main>
-      <div class="container">
-
-        <div class="leaders-hero" style="margin-top:24px">
-          <div class="leaders-hero-mesh"></div>
-          <div class="leaders-hero-inner">
-            <div class="leaders-hero-kicker">
-              <span style="font-size:18px;line-height:1">${emoji}</span>
-              <span>${sportLabel} Archive</span>
-            </div>
-            <h1 class="leaders-hero-title">Every ${sportLabel} story we've published.</h1>
-            <p class="leaders-hero-dek">
-              ${total} ${sportLabel} stories with AI prop-bet impact analysis. Page ${page} of ${totalPages}.
-            </p>
-            <p style="margin-top:18px">
-              <a href="${baseHref}" style="color:var(--gold);font-size:13px;font-weight:600;text-decoration:none;font-family:var(--font-mono);letter-spacing:0.1em;text-transform:uppercase">← Back to ${sportLabel} latest</a>
-            </p>
-          </div>
-        </div>
-
-        <section class="news-section">
-          <div class="section-heading">
-            <h2>📰 Page ${page}</h2>
-            <span class="section-meta">${articles.length} of ${total} ${sportLabel} stories · newest first</span>
-          </div>
-          <div class="article-grid uniform-grid fade-stagger">
-            ${articles.map((a) => renderArticleCard(a)).join('')}
-          </div>
-          ${renderPagination({ currentPage, totalPages, baseHref })}
-        </section>
-
-        ${renderCrossSportStrip(sport)}
-
-      </div>
-    </main>
-    ${renderFooter()}
-  `;
-
-  injectPaginationLinkTags({ currentPage, totalPages, baseUrl });
-}
-
-/* ── Cross-sport strip — bottom of every sport page ────────────────── */
-function renderCrossSportStrip(currentSport) {
-  const sports = ['mlb', 'nfl', 'nba', 'nhl'].filter((s) => s !== currentSport);
-  return `
-    <section style="margin:48px 0 16px;padding:28px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
-      <div style="text-align:center">
-        <div style="font-family:var(--font-mono);font-size:10px;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:var(--paper-faint);margin-bottom:14px">Other sections</div>
-        <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center">
-          <a href="/news" class="btn btn-ghost" style="padding:10px 18px;font-size:12px">📰 All News</a>
-          ${sports.map((s) => `
-            <a href="/news/${s}" class="btn btn-ghost" style="padding:10px 18px;font-size:12px">${SPORT_EMOJI[s]} ${SPORT_LABELS[s]}</a>
+      <div class="section-bar">
+        <div class="container section-bar-inner">
+          <a href="/news" class="section-link">All News</a>
+          ${SECTIONS.map((s) => `
+            <a href="/news/${s}" class="section-link ${s === sport ? 'active' : ''}">${s.toUpperCase()}</a>
           `).join('')}
         </div>
       </div>
-    </section>
+
+      <div class="container" style="padding-top:40px">
+        <div style="border-bottom:2px solid var(--gold);padding-bottom:18px;margin-bottom:32px">
+          <div class="kicker kicker-gold" style="margin-bottom:8px">${escapeHtml(sport.toUpperCase())} · The Section</div>
+          <h1 class="serif" style="font-family:var(--font-serif);font-size:clamp(36px,5vw,52px);font-weight:900;letter-spacing:-0.025em;margin:0 0 10px;line-height:1.05">${escapeHtml(sport.toUpperCase())} News & Notes</h1>
+          <p style="font-family:var(--font-serif);font-style:italic;font-size:18px;color:var(--paper-dim);max-width:680px;margin:0">${escapeHtml(tagline)}</p>
+        </div>
+
+        <div id="lead-slot">${cardSkeleton(1, true)}</div>
+        <div id="rest-slot">${cardSkeleton(8)}</div>
+        <div id="pagination" class="pagination"></div>
+      </div>
+    </main>
+    ${renderFooter()}
+  `;
+
+  const data = await api.newsBySport(sport, PAGE_SIZE, currentPage).catch(() => ({ articles: [] }));
+  const articles = data.articles || [];
+  const sportLabel = sport.toUpperCase();
+
+  // Schema (unchanged)
+  injectSchemas([
+    organizationSchema(),
+    websiteSchema(),
+    collectionPageSchema({
+      url: `/news/${sport}`,
+      name: `${sportLabel} News — PropBetEdge`,
+      description: `Latest ${sportLabel} news with AI prop-bet impact analysis.`,
+      articles,
+    }),
+    breadcrumbSchema([
+      { name: 'Home', url: '/' },
+      { name: 'News', url: '/news' },
+      { name: `${sportLabel} News` },
+    ]),
+  ], 'jsonld-sport');
+
+  if (!articles.length) {
+    document.getElementById('lead-slot').innerHTML = '';
+    document.getElementById('rest-slot').innerHTML = `
+      <div class="empty" style="margin-top:32px">
+        <h3>No ${sport.toUpperCase()} articles ${currentPage > 1 ? `on page ${currentPage}` : 'yet'}</h3>
+        <p>${currentPage > 1 ? `<a href="/news/${sport}" style="color:var(--gold)">← Back to page 1</a>` : 'The news engine pulls every 30 minutes — check back shortly.'}</p>
+      </div>
+    `;
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  // Lead = first article (or one with image preferred) — only on page 1
+  // On pages 2+, just show the grid (no lead+sidebar treatment)
+  if (currentPage === 1) {
+    const lead = pickLead(articles);
+    const rest = articles.filter((a) => a.id !== lead.id);
+
+    document.getElementById('lead-slot').innerHTML = `
+      <div class="lead-grid" style="margin-bottom:48px">
+        ${renderLeadStory(lead, sport)}
+        <aside class="lead-sidebar">
+          <div class="sidebar-header">More ${sport.toUpperCase()}</div>
+          ${rest.slice(0, 4).map(renderSidebarStory).join('')}
+        </aside>
+      </div>
+    `;
+
+    const remaining = rest.slice(4);
+    document.getElementById('rest-slot').innerHTML = remaining.length ? `
+      <div class="section-heading">
+        <h2>More Stories</h2>
+      </div>
+      <div class="article-grid fade-stagger">
+        ${remaining.map((a) => renderArticleCard(a)).join('')}
+      </div>
+    ` : '';
+  } else {
+    // Pages 2+ — simple grid with section heading, no lead story
+    document.getElementById('lead-slot').innerHTML = '';
+    document.getElementById('rest-slot').innerHTML = `
+      <div class="section-heading">
+        <h2>${sportLabel} · Page ${currentPage}</h2>
+        <span class="section-meta">Newest first</span>
+      </div>
+      <div class="article-grid fade-stagger">
+        ${articles.map((a) => renderArticleCard(a)).join('')}
+      </div>
+    `;
+  }
+
+  // Pagination controls
+  const total = data.total || articles.length;
+  const totalPages = data.totalPages || (total ? Math.ceil(total / PAGE_SIZE) : Math.max(currentPage, 1));
+  document.getElementById('pagination').innerHTML = renderPagination(currentPage, totalPages);
+}
+
+function renderPagination(current, total) {
+  if (total <= 1) return '';
+
+  const prev = current > 1 ? `<a href="?page=${current - 1}" class="page-btn">← Prev</a>` : `<span class="page-btn disabled">← Prev</span>`;
+  const next = current < total ? `<a href="?page=${current + 1}" class="page-btn">Next →</a>` : `<span class="page-btn disabled">Next →</span>`;
+
+  const pages = [];
+  const start = Math.max(1, current - 2);
+  const end = Math.min(total, current + 2);
+
+  if (start > 1) {
+    pages.push(`<a href="?page=1" class="page-num">1</a>`);
+    if (start > 2) pages.push(`<span class="page-ellipsis">…</span>`);
+  }
+  for (let i = start; i <= end; i++) {
+    if (i === current) pages.push(`<span class="page-num current">${i}</span>`);
+    else pages.push(`<a href="?page=${i}" class="page-num">${i}</a>`);
+  }
+  if (end < total) {
+    if (end < total - 1) pages.push(`<span class="page-ellipsis">…</span>`);
+    pages.push(`<a href="?page=${total}" class="page-num">${total}</a>`);
+  }
+
+  return `
+    <div class="pagination-inner">
+      ${prev}
+      <div class="page-numbers">${pages.join('')}</div>
+      ${next}
+    </div>
+    <div class="pagination-meta">Page ${current} of ${total}</div>
   `;
 }
 
-function escapeHtml(s) {
+function pickLead(articles) {
+  const withImage = articles.filter((a) => a.image_url);
+  if (withImage.length) {
+    return withImage.sort((a, b) => (b.take?.impact_score || 0) - (a.take?.impact_score || 0))[0];
+  }
+  return articles[0];
+}
+
+function renderLeadStory(article, sport) {
+  const url = article.url || `/news/${article.sport}/${article.slug}`;
+  const date = new Date(article.published_at);
+  const dek = article.take?.summary || article.summary;
+  const imgBlock = article.image_url
+    ? `<div class="lead-image">
+         <img src="${escapeAttr(proxyImage(article.image_url))}" alt="${escapeAttr(article.title)}" class="hero-image-img" onerror="this.classList.add('img-broken')" />
+         <div class="img-fallback">${SPORT_FALLBACK[sport] || '◆'}</div>
+       </div>`
+    : `<div class="lead-image"><div class="img-fallback">${SPORT_FALLBACK[sport] || '◆'}</div></div>`;
+
+  return `
+    <a href="${escapeAttr(url)}" class="lead-story fade-in">
+      ${imgBlock}
+      <div class="lead-meta">
+        <span class="sport-tag">${escapeHtml(sport.toUpperCase())}</span>
+        <span class="dot">·</span>
+        <span class="timestamp">${formatRelative(date)}</span>
+      </div>
+      <h2 class="lead-headline">${escapeHtml(article.title)}</h2>
+      ${dek ? `<p class="lead-dek">${escapeHtml(dek)}</p>` : ''}
+    </a>
+  `;
+}
+
+function cardSkeleton(n, large = false) {
+  let out = large ? '<div class="lead-grid" style="margin-bottom:48px"><div>' : '<div class="article-grid">';
+  for (let i = 0; i < n; i++) {
+    out += `
+      <div class="skel-card">
+        <div class="skel skel-card-img"></div>
+        <div class="skel skel-line" style="width:30%;height:10px"></div>
+        <div class="skel skel-line" style="width:90%;height:24px;margin-top:8px"></div>
+      </div>
+    `;
+  }
+  out += large ? '</div><div></div></div>' : '</div>';
+  return out;
+}
+
+function escapeAttr(s) {
   if (s == null) return '';
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
