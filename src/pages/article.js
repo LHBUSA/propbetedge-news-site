@@ -1,12 +1,17 @@
 /**
  * src/pages/article.js
  * Editorial long-form article — magazine layout with in-content ads
+ *
+ * v3.14: 🆕 Added ESPN-pattern right rail (Top Headlines + Model Notes + soft CTA)
+ *        on desktop ≥1100px. Single column on mobile/tablet. Zero new API endpoints —
+ *        rail filters api.homepage() client-side using existing take.advice field.
  */
 
 import { api } from '../api.js';
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { renderArticleCard, escapeHtml, formatRelative } from '../components/article-card.js';
+import { renderRailShell, mountArticleRail } from '../components/right-rail.js';
 import { renderNotFound } from './404.js';
 import { ad_in_article_after_take, ad_in_article_mid, ad_brand_family, proxyImage } from '../ads-config.js';
 import {
@@ -88,47 +93,57 @@ export async function renderArticle(root, sport, slug, setMeta) {
   root.innerHTML = `
     ${renderHeader()}
     <main>
-      <article class="container-narrow article-page fade-in">
-        <a href="/news/${article.sport}" class="article-back">← ${SPORT_LABELS[article.sport] || article.sport.toUpperCase()}</a>
+      <div class="container-narrow article-with-rail">
+        <article class="article-page fade-in">
+          <a href="/news/${article.sport}" class="article-back">← ${SPORT_LABELS[article.sport] || article.sport.toUpperCase()}</a>
 
-        <header class="article-hero">
-          <div class="article-meta">
-            <span class="sport-tag">${escapeHtml(article.sport.toUpperCase())}</span>
-            ${article.category && article.category !== 'general'
-              ? `<span class="category-tag">${escapeHtml(article.category)}</span>` : ''}
-            <span class="date">${formatDate(article.published_at)}</span>
-          </div>
+          <header class="article-hero">
+            <div class="article-meta">
+              <span class="sport-tag">${escapeHtml(article.sport.toUpperCase())}</span>
+              ${article.category && article.category !== 'general'
+                ? `<span class="category-tag">${escapeHtml(article.category)}</span>` : ''}
+              <span class="date">${formatDate(article.published_at)}</span>
+            </div>
 
-          <h1 class="article-title">${escapeHtml(article.title)}</h1>
+            <h1 class="article-title">${escapeHtml(article.title)}</h1>
 
-          ${article.summary
-            ? `<p class="article-dek">${escapeHtml(article.summary)}</p>`
-            : ''}
+            ${article.summary
+              ? `<p class="article-dek">${escapeHtml(article.summary)}</p>`
+              : ''}
 
-          <div class="article-byline">
-            <span>By <a href="${escapeAttr(authorHref(article.author))}" class="byline-link"><strong>${escapeHtml(article.author || 'PropBetEdge Editorial Team')}</strong></a></span>
-            <span style="color:var(--paper-subtle)">·</span>
-            <span>${formatRelative(new Date(article.published_at))}</span>
-          </div>
-        </header>
+            <div class="article-byline">
+              <span>By <a href="${escapeAttr(authorHref(article.author))}" class="byline-link"><strong>${escapeHtml(article.author || 'PropBetEdge Editorial Team')}</strong></a></span>
+              <span style="color:var(--paper-subtle)">·</span>
+              <span>${formatRelative(new Date(article.published_at))}</span>
+            </div>
+          </header>
 
-        ${heroImage}
+          ${heroImage}
 
-        ${renderTakeCallout(article)}
+          ${renderTakeCallout(article)}
 
-        ${ad_in_article_after_take(articleContext)}
+          ${ad_in_article_after_take(articleContext)}
 
-        ${bodyHtml}
+          ${bodyHtml}
 
-        ${ad_brand_family('end_of_article')}
+          ${ad_brand_family('end_of_article')}
 
-        ${renderPicksCTA(article)}
+          ${renderPicksCTA(article)}
 
-        <div id="related-slot"></div>
-      </article>
+          <div id="related-slot"></div>
+        </article>
+
+        ${renderRailShell()}
+      </div>
     </main>
     ${renderFooter()}
   `;
+
+  // Mount the rail — fetches in background, swaps skeletons for live content
+  mountArticleRail({
+    currentSlug: article.slug,
+    currentSport: article.sport,
+  });
 
   loadRelated(article);
 }
