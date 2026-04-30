@@ -93,8 +93,8 @@ export async function renderArticle(root, sport, slug, setMeta) {
   root.innerHTML = `
     ${renderHeader()}
     <main>
-      <div class="container-narrow article-with-rail">
-        <article class="article-page fade-in">
+      <div class="article-with-rail">
+        <article class="container-narrow article-page fade-in">
           <a href="/news/${article.sport}" class="article-back">← ${SPORT_LABELS[article.sport] || article.sport.toUpperCase()}</a>
 
           <header class="article-hero">
