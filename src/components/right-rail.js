@@ -88,10 +88,10 @@ function injectStyles() {
         flex: 0 0 320px;
         width: 320px;
         max-width: 320px;
-        /* Drop the rail down so it aligns with the article body, not the
-           kicker/back-link. Roughly the height of the article-back link
-           plus meta row + half the title. */
-        margin-top: 80px;
+        /* Drop the rail down so its top aligns with the article's hero photo,
+           not the headline. ~340px clears: back-link + meta row + 6-line
+           title + dek + byline. */
+        margin-top: 340px;
       }
     }
 
@@ -135,14 +135,14 @@ function injectStyles() {
       font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--paper, #f5f5f7);
+      color: #f5f8ff;
       margin: 0;
     }
     .par-heading-meta {
       font-size: 10px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      color: var(--paper-subtle, rgba(245, 245, 247, 0.5));
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #b8c2d4;
       text-transform: uppercase;
     }
     .par-heading-pulse {
@@ -197,7 +197,7 @@ function injectStyles() {
       font-size: 14px;
       font-weight: 600;
       line-height: 1.4;
-      color: var(--paper, #f5f5f7);
+      color: #f5f8ff;
       transition: color 0.15s ease;
       margin: 0;
     }
@@ -287,15 +287,16 @@ function injectStyles() {
     .par-cta-title {
       font-size: 16px;
       font-weight: 700;
-      color: var(--paper, #f5f5f7);
-      margin: 0 0 4px;
+      color: #f5f8ff;
+      margin: 0 0 6px;
       line-height: 1.3;
     }
     .par-cta-sub {
-      font-size: 12px;
-      color: var(--paper-subtle, rgba(245, 245, 247, 0.6));
+      font-size: 12.5px;
+      color: #d4dae8;
       margin: 0 0 14px;
       line-height: 1.5;
+      font-weight: 400;
     }
     .par-cta-btn {
       display: inline-block;
@@ -334,7 +335,7 @@ function injectStyles() {
     }
     .par-empty {
       font-size: 12px;
-      color: var(--paper-subtle, rgba(245, 245, 247, 0.5));
+      color: #b8c2d4;
       font-style: italic;
       padding: 10px 0;
     }
