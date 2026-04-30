@@ -1,4 +1,5 @@
 const API_BASE = 'https://propbet-news-api.sales-fd3.workers.dev';
+
 async function get(path) {
   const r = await fetch(`${API_BASE}${path}`, { credentials: 'omit' });
   if (!r.ok) {
@@ -7,18 +8,23 @@ async function get(path) {
   }
   return await r.json();
 }
+
 export const api = {
   homepage:    () => get('/news/homepage'),
   breaking:    () => get('/news/breaking'),
+
+  // Returns { page, limit, total, totalPages, hasMore, articles, ... }
   newsAll:     (limit = 20, page = 1) => get(`/news?limit=${limit}&page=${page}`),
-  newsBySport: (sport, limit = 20) => get(`/news/by-sport/${encodeURIComponent(sport)}?limit=${limit}`),
+
+  // v3.15: now accepts page param + returns pagination metadata
+  newsBySport: (sport, limit = 20, page = 1) =>
+    get(`/news/by-sport/${encodeURIComponent(sport)}?limit=${limit}&page=${page}`),
+
   article:     (slug) => get(`/news/article/${encodeURIComponent(slug)}`),
   sports:      () => get('/news/sports'),
 
-  // 🆕 v3.9.4: client-side author filter (uses /news endpoint, filters in browser)
-  // Future upgrade: add a real /news/by-author/:slug endpoint to the API worker
+  // v3.9.4: client-side author filter (uses /news endpoint, filters in browser)
   byAuthor: async (authorName, limit = 20) => {
-    // Fetch a larger pool then filter — gives us enough matches for one author
     const all = await get(`/news?limit=100&page=1`);
     const matches = (all.articles || []).filter((a) =>
       a.author && a.author.toLowerCase() === authorName.toLowerCase()
