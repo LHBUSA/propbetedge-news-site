@@ -88,10 +88,9 @@ function injectStyles() {
         flex: 0 0 320px;
         width: 320px;
         max-width: 320px;
-        /* Drop the rail down so its top aligns with the article's hero photo,
-           not the headline. ~340px clears: back-link + meta row + 6-line
-           title + dek + byline. */
-        margin-top: 340px;
+        /* Rail starts at the top of the article hero photo. Clears the
+           back-link, meta row, full title block, dek, and byline. */
+        margin-top: 520px;
       }
     }
 
