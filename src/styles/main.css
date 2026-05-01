@@ -5581,3 +5581,57 @@ a.leaders-sport-tab.active,
     padding: 0 10px;
   }
 }
+
+/* ========================================================================
+ * v3.16 - AD DISCLOSURE LABELS (FTC compliance)
+ *
+ * APPEND THIS TO BOTTOM OF main.css
+ *
+ * Adds the small uppercase "Advertisement" label that appears above
+ * every ad placement. Same pattern used by NYT, WSJ, ESPN, etc.
+ * ======================================================================== */
+
+.ad-wrapper,
+.ad-banner-wrapper {
+  position: relative;
+  display: block;
+  margin-bottom: 0;
+}
+
+.ad-disclosure {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--paper-faint);
+  margin-bottom: 8px;
+  padding-left: 2px;
+  opacity: 0.55;
+  user-select: none;
+}
+
+.ad-disclosure-banner {
+  text-align: center;
+  margin-bottom: 6px;
+  padding: 0;
+}
+
+/* Sportsbook ads get a slightly more prominent disclosure since the law
+   requires clear gambling-related identification */
+.ad-wrapper[data-ad-sportsbook] .ad-disclosure {
+  color: var(--gold);
+  opacity: 0.7;
+}
+
+@media (max-width: 640px) {
+  .ad-disclosure {
+    font-size: 8px;
+    letter-spacing: 0.18em;
+    margin-bottom: 6px;
+  }
+  .ad-disclosure-banner {
+    margin-bottom: 4px;
+  }
+}
