@@ -6214,3 +6214,41 @@ a.leaders-sport-tab.active,
     grid-template-columns: 1fr;
   }
 }
+
+/* ========================================================================
+ * v3.16 — Edges nav link styling
+ *
+ * APPEND TO BOTTOM OF main.css (after the odds page styles)
+ *
+ * Subtle gold accent — it's a "live data" link, deserves visual weight
+ * but shouldn't compete with the orange Picks → CTA.
+ * ======================================================================== */
+
+.nav-link.edges-link {
+  position: relative;
+  color: var(--gold);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.nav-link.edges-link:hover {
+  color: var(--gold-bright);
+}
+
+.nav-link.edges-link.active {
+  color: var(--gold-bright);
+}
+
+.nav-link.edges-link.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 2px;
+  background: var(--gold);
+}
+
+/* Pulsing dot before the lightning emoji is overkill — emoji is enough.
+   But if we want it to feel as "live" as the score strip, we could
+   add a subtle pulse animation to the emoji itself. Skipping for now. */
