@@ -6216,18 +6216,21 @@ a.leaders-sport-tab.active,
 }
 
 /* ========================================================================
- * v3.16 — World-class masthead redesign
+ * v3.16.1 — Masthead redesign (warmer, breathable, mobile-first)
  *
- * APPEND TO BOTTOM OF main.css (after the odds page styles)
+ * REPLACE the previous v3.16 header CSS block in main.css with this one.
  *
- * Two-tier centered nav. Subtle radial gradient backdrop. Single gold
- * accent. Single button-style CTA (Picks). Live edge counter on Edges.
- * Editorial polish without losing the live-data energy.
+ * Changes from v3.16:
+ * - Uses --ink (warm dark brown) instead of pure #0a0a0a
+ * - More vertical breathing room between rows
+ * - Mobile-first: base styles target mobile, desktop is enhancement
+ * - Tagline moved BELOW logo on mobile, beside it on desktop
+ * - Primary nav scales gracefully on small screens
  * ======================================================================== */
 
 .masthead-v316 {
   position: relative;
-  background: #0a0a0a;
+  background: var(--ink, #14110e);
   border-bottom: none;
   isolation: isolate;
   overflow: hidden;
@@ -6237,10 +6240,9 @@ a.leaders-sport-tab.active,
   position: absolute;
   inset: 0;
   background: radial-gradient(
-    ellipse 80% 60% at center top,
-    rgba(212, 175, 55, 0.08) 0%,
-    rgba(20, 17, 14, 0.4) 40%,
-    transparent 80%
+    ellipse 90% 70% at center top,
+    rgba(212, 175, 55, 0.07) 0%,
+    rgba(20, 17, 14, 0) 60%
   );
   pointer-events: none;
   z-index: 0;
@@ -6252,15 +6254,17 @@ a.leaders-sport-tab.active,
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  padding: 22px 0 0;
+  gap: 18px;
+  padding: 24px 16px 0;
 }
 
-/* ===== Logo row ===== */
+/* ===== Logo + tagline ===== */
+/* Mobile-first: stacked, centered */
 .masthead-v316-logo-row {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 6px;
   text-decoration: none;
   transition: opacity 0.18s;
 }
@@ -6271,27 +6275,27 @@ a.leaders-sport-tab.active,
 
 .masthead-v316-mark {
   display: block;
-  height: 60px;
+  height: 56px;
   width: auto;
 }
 
 .masthead-v316-tagline {
   font-family: var(--font-serif, Georgia, serif);
   font-style: italic;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--paper-faint, #6a6660);
   letter-spacing: 0.02em;
   white-space: nowrap;
-  align-self: center;
-  margin-top: 4px;
 }
 
 /* ===== Primary nav (Edges / Live Games / Picks) ===== */
 .masthead-v316-primary {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding-top: 4px;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 2px;
+  flex-wrap: wrap;
 }
 
 .primary-link {
@@ -6299,7 +6303,7 @@ a.leaders-sport-tab.active,
   align-items: center;
   gap: 7px;
   font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -6308,6 +6312,7 @@ a.leaders-sport-tab.active,
   padding: 8px 4px;
   position: relative;
   transition: color 0.18s;
+  white-space: nowrap;
 }
 
 .primary-link:hover {
@@ -6339,6 +6344,7 @@ a.leaders-sport-tab.active,
   font-size: 13px;
   line-height: 1;
 }
+
 .primary-link-count {
   display: inline-flex;
   align-items: center;
@@ -6380,7 +6386,7 @@ a.leaders-sport-tab.active,
 .primary-link-cta {
   background: var(--gold, #d4af37);
   color: var(--ink, #14110e);
-  padding: 9px 18px;
+  padding: 9px 16px;
   border-radius: 3px;
   letter-spacing: 0.14em;
   font-weight: 600;
@@ -6396,6 +6402,7 @@ a.leaders-sport-tab.active,
   width: 1px;
   height: 14px;
   background: rgba(212, 175, 55, 0.18);
+  display: none; /* hidden on mobile */
 }
 
 /* ===== Secondary nav (sport tabs + Leaders) ===== */
@@ -6403,24 +6410,26 @@ a.leaders-sport-tab.active,
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
+  gap: 14px;
   flex-wrap: wrap;
-  padding: 10px 0 12px;
+  padding: 12px 16px 14px;
   border-top: 0.5px solid rgba(212, 175, 55, 0.1);
   width: 100%;
+  margin-top: 4px;
 }
 
 .secondary-link {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   text-decoration: none;
   color: var(--paper-faint, #6a6660);
   padding: 4px 0;
   position: relative;
   transition: color 0.18s;
+  white-space: nowrap;
 }
 
 .secondary-link:hover {
@@ -6446,6 +6455,7 @@ a.leaders-sport-tab.active,
   color: rgba(212, 175, 55, 0.25);
   font-size: 10px;
   user-select: none;
+  display: none; /* hidden on mobile to reduce clutter */
 }
 
 /* ===== Bottom hairline ===== */
@@ -6459,52 +6469,77 @@ a.leaders-sport-tab.active,
   );
 }
 
-/* ===== HIDE OLD MASTHEAD CSS CONFLICTS =====
- * The old .masthead/.masthead-inner classes still exist in main.css.
- * Since we changed the class name to .masthead-v316, the old styles don't
- * apply to the new markup. No conflict. But if any wildcard nav rules
- * leak through, this scopes them away. */
-.masthead-v316 .nav-link {
-  /* In case any global nav-link rules try to apply */
+/* ============================================
+ * DESKTOP ENHANCEMENT — only when there's room
+ * ============================================ */
+@media (min-width: 720px) {
+  .masthead-v316-inner {
+    gap: 22px;
+    padding: 28px 24px 0;
+  }
+
+  .masthead-v316-logo-row {
+    flex-direction: row;
+    gap: 18px;
+  }
+
+  .masthead-v316-mark {
+    height: 64px;
+  }
+
+  .masthead-v316-tagline {
+    font-size: 12px;
+    align-self: center;
+    margin-top: 4px;
+  }
+
+  .masthead-v316-primary {
+    gap: 16px;
+  }
+
+  .primary-link {
+    font-size: 12px;
+    padding: 8px 4px;
+  }
+
+  .primary-link-cta {
+    padding: 9px 18px;
+  }
+
+  .primary-divider {
+    display: inline-block;
+  }
+
+  .masthead-v316-secondary {
+    gap: 18px;
+    padding: 14px 0 16px;
+  }
+
+  .secondary-dot {
+    display: inline;
+  }
 }
 
-/* ===== Mobile ===== */
-@media (max-width: 720px) {
+@media (min-width: 1024px) {
   .masthead-v316-inner {
-    padding: 18px 0 0;
-    gap: 12px;
+    gap: 24px;
+    padding: 32px 32px 0;
   }
+
   .masthead-v316-mark {
-    height: 48px;
+    height: 68px;
   }
+
   .masthead-v316-tagline {
-    display: none;
+    font-size: 13px;
   }
-  .masthead-v316-primary {
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
+
   .primary-link {
-    font-size: 11px;
-    padding: 6px 2px;
+    font-size: 12px;
   }
-  .primary-link-cta {
-    padding: 8px 14px;
-  }
-  .primary-divider {
-    display: none;
-  }
+
   .masthead-v316-secondary {
-    gap: 12px;
-    padding: 8px 0 10px;
-    font-size: 9px;
-  }
-  .secondary-link {
-    font-size: 9px;
-    letter-spacing: 0.14em;
-  }
-  .secondary-dot {
-    display: none;
+    gap: 22px;
+    padding: 14px 0 18px;
   }
 }
