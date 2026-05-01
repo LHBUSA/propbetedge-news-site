@@ -2,6 +2,12 @@
  * src/ads-config.js
  * ─────────────────────────────────────────────────────────────────────────
  * ALL ad slots and creatives defined here. Paywall-ready copy.
+ *
+ * v3.16: FTC ad disclosure on every paid placement
+ *        rel="sponsored" on all ad links (Google 2019 spec)
+ *        1-800-GAMBLER inline tag on sportsbook ads (state law)
+ *        Same-page frequency cap to prevent duplicate brand showings
+ *        Improved pickBrand fallback (random vs always-first)
  * ─────────────────────────────────────────────────────────────────────────
  */
 
@@ -142,15 +148,37 @@ export const BRAND_FAMILY = [
   },
 ];
 
-// Weighted random pick — PropBetEdge Pro shows ~4x more often than other brands
+// Same-page frequency cap — avoid showing the same brand back-to-back.
+// Module-level state persists across calls in the same render pass.
+let _lastBrandKey = null;
+
+// Weighted random pick — PropBetEdge Pro shows ~4x more often than other brands.
+// Skips the most recently shown brand to avoid duplicates on a single page.
 function pickBrand() {
-  const total = BRAND_FAMILY.reduce((s, b) => s + (b.weight || 1), 0);
+  const eligible = BRAND_FAMILY.filter((b) => b.key !== _lastBrandKey);
+  const pool = eligible.length ? eligible : BRAND_FAMILY;
+  const total = pool.reduce((s, b) => s + (b.weight || 1), 0);
   let r = Math.random() * total;
-  for (const brand of BRAND_FAMILY) {
+  for (const brand of pool) {
     r -= brand.weight || 1;
-    if (r <= 0) return brand;
+    if (r <= 0) {
+      _lastBrandKey = brand.key;
+      return brand;
+    }
   }
-  return BRAND_FAMILY[0];
+  // Safer fallback: random pick instead of always first brand
+  const fallback = pool[Math.floor(Math.random() * pool.length)];
+  _lastBrandKey = fallback.key;
+  return fallback;
+}
+
+// Reset the same-page frequency cap (useful for tests or per-request resets)
+export function resetAdRotation() {
+  _lastBrandKey = null;
+}
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -161,19 +189,18 @@ export function ad_brand_family(slotName = 'brand_slot') {
   const brand = pickBrand();
   const trackedHref = withUtm(brand.href, slotName, brand.key);
   return `
-    <a href="${trackedHref}" class="ad-block ad-brand-family ad-tone-${brand.tone}" target="_blank" rel="noopener">
-      <div class="ad-block-content">
-        <span class="ad-block-eyebrow">${brand.eyebrow}</span>
-        <h3 class="ad-block-headline">${brand.headline}</h3>
-        ${brand.sub ? `<p class="ad-block-sub">${brand.sub}</p>` : ''}
-        <span class="ad-block-cta">${brand.cta} →</span>
-      </div>
-    </a>
+    <div class="ad-wrapper" data-ad-slot="${slotName}" data-ad-brand="${brand.key}">
+      <span class="ad-disclosure">Advertisement</span>
+      <a href="${trackedHref}" class="ad-block ad-brand-family ad-tone-${brand.tone}" target="_blank" rel="noopener sponsored">
+        <div class="ad-block-content">
+          <span class="ad-block-eyebrow">${brand.eyebrow}</span>
+          <h3 class="ad-block-headline">${brand.headline}</h3>
+          ${brand.sub ? `<p class="ad-block-sub">${brand.sub}</p>` : ''}
+          <span class="ad-block-cta">${brand.cta} →</span>
+        </div>
+      </a>
+    </div>
   `;
-}
-
-function pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -231,7 +258,7 @@ export function ad_in_article_mid(articleContext = {}) {
       tone: 'sportsbook',
       eyebrow: 'Place this bet',
       headline: 'New users get a $200 bonus on their first bet',
-      sub: '21+ · T&Cs apply · See sportsbook for details',
+      sub: '21+ · T&Cs apply · See sportsbook for details · If you or someone you know has a gambling problem, call 1-800-GAMBLER',
       cta: 'Open DraftKings',
       href: AFFILIATE_LINKS.draftkings,
       sportsbook: 'DraftKings',
@@ -240,7 +267,7 @@ export function ad_in_article_mid(articleContext = {}) {
       tone: 'sportsbook',
       eyebrow: 'Bet this angle',
       headline: 'Get up to $1,000 in bonus bets — first bet covered',
-      sub: '21+ · T&Cs apply',
+      sub: '21+ · T&Cs apply · If you or someone you know has a gambling problem, call 1-800-GAMBLER',
       cta: 'Open FanDuel',
       href: AFFILIATE_LINKS.fanduel,
       sportsbook: 'FanDuel',
@@ -251,6 +278,7 @@ export function ad_in_article_mid(articleContext = {}) {
 
 // ═════════════════════════════════════════════════════════════════════════
 // SLOT: footer_banner — above main footer, sells across all sports + community
+// (House CTA, not paid advertising — so no disclosure needed)
 // ═════════════════════════════════════════════════════════════════════════
 export function ad_footer_banner() {
   return `
@@ -285,26 +313,36 @@ export function ad_footer_banner() {
 // ═════════════════════════════════════════════════════════════════════════
 
 function renderAdBanner({ tone, eyebrow, headline, cta, href }) {
+  const isExternal = href.startsWith('http');
   return `
-    <a href="${href}" class="ad-banner ad-tone-${tone}" target="${href.startsWith('http') ? '_blank' : '_self'}" rel="noopener">
-      <div class="ad-banner-inner">
-        <span class="ad-banner-eyebrow">${eyebrow}</span>
-        <span class="ad-banner-headline">${headline}</span>
-        <span class="ad-banner-cta">${cta} →</span>
-      </div>
-    </a>
+    <div class="ad-banner-wrapper" data-ad-slot="header_banner">
+      <span class="ad-disclosure ad-disclosure-banner">Advertisement</span>
+      <a href="${href}" class="ad-banner ad-tone-${tone}" target="${isExternal ? '_blank' : '_self'}" rel="noopener sponsored">
+        <div class="ad-banner-inner">
+          <span class="ad-banner-eyebrow">${eyebrow}</span>
+          <span class="ad-banner-headline">${headline}</span>
+          <span class="ad-banner-cta">${cta} →</span>
+        </div>
+      </a>
+    </div>
   `;
 }
 
 function renderAdBlock({ tone, eyebrow, headline, sub, cta, href, sportsbook }) {
+  const isExternal = href.startsWith('http');
+  const isSportsbook = tone === 'sportsbook';
+  const disclosureLabel = isSportsbook ? 'Advertisement · 21+' : 'Advertisement';
   return `
-    <a href="${href}" class="ad-block ad-tone-${tone}" target="${href.startsWith('http') ? '_blank' : '_self'}" rel="noopener${tone === 'sportsbook' ? ' sponsored' : ''}">
-      <div class="ad-block-content">
-        <span class="ad-block-eyebrow">${eyebrow}${sportsbook ? ` · Sponsored` : ''}</span>
-        <h3 class="ad-block-headline">${headline}</h3>
-        ${sub ? `<p class="ad-block-sub">${sub}</p>` : ''}
-        <span class="ad-block-cta">${cta} →</span>
-      </div>
-    </a>
+    <div class="ad-wrapper" data-ad-slot="mid_article"${sportsbook ? ` data-ad-sportsbook="${sportsbook}"` : ''}>
+      <span class="ad-disclosure">${disclosureLabel}</span>
+      <a href="${href}" class="ad-block ad-tone-${tone}" target="${isExternal ? '_blank' : '_self'}" rel="noopener sponsored">
+        <div class="ad-block-content">
+          <span class="ad-block-eyebrow">${eyebrow}${sportsbook ? ` · Sponsored` : ''}</span>
+          <h3 class="ad-block-headline">${headline}</h3>
+          ${sub ? `<p class="ad-block-sub">${sub}</p>` : ''}
+          <span class="ad-block-cta">${cta} →</span>
+        </div>
+      </a>
+    </div>
   `;
 }
