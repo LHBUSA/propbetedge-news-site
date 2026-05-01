@@ -3,8 +3,8 @@
  * ─────────────────────────────────────────────────────────────────────────
  * ALL ad slots and creatives defined here. Paywall-ready copy.
  *
- * v3.16: FTC ad disclosure on every paid placement
- *        rel="sponsored" on all ad links (Google 2019 spec)
+ * v3.16: Disclosure handled by existing CSS .ad-brand-family::before
+ *        rel="sponsored" added to ALL ad links (Google 2019 spec)
  *        1-800-GAMBLER inline tag on sportsbook ads (state law)
  *        Same-page frequency cap to prevent duplicate brand showings
  *        Improved pickBrand fallback (random vs always-first)
@@ -184,22 +184,20 @@ function pick(arr) {
 // ═════════════════════════════════════════════════════════════════════════
 // SLOT: brand_family — rotating cross-promo ad for any article position
 // Used after lead image, after take, end of article
+// Disclosure is rendered by CSS .ad-brand-family::before automatically
 // ═════════════════════════════════════════════════════════════════════════
 export function ad_brand_family(slotName = 'brand_slot') {
   const brand = pickBrand();
   const trackedHref = withUtm(brand.href, slotName, brand.key);
   return `
-    <div class="ad-wrapper" data-ad-slot="${slotName}" data-ad-brand="${brand.key}">
-      <span class="ad-disclosure">Advertisement</span>
-      <a href="${trackedHref}" class="ad-block ad-brand-family ad-tone-${brand.tone}" target="_blank" rel="noopener sponsored">
-        <div class="ad-block-content">
-          <span class="ad-block-eyebrow">${brand.eyebrow}</span>
-          <h3 class="ad-block-headline">${brand.headline}</h3>
-          ${brand.sub ? `<p class="ad-block-sub">${brand.sub}</p>` : ''}
-          <span class="ad-block-cta">${brand.cta} →</span>
-        </div>
-      </a>
-    </div>
+    <a href="${trackedHref}" class="ad-block ad-brand-family ad-tone-${brand.tone}" target="_blank" rel="noopener sponsored" data-ad-slot="${slotName}" data-ad-brand="${brand.key}">
+      <div class="ad-block-content">
+        <span class="ad-block-eyebrow">${brand.eyebrow}</span>
+        <h3 class="ad-block-headline">${brand.headline}</h3>
+        ${brand.sub ? `<p class="ad-block-sub">${brand.sub}</p>` : ''}
+        <span class="ad-block-cta">${brand.cta} →</span>
+      </div>
+    </a>
   `;
 }
 
@@ -315,34 +313,26 @@ export function ad_footer_banner() {
 function renderAdBanner({ tone, eyebrow, headline, cta, href }) {
   const isExternal = href.startsWith('http');
   return `
-    <div class="ad-banner-wrapper" data-ad-slot="header_banner">
-      <span class="ad-disclosure ad-disclosure-banner">Advertisement</span>
-      <a href="${href}" class="ad-banner ad-tone-${tone}" target="${isExternal ? '_blank' : '_self'}" rel="noopener sponsored">
-        <div class="ad-banner-inner">
-          <span class="ad-banner-eyebrow">${eyebrow}</span>
-          <span class="ad-banner-headline">${headline}</span>
-          <span class="ad-banner-cta">${cta} →</span>
-        </div>
-      </a>
-    </div>
+    <a href="${href}" class="ad-banner ad-tone-${tone}" target="${isExternal ? '_blank' : '_self'}" rel="noopener sponsored">
+      <div class="ad-banner-inner">
+        <span class="ad-banner-eyebrow">${eyebrow}</span>
+        <span class="ad-banner-headline">${headline}</span>
+        <span class="ad-banner-cta">${cta} →</span>
+      </div>
+    </a>
   `;
 }
 
 function renderAdBlock({ tone, eyebrow, headline, sub, cta, href, sportsbook }) {
   const isExternal = href.startsWith('http');
-  const isSportsbook = tone === 'sportsbook';
-  const disclosureLabel = isSportsbook ? 'Advertisement · 21+' : 'Advertisement';
   return `
-    <div class="ad-wrapper" data-ad-slot="mid_article"${sportsbook ? ` data-ad-sportsbook="${sportsbook}"` : ''}>
-      <span class="ad-disclosure">${disclosureLabel}</span>
-      <a href="${href}" class="ad-block ad-tone-${tone}" target="${isExternal ? '_blank' : '_self'}" rel="noopener sponsored">
-        <div class="ad-block-content">
-          <span class="ad-block-eyebrow">${eyebrow}${sportsbook ? ` · Sponsored` : ''}</span>
-          <h3 class="ad-block-headline">${headline}</h3>
-          ${sub ? `<p class="ad-block-sub">${sub}</p>` : ''}
-          <span class="ad-block-cta">${cta} →</span>
-        </div>
-      </a>
-    </div>
+    <a href="${href}" class="ad-block ad-tone-${tone}" target="${isExternal ? '_blank' : '_self'}" rel="noopener sponsored"${sportsbook ? ` data-ad-sportsbook="${sportsbook}"` : ''}>
+      <div class="ad-block-content">
+        <span class="ad-block-eyebrow">${eyebrow}${sportsbook ? ` · Sponsored` : ''}</span>
+        <h3 class="ad-block-headline">${headline}</h3>
+        ${sub ? `<p class="ad-block-sub">${sub}</p>` : ''}
+        <span class="ad-block-cta">${cta} →</span>
+      </div>
+    </a>
   `;
 }
