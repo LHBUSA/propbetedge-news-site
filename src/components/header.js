@@ -9,15 +9,15 @@
  *        Auto-fetches from PropSports API, refreshes every 60s.
  *        MLB tiles → /games/mlb/{id} (paywall funnel via game-detail page)
  *        NFL/NBA/NHL tiles → their respective subdomains.
+ * v3.16: 🆕 Added ⚡ Edges link → /odds (public +EV edge board, fed by EV Finder Worker)
  */
 import { ad_header_banner } from '../ads-config.js';
 import { renderScoreStripShell, mountScoreStrip } from './score-strip.js';
-
 export function renderHeader() {
   const path = window.location.pathname;
   const isLive    = path === '/games'   || path.startsWith('/games/');
   const isLeaders = path === '/leaders' || path.startsWith('/leaders/');
-
+  const isOdds    = path === '/odds';
   // Schedule the score-strip mount for the next tick — by then the header HTML
   // is in the DOM. Idempotent: mountScoreStrip() guards against double-wiring.
   // Using queueMicrotask so it fires before the next paint, no flash of empty rail.
@@ -28,7 +28,6 @@ export function renderHeader() {
       }
     });
   }
-
   return `
     ${renderScoreStripShell()}
     ${ad_header_banner()}
@@ -54,6 +53,7 @@ export function renderHeader() {
           <a href="/news/nhl" class="nav-link ${path.startsWith('/news/nhl') ? 'active' : ''}">NHL</a>
           <a href="/games" class="nav-link live-link ${isLive ? 'active' : ''}">Live Games</a>
           <a href="/leaders" class="nav-link ${isLeaders ? 'active' : ''}">Leaders</a>
+          <a href="/odds" class="nav-link edges-link ${isOdds ? 'active' : ''}">⚡ Edges</a>
           <a href="https://mlb.propbetedge.ai" class="nav-link cta">Picks →</a>
         </div>
       </div>
