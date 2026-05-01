@@ -1,6 +1,9 @@
 /**
  * src/router.js
  *
+ * v3.16 additions:
+ *   /odds                     → public +EV edge board (fed by EV Finder Worker)
+ *
  * v3.15 additions:
  *   /news/page/N              → paginated all-news
  *   /news/:sport/page/N       → paginated per-sport
@@ -27,6 +30,7 @@ import { renderMlbPlayerPage } from './pages/player-mlb.js';
 import { renderNhlPlayerPage } from './pages/player-nhl.js';
 import { renderNbaPlayerPage } from './pages/player-nba.js';
 import { renderNflPlayerPage } from './pages/player-nfl.js';
+import { renderOdds } from './pages/odds.js';
 
 const VALID_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl']);
 
@@ -79,6 +83,16 @@ function clearAndRoute() {
       canonical: 'https://propbetedge.ai/',
     });
     return renderHome(root);
+  }
+
+  // 🆕 v3.16 — /odds (public +EV edge board)
+  if (path === '/odds') {
+    setMeta({
+      title: "Today's +EV Edges — PropBetEdge",
+      description: 'Live MLB player prop edges where our Poisson model beats the book by 5%+. No paywall on today\'s edges. Updated every 15 minutes.',
+      canonical: 'https://propbetedge.ai/odds',
+    });
+    return renderOdds(root);
   }
 
   // 🆕 v3.15 — /news/page/N (paginated all-news)
