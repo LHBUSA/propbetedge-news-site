@@ -3,11 +3,11 @@
  * Public-facing edge board — the page Discord links to
  *
  * v3.16: Initial release
- *   - Reads from propbet-ev-finder /edges-today endpoint
+ *   - Reads from propbetedge-ev-finder /edges-today endpoint
  *   - Radical transparency: every edge fully visible, no paywall
  *   - Auto-refreshes every 60s
  *   - Sport-coded by tier (diamond/strong/solid)
- *   - SEO-optimized with JSON-LD SportsEvent + Offer schema
+ *   - SEO-optimized with JSON-LD ItemList + SportsEvent schema
  */
 
 import { renderHeader } from '../components/header.js';
@@ -17,7 +17,7 @@ import {
   organizationSchema, websiteSchema, breadcrumbSchema, injectSchemas,
 } from '../schema.js';
 
-const EV_FINDER_URL = 'https://propbet-ev-finder.sales-fd3.workers.dev/edges-today';
+const EV_FINDER_URL = 'https://propbetedge-ev-finder.sales-fd3.workers.dev/edges-today';
 const REFRESH_INTERVAL_MS = 60 * 1000; // refetch every 60s
 let _refreshTimer = null;
 
@@ -335,7 +335,7 @@ function renderSubscribeBlock() {
 function injectEdgeSchema(data) {
   if (!data.edges || !data.edges.length) return;
   // Inject ItemList of betting edges as schema.org for SEO.
-  // Each edge is a SportsEvent with a SportsTeam home/away and a player Person.
+  // Each edge is a SportsEvent with a player Person as competitor.
   const items = data.edges.slice(0, 8).map((edge, idx) => ({
     '@type': 'ListItem',
     position: idx + 1,
