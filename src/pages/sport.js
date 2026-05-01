@@ -2,6 +2,7 @@
  * src/pages/sport.js
  * Sport-section landing — like a magazine section front
  * v3.15: pagination added (?page=N), everything else unchanged
+ * v3.16: Hero article must be fresh (36h window) — fixes stale top story on section pages
  */
 
 import { api } from '../api.js';
@@ -172,11 +173,39 @@ function renderPagination(current, total) {
   `;
 }
 
+// v3.16: Hero must be both relevant AND fresh.
+// Look for the highest-impact article from the last 36 hours that has an image.
+// Fall back gracefully if no recent article qualifies.
 function pickLead(articles) {
+  const FRESH_WINDOW_MS = 36 * 60 * 60 * 1000; // 36 hours
+  const now = Date.now();
+
   const withImage = articles.filter((a) => a.image_url);
-  if (withImage.length) {
-    return withImage.sort((a, b) => (b.take?.impact_score || 0) - (a.take?.impact_score || 0))[0];
+
+  // Tier 1: Fresh articles (last 36h) with images, sorted by impact_score DESC,
+  // with published_at DESC as tiebreaker.
+  const fresh = withImage.filter((a) => {
+    if (!a.published_at) return false;
+    const age = now - new Date(a.published_at).getTime();
+    return age >= 0 && age <= FRESH_WINDOW_MS;
+  });
+
+  if (fresh.length) {
+    return fresh.sort((a, b) => {
+      const impactDiff = (b.take?.impact_score || 0) - (a.take?.impact_score || 0);
+      if (impactDiff !== 0) return impactDiff;
+      return new Date(b.published_at) - new Date(a.published_at);
+    })[0];
   }
+
+  // Tier 2: No fresh article with image — fall back to the freshest article with an image (any age).
+  if (withImage.length) {
+    return withImage.sort((a, b) =>
+      new Date(b.published_at) - new Date(a.published_at)
+    )[0];
+  }
+
+  // Tier 3: No images at all — take whatever the API sent first (already published_at DESC).
   return articles[0];
 }
 
