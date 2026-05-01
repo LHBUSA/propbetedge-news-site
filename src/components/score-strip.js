@@ -1,28 +1,26 @@
 /**
  * src/components/score-strip.js
- * ESPN bottom-line score strip — v3.2
+ * ESPN-elite score strip — v3.3
  *
- * v3.2 changes:
- *   - HIGH contrast text — all muted grays bumped brighter for readability
- *     (#94a3b8 → #cbd5e1, #64748b → #94a3b8, etc.)
- *   - DATE FILTER: only show games where gameDate is today (ET) OR upcoming
- *     within the next 36 hours. No more stale NFL games from yesterday.
- *   - Added text-rendering: optimizeLegibility for crisp small text
- *   - Added font-feature-settings to disable ligatures (sharper digits)
+ * v3.3 changes:
+ *   - TEAM LOGOS rendered beside team names (ESPN bottom-line pattern)
+ *   - Strip taller: 80px mobile, 70px desktop (was 64/56) for proper breathing room
+ *   - Scroll direction REVERSED — content moves left-to-right naturally
+ *     (appears on right, departs on left, matches reading flow)
+ *   - ADAPTIVE polling — 15s when live games present, 60s when none live
+ *   - Score-change FLASH — tiles briefly highlight gold when their data updates
+ *   - Logo fallback letters when image fails to load
+ *   - More tile breathing room (4 rows + logos need it)
  *
- * v3.1: Wider tiles, strict overflow control, no clipping
- * v3:   Tiered detail per tile, faster mobile scroll, ESPN bottom-line
- *
- * Tile click routing:
- *   • MLB → /games/mlb/{gameId}
- *   • NBA / NHL / NFL → nba/nhl/nfl.propbetedge.ai
+ * v3.2: High contrast, date filter for relevance
+ * v3.1: Wider tiles, overflow control
+ * v3:   Tiered detail, faster mobile scroll, ESPN bottom-line foundation
  */
 
-const REFRESH_MS = 60_000;
+const REFRESH_LIVE_MS = 15_000; // 15s when live games present
+const REFRESH_IDLE_MS = 60_000; // 60s when nothing live
 
-// 36 hour upcoming window — covers tonight + tomorrow's day games
 const UPCOMING_WINDOW_MS = 36 * 60 * 60 * 1000;
-// 6 hour past window — keep just-finished games visible briefly
 const RECENT_FINAL_WINDOW_MS = 6 * 60 * 60 * 1000;
 
 const SPORT_TARGETS = {
@@ -52,22 +50,23 @@ const HIDDEN_SPORTS = new Set();
 
 let _activeFilter = 'all';
 let _games = [];
+let _gameSnapshot = new Map(); // gameId → JSON.stringify(g) for change detection
 let _refreshTimer = null;
 
 /* ─────────────────────────────────────────────────────────────────────────
- * STYLES — HIGH CONTRAST
+ * STYLES
  * ────────────────────────────────────────────────────────────────────────*/
 function injectStyles() {
   if (document.getElementById('pbe-score-strip-styles')) return;
   const s = document.createElement('style');
   s.id = 'pbe-score-strip-styles';
   s.textContent = `
-    /* Mobile baseline */
+    /* Mobile baseline — 80px tall for proper breathing room */
     #pbe-score-strip {
       position: sticky;
       top: 0;
       z-index: 100;
-      height: 64px;
+      height: 80px;
       background: linear-gradient(180deg, #0a0f1a 0%, #0f1626 100%);
       border-bottom: 1px solid rgba(255, 210, 74, 0.18);
       box-shadow: 0 2px 14px rgba(0, 0, 0, 0.35);
@@ -83,7 +82,7 @@ function injectStyles() {
       contain: layout style;
     }
 
-    /* Filter chips — high contrast */
+    /* Filter chips */
     .pss-filter {
       flex-shrink: 0;
       display: flex;
@@ -119,7 +118,7 @@ function injectStyles() {
       color: #ffd24a;
     }
 
-    /* Date stamp — bumped contrast */
+    /* Date stamp */
     .pss-date {
       display: none;
       flex-shrink: 0;
@@ -146,7 +145,7 @@ function injectStyles() {
       50% { opacity: 0.55; }
     }
 
-    /* Rail */
+    /* Rail wrap */
     .pss-rail-wrap {
       flex: 1;
       overflow-x: auto;
@@ -164,7 +163,7 @@ function injectStyles() {
       height: 100%;
     }
 
-    /* Marquee */
+    /* Marquee — REVERSED direction (left to right) */
     .pss-rail.pss-marquee-on {
       animation: pss-marquee 30s linear infinite;
       width: max-content;
@@ -175,8 +174,8 @@ function injectStyles() {
       animation-play-state: paused;
     }
     @keyframes pss-marquee {
-      from { transform: translateX(0); }
-      to   { transform: translateX(-50%); }
+      from { transform: translateX(-50%); }
+      to   { transform: translateX(0); }
     }
     @media (prefers-reduced-motion: reduce) {
       .pss-rail.pss-marquee-on { animation: none; }
@@ -188,8 +187,8 @@ function injectStyles() {
       display: flex;
       flex-direction: column;
       justify-content: center;
-      gap: 1px;
-      padding: 6px 14px 6px 14px;
+      gap: 2px;
+      padding: 8px 14px;
       height: 100%;
       border-right: 1px solid rgba(255, 255, 255, 0.06);
       text-decoration: none;
@@ -197,13 +196,23 @@ function injectStyles() {
       transition: background 0.15s ease;
       cursor: pointer;
       position: relative;
-      width: 230px;
-      min-width: 230px;
-      max-width: 230px;
+      width: 250px;
+      min-width: 250px;
+      max-width: 250px;
       box-sizing: border-box;
       overflow: hidden;
     }
     .pss-tile:hover { background: rgba(255, 255, 255, 0.05); }
+
+    /* Score-change flash */
+    .pss-tile.pss-tile-updated {
+      animation: pss-tile-flash 1.6s ease-out;
+    }
+    @keyframes pss-tile-flash {
+      0%   { background: rgba(255, 210, 74, 0.18); }
+      40%  { background: rgba(255, 210, 74, 0.08); }
+      100% { background: transparent; }
+    }
 
     .pss-tile-accent {
       position: absolute;
@@ -212,11 +221,11 @@ function injectStyles() {
       height: 100%;
     }
 
-    /* Sport badge — top-right, brighter */
+    /* Sport badge — top-right */
     .pss-sport-tag {
       position: absolute;
-      top: 5px;
-      right: 6px;
+      top: 6px;
+      right: 8px;
       font-size: 8px;
       font-weight: 800;
       letter-spacing: 0.08em;
@@ -225,7 +234,7 @@ function injectStyles() {
       pointer-events: none;
     }
 
-    /* Status pill — high contrast */
+    /* Status pill INLINE */
     .pss-status-inline {
       font-size: 8.5px;
       font-weight: 800;
@@ -255,7 +264,7 @@ function injectStyles() {
       background: rgba(148, 163, 184, 0.18);
     }
 
-    /* Top line — higher contrast */
+    /* Top line */
     .pss-tile-top {
       display: flex;
       align-items: center;
@@ -269,7 +278,8 @@ function injectStyles() {
       text-overflow: ellipsis;
       width: 100%;
       max-width: 100%;
-      padding-right: 28px;
+      padding-right: 32px;
+      margin-bottom: 1px;
     }
     .pss-tile-top > span {
       overflow: hidden;
@@ -277,17 +287,47 @@ function injectStyles() {
       white-space: nowrap;
     }
 
-    /* Team rows — bright white */
+    /* Team rows — with logos */
     .pss-team-row {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
       gap: 6px;
-      font-size: 12px;
+      font-size: 12.5px;
       line-height: 1.2;
       width: 100%;
       max-width: 100%;
       overflow: hidden;
+    }
+    .pss-team-id {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+    }
+    .pss-team-logo {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      object-fit: contain;
+      background: transparent;
+    }
+    .pss-team-logo-placeholder {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: rgba(148, 163, 184, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 7px;
+      font-weight: 800;
+      color: #cbd5e1;
+      letter-spacing: 0;
+      font-variant-numeric: tabular-nums;
     }
     .pss-team-name {
       font-weight: 700;
@@ -297,7 +337,6 @@ function injectStyles() {
       text-overflow: ellipsis;
       letter-spacing: 0.02em;
       font-variant-numeric: tabular-nums;
-      flex: 1;
       min-width: 0;
     }
     .pss-team-record {
@@ -306,22 +345,24 @@ function injectStyles() {
       font-size: 9.5px;
       margin-left: 4px;
       font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
     }
     .pss-team-row.winner .pss-team-name { color: #ffd24a; font-weight: 800; }
     .pss-team-row.winner .pss-team-score { color: #ffd24a; font-weight: 800; }
     .pss-team-row.loser .pss-team-name { color: #94a3b8; }
     .pss-team-row.loser .pss-team-score { color: #94a3b8; }
+    .pss-team-row.loser .pss-team-logo { opacity: 0.55; }
     .pss-team-score {
-      font-weight: 700;
+      font-weight: 800;
       color: #ffffff;
       font-variant-numeric: tabular-nums;
       min-width: 22px;
       text-align: right;
-      font-size: 13px;
+      font-size: 14px;
       flex-shrink: 0;
     }
 
-    /* Bottom meta — brighter */
+    /* Bottom meta */
     .pss-tile-bottom {
       display: flex;
       align-items: center;
@@ -335,19 +376,12 @@ function injectStyles() {
       text-overflow: ellipsis;
       width: 100%;
       max-width: 100%;
-      margin-top: 2px;
+      margin-top: 3px;
     }
     .pss-tile-bottom > span {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-    }
-    .pss-tile-bottom .pss-net {
-      color: #ffd24a;
-      font-weight: 700;
-      font-size: 8.5px;
-      letter-spacing: 0.06em;
-      flex-shrink: 0;
     }
     .pss-tile-bottom .pss-divider {
       color: rgba(148, 163, 184, 0.5);
@@ -386,35 +420,40 @@ function injectStyles() {
       z-index: 2;
     }
 
-    /* Breakpoints */
+    /* ── 480px+ ───────────────────────────────────────────────────── */
     @media (min-width: 480px) {
-      .pss-tile { width: 250px; min-width: 250px; max-width: 250px; padding: 6px 16px; }
-      .pss-team-name { font-size: 12.5px; }
-      .pss-team-score { font-size: 13.5px; }
+      .pss-tile { width: 270px; min-width: 270px; max-width: 270px; padding: 8px 16px; }
+      .pss-team-name { font-size: 13px; }
+      .pss-team-score { font-size: 14.5px; }
+      .pss-team-logo, .pss-team-logo-placeholder { width: 20px; height: 20px; }
     }
 
+    /* ── 700px+ ───────────────────────────────────────────────────── */
     @media (min-width: 700px) {
-      #pbe-score-strip { height: 60px; }
+      #pbe-score-strip { height: 70px; }
       .pss-date { display: flex; }
-      .pss-tile { width: 270px; min-width: 270px; max-width: 270px; padding: 7px 18px; }
-      .pss-team-row { font-size: 13px; }
-      .pss-team-score { font-size: 14px; }
-      .pss-tile-top { font-size: 10px; padding-right: 32px; }
+      .pss-tile { width: 290px; min-width: 290px; max-width: 290px; padding: 8px 18px; }
+      .pss-team-row { font-size: 13.5px; }
+      .pss-team-score { font-size: 15px; }
+      .pss-tile-top { font-size: 10px; padding-right: 36px; }
       .pss-tile-bottom { font-size: 9.5px; }
+      .pss-team-logo, .pss-team-logo-placeholder { width: 22px; height: 22px; }
       .pss-filter-btn { padding: 4px 9px; font-size: 10px; letter-spacing: 0.06em; }
       .pss-filter { padding: 0 10px; gap: 3px; }
       .pss-rail.pss-marquee-on { animation-duration: 45s; }
     }
 
+    /* ── 1024px+ ──────────────────────────────────────────────────── */
     @media (min-width: 1024px) {
-      #pbe-score-strip { height: 56px; }
-      .pss-tile { width: 290px; min-width: 290px; max-width: 290px; }
+      #pbe-score-strip { height: 70px; }
+      .pss-tile { width: 310px; min-width: 310px; max-width: 310px; }
       .pss-rail.pss-marquee-on { animation-duration: 60s; }
     }
 
     @media (prefers-reduced-motion: reduce) {
       .pss-status-inline.live, .pss-date .pss-live-dot { animation: none; }
       .pss-rail-wrap { scroll-behavior: auto; }
+      .pss-tile.pss-tile-updated { animation: none; }
     }
   `;
   document.head.appendChild(s);
@@ -459,42 +498,44 @@ function buildPitcherLine(g) {
   return `${away} vs ${home}`;
 }
 
-/**
- * v3.2 — Filter to relevant games only.
- * Keep:
- *   - All live games (any sport)
- *   - Pre-game scheduled within the next 36 hours
- *   - Just-finished games within the last 6 hours (so a "FINAL" tile
- *     stays visible briefly after game ends, gives users continuity)
- * Drop:
- *   - Stale finals from yesterday or earlier
- *   - Games scheduled more than 36 hours out (tomorrow night NFL etc.
- *     when current focus is today)
- */
 function isRelevantGame(g) {
   if (g.state === 'live') return true;
-  if (!g.gameDate) {
-    // No date info — only keep if live, drop everything else as a safety
-    return false;
-  }
+  if (!g.gameDate) return false;
   const gameTime = new Date(g.gameDate).getTime();
   if (isNaN(gameTime)) return false;
   const now = Date.now();
   if (g.state === 'pre') {
-    // Keep if within 36h upcoming AND not in the past
     return gameTime > now - 30 * 60 * 1000 && gameTime < now + UPCOMING_WINDOW_MS;
   }
   if (g.state === 'final') {
-    // Keep if finished within last 6 hours
     return gameTime > now - RECENT_FINAL_WINDOW_MS - 6 * 60 * 60 * 1000;
   }
   return true;
 }
 
+function teamLogoHTML(team, sport) {
+  if (team.logo) {
+    return `<img class="pss-team-logo" src="${escape(team.logo)}" alt="${escape(team.abbr || team.name || '')}" loading="lazy" onerror="this.outerHTML='<div class=\\'pss-team-logo-placeholder\\'>${escape((team.abbr || '').slice(0,3))}</div>'" />`;
+  }
+  // Fallback: 2-3 letter abbreviation in a circle
+  const letters = (team.abbr || team.name || '?').slice(0, 3).toUpperCase();
+  return `<div class="pss-team-logo-placeholder">${escape(letters)}</div>`;
+}
+
+function gameSignature(g) {
+  // Used for change detection — only fields we care about
+  return JSON.stringify({
+    state: g.state,
+    statusText: g.statusText,
+    awayScore: g.away?.score,
+    homeScore: g.home?.score,
+  });
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
  * TILE HTML
  * ────────────────────────────────────────────────────────────────────────*/
-function tileHTML(g) {
+function tileHTML(g, isUpdated) {
   const accent = SPORT_ACCENTS[g.sport] || '#94a3b8';
   const target = SPORT_TARGETS[g.sport] || {};
   const sportTag = SPORT_BADGE[g.sport] || '';
@@ -543,8 +584,12 @@ function tileHTML(g) {
     bottomLine = `<span class="pss-cta-mini ${ctaCls}">${escape(ctaText)}</span>`;
   }
 
+  const tileClasses = ['pss-tile'];
+  if (isUpdated) tileClasses.push('pss-tile-updated');
+
   return `
-    <a class="pss-tile" href="${escape(tileHref(g))}" data-sport="${g.sport}"
+    <a class="${tileClasses.join(' ')}" href="${escape(tileHref(g))}" data-sport="${g.sport}"
+       data-game-id="${escape(String(g.gameId || ''))}"
        title="${escape(tileTitle(g))}">
       <span class="pss-tile-accent" style="background:${accent}"></span>
       <span class="pss-sport-tag">${escape(sportTag)}</span>
@@ -552,15 +597,21 @@ function tileHTML(g) {
       <div class="pss-tile-top">${topLine}</div>
 
       <div class="pss-team-row${awayWin ? ' winner' : ''}${awayLose ? ' loser' : ''}">
-        <span class="pss-team-name">
-          ${escape(awayDisplay)}${g.away.record ? `<span class="pss-team-record">${escape(g.away.record)}</span>` : ''}
+        <span class="pss-team-id">
+          ${teamLogoHTML(g.away, g.sport)}
+          <span class="pss-team-name">
+            ${escape(awayDisplay)}${g.away.record ? `<span class="pss-team-record">${escape(g.away.record)}</span>` : ''}
+          </span>
         </span>
         ${showScores ? `<span class="pss-team-score">${escape(g.away.score ?? '')}</span>` : ''}
       </div>
 
       <div class="pss-team-row${homeWin ? ' winner' : ''}${homeLose ? ' loser' : ''}">
-        <span class="pss-team-name">
-          ${escape(homeDisplay)}${g.home.record ? `<span class="pss-team-record">${escape(g.home.record)}</span>` : ''}
+        <span class="pss-team-id">
+          ${teamLogoHTML(g.home, g.sport)}
+          <span class="pss-team-name">
+            ${escape(homeDisplay)}${g.home.record ? `<span class="pss-team-record">${escape(g.home.record)}</span>` : ''}
+          </span>
         </span>
         ${showScores ? `<span class="pss-team-score">${escape(g.home.score ?? '')}</span>` : ''}
       </div>
@@ -577,7 +628,6 @@ function paint() {
   const railEl = document.getElementById('pss-rail');
   if (!railEl) return;
 
-  // v3.2 — apply relevance filter before sport filter
   const relevant = _games.filter(isRelevantGame);
 
   const filtered = _activeFilter === 'all'
@@ -602,7 +652,20 @@ function paint() {
     return;
   }
 
-  const tiles = ordered.map(tileHTML).join('');
+  // Detect which games changed since last paint for flash effect
+  const newSnapshot = new Map();
+  const updatedGameIds = new Set();
+  for (const g of ordered) {
+    const sig = gameSignature(g);
+    const id = String(g.gameId || '');
+    newSnapshot.set(id, sig);
+    if (id && _gameSnapshot.has(id) && _gameSnapshot.get(id) !== sig) {
+      updatedGameIds.add(id);
+    }
+  }
+  _gameSnapshot = newSnapshot;
+
+  const tiles = ordered.map(g => tileHTML(g, updatedGameIds.has(String(g.gameId || '')))).join('');
 
   railEl.classList.remove('pss-marquee-on');
   railEl.innerHTML = tiles;
@@ -612,6 +675,8 @@ function paint() {
     if (!wrap) return;
     const overflows = railEl.scrollWidth > wrap.clientWidth + 4;
     if (overflows) {
+      // For reversed scroll: duplicate tiles AT THE BEGINNING so animation
+      // from translateX(-50%) → translateX(0) shows continuous content
       railEl.innerHTML = tiles + tiles;
       railEl.classList.add('pss-marquee-on');
     }
@@ -622,6 +687,23 @@ function paintFilters() {
   document.querySelectorAll('.pss-filter-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.filter === _activeFilter);
   });
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * ADAPTIVE POLLING — 15s when live, 60s when idle
+ * ────────────────────────────────────────────────────────────────────────*/
+function determineRefreshInterval() {
+  const hasLive = _games.some(g => g.state === 'live');
+  return hasLive ? REFRESH_LIVE_MS : REFRESH_IDLE_MS;
+}
+
+function scheduleNextRefresh() {
+  if (_refreshTimer) clearTimeout(_refreshTimer);
+  const interval = determineRefreshInterval();
+  _refreshTimer = setTimeout(async () => {
+    await loadAndPaint();
+    scheduleNextRefresh();
+  }, interval);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -672,9 +754,7 @@ export async function mountScoreStrip() {
   }
 
   await loadAndPaint();
-
-  if (_refreshTimer) clearInterval(_refreshTimer);
-  _refreshTimer = setInterval(loadAndPaint, REFRESH_MS);
+  scheduleNextRefresh();
 }
 
 async function loadAndPaint() {
@@ -695,5 +775,5 @@ async function loadAndPaint() {
 }
 
 export function unmountScoreStrip() {
-  if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
+  if (_refreshTimer) { clearTimeout(_refreshTimer); _refreshTimer = null; }
 }
