@@ -1,31 +1,22 @@
 /**
  * src/components/score-strip.js
- * ESPN-elite score strip — v3.5
+ * ESPN-elite score strip — v3.6
  *
- * v3.5 — SCROLL GLITCH FIX:
- *   The previous versions rebuilt the entire rail HTML on every poll cycle
- *   (every 15s when live games exist), which restarted the CSS marquee
- *   animation from position 0. That caused the visible "snap-back" glitch.
+ * v3.6 — MOBILE FIXES:
  *
- *   v3.5 separates two cases:
+ *   1. SCROLL SPEED: mobile marquee 30s → 18s. Felt glacial before. The
+ *      strip now actually scrolls visibly fast on phones. Desktop unchanged
+ *      (45s at 700px+, 60s at 1024px+).
  *
- *   FULL REBUILD (rare): set of games changed — new game added, game removed
- *   from relevance window, sport filter changed. Rebuilds DOM. Marquee
- *   restarts (acceptable since the content set actually changed).
+ *   2. FILTER COMPACT MODE: at <700px the All/MLB/NBA/NHL/NFL row of
+ *      buttons was eating ~140px of horizontal space — half a tile width
+ *      on a 380px phone. Now it's a single 56px-wide pill that opens a
+ *      vertical dropdown when tapped. Saves ~85px for actual scores.
+ *      Above 700px the original button row shows again. Desktop unchanged.
  *
- *   IN-PLACE UPDATE (common): same games, just score/state changes. Finds
- *   each tile by data-game-id and updates ONLY the score/state nodes inside.
- *   No DOM rebuild. Marquee keeps scrolling smoothly. Score-change flash
- *   triggered by toggling a class.
- *
- *   Result: the strip scrolls forever without snapping, scores update live,
- *   tiles flash gold when their data changes.
- *
- * v3.4: Strip height bumped to 88/76, proper padding
- * v3.3: Team logos, reversed scroll, adaptive polling, score flash
- * v3.2: High contrast, date filter
- * v3.1: Wider tiles, overflow control
- * v3:   Tiered detail, ESPN bottom-line foundation
+ * v3.5: scroll glitch fix via in-place tile updates
+ * v3.4: strip height bumped to 88/76, proper padding
+ * v3.3: team logos, reversed scroll, adaptive polling, score flash
  */
 
 const REFRESH_LIVE_MS = 15_000;
@@ -63,12 +54,10 @@ let _activeFilter = 'all';
 let _games = [];
 let _gameSnapshot = new Map();
 let _refreshTimer = null;
-// v3.5: track which IDs are currently in the rendered DOM so we can decide
-// rebuild vs in-place update on each poll cycle.
 let _renderedGameIds = new Set();
 
 /* ─────────────────────────────────────────────────────────────────────────
- * STYLES — same as v3.4
+ * STYLES
  * ────────────────────────────────────────────────────────────────────────*/
 function injectStyles() {
   if (document.getElementById('pbe-score-strip-styles')) return;
@@ -87,7 +76,7 @@ function injectStyles() {
       align-items: stretch;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       color: #f8fafc;
-      overflow: hidden;
+      overflow: visible;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       text-rendering: optimizeLegibility;
@@ -95,15 +84,72 @@ function injectStyles() {
       contain: layout style;
     }
 
+    /* === MOBILE FILTER: compact pill that opens a dropdown === */
     .pss-filter {
       flex-shrink: 0;
       display: flex;
       align-items: center;
       padding: 0 6px;
-      gap: 2px;
       border-right: 1px solid rgba(255, 255, 255, 0.08);
       background: rgba(0, 0, 0, 0.35);
+      position: relative;
     }
+    .pss-filter-row {
+      /* Mobile: hidden — only the trigger pill shows */
+      display: none;
+      gap: 2px;
+    }
+    .pss-filter-trigger {
+      /* Mobile: the only thing visible */
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 210, 74, 0.18);
+      border: 1px solid rgba(255, 210, 74, 0.5);
+      color: #ffd24a;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 5px 8px 5px 9px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+      line-height: 1;
+      min-width: 56px;
+      justify-content: center;
+    }
+    .pss-filter-trigger::after {
+      content: '▾';
+      font-size: 8px;
+      opacity: 0.7;
+    }
+    .pss-filter-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 4px;
+      margin-top: 4px;
+      background: #0f1626;
+      border: 1px solid rgba(255, 210, 74, 0.3);
+      border-radius: 6px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+      padding: 4px;
+      z-index: 200;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 80px;
+    }
+    .pss-filter-dropdown.open {
+      display: flex;
+    }
+    .pss-filter-dropdown .pss-filter-btn {
+      width: 100%;
+      text-align: center;
+    }
+
     .pss-filter-btn {
       background: transparent;
       border: 1px solid rgba(203, 213, 225, 0.2);
@@ -173,8 +219,9 @@ function injectStyles() {
       height: 100%;
     }
 
+    /* === MOBILE SCROLL SPEED — 18s (was 30s) === */
     .pss-rail.pss-marquee-on {
-      animation: pss-marquee 30s linear infinite;
+      animation: pss-marquee 18s linear infinite;
       width: max-content;
     }
     .pss-rail-wrap:hover .pss-rail.pss-marquee-on,
@@ -256,20 +303,13 @@ function injectStyles() {
       margin-right: 4px;
       line-height: 1;
     }
-    .pss-status-inline.pre   {
-      color: #cbd5e1;
-      background: transparent;
-      padding: 0;
-    }
+    .pss-status-inline.pre   { color: #cbd5e1; background: transparent; padding: 0; }
     .pss-status-inline.live  {
       color: #ffffff;
       background: rgba(239, 68, 68, 0.95);
       animation: pss-pulse 1.6s ease-in-out infinite;
     }
-    .pss-status-inline.final {
-      color: #cbd5e1;
-      background: rgba(148, 163, 184, 0.18);
-    }
+    .pss-status-inline.final { color: #cbd5e1; background: rgba(148, 163, 184, 0.18); }
 
     .pss-tile-top {
       display: flex;
@@ -394,10 +434,7 @@ function injectStyles() {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-    .pss-tile-bottom .pss-divider {
-      color: rgba(148, 163, 184, 0.5);
-      flex-shrink: 0;
-    }
+    .pss-tile-bottom .pss-divider { color: rgba(148, 163, 184, 0.5); flex-shrink: 0; }
     .pss-tile-bottom .pss-cta-mini {
       color: #ffd24a;
       font-weight: 800;
@@ -406,9 +443,7 @@ function injectStyles() {
       text-transform: uppercase;
       flex-shrink: 0;
     }
-    .pss-tile-bottom .pss-cta-mini.soon {
-      color: #94a3b8;
-    }
+    .pss-tile-bottom .pss-cta-mini.soon { color: #94a3b8; }
 
     .pss-empty {
       display: flex;
@@ -431,6 +466,7 @@ function injectStyles() {
       z-index: 2;
     }
 
+    /* ── 480px+ ───────────────────────────────────────────────────── */
     @media (min-width: 480px) {
       .pss-tile { width: 270px; min-width: 270px; max-width: 270px; padding: 10px 16px 12px; }
       .pss-team-name { font-size: 13px; }
@@ -439,9 +475,20 @@ function injectStyles() {
       .pss-team-row { min-height: 20px; }
     }
 
+    /* ── 700px+ : EXPANDED FILTER ROW + slower scroll ─────────────── */
     @media (min-width: 700px) {
       #pbe-score-strip { height: 76px; }
       .pss-date { display: flex; }
+
+      /* Hide the mobile trigger, show the full row */
+      .pss-filter-trigger { display: none; }
+      .pss-filter-dropdown { display: none !important; }
+      .pss-filter-row {
+        display: flex;
+        gap: 3px;
+      }
+      .pss-filter { padding: 0 10px; }
+
       .pss-tile { width: 290px; min-width: 290px; max-width: 290px; padding: 9px 18px 11px; }
       .pss-team-row { font-size: 13.5px; min-height: 22px; }
       .pss-team-score { font-size: 15px; }
@@ -449,10 +496,10 @@ function injectStyles() {
       .pss-tile-bottom { font-size: 9.5px; }
       .pss-team-logo, .pss-team-logo-placeholder { width: 22px; height: 22px; }
       .pss-filter-btn { padding: 4px 9px; font-size: 10px; letter-spacing: 0.06em; }
-      .pss-filter { padding: 0 10px; gap: 3px; }
       .pss-rail.pss-marquee-on { animation-duration: 45s; }
     }
 
+    /* ── 1024px+ ──────────────────────────────────────────────────── */
     @media (min-width: 1024px) {
       #pbe-score-strip { height: 76px; }
       .pss-tile { width: 310px; min-width: 310px; max-width: 310px; }
@@ -581,7 +628,7 @@ function renderTopLine(g) {
   }
 }
 
-function renderTeamRow(g, side /* 'away' | 'home' */) {
+function renderTeamRow(g, side) {
   const me = g[side];
   const them = g[side === 'away' ? 'home' : 'away'];
   const meScoreShown = me.score !== '' && me.score !== null && me.score !== undefined;
@@ -619,19 +666,14 @@ function renderBottomLine(g, ctaText, ctaCls) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
- * IN-PLACE TILE UPDATE — v3.5 — no DOM rebuild, no scroll snap
- *
- * Updates only the live data on an existing tile element.
- * Triggers the gold flash if data actually changed.
+ * IN-PLACE TILE UPDATE — preserves marquee animation
  * ────────────────────────────────────────────────────────────────────────*/
 function updateTileInPlace(tileEl, g) {
   if (!tileEl) return;
 
-  // 1. Top line (status + state text)
   const topEl = tileEl.querySelector('.pss-tile-top');
   if (topEl) topEl.innerHTML = renderTopLine(g);
 
-  // 2. Team rows — only the score cell + winner/loser class change
   ['away', 'home'].forEach(side => {
     const rowEl = tileEl.querySelector(`.pss-team-row[data-side="${side}"]`);
     if (!rowEl) return;
@@ -660,7 +702,6 @@ function updateTileInPlace(tileEl, g) {
     }
   });
 
-  // 3. Bottom line — refresh CTA and pitcher line in case state changed
   const target = SPORT_TARGETS[g.sport] || {};
   const ctaText = target.live ? 'Picks live' : 'Free access';
   const ctaCls = target.live ? '' : 'soon';
@@ -670,7 +711,6 @@ function updateTileInPlace(tileEl, g) {
 
 function flashTile(tileEl) {
   if (!tileEl) return;
-  // Force reflow so re-applying the class re-triggers the animation
   tileEl.classList.remove('pss-tile-updated');
   void tileEl.offsetWidth;
   tileEl.classList.add('pss-tile-updated');
@@ -708,24 +748,21 @@ function paint() {
     return;
   }
 
-  // === v3.5 KEY DECISION: rebuild or in-place update? ===
   const newIds = new Set(ordered.map(g => String(g.gameId || '')));
   const sameSet = newIds.size === _renderedGameIds.size
     && [...newIds].every(id => _renderedGameIds.has(id));
 
   if (sameSet && railEl.querySelector('.pss-tile')) {
-    // === IN-PLACE UPDATE PATH — no DOM rebuild, marquee keeps scrolling ===
+    // IN-PLACE UPDATE — marquee keeps scrolling
     const newSnapshot = new Map();
     for (const g of ordered) {
       const id = String(g.gameId || '');
       const sig = gameSignature(g);
       newSnapshot.set(id, sig);
 
-      // Update ALL DOM nodes with this game id (rail is duplicated for marquee)
       const tiles = railEl.querySelectorAll(`.pss-tile[data-game-id="${CSS.escape(id)}"]`);
       tiles.forEach(tileEl => {
         updateTileInPlace(tileEl, g);
-        // Flash if data actually changed
         if (_gameSnapshot.has(id) && _gameSnapshot.get(id) !== sig) {
           flashTile(tileEl);
         }
@@ -735,12 +772,11 @@ function paint() {
     return;
   }
 
-  // === FULL REBUILD PATH — set of games changed ===
+  // FULL REBUILD — set of games changed
   const tiles = ordered.map(tileHTML).join('');
   railEl.classList.remove('pss-marquee-on');
   railEl.innerHTML = tiles;
 
-  // Update tracking maps
   _renderedGameIds = newIds;
   const newSnapshot = new Map();
   for (const g of ordered) {
@@ -753,7 +789,6 @@ function paint() {
     if (!wrap) return;
     const overflows = railEl.scrollWidth > wrap.clientWidth + 4;
     if (overflows) {
-      // Duplicate tiles for seamless marquee loop
       railEl.innerHTML = tiles + tiles;
       railEl.classList.add('pss-marquee-on');
     }
@@ -764,6 +799,11 @@ function paintFilters() {
   document.querySelectorAll('.pss-filter-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.filter === _activeFilter);
   });
+  // Update mobile trigger label
+  const trigger = document.querySelector('.pss-filter-trigger');
+  if (trigger) {
+    trigger.firstChild.nodeValue = _activeFilter === 'all' ? 'All' : _activeFilter.toUpperCase();
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -797,9 +837,15 @@ export function renderScoreStripShell() {
     return `<button class="${cls}" data-filter="${sp}" type="button">${label}</button>`;
   }).join('');
 
+  const triggerLabel = _activeFilter === 'all' ? 'All' : _activeFilter.toUpperCase();
+
   return `
     <div id="pbe-score-strip" role="region" aria-label="Live scores across MLB, NBA, NHL, NFL">
-      <div class="pss-filter">${filterButtons}</div>
+      <div class="pss-filter">
+        <button class="pss-filter-trigger" type="button" aria-haspopup="true" aria-expanded="false">${triggerLabel}</button>
+        <div class="pss-filter-dropdown" role="menu">${filterButtons}</div>
+        <div class="pss-filter-row">${filterButtons}</div>
+      </div>
       <div class="pss-date">
         <span class="pss-live-dot"></span>
         Live · ${time} ET
@@ -819,16 +865,45 @@ export async function mountScoreStrip() {
 
   const strip = document.getElementById('pbe-score-strip');
   if (strip && !strip.dataset.wired) {
+    // Filter button clicks (works for both mobile dropdown + desktop row)
     strip.addEventListener('click', e => {
+      // Trigger button toggles the dropdown
+      const trigger = e.target.closest('.pss-filter-trigger');
+      if (trigger) {
+        e.preventDefault();
+        const dd = strip.querySelector('.pss-filter-dropdown');
+        const isOpen = dd?.classList.toggle('open');
+        trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        return;
+      }
+
       const btn = e.target.closest('.pss-filter-btn');
       if (!btn) return;
       e.preventDefault();
       _activeFilter = btn.dataset.filter;
-      // Filter change forces full rebuild (set of visible games changes)
-      _renderedGameIds = new Set();
+      _renderedGameIds = new Set(); // force rebuild on filter change
       paintFilters();
       paint();
+      // Close mobile dropdown after selection
+      const dd = strip.querySelector('.pss-filter-dropdown');
+      if (dd?.classList.contains('open')) {
+        dd.classList.remove('open');
+        const trig = strip.querySelector('.pss-filter-trigger');
+        trig?.setAttribute('aria-expanded', 'false');
+      }
     });
+
+    // Close dropdown on outside click
+    document.addEventListener('click', e => {
+      if (e.target.closest('#pbe-score-strip')) return;
+      const dd = strip.querySelector('.pss-filter-dropdown');
+      if (dd?.classList.contains('open')) {
+        dd.classList.remove('open');
+        const trig = strip.querySelector('.pss-filter-trigger');
+        trig?.setAttribute('aria-expanded', 'false');
+      }
+    });
+
     strip.dataset.wired = '1';
   }
 
