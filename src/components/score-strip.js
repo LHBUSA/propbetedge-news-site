@@ -1,16 +1,27 @@
 /**
  * src/components/score-strip.js
- * ESPN-elite score strip — v3.4
+ * ESPN-elite score strip — v3.5
  *
- * v3.4 changes:
- *   - Strip height bumped to 88px mobile / 76px desktop for proper padding
- *   - Tile padding reworked: 10px top, 12px bottom (was 8px both)
- *   - Bottom line gets explicit margin-bottom: 0 + flex-shrink: 0
- *   - Reduced inter-row gap from 2px → 1px so all 4 lines fit cleanly
- *   - Top line margin-bottom reduced from 1px → 0
- *   - Status pill height tightened (line-height: 1) so it doesn't push rows
- *   - Team rows have explicit min-height to prevent collapse
+ * v3.5 — SCROLL GLITCH FIX:
+ *   The previous versions rebuilt the entire rail HTML on every poll cycle
+ *   (every 15s when live games exist), which restarted the CSS marquee
+ *   animation from position 0. That caused the visible "snap-back" glitch.
  *
+ *   v3.5 separates two cases:
+ *
+ *   FULL REBUILD (rare): set of games changed — new game added, game removed
+ *   from relevance window, sport filter changed. Rebuilds DOM. Marquee
+ *   restarts (acceptable since the content set actually changed).
+ *
+ *   IN-PLACE UPDATE (common): same games, just score/state changes. Finds
+ *   each tile by data-game-id and updates ONLY the score/state nodes inside.
+ *   No DOM rebuild. Marquee keeps scrolling smoothly. Score-change flash
+ *   triggered by toggling a class.
+ *
+ *   Result: the strip scrolls forever without snapping, scores update live,
+ *   tiles flash gold when their data changes.
+ *
+ * v3.4: Strip height bumped to 88/76, proper padding
  * v3.3: Team logos, reversed scroll, adaptive polling, score flash
  * v3.2: High contrast, date filter
  * v3.1: Wider tiles, overflow control
@@ -52,16 +63,18 @@ let _activeFilter = 'all';
 let _games = [];
 let _gameSnapshot = new Map();
 let _refreshTimer = null;
+// v3.5: track which IDs are currently in the rendered DOM so we can decide
+// rebuild vs in-place update on each poll cycle.
+let _renderedGameIds = new Set();
 
 /* ─────────────────────────────────────────────────────────────────────────
- * STYLES — proper vertical padding, no content kissing the edges
+ * STYLES — same as v3.4
  * ────────────────────────────────────────────────────────────────────────*/
 function injectStyles() {
   if (document.getElementById('pbe-score-strip-styles')) return;
   const s = document.createElement('style');
   s.id = 'pbe-score-strip-styles';
   s.textContent = `
-    /* Mobile baseline — 88px tall, room for 4 padded rows */
     #pbe-score-strip {
       position: sticky;
       top: 0;
@@ -82,7 +95,6 @@ function injectStyles() {
       contain: layout style;
     }
 
-    /* Filter chips */
     .pss-filter {
       flex-shrink: 0;
       display: flex;
@@ -118,7 +130,6 @@ function injectStyles() {
       color: #ffd24a;
     }
 
-    /* Date stamp */
     .pss-date {
       display: none;
       flex-shrink: 0;
@@ -145,7 +156,6 @@ function injectStyles() {
       50% { opacity: 0.55; }
     }
 
-    /* Rail */
     .pss-rail-wrap {
       flex: 1;
       overflow-x: auto;
@@ -163,7 +173,6 @@ function injectStyles() {
       height: 100%;
     }
 
-    /* Marquee — left to right */
     .pss-rail.pss-marquee-on {
       animation: pss-marquee 30s linear infinite;
       width: max-content;
@@ -181,7 +190,6 @@ function injectStyles() {
       .pss-rail.pss-marquee-on { animation: none; }
     }
 
-    /* === TILE — proper vertical padding, content NEVER touches edges === */
     .pss-tile {
       flex-shrink: 0;
       display: flex;
@@ -204,7 +212,6 @@ function injectStyles() {
     }
     .pss-tile:hover { background: rgba(255, 255, 255, 0.05); }
 
-    /* Score-change flash */
     .pss-tile.pss-tile-updated {
       animation: pss-tile-flash 1.6s ease-out;
     }
@@ -221,7 +228,6 @@ function injectStyles() {
       height: 100%;
     }
 
-    /* Sport badge top-right */
     .pss-sport-tag {
       position: absolute;
       top: 8px;
@@ -235,7 +241,6 @@ function injectStyles() {
       line-height: 1;
     }
 
-    /* Status pill */
     .pss-status-inline {
       font-size: 8.5px;
       font-weight: 800;
@@ -266,7 +271,6 @@ function injectStyles() {
       background: rgba(148, 163, 184, 0.18);
     }
 
-    /* Top line */
     .pss-tile-top {
       display: flex;
       align-items: center;
@@ -290,7 +294,6 @@ function injectStyles() {
       white-space: nowrap;
     }
 
-    /* Team rows */
     .pss-team-row {
       display: flex;
       align-items: center;
@@ -369,7 +372,6 @@ function injectStyles() {
       line-height: 1;
     }
 
-    /* Bottom meta */
     .pss-tile-bottom {
       display: flex;
       align-items: center;
@@ -429,7 +431,6 @@ function injectStyles() {
       z-index: 2;
     }
 
-    /* ── 480px+ ───────────────────────────────────────────────────── */
     @media (min-width: 480px) {
       .pss-tile { width: 270px; min-width: 270px; max-width: 270px; padding: 10px 16px 12px; }
       .pss-team-name { font-size: 13px; }
@@ -438,7 +439,6 @@ function injectStyles() {
       .pss-team-row { min-height: 20px; }
     }
 
-    /* ── 700px+ ───────────────────────────────────────────────────── */
     @media (min-width: 700px) {
       #pbe-score-strip { height: 76px; }
       .pss-date { display: flex; }
@@ -453,7 +453,6 @@ function injectStyles() {
       .pss-rail.pss-marquee-on { animation-duration: 45s; }
     }
 
-    /* ── 1024px+ ──────────────────────────────────────────────────── */
     @media (min-width: 1024px) {
       #pbe-score-strip { height: 76px; }
       .pss-tile { width: 310px; min-width: 310px; max-width: 310px; }
@@ -543,101 +542,148 @@ function gameSignature(g) {
 /* ─────────────────────────────────────────────────────────────────────────
  * TILE HTML
  * ────────────────────────────────────────────────────────────────────────*/
-function tileHTML(g, isUpdated) {
+function tileHTML(g) {
   const accent = SPORT_ACCENTS[g.sport] || '#94a3b8';
   const target = SPORT_TARGETS[g.sport] || {};
   const sportTag = SPORT_BADGE[g.sport] || '';
   const ctaText = target.live ? 'Picks live' : 'Free access';
   const ctaCls = target.live ? '' : 'soon';
 
-  let topLabel = '';
-  if (g.state === 'live') {
-    topLabel = g.statusText || 'Live';
-  } else if (g.state === 'final') {
-    topLabel = '';
-  } else {
-    topLabel = g.statusText || 'TBD';
-  }
-
-  const awayScoreShown = g.away.score !== '' && g.away.score !== null && g.away.score !== undefined;
-  const homeScoreShown = g.home.score !== '' && g.home.score !== null && g.home.score !== undefined;
-  const showScores = awayScoreShown || homeScoreShown;
-
-  const awayWin = g.state === 'final' && showScores && parseInt(g.away.score) > parseInt(g.home.score);
-  const homeWin = g.state === 'final' && showScores && parseInt(g.home.score) > parseInt(g.away.score);
-  const awayLose = g.state === 'final' && showScores && parseInt(g.away.score) < parseInt(g.home.score);
-  const homeLose = g.state === 'final' && showScores && parseInt(g.home.score) < parseInt(g.away.score);
-
-  const awayDisplay = g.away.abbr || g.away.name || '—';
-  const homeDisplay = g.home.abbr || g.home.name || '—';
-
-  let topLine = '';
-  if (g.state === 'live') {
-    topLine = `<span class="pss-status-inline live">LIVE</span><span>${escape(topLabel)}</span>`;
-  } else if (g.state === 'final') {
-    topLine = `<span class="pss-status-inline final">FINAL</span>`;
-  } else {
-    topLine = `<span>${escape(topLabel)}</span>`;
-  }
-
-  const pitcherLine = buildPitcherLine(g);
-  let bottomLine = '';
-  if (pitcherLine) {
-    bottomLine = `
-      <span>${escape(pitcherLine)}</span>
-      <span class="pss-divider">·</span>
-      <span class="pss-cta-mini ${ctaCls}">${escape(ctaText)}</span>
-    `;
-  } else {
-    bottomLine = `<span class="pss-cta-mini ${ctaCls}">${escape(ctaText)}</span>`;
-  }
-
-  const tileClasses = ['pss-tile'];
-  if (isUpdated) tileClasses.push('pss-tile-updated');
+  const topLine = renderTopLine(g);
+  const awayRow = renderTeamRow(g, 'away');
+  const homeRow = renderTeamRow(g, 'home');
+  const bottomLine = renderBottomLine(g, ctaText, ctaCls);
 
   return `
-    <a class="${tileClasses.join(' ')}" href="${escape(tileHref(g))}" data-sport="${g.sport}"
+    <a class="pss-tile" href="${escape(tileHref(g))}" data-sport="${g.sport}"
        data-game-id="${escape(String(g.gameId || ''))}"
        title="${escape(tileTitle(g))}">
       <span class="pss-tile-accent" style="background:${accent}"></span>
       <span class="pss-sport-tag">${escape(sportTag)}</span>
-
       <div class="pss-tile-top">${topLine}</div>
-
-      <div class="pss-team-row${awayWin ? ' winner' : ''}${awayLose ? ' loser' : ''}">
-        <span class="pss-team-id">
-          ${teamLogoHTML(g.away, g.sport)}
-          <span class="pss-team-name">
-            ${escape(awayDisplay)}${g.away.record ? `<span class="pss-team-record">${escape(g.away.record)}</span>` : ''}
-          </span>
-        </span>
-        ${showScores ? `<span class="pss-team-score">${escape(g.away.score ?? '')}</span>` : ''}
-      </div>
-
-      <div class="pss-team-row${homeWin ? ' winner' : ''}${homeLose ? ' loser' : ''}">
-        <span class="pss-team-id">
-          ${teamLogoHTML(g.home, g.sport)}
-          <span class="pss-team-name">
-            ${escape(homeDisplay)}${g.home.record ? `<span class="pss-team-record">${escape(g.home.record)}</span>` : ''}
-          </span>
-        </span>
-        ${showScores ? `<span class="pss-team-score">${escape(g.home.score ?? '')}</span>` : ''}
-      </div>
-
+      ${awayRow}
+      ${homeRow}
       <div class="pss-tile-bottom">${bottomLine}</div>
     </a>
   `;
 }
 
+function renderTopLine(g) {
+  const topLabel = g.state === 'live' ? (g.statusText || 'Live')
+                 : g.state === 'final' ? ''
+                 : (g.statusText || 'TBD');
+  if (g.state === 'live') {
+    return `<span class="pss-status-inline live">LIVE</span><span>${escape(topLabel)}</span>`;
+  } else if (g.state === 'final') {
+    return `<span class="pss-status-inline final">FINAL</span>`;
+  } else {
+    return `<span>${escape(topLabel)}</span>`;
+  }
+}
+
+function renderTeamRow(g, side /* 'away' | 'home' */) {
+  const me = g[side];
+  const them = g[side === 'away' ? 'home' : 'away'];
+  const meScoreShown = me.score !== '' && me.score !== null && me.score !== undefined;
+  const themScoreShown = them.score !== '' && them.score !== null && them.score !== undefined;
+  const showScores = meScoreShown || themScoreShown;
+  const isFinal = g.state === 'final' && showScores;
+  const won = isFinal && parseInt(me.score) > parseInt(them.score);
+  const lost = isFinal && parseInt(me.score) < parseInt(them.score);
+  const winnerClass = won ? ' winner' : lost ? ' loser' : '';
+  const display = me.abbr || me.name || '—';
+
+  return `
+    <div class="pss-team-row${winnerClass}" data-side="${side}">
+      <span class="pss-team-id">
+        ${teamLogoHTML(me, g.sport)}
+        <span class="pss-team-name">
+          ${escape(display)}${me.record ? `<span class="pss-team-record">${escape(me.record)}</span>` : ''}
+        </span>
+      </span>
+      ${showScores ? `<span class="pss-team-score">${escape(me.score ?? '')}</span>` : ''}
+    </div>
+  `;
+}
+
+function renderBottomLine(g, ctaText, ctaCls) {
+  const pitcherLine = buildPitcherLine(g);
+  if (pitcherLine) {
+    return `
+      <span>${escape(pitcherLine)}</span>
+      <span class="pss-divider">·</span>
+      <span class="pss-cta-mini ${ctaCls}">${escape(ctaText)}</span>
+    `;
+  }
+  return `<span class="pss-cta-mini ${ctaCls}">${escape(ctaText)}</span>`;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
- * RENDER
+ * IN-PLACE TILE UPDATE — v3.5 — no DOM rebuild, no scroll snap
+ *
+ * Updates only the live data on an existing tile element.
+ * Triggers the gold flash if data actually changed.
+ * ────────────────────────────────────────────────────────────────────────*/
+function updateTileInPlace(tileEl, g) {
+  if (!tileEl) return;
+
+  // 1. Top line (status + state text)
+  const topEl = tileEl.querySelector('.pss-tile-top');
+  if (topEl) topEl.innerHTML = renderTopLine(g);
+
+  // 2. Team rows — only the score cell + winner/loser class change
+  ['away', 'home'].forEach(side => {
+    const rowEl = tileEl.querySelector(`.pss-team-row[data-side="${side}"]`);
+    if (!rowEl) return;
+
+    const me = g[side];
+    const them = g[side === 'away' ? 'home' : 'away'];
+    const showScores = (me.score !== '' && me.score !== null && me.score !== undefined)
+                    || (them.score !== '' && them.score !== null && them.score !== undefined);
+    const isFinal = g.state === 'final' && showScores;
+    const won = isFinal && parseInt(me.score) > parseInt(them.score);
+    const lost = isFinal && parseInt(me.score) < parseInt(them.score);
+
+    rowEl.classList.toggle('winner', won);
+    rowEl.classList.toggle('loser', lost);
+
+    let scoreEl = rowEl.querySelector('.pss-team-score');
+    if (showScores) {
+      if (!scoreEl) {
+        scoreEl = document.createElement('span');
+        scoreEl.className = 'pss-team-score';
+        rowEl.appendChild(scoreEl);
+      }
+      scoreEl.textContent = me.score ?? '';
+    } else if (scoreEl) {
+      scoreEl.remove();
+    }
+  });
+
+  // 3. Bottom line — refresh CTA and pitcher line in case state changed
+  const target = SPORT_TARGETS[g.sport] || {};
+  const ctaText = target.live ? 'Picks live' : 'Free access';
+  const ctaCls = target.live ? '' : 'soon';
+  const bottomEl = tileEl.querySelector('.pss-tile-bottom');
+  if (bottomEl) bottomEl.innerHTML = renderBottomLine(g, ctaText, ctaCls);
+}
+
+function flashTile(tileEl) {
+  if (!tileEl) return;
+  // Force reflow so re-applying the class re-triggers the animation
+  tileEl.classList.remove('pss-tile-updated');
+  void tileEl.offsetWidth;
+  tileEl.classList.add('pss-tile-updated');
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * RENDER / UPDATE
  * ────────────────────────────────────────────────────────────────────────*/
 function paint() {
   const railEl = document.getElementById('pss-rail');
   if (!railEl) return;
 
   const relevant = _games.filter(isRelevantGame);
-
   const filtered = _activeFilter === 'all'
     ? relevant
     : relevant.filter(g => g.sport === _activeFilter);
@@ -657,31 +703,57 @@ function paint() {
       : `No ${_activeFilter.toUpperCase()} games today`;
     railEl.innerHTML = `<div class="pss-empty">${msg}</div>`;
     railEl.classList.remove('pss-marquee-on');
+    _renderedGameIds = new Set();
+    _gameSnapshot = new Map();
     return;
   }
 
-  const newSnapshot = new Map();
-  const updatedGameIds = new Set();
-  for (const g of ordered) {
-    const sig = gameSignature(g);
-    const id = String(g.gameId || '');
-    newSnapshot.set(id, sig);
-    if (id && _gameSnapshot.has(id) && _gameSnapshot.get(id) !== sig) {
-      updatedGameIds.add(id);
+  // === v3.5 KEY DECISION: rebuild or in-place update? ===
+  const newIds = new Set(ordered.map(g => String(g.gameId || '')));
+  const sameSet = newIds.size === _renderedGameIds.size
+    && [...newIds].every(id => _renderedGameIds.has(id));
+
+  if (sameSet && railEl.querySelector('.pss-tile')) {
+    // === IN-PLACE UPDATE PATH — no DOM rebuild, marquee keeps scrolling ===
+    const newSnapshot = new Map();
+    for (const g of ordered) {
+      const id = String(g.gameId || '');
+      const sig = gameSignature(g);
+      newSnapshot.set(id, sig);
+
+      // Update ALL DOM nodes with this game id (rail is duplicated for marquee)
+      const tiles = railEl.querySelectorAll(`.pss-tile[data-game-id="${CSS.escape(id)}"]`);
+      tiles.forEach(tileEl => {
+        updateTileInPlace(tileEl, g);
+        // Flash if data actually changed
+        if (_gameSnapshot.has(id) && _gameSnapshot.get(id) !== sig) {
+          flashTile(tileEl);
+        }
+      });
     }
+    _gameSnapshot = newSnapshot;
+    return;
   }
-  _gameSnapshot = newSnapshot;
 
-  const tiles = ordered.map(g => tileHTML(g, updatedGameIds.has(String(g.gameId || '')))).join('');
-
+  // === FULL REBUILD PATH — set of games changed ===
+  const tiles = ordered.map(tileHTML).join('');
   railEl.classList.remove('pss-marquee-on');
   railEl.innerHTML = tiles;
+
+  // Update tracking maps
+  _renderedGameIds = newIds;
+  const newSnapshot = new Map();
+  for (const g of ordered) {
+    newSnapshot.set(String(g.gameId || ''), gameSignature(g));
+  }
+  _gameSnapshot = newSnapshot;
 
   requestAnimationFrame(() => {
     const wrap = document.querySelector('.pss-rail-wrap');
     if (!wrap) return;
     const overflows = railEl.scrollWidth > wrap.clientWidth + 4;
     if (overflows) {
+      // Duplicate tiles for seamless marquee loop
       railEl.innerHTML = tiles + tiles;
       railEl.classList.add('pss-marquee-on');
     }
@@ -752,6 +824,8 @@ export async function mountScoreStrip() {
       if (!btn) return;
       e.preventDefault();
       _activeFilter = btn.dataset.filter;
+      // Filter change forces full rebuild (set of visible games changes)
+      _renderedGameIds = new Set();
       paintFilters();
       paint();
     });
