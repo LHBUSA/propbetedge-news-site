@@ -1,23 +1,17 @@
 /**
  * src/components/score-strip.js
- * ESPN bottom-line score strip — v3.1
+ * ESPN bottom-line score strip — v3.2
  *
- * v3.1 changes (fixes from v3):
- *   - Wider tile minimums so content stops clipping
- *     (mobile 230px, 480px+ 250px, desktop 270px)
- *   - Tighter internal gaps so content uses tile width fully
- *   - Top line uses overflow:hidden + ellipsis to gracefully truncate
- *     long status text instead of bleeding past the tile boundary
- *   - Bottom line same treatment
- *   - Sport tag in corner shrunk and pulled tighter to edge
- *   - Last tile gets no border-right (cleaner edge)
+ * v3.2 changes:
+ *   - HIGH contrast text — all muted grays bumped brighter for readability
+ *     (#94a3b8 → #cbd5e1, #64748b → #94a3b8, etc.)
+ *   - DATE FILTER: only show games where gameDate is today (ET) OR upcoming
+ *     within the next 36 hours. No more stale NFL games from yesterday.
+ *   - Added text-rendering: optimizeLegibility for crisp small text
+ *   - Added font-feature-settings to disable ligatures (sharper digits)
  *
- * v3 changes:
- *   - Tiered detail per tile: records always, starters when available,
- *     inline live state, broadcast network ready
- *   - Faster mobile scroll (30s on mobile, 45s on desktop)
- *   - Two-tile-visible mobile baseline
- *   - Tile heights bumped to 64px on mobile, 56px on desktop
+ * v3.1: Wider tiles, strict overflow control, no clipping
+ * v3:   Tiered detail per tile, faster mobile scroll, ESPN bottom-line
  *
  * Tile click routing:
  *   • MLB → /games/mlb/{gameId}
@@ -25,6 +19,11 @@
  */
 
 const REFRESH_MS = 60_000;
+
+// 36 hour upcoming window — covers tonight + tomorrow's day games
+const UPCOMING_WINDOW_MS = 36 * 60 * 60 * 1000;
+// 6 hour past window — keep just-finished games visible briefly
+const RECENT_FINAL_WINDOW_MS = 6 * 60 * 60 * 1000;
 
 const SPORT_TARGETS = {
   mlb: { label: 'Picks live',  live: true,  base: null },
@@ -35,9 +34,9 @@ const SPORT_TARGETS = {
 
 const SPORT_ACCENTS = {
   mlb: '#ef4444',
-  nfl: '#8b5cf6',
-  nba: '#f97316',
-  nhl: '#06b6d4',
+  nfl: '#a78bfa',
+  nba: '#fb923c',
+  nhl: '#22d3ee',
 };
 
 const SPORT_BADGE = {
@@ -56,14 +55,14 @@ let _games = [];
 let _refreshTimer = null;
 
 /* ─────────────────────────────────────────────────────────────────────────
- * STYLES — mobile-first, ESPN-level density, NO clipping
+ * STYLES — HIGH CONTRAST
  * ────────────────────────────────────────────────────────────────────────*/
 function injectStyles() {
   if (document.getElementById('pbe-score-strip-styles')) return;
   const s = document.createElement('style');
   s.id = 'pbe-score-strip-styles';
   s.textContent = `
-    /* ── Mobile baseline — 64px tall, wider tiles ──────────────────── */
+    /* Mobile baseline */
     #pbe-score-strip {
       position: sticky;
       top: 0;
@@ -75,26 +74,29 @@ function injectStyles() {
       display: flex;
       align-items: stretch;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      color: #f5f8ff;
+      color: #f8fafc;
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      font-feature-settings: "tnum" 1, "liga" 0;
       contain: layout style;
     }
 
-    /* Filter chips */
+    /* Filter chips — high contrast */
     .pss-filter {
       flex-shrink: 0;
       display: flex;
       align-items: center;
       padding: 0 6px;
       gap: 2px;
-      border-right: 1px solid rgba(255, 255, 255, 0.06);
-      background: rgba(0, 0, 0, 0.3);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.35);
     }
     .pss-filter-btn {
       background: transparent;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #94a3b8;
+      border: 1px solid rgba(203, 213, 225, 0.2);
+      color: #cbd5e1;
       font-size: 9px;
       font-weight: 700;
       letter-spacing: 0.04em;
@@ -108,16 +110,16 @@ function injectStyles() {
       flex-shrink: 0;
     }
     .pss-filter-btn:hover {
-      color: #f5f8ff;
-      border-color: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.4);
     }
     .pss-filter-btn.active {
-      background: rgba(255, 210, 74, 0.15);
-      border-color: rgba(255, 210, 74, 0.4);
+      background: rgba(255, 210, 74, 0.18);
+      border-color: rgba(255, 210, 74, 0.5);
       color: #ffd24a;
     }
 
-    /* Date stamp */
+    /* Date stamp — bumped contrast */
     .pss-date {
       display: none;
       flex-shrink: 0;
@@ -126,9 +128,9 @@ function injectStyles() {
       font-size: 10px;
       font-weight: 600;
       letter-spacing: 0.06em;
-      color: #64748b;
+      color: #cbd5e1;
       text-transform: uppercase;
-      border-right: 1px solid rgba(255, 255, 255, 0.04);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
       white-space: nowrap;
     }
     .pss-date .pss-live-dot {
@@ -180,7 +182,7 @@ function injectStyles() {
       .pss-rail.pss-marquee-on { animation: none; }
     }
 
-    /* === TILE — wider, no clipping, content fits === */
+    /* === TILE === */
     .pss-tile {
       flex-shrink: 0;
       display: flex;
@@ -189,7 +191,7 @@ function injectStyles() {
       gap: 1px;
       padding: 6px 14px 6px 14px;
       height: 100%;
-      border-right: 1px solid rgba(255, 255, 255, 0.05);
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
       text-decoration: none;
       color: inherit;
       transition: background 0.15s ease;
@@ -201,7 +203,7 @@ function injectStyles() {
       box-sizing: border-box;
       overflow: hidden;
     }
-    .pss-tile:hover { background: rgba(255, 255, 255, 0.04); }
+    .pss-tile:hover { background: rgba(255, 255, 255, 0.05); }
 
     .pss-tile-accent {
       position: absolute;
@@ -210,7 +212,7 @@ function injectStyles() {
       height: 100%;
     }
 
-    /* Sport badge — top-right corner, tucked in tight */
+    /* Sport badge — top-right, brighter */
     .pss-sport-tag {
       position: absolute;
       top: 5px;
@@ -218,12 +220,12 @@ function injectStyles() {
       font-size: 8px;
       font-weight: 800;
       letter-spacing: 0.08em;
-      color: #64748b;
+      color: #94a3b8;
       font-variant-numeric: tabular-nums;
       pointer-events: none;
     }
 
-    /* INLINE status pill */
+    /* Status pill — high contrast */
     .pss-status-inline {
       font-size: 8.5px;
       font-weight: 800;
@@ -239,35 +241,35 @@ function injectStyles() {
       margin-right: 4px;
     }
     .pss-status-inline.pre   {
-      color: #94a3b8;
+      color: #cbd5e1;
       background: transparent;
       padding: 0;
     }
     .pss-status-inline.live  {
-      color: #fff;
-      background: rgba(239, 68, 68, 0.85);
+      color: #ffffff;
+      background: rgba(239, 68, 68, 0.95);
       animation: pss-pulse 1.6s ease-in-out infinite;
     }
     .pss-status-inline.final {
-      color: #94a3b8;
-      background: rgba(148, 163, 184, 0.12);
+      color: #cbd5e1;
+      background: rgba(148, 163, 184, 0.18);
     }
 
-    /* Top row — game state, ellipsis if too long */
+    /* Top line — higher contrast */
     .pss-tile-top {
       display: flex;
       align-items: center;
       gap: 4px;
       font-size: 9.5px;
-      font-weight: 600;
-      color: #94a3b8;
+      font-weight: 700;
+      color: #cbd5e1;
       letter-spacing: 0.04em;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       width: 100%;
       max-width: 100%;
-      padding-right: 28px; /* leave room for sport tag */
+      padding-right: 28px;
     }
     .pss-tile-top > span {
       overflow: hidden;
@@ -275,7 +277,7 @@ function injectStyles() {
       white-space: nowrap;
     }
 
-    /* Team rows */
+    /* Team rows — bright white */
     .pss-team-row {
       display: flex;
       align-items: baseline;
@@ -289,7 +291,7 @@ function injectStyles() {
     }
     .pss-team-name {
       font-weight: 700;
-      color: #e2e8f5;
+      color: #ffffff;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -299,19 +301,19 @@ function injectStyles() {
       min-width: 0;
     }
     .pss-team-record {
-      font-weight: 500;
-      color: #64748b;
+      font-weight: 600;
+      color: #94a3b8;
       font-size: 9.5px;
       margin-left: 4px;
       font-variant-numeric: tabular-nums;
     }
     .pss-team-row.winner .pss-team-name { color: #ffd24a; font-weight: 800; }
     .pss-team-row.winner .pss-team-score { color: #ffd24a; font-weight: 800; }
-    .pss-team-row.loser .pss-team-name { color: #64748b; }
-    .pss-team-row.loser .pss-team-score { color: #64748b; }
+    .pss-team-row.loser .pss-team-name { color: #94a3b8; }
+    .pss-team-row.loser .pss-team-score { color: #94a3b8; }
     .pss-team-score {
       font-weight: 700;
-      color: #f5f8ff;
+      color: #ffffff;
       font-variant-numeric: tabular-nums;
       min-width: 22px;
       text-align: right;
@@ -319,14 +321,14 @@ function injectStyles() {
       flex-shrink: 0;
     }
 
-    /* Bottom meta — ellipsis truncation */
+    /* Bottom meta — brighter */
     .pss-tile-bottom {
       display: flex;
       align-items: center;
       gap: 5px;
       font-size: 9px;
-      color: #64748b;
-      font-weight: 500;
+      color: #94a3b8;
+      font-weight: 600;
       letter-spacing: 0.02em;
       white-space: nowrap;
       overflow: hidden;
@@ -348,19 +350,19 @@ function injectStyles() {
       flex-shrink: 0;
     }
     .pss-tile-bottom .pss-divider {
-      color: rgba(148, 163, 184, 0.4);
+      color: rgba(148, 163, 184, 0.5);
       flex-shrink: 0;
     }
     .pss-tile-bottom .pss-cta-mini {
       color: #ffd24a;
-      font-weight: 700;
+      font-weight: 800;
       font-size: 8.5px;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       flex-shrink: 0;
     }
     .pss-tile-bottom .pss-cta-mini.soon {
-      color: #64748b;
+      color: #94a3b8;
     }
 
     .pss-empty {
@@ -369,7 +371,7 @@ function injectStyles() {
       justify-content: center;
       padding: 0 16px;
       font-size: 11px;
-      color: #64748b;
+      color: #cbd5e1;
       font-style: italic;
       min-width: 200px;
       flex: 1;
@@ -384,14 +386,13 @@ function injectStyles() {
       z-index: 2;
     }
 
-    /* ── 480px+ ───────────────────────────────────────────────────── */
+    /* Breakpoints */
     @media (min-width: 480px) {
       .pss-tile { width: 250px; min-width: 250px; max-width: 250px; padding: 6px 16px; }
       .pss-team-name { font-size: 12.5px; }
       .pss-team-score { font-size: 13.5px; }
     }
 
-    /* ── 700px+ ───────────────────────────────────────────────────── */
     @media (min-width: 700px) {
       #pbe-score-strip { height: 60px; }
       .pss-date { display: flex; }
@@ -405,7 +406,6 @@ function injectStyles() {
       .pss-rail.pss-marquee-on { animation-duration: 45s; }
     }
 
-    /* ── 1024px+ ──────────────────────────────────────────────────── */
     @media (min-width: 1024px) {
       #pbe-score-strip { height: 56px; }
       .pss-tile { width: 290px; min-width: 290px; max-width: 290px; }
@@ -459,6 +459,38 @@ function buildPitcherLine(g) {
   return `${away} vs ${home}`;
 }
 
+/**
+ * v3.2 — Filter to relevant games only.
+ * Keep:
+ *   - All live games (any sport)
+ *   - Pre-game scheduled within the next 36 hours
+ *   - Just-finished games within the last 6 hours (so a "FINAL" tile
+ *     stays visible briefly after game ends, gives users continuity)
+ * Drop:
+ *   - Stale finals from yesterday or earlier
+ *   - Games scheduled more than 36 hours out (tomorrow night NFL etc.
+ *     when current focus is today)
+ */
+function isRelevantGame(g) {
+  if (g.state === 'live') return true;
+  if (!g.gameDate) {
+    // No date info — only keep if live, drop everything else as a safety
+    return false;
+  }
+  const gameTime = new Date(g.gameDate).getTime();
+  if (isNaN(gameTime)) return false;
+  const now = Date.now();
+  if (g.state === 'pre') {
+    // Keep if within 36h upcoming AND not in the past
+    return gameTime > now - 30 * 60 * 1000 && gameTime < now + UPCOMING_WINDOW_MS;
+  }
+  if (g.state === 'final') {
+    // Keep if finished within last 6 hours
+    return gameTime > now - RECENT_FINAL_WINDOW_MS - 6 * 60 * 60 * 1000;
+  }
+  return true;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
  * TILE HTML
  * ────────────────────────────────────────────────────────────────────────*/
@@ -490,7 +522,6 @@ function tileHTML(g) {
   const awayDisplay = g.away.abbr || g.away.name || '—';
   const homeDisplay = g.home.abbr || g.home.name || '—';
 
-  // Top line
   let topLine = '';
   if (g.state === 'live') {
     topLine = `<span class="pss-status-inline live">LIVE</span><span>${escape(topLabel)}</span>`;
@@ -500,7 +531,6 @@ function tileHTML(g) {
     topLine = `<span>${escape(topLabel)}</span>`;
   }
 
-  // Bottom line
   const pitcherLine = buildPitcherLine(g);
   let bottomLine = '';
   if (pitcherLine) {
@@ -547,9 +577,12 @@ function paint() {
   const railEl = document.getElementById('pss-rail');
   if (!railEl) return;
 
+  // v3.2 — apply relevance filter before sport filter
+  const relevant = _games.filter(isRelevantGame);
+
   const filtered = _activeFilter === 'all'
-    ? _games
-    : _games.filter(g => g.sport === _activeFilter);
+    ? relevant
+    : relevant.filter(g => g.sport === _activeFilter);
 
   const ordered = [...filtered].sort((a, b) => {
     const stateOrder = { live: 0, pre: 1, final: 2 };
@@ -562,7 +595,7 @@ function paint() {
 
   if (!ordered.length) {
     const msg = _activeFilter === 'all'
-      ? 'No games today — check back tomorrow'
+      ? 'No games right now — check back tonight'
       : `No ${_activeFilter.toUpperCase()} games today`;
     railEl.innerHTML = `<div class="pss-empty">${msg}</div>`;
     railEl.classList.remove('pss-marquee-on');
