@@ -1,19 +1,26 @@
 /**
  * src/components/score-strip.js
- * ESPN bottom-line score strip — v3 (ESPN-level detail)
+ * ESPN bottom-line score strip — v3.1
+ *
+ * v3.1 changes (fixes from v3):
+ *   - Wider tile minimums so content stops clipping
+ *     (mobile 230px, 480px+ 250px, desktop 270px)
+ *   - Tighter internal gaps so content uses tile width fully
+ *   - Top line uses overflow:hidden + ellipsis to gracefully truncate
+ *     long status text instead of bleeding past the tile boundary
+ *   - Bottom line same treatment
+ *   - Sport tag in corner shrunk and pulled tighter to edge
+ *   - Last tile gets no border-right (cleaner edge)
  *
  * v3 changes:
  *   - Tiered detail per tile: records always, starters when available,
- *     inline live state (inning/quarter/clock), broadcast network, odds when ready
+ *     inline live state, broadcast network ready
  *   - Faster mobile scroll (30s on mobile, 45s on desktop)
- *   - Two-tile-visible mobile baseline (you see one full + a peek of the next,
- *     signaling there's more without forcing horizontal swipe)
- *   - Tile heights bumped to 64px on mobile, 56px on desktop for breathing room
- *   - Status pill is now a corner badge so the team rows have full width
- *   - Records render in muted gray inline next to team abbreviation
+ *   - Two-tile-visible mobile baseline
+ *   - Tile heights bumped to 64px on mobile, 56px on desktop
  *
  * Tile click routing:
- *   • MLB live/final/pre → /games/mlb/{gameId}
+ *   • MLB → /games/mlb/{gameId}
  *   • NBA / NHL / NFL → nba/nhl/nfl.propbetedge.ai
  */
 
@@ -49,14 +56,14 @@ let _games = [];
 let _refreshTimer = null;
 
 /* ─────────────────────────────────────────────────────────────────────────
- * STYLES — mobile-first, ESPN-level density
+ * STYLES — mobile-first, ESPN-level density, NO clipping
  * ────────────────────────────────────────────────────────────────────────*/
 function injectStyles() {
   if (document.getElementById('pbe-score-strip-styles')) return;
   const s = document.createElement('style');
   s.id = 'pbe-score-strip-styles';
   s.textContent = `
-    /* ── Mobile baseline — 64px tall ────────────────────────────────── */
+    /* ── Mobile baseline — 64px tall, wider tiles ──────────────────── */
     #pbe-score-strip {
       position: sticky;
       top: 0;
@@ -74,7 +81,7 @@ function injectStyles() {
       contain: layout style;
     }
 
-    /* Filter chips — left side, compact on mobile */
+    /* Filter chips */
     .pss-filter {
       flex-shrink: 0;
       display: flex;
@@ -110,7 +117,7 @@ function injectStyles() {
       color: #ffd24a;
     }
 
-    /* Date stamp — hidden on mobile, shown 700px+ */
+    /* Date stamp */
     .pss-date {
       display: none;
       flex-shrink: 0;
@@ -137,7 +144,7 @@ function injectStyles() {
       50% { opacity: 0.55; }
     }
 
-    /* Rail wrapper */
+    /* Rail */
     .pss-rail-wrap {
       flex: 1;
       overflow-x: auto;
@@ -155,7 +162,7 @@ function injectStyles() {
       height: 100%;
     }
 
-    /* Marquee — faster on mobile (30s), slower on desktop (45s) */
+    /* Marquee */
     .pss-rail.pss-marquee-on {
       animation: pss-marquee 30s linear infinite;
       width: max-content;
@@ -173,14 +180,14 @@ function injectStyles() {
       .pss-rail.pss-marquee-on { animation: none; }
     }
 
-    /* === TILE — ESPN bottom-line dense layout === */
+    /* === TILE — wider, no clipping, content fits === */
     .pss-tile {
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
       justify-content: center;
       gap: 1px;
-      padding: 6px 10px 6px 12px;
+      padding: 6px 14px 6px 14px;
       height: 100%;
       border-right: 1px solid rgba(255, 255, 255, 0.05);
       text-decoration: none;
@@ -188,8 +195,11 @@ function injectStyles() {
       transition: background 0.15s ease;
       cursor: pointer;
       position: relative;
-      min-width: 200px;
-      max-width: 240px;
+      width: 230px;
+      min-width: 230px;
+      max-width: 230px;
+      box-sizing: border-box;
+      overflow: hidden;
     }
     .pss-tile:hover { background: rgba(255, 255, 255, 0.04); }
 
@@ -200,19 +210,20 @@ function injectStyles() {
       height: 100%;
     }
 
-    /* Sport badge top-right corner — replaces full status pill */
+    /* Sport badge — top-right corner, tucked in tight */
     .pss-sport-tag {
       position: absolute;
-      top: 4px;
-      right: 8px;
+      top: 5px;
+      right: 6px;
       font-size: 8px;
       font-weight: 800;
       letter-spacing: 0.08em;
       color: #64748b;
       font-variant-numeric: tabular-nums;
+      pointer-events: none;
     }
 
-    /* Status pill — INLINE small, only when live or final */
+    /* INLINE status pill */
     .pss-status-inline {
       font-size: 8.5px;
       font-weight: 800;
@@ -242,11 +253,11 @@ function injectStyles() {
       background: rgba(148, 163, 184, 0.12);
     }
 
-    /* Top row: status + matchup label / time */
+    /* Top row — game state, ellipsis if too long */
     .pss-tile-top {
       display: flex;
       align-items: center;
-      gap: 0;
+      gap: 4px;
       font-size: 9.5px;
       font-weight: 600;
       color: #94a3b8;
@@ -254,7 +265,14 @@ function injectStyles() {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 180px;
+      width: 100%;
+      max-width: 100%;
+      padding-right: 28px; /* leave room for sport tag */
+    }
+    .pss-tile-top > span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     /* Team rows */
@@ -265,6 +283,9 @@ function injectStyles() {
       gap: 6px;
       font-size: 12px;
       line-height: 1.2;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
     }
     .pss-team-name {
       font-weight: 700;
@@ -274,6 +295,8 @@ function injectStyles() {
       text-overflow: ellipsis;
       letter-spacing: 0.02em;
       font-variant-numeric: tabular-nums;
+      flex: 1;
+      min-width: 0;
     }
     .pss-team-record {
       font-weight: 500;
@@ -293,13 +316,14 @@ function injectStyles() {
       min-width: 22px;
       text-align: right;
       font-size: 13px;
+      flex-shrink: 0;
     }
 
-    /* Bottom meta line — pitchers, network, etc */
+    /* Bottom meta — ellipsis truncation */
     .pss-tile-bottom {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       font-size: 9px;
       color: #64748b;
       font-weight: 500;
@@ -307,17 +331,25 @@ function injectStyles() {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 180px;
+      width: 100%;
+      max-width: 100%;
       margin-top: 2px;
+    }
+    .pss-tile-bottom > span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .pss-tile-bottom .pss-net {
       color: #ffd24a;
       font-weight: 700;
       font-size: 8.5px;
       letter-spacing: 0.06em;
+      flex-shrink: 0;
     }
     .pss-tile-bottom .pss-divider {
       color: rgba(148, 163, 184, 0.4);
+      flex-shrink: 0;
     }
     .pss-tile-bottom .pss-cta-mini {
       color: #ffd24a;
@@ -325,12 +357,12 @@ function injectStyles() {
       font-size: 8.5px;
       letter-spacing: 0.06em;
       text-transform: uppercase;
+      flex-shrink: 0;
     }
     .pss-tile-bottom .pss-cta-mini.soon {
       color: #64748b;
     }
 
-    /* Empty / loading state */
     .pss-empty {
       display: flex;
       align-items: center;
@@ -352,30 +384,31 @@ function injectStyles() {
       z-index: 2;
     }
 
-    /* ── 480px+ — large phone / small tablet ─────────────────────── */
+    /* ── 480px+ ───────────────────────────────────────────────────── */
     @media (min-width: 480px) {
-      .pss-tile { min-width: 215px; max-width: 250px; padding: 6px 12px 6px 14px; }
+      .pss-tile { width: 250px; min-width: 250px; max-width: 250px; padding: 6px 16px; }
       .pss-team-name { font-size: 12.5px; }
       .pss-team-score { font-size: 13.5px; }
     }
 
-    /* ── 700px+ — full date stamp + slower scroll ─────────────────── */
+    /* ── 700px+ ───────────────────────────────────────────────────── */
     @media (min-width: 700px) {
       #pbe-score-strip { height: 60px; }
       .pss-date { display: flex; }
-      .pss-tile { min-width: 230px; max-width: 270px; padding: 7px 14px 7px 16px; }
+      .pss-tile { width: 270px; min-width: 270px; max-width: 270px; padding: 7px 18px; }
       .pss-team-row { font-size: 13px; }
       .pss-team-score { font-size: 14px; }
-      .pss-tile-top { font-size: 10px; }
+      .pss-tile-top { font-size: 10px; padding-right: 32px; }
       .pss-tile-bottom { font-size: 9.5px; }
       .pss-filter-btn { padding: 4px 9px; font-size: 10px; letter-spacing: 0.06em; }
       .pss-filter { padding: 0 10px; gap: 3px; }
       .pss-rail.pss-marquee-on { animation-duration: 45s; }
     }
 
-    /* ── 1024px+ — desktop ───────────────────────────────────────── */
+    /* ── 1024px+ ──────────────────────────────────────────────────── */
     @media (min-width: 1024px) {
       #pbe-score-strip { height: 56px; }
+      .pss-tile { width: 290px; min-width: 290px; max-width: 290px; }
       .pss-rail.pss-marquee-on { animation-duration: 60s; }
     }
 
@@ -409,7 +442,6 @@ function tileTitle(g) {
   return 'Coming soon · Free access while in beta';
 }
 
-// Truncate pitcher/QB names: "Carlos Rodón" → "C. Rodón"
 function shortName(fullName) {
   if (!fullName || fullName === 'TBD') return 'TBD';
   const parts = fullName.trim().split(/\s+/);
@@ -419,7 +451,6 @@ function shortName(fullName) {
 
 function buildPitcherLine(g) {
   if (g.sport !== 'mlb' || !g.pitchers || g.state !== 'pre') return null;
-  // pitchers comes through as "Bobby Smith vs Jane Doe" or "TBD vs Jane Doe"
   const m = g.pitchers.match(/^(.+?)\s+vs\s+(.+)$/);
   if (!m) return null;
   const away = shortName(m[1].trim());
@@ -438,22 +469,12 @@ function tileHTML(g) {
   const ctaText = target.live ? 'Picks live' : 'Free access';
   const ctaCls = target.live ? '' : 'soon';
 
-  // Status determination
-  let statusText = '';
-  let statusClass = 'pre';
   let topLabel = '';
-
   if (g.state === 'live') {
-    statusText = 'LIVE';
-    statusClass = 'live';
     topLabel = g.statusText || 'Live';
   } else if (g.state === 'final') {
-    statusText = 'FINAL';
-    statusClass = 'final';
     topLabel = '';
   } else {
-    statusText = '';
-    statusClass = 'pre';
     topLabel = g.statusText || 'TBD';
   }
 
@@ -469,7 +490,7 @@ function tileHTML(g) {
   const awayDisplay = g.away.abbr || g.away.name || '—';
   const homeDisplay = g.home.abbr || g.home.name || '—';
 
-  // Top line: status + state text
+  // Top line
   let topLine = '';
   if (g.state === 'live') {
     topLine = `<span class="pss-status-inline live">LIVE</span><span>${escape(topLabel)}</span>`;
@@ -479,7 +500,7 @@ function tileHTML(g) {
     topLine = `<span>${escape(topLabel)}</span>`;
   }
 
-  // Bottom line: pitchers (MLB pre) → CTA
+  // Bottom line
   const pitcherLine = buildPitcherLine(g);
   let bottomLine = '';
   if (pitcherLine) {
