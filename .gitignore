@@ -1,0 +1,17 @@
+# Backups
+*.bak
+*.bak.*
+src/**/*.bak.*
+
+# Test files
+phillies-test.html
+deploy.ps1
+article.js.new
+media-embeds.css
+
+# Vercel
+.vercel/
+.env.local
+
+# Misc
+-w
