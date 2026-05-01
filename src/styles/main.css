@@ -6216,39 +6216,295 @@ a.leaders-sport-tab.active,
 }
 
 /* ========================================================================
- * v3.16 — Edges nav link styling
+ * v3.16 — World-class masthead redesign
  *
  * APPEND TO BOTTOM OF main.css (after the odds page styles)
  *
- * Subtle gold accent — it's a "live data" link, deserves visual weight
- * but shouldn't compete with the orange Picks → CTA.
+ * Two-tier centered nav. Subtle radial gradient backdrop. Single gold
+ * accent. Single button-style CTA (Picks). Live edge counter on Edges.
+ * Editorial polish without losing the live-data energy.
  * ======================================================================== */
 
-.nav-link.edges-link {
+.masthead-v316 {
   position: relative;
-  color: var(--gold);
-  font-weight: 600;
+  background: #0a0a0a;
+  border-bottom: none;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.masthead-v316-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 60% at center top,
+    rgba(212, 175, 55, 0.08) 0%,
+    rgba(20, 17, 14, 0.4) 40%,
+    transparent 80%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.masthead-v316-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 0 0;
+}
+
+/* ===== Logo row ===== */
+.masthead-v316-logo-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  text-decoration: none;
+  transition: opacity 0.18s;
+}
+
+.masthead-v316-logo-row:hover {
+  opacity: 0.92;
+}
+
+.masthead-v316-mark {
+  display: block;
+  height: 60px;
+  width: auto;
+}
+
+.masthead-v316-tagline {
+  font-family: var(--font-serif, Georgia, serif);
+  font-style: italic;
+  font-size: 12px;
+  color: var(--paper-faint, #6a6660);
   letter-spacing: 0.02em;
+  white-space: nowrap;
+  align-self: center;
+  margin-top: 4px;
 }
 
-.nav-link.edges-link:hover {
-  color: var(--gold-bright);
+/* ===== Primary nav (Edges / Live Games / Picks) ===== */
+.masthead-v316-primary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 4px;
 }
 
-.nav-link.edges-link.active {
-  color: var(--gold-bright);
+.primary-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--paper-dim, #c4c0b0);
+  padding: 8px 4px;
+  position: relative;
+  transition: color 0.18s;
 }
 
-.nav-link.edges-link.active::after {
+.primary-link:hover {
+  color: var(--paper, #ffffff);
+}
+
+.primary-link.active {
+  color: var(--gold, #d4af37);
+}
+
+.primary-link.active::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 2px;
+  height: 1px;
+  background: var(--gold, #d4af37);
+}
+
+/* Edges link — gold-forward, lightning + count badge */
+.primary-link-edges {
+  color: var(--gold, #d4af37);
+}
+.primary-link-edges:hover {
+  color: var(--gold-bright, #f5c52e);
+}
+.primary-link-edges .primary-link-bolt {
+  font-size: 13px;
+  line-height: 1;
+}
+.primary-link-count {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  padding: 0;
+  margin-left: 2px;
+  color: transparent;
+  background: transparent;
+  border-radius: 2px;
+  transition: padding 0.2s, background 0.2s, color 0.2s;
+}
+.primary-link-count.has-edges {
+  padding: 2px 6px;
+  background: rgba(212, 175, 55, 0.18);
+  color: var(--gold, #d4af37);
+}
+
+/* Live Games link — red dot pulse */
+.primary-link-live .primary-link-livedot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  animation: live-pulse 2.2s infinite;
+}
+
+@keyframes live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  70%  { box-shadow: 0 0 0 7px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Picks → CTA pill — the single button-style element */
+.primary-link-cta {
+  background: var(--gold, #d4af37);
+  color: var(--ink, #14110e);
+  padding: 9px 18px;
+  border-radius: 3px;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  transition: background 0.18s, transform 0.18s;
+}
+.primary-link-cta:hover {
+  background: var(--gold-bright, #f5c52e);
+  color: var(--ink, #14110e);
+  transform: translateY(-1px);
+}
+
+.primary-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(212, 175, 55, 0.18);
+}
+
+/* ===== Secondary nav (sport tabs + Leaders) ===== */
+.masthead-v316-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 10px 0 12px;
+  border-top: 0.5px solid rgba(212, 175, 55, 0.1);
+  width: 100%;
+}
+
+.secondary-link {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--paper-faint, #6a6660);
+  padding: 4px 0;
+  position: relative;
+  transition: color 0.18s;
+}
+
+.secondary-link:hover {
+  color: var(--paper-dim, #c4c0b0);
+}
+
+.secondary-link.active {
+  color: var(--gold, #d4af37);
+}
+
+.secondary-link.active::after {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
-  bottom: -4px;
-  height: 2px;
-  background: var(--gold);
+  bottom: -2px;
+  height: 1px;
+  background: var(--gold, #d4af37);
 }
 
-/* Pulsing dot before the lightning emoji is overkill — emoji is enough.
-   But if we want it to feel as "live" as the score strip, we could
-   add a subtle pulse animation to the emoji itself. Skipping for now. */
+.secondary-dot {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  color: rgba(212, 175, 55, 0.25);
+  font-size: 10px;
+  user-select: none;
+}
+
+/* ===== Bottom hairline ===== */
+.masthead-v316-hairline {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212, 175, 55, 0.4) 50%,
+    transparent 100%
+  );
+}
+
+/* ===== HIDE OLD MASTHEAD CSS CONFLICTS =====
+ * The old .masthead/.masthead-inner classes still exist in main.css.
+ * Since we changed the class name to .masthead-v316, the old styles don't
+ * apply to the new markup. No conflict. But if any wildcard nav rules
+ * leak through, this scopes them away. */
+.masthead-v316 .nav-link {
+  /* In case any global nav-link rules try to apply */
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 720px) {
+  .masthead-v316-inner {
+    padding: 18px 0 0;
+    gap: 12px;
+  }
+  .masthead-v316-mark {
+    height: 48px;
+  }
+  .masthead-v316-tagline {
+    display: none;
+  }
+  .masthead-v316-primary {
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .primary-link {
+    font-size: 11px;
+    padding: 6px 2px;
+  }
+  .primary-link-cta {
+    padding: 8px 14px;
+  }
+  .primary-divider {
+    display: none;
+  }
+  .masthead-v316-secondary {
+    gap: 12px;
+    padding: 8px 0 10px;
+    font-size: 9px;
+  }
+  .secondary-link {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+  }
+  .secondary-dot {
+    display: none;
+  }
+}
