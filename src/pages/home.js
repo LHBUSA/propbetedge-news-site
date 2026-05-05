@@ -2,6 +2,11 @@
  * src/pages/home.js
  * Editorial homepage — magazine layout
  *
+ * v3.12.2: breaking banner adds recency filter (max 4hr old). A high-impact
+ *          story from yesterday isn't breaking anymore — it's settled news.
+ *          Banner becomes a real signal: when users see red, it's actually
+ *          time-sensitive market-moving news posted in the last 4 hours.
+ *
  * v3.12.1: breaking banner excludes recaps. Banner is for time-sensitive
  *          market-moving news (injuries, trades, lineup changes), not daily
  *          morning editorial. Recaps live in hero (morning) and Top Stories.
@@ -91,13 +96,16 @@ export async function renderHome(root) {
   ]);
 
   // Breaking ribbon
-  // v3.12.1: exclude recaps from the breaking banner. Recaps are daily
-  // morning editorial, not "breaking" news. The banner is reserved for
-  // genuinely time-sensitive stories (injuries, trades, lineup changes)
-  // that affect tonight's prop markets. If no qualifying article exists,
-  // the banner stays empty — better empty than misleading.
-  const breakingPick = (breaking.articles || []).find(
-    (a) => a.category !== 'recap' && a.topic_kind !== 'recap'
+  // v3.12.2: require both NON-recap AND recency. A 17h-old high-impact story
+  // isn't "breaking" anymore — it's settled news that belongs in Top Stories,
+  // not the red banner. The banner becomes a real signal: when users see it,
+  // they know it's actually time-sensitive, market-moving news posted recently.
+  const MAX_BREAKING_AGE_MS = 4 * 60 * 60 * 1000;  // 4 hours
+  const nowTs = Date.now();
+  const breakingPick = (breaking.articles || []).find((a) =>
+    a.category !== 'recap' &&
+    a.topic_kind !== 'recap' &&
+    (nowTs - new Date(a.published_at).getTime()) < MAX_BREAKING_AGE_MS
   );
   if (breakingPick) {
     document.getElementById('breaking-slot').innerHTML = renderBreakingBanner(breakingPick);
