@@ -2,10 +2,12 @@
  * src/pages/home.js
  * Editorial homepage — magazine layout
  *
- * v3.12.2: breaking banner adds recency filter (max 4hr old). A high-impact
- *          story from yesterday isn't breaking anymore — it's settled news.
- *          Banner becomes a real signal: when users see red, it's actually
- *          time-sensitive market-moving news posted in the last 4 hours.
+ * v3.12.3: breaking banner two-tier — prefer fresh (< 12hr) non-recap news,
+ *          fall back to most recent non-recap if nothing fresh exists. Banner
+ *          only empty if no qualifying articles at all.
+ *
+ * v3.12.2: breaking banner adds recency filter (max 4hr old) — too strict,
+ *          left banner empty in mornings. Replaced with v3.12.3 two-tier logic.
  *
  * v3.12.1: breaking banner excludes recaps. Banner is for time-sensitive
  *          market-moving news (injuries, trades, lineup changes), not daily
@@ -96,17 +98,19 @@ export async function renderHome(root) {
   ]);
 
   // Breaking ribbon
-  // v3.12.2: require both NON-recap AND recency. A 17h-old high-impact story
-  // isn't "breaking" anymore — it's settled news that belongs in Top Stories,
-  // not the red banner. The banner becomes a real signal: when users see it,
-  // they know it's actually time-sensitive, market-moving news posted recently.
-  const MAX_BREAKING_AGE_MS = 4 * 60 * 60 * 1000;  // 4 hours
+  // v3.12.3: two-tier breaking. Prefer fresh non-recap news (< 12hr) for the
+  // red banner. If nothing fresh qualifies, fall back to the most recent
+  // non-recap article so the banner always has content. Recaps still excluded —
+  // they belong in hero, not breaking.
+  const MAX_FRESH_BREAKING_MS = 12 * 60 * 60 * 1000;
   const nowTs = Date.now();
-  const breakingPick = (breaking.articles || []).find((a) =>
-    a.category !== 'recap' &&
-    a.topic_kind !== 'recap' &&
-    (nowTs - new Date(a.published_at).getTime()) < MAX_BREAKING_AGE_MS
+  const breakingCandidates = (breaking.articles || []).filter(
+    (a) => a.category !== 'recap' && a.topic_kind !== 'recap'
   );
+  const freshBreaking = breakingCandidates.find(
+    (a) => (nowTs - new Date(a.published_at).getTime()) < MAX_FRESH_BREAKING_MS
+  );
+  const breakingPick = freshBreaking || breakingCandidates[0];
   if (breakingPick) {
     document.getElementById('breaking-slot').innerHTML = renderBreakingBanner(breakingPick);
   }
