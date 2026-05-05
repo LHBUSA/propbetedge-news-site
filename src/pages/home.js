@@ -2,22 +2,22 @@
  * src/pages/home.js
  * Editorial homepage — magazine layout
  *
- * v3.18: 📐 Layout balance fix
- *   - Lead overlay drops fixed aspect-ratio; instead stretches to match
- *     sidebar height via height:100% + min-height fallback
- *   - Sidebar trimmed from 4 → 3 stories (#1 still gets hero image
- *     treatment) — tighter layout, less vertical mismatch
- *   - Empty stadium-background gap below lead/sidebar reduced via
- *     section margin tightening
+ * v3.19: 🔆 Meta strip contrast pass
+ *   - Sport tag, timestamp, and impact badge in the lead overlay get
+ *     frosted-glass backdrop blur + heavier opacity + text shadows so
+ *     they stay readable on bright OR busy hero images (not just dark
+ *     gradient sections)
+ *   - Sport tag: solid dark background w/ blur + brighter border
+ *   - Timestamp: text-shadow halo for legibility without a pill bg
+ *   - Impact badge: bumped gold opacity, added text-shadow + drop-shadow
  *
+ * v3.18: layout balance fix (hero stretches, sidebar trim 4→3)
  * v3.17: cinematic overlay hero, mobile pass, all-4-sport rails
  * v3.16: lead dek readability (no italic, high contrast, truncated)
  * v3.15: 5h freshness gate on lead carousel
  * v3.14: lead carousel rotates top stories every 8s
  * v3.13: auto-refresh + bigger story sizing
  * v3.12.x: breaking banner tiers + recap exclusion
- * v3.12: morning-coffee hero priority
- * v3.11: trust API ordering
  */
 
 import { api } from '../api.js';
@@ -631,25 +631,35 @@ function injectHomeStyles() {
       font-size: 11px;
       letter-spacing: 1.4px;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.85);
+      color: #fff;
       margin-bottom: 14px;
     }
+    /* v3.19: solid dark pill + brighter border + backdrop blur for any-bg legibility */
     .lead-overlay-content .sport-tag {
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.28);
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
+      border: 1px solid rgba(255, 255, 255, 0.45);
       color: #fff;
-      padding: 3px 9px;
+      padding: 4px 10px;
       border-radius: 4px;
       font-weight: 700;
       font-size: 10px;
       letter-spacing: 1.5px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
+    /* v3.19: timestamp gets text-shadow halo, no pill */
     .lead-overlay-content .dot {
-      color: rgba(255,255,255,0.4);
+      color: rgba(255, 255, 255, 0.65);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+      font-weight: 700;
     }
     .lead-overlay-content .timestamp {
-      color: rgba(255,255,255,0.78);
-      font-weight: 500;
+      color: #fff;
+      font-weight: 600;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8), 0 0 12px rgba(0, 0, 0, 0.5);
+      letter-spacing: 1.4px;
     }
     .lead-headline-overlay {
       font-family: 'Playfair Display', Georgia, serif;
@@ -680,21 +690,27 @@ function injectHomeStyles() {
       color: #fff;
       font-weight: 700;
     }
+    /* v3.19: impact badge bumped opacity + text-shadow + outer glow */
     .lead-impact-badge {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      background: linear-gradient(135deg, rgba(245,166,35,0.28), rgba(245,166,35,0.12));
-      border: 1px solid rgba(245,166,35,0.55);
-      color: #FFD78A;
-      padding: 2px 9px;
+      background: linear-gradient(135deg, rgba(245,166,35,0.55), rgba(245,166,35,0.35));
+      backdrop-filter: blur(10px) saturate(140%);
+      -webkit-backdrop-filter: blur(10px) saturate(140%);
+      border: 1px solid rgba(255,200,90,0.85);
+      color: #fff;
+      padding: 3px 10px;
       border-radius: 999px;
       font-size: 10px;
       font-weight: 700;
       letter-spacing: 1.2px;
       text-transform: uppercase;
       margin-left: 8px;
-      box-shadow: 0 0 12px rgba(245,166,35,0.25);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+      box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.35),
+        0 0 16px rgba(245, 166, 35, 0.4);
     }
 
     /* ─── v3.18 ensure grid columns stretch to match heights ─── */
