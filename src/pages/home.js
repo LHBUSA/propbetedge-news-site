@@ -2,6 +2,10 @@
  * src/pages/home.js
  * Editorial homepage — magazine layout
  *
+ * v3.12.1: breaking banner excludes recaps. Banner is for time-sensitive
+ *          market-moving news (injuries, trades, lineup changes), not daily
+ *          morning editorial. Recaps live in hero (morning) and Top Stories.
+ *
  * v3.12: morning-coffee hero priority. Fresh recaps (< 12hr old) with images
  *        win the lead slot, sorted by impact_score. After 12hr, fall back to
  *        v3.11 API recency ordering so evening users see tonight's lineup /
@@ -87,8 +91,16 @@ export async function renderHome(root) {
   ]);
 
   // Breaking ribbon
-  if (breaking.articles?.length) {
-    document.getElementById('breaking-slot').innerHTML = renderBreakingBanner(breaking.articles[0]);
+  // v3.12.1: exclude recaps from the breaking banner. Recaps are daily
+  // morning editorial, not "breaking" news. The banner is reserved for
+  // genuinely time-sensitive stories (injuries, trades, lineup changes)
+  // that affect tonight's prop markets. If no qualifying article exists,
+  // the banner stays empty — better empty than misleading.
+  const breakingPick = (breaking.articles || []).find(
+    (a) => a.category !== 'recap' && a.topic_kind !== 'recap'
+  );
+  if (breakingPick) {
+    document.getElementById('breaking-slot').innerHTML = renderBreakingBanner(breakingPick);
   }
 
   const all = homepage.articles || [];
