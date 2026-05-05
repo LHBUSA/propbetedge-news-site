@@ -2,22 +2,18 @@
  * src/pages/home.js
  * Editorial homepage — magazine layout
  *
- * v3.17: 🎬 Cinematic hero overlay + sport rail completeness + mobile pass
- *   - Lead story is now an OVERLAID hero card (image fills, headline +
- *     dek overlay the bottom with a darkening gradient — same pattern as
- *     The Athletic / BBC Sport / NYT Sports). Major visual upgrade.
- *   - Dropped the title-attr tooltip on dek (mobile users couldn't see it).
- *     200-char truncation is sufficient; full text is one click away.
- *   - All 4 sport rails ALWAYS render with header. If a sport has no
- *     recent articles, we show a placeholder card with archive link
- *     instead of hiding the rail entirely. Keeps brand consistency.
- *   - Mobile: hero aspect shifts to 4:5 portrait, headline sizing
- *     respecified for small viewports, sidebar hero-img shrinks
- *     proportionally, latest-anchor reverts to single-col.
+ * v3.18: 📐 Layout balance fix
+ *   - Lead overlay drops fixed aspect-ratio; instead stretches to match
+ *     sidebar height via height:100% + min-height fallback
+ *   - Sidebar trimmed from 4 → 3 stories (#1 still gets hero image
+ *     treatment) — tighter layout, less vertical mismatch
+ *   - Empty stadium-background gap below lead/sidebar reduced via
+ *     section margin tightening
  *
+ * v3.17: cinematic overlay hero, mobile pass, all-4-sport rails
  * v3.16: lead dek readability (no italic, high contrast, truncated)
- * v3.15: 5h freshness gate on lead carousel with overnight fallback
- * v3.14: lead story carousel rotates top stories every 8s
+ * v3.15: 5h freshness gate on lead carousel
+ * v3.14: lead carousel rotates top stories every 8s
  * v3.13: auto-refresh + bigger story sizing
  * v3.12.x: breaking banner tiers + recap exclusion
  * v3.12: morning-coffee hero priority
@@ -231,11 +227,10 @@ function populateHome(data, opts = {}) {
     if (animate) crossfade(leadSlot);
   }
 
-  // Sidebar — top stories below the lead pool. Some overlap with carousel
-  // is expected (real news sites do this — same story is often featured AND
-  // listed in Top Stories). Filter out only the CURRENTLY-displayed lead.
+  // Sidebar — top stories below the lead pool. v3.18: trimmed from 4 → 3
+  // for tighter layout balance with the cinematic hero.
   const remaining = all.filter((a) => a.id !== leadPick.id);
-  const sidebarStories = remaining.slice(0, 4);
+  const sidebarStories = remaining.slice(0, 3);
   if (sidebarSlot) {
     sidebarSlot.innerHTML = `
       <div class="sidebar-header">Top Stories</div>
@@ -247,8 +242,8 @@ function populateHome(data, opts = {}) {
   }
 
   // Latest grid — first card (anchor) is bigger
-  // remaining = articles minus the carousel's currently-displayed lead
-  const latest = remaining.slice(4, 10);
+  // v3.18: sidebar shows 3, so latest starts at index 3 in `remaining`
+  const latest = remaining.slice(3, 9);
   if (latestGrid) {
     latestGrid.innerHTML = latest.length
       ? latest.map((a, i) => {
@@ -558,12 +553,15 @@ function injectHomeStyles() {
   s.id = 'pbe-home-v313-styles';
   s.textContent = `
     /* ─── v3.17 cinematic overlay hero ───────────────────────── */
+    /* v3.18: dropped aspect-ratio in favor of height:100% + min-height.
+       In the lead-grid, this stretches to match sidebar height naturally. */
     .lead-story-overlay {
       position: relative;
       display: block;
+      height: 100%;
+      min-height: 540px;
       border-radius: 14px;
       overflow: hidden;
-      aspect-ratio: 16 / 10;
       text-decoration: none !important;
       color: inherit;
       background: #0a0a0a;
@@ -697,6 +695,27 @@ function injectHomeStyles() {
       text-transform: uppercase;
       margin-left: 8px;
       box-shadow: 0 0 12px rgba(245,166,35,0.25);
+    }
+
+    /* ─── v3.18 ensure grid columns stretch to match heights ─── */
+    .lead-grid {
+      align-items: stretch !important;
+    }
+    .lead-grid > * {
+      min-height: 0;
+    }
+    /* Lead slot must fill the grid cell so the overlay's height:100% works */
+    #lead-slot {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    #lead-slot > .lead-story-overlay {
+      flex: 1 1 auto;
+    }
+    /* Tighten section gap between lead row and Latest */
+    .latest-section {
+      margin-top: clamp(28px, 4vw, 48px);
     }
 
     /* ─── Sidebar #1 hero treatment ─────────────────────────── */
