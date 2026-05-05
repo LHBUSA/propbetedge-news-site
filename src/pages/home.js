@@ -2,22 +2,21 @@
  * src/pages/home.js
  * Editorial homepage — magazine layout
  *
- * v3.19: 🔆 Meta strip contrast pass
- *   - Sport tag, timestamp, and impact badge in the lead overlay get
- *     frosted-glass backdrop blur + heavier opacity + text shadows so
- *     they stay readable on bright OR busy hero images (not just dark
- *     gradient sections)
- *   - Sport tag: solid dark background w/ blur + brighter border
- *   - Timestamp: text-shadow halo for legibility without a pill bg
- *   - Impact badge: bumped gold opacity, added text-shadow + drop-shadow
+ * v3.20: 🔆 Sidebar timestamp readability
+ *   - Sidebar timestamps ("48M AGO", "2H AGO") were rendered in muted
+ *     paper-subtle gray that was barely legible against the sidebar bg
+ *   - Bumped .timestamp color globally inside sidebar context to white
+ *     w/ heavier font-weight and letter-spacing
+ *   - Catches both the #1 hero item (rendered here) and items 2-3
+ *     (rendered by article-card.js component) via broad selector match
  *
+ * v3.19: meta strip contrast pass for any-bg legibility
  * v3.18: layout balance fix (hero stretches, sidebar trim 4→3)
  * v3.17: cinematic overlay hero, mobile pass, all-4-sport rails
- * v3.16: lead dek readability (no italic, high contrast, truncated)
- * v3.15: 5h freshness gate on lead carousel
- * v3.14: lead carousel rotates top stories every 8s
+ * v3.16: lead dek readability
+ * v3.15: 5h freshness gate
+ * v3.14: lead carousel
  * v3.13: auto-refresh + bigger story sizing
- * v3.12.x: breaking banner tiers + recap exclusion
  */
 
 import { api } from '../api.js';
@@ -758,14 +757,33 @@ function injectHomeStyles() {
       object-fit: cover;
     }
     .sidebar-meta {
-      font-size: 10px;
-      letter-spacing: 0.8px;
+      font-size: 11px;
+      letter-spacing: 1px;
       text-transform: uppercase;
-      color: var(--paper-subtle, #a0a8b4);
+      color: rgba(255, 255, 255, 0.85) !important;  /* v3.20: brighter than --paper-subtle */
       margin-bottom: 6px;
       display: flex;
       align-items: center;
       gap: 6px;
+      font-weight: 600;
+    }
+    /* v3.20: catch ALL sidebar timestamps (#1 hero rendered here + #2/#3
+       from article-card.js). High specificity overrides the muted defaults. */
+    .sidebar-story .timestamp,
+    .sidebar-meta .timestamp,
+    .top-stories .timestamp,
+    .sidebar-story time,
+    .top-stories time {
+      color: rgba(255, 255, 255, 0.82) !important;
+      font-weight: 600 !important;
+      letter-spacing: 1px !important;
+      font-size: 11px !important;
+    }
+    .sidebar-story .dot,
+    .sidebar-meta .dot,
+    .top-stories .dot {
+      color: rgba(255, 255, 255, 0.45) !important;
+      font-weight: 700 !important;
     }
     .sidebar-headline-hero {
       font-size: 17px;
