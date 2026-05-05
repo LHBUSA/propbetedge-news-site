@@ -2,28 +2,19 @@
  * src/pages/home.js
  * Editorial homepage — magazine layout
  *
- * v3.15: ⏱ Lead carousel freshness gate
- *   - Articles older than 5 hours are excluded from the lead carousel
- *   - Exception: if nothing fresh exists (overnight / slow news days), fall
- *     back to the top articles regardless of age so the lead is never empty
- *   - Logic applies BOTH to initial render AND auto-refresh
+ * v3.16: 📝 Lead dek readability pass
+ *   - Removed italics on the lead-story dek (was hard to read at a glance)
+ *   - Bumped contrast: rgba(255,255,255,0.92) on lead, with subtle text-shadow
+ *     for legibility against busy hero images
+ *   - Added 200-char truncation on word boundary so dek stays punchy
+ *   - Kept original copy in tooltip (title attr) for full context on hover
  *
- * v3.14: 🎠 Lead story carousel — rotates through top articles every 8 sec
- *   - Crossfade transitions, pause-on-hover, click-dots manual navigation
- *   - Pool refreshes when auto-refresh brings in new articles
- *   - Sidebar/latest unchanged (some overlap is expected like real news sites)
- *
- * v3.13: 🔄 Auto-refresh + restored bigger story sizing
- *   - Background re-fetches breaking/homepage/sport data every 3 min
- *   - Lead story upgraded with bigger image, larger headline (clamps to 56px)
- *   - Top Stories sidebar #1 slot gets a small image preview
- *   - Latest grid first card spans 2 cols (visual anchor) on desktop
- *
- * v3.12.3: breaking banner two-tier — prefer fresh (< 12hr) non-recap news
- * v3.12.2: breaking banner adds recency filter
- * v3.12.1: breaking banner excludes recaps
+ * v3.15: ⏱ Lead carousel freshness gate (5h max age, slow-time fallback)
+ * v3.14: 🎠 Lead story carousel — rotates top stories every 8 sec
+ * v3.13: 🔄 Auto-refresh + bigger story sizing
+ * v3.12.x: breaking banner tiers + recap exclusion
  * v3.12: morning-coffee hero priority
- * v3.11: trust API ordering for lead/sidebar
+ * v3.11: trust API ordering
  */
 
 import { api } from '../api.js';
@@ -457,11 +448,13 @@ function buildLeadPool(articles) {
 // ─── Renderers (lead/sidebar/skeletons) ──────────────────────────────────
 
 // v3.13: Bigger lead story — larger image area, bolder headline, more visual weight
+// v3.16: Dek truncated to ~200 chars, italic removed, higher contrast
 function renderLeadStory(article) {
   const url = article.url || `/news/${article.sport}/${article.slug}`;
   const date = new Date(article.published_at);
   const sport = article.sport;
-  const dek = article.take?.summary || article.summary;
+  const dekFull = article.take?.summary || article.summary || '';
+  const dek = truncateDek(dekFull, 200);
   const impact = article.take?.impact_score;
 
   const imgBlock = article.image_url
@@ -485,12 +478,21 @@ function renderLeadStory(article) {
         ${impactBadge}
       </div>
       <h1 class="lead-headline lead-headline-big">${escapeHtml(article.title)}</h1>
-      ${dek ? `<p class="lead-dek lead-dek-big">${escapeHtml(dek)}</p>` : ''}
+      ${dek ? `<p class="lead-dek lead-dek-big" title="${escapeAttr(dekFull)}">${escapeHtml(dek)}</p>` : ''}
       <div class="lead-byline">
         <span>By <strong style="color:var(--paper)">${escapeHtml(article.author || 'PropBetEdge Staff')}</strong></span>
       </div>
     </a>
   `;
+}
+
+// v3.16: Truncate dek to roughly N chars, breaking on word boundary
+function truncateDek(text, maxChars = 200) {
+  if (!text || text.length <= maxChars) return text || '';
+  const slice = text.slice(0, maxChars);
+  const lastSpace = slice.lastIndexOf(' ');
+  const cut = lastSpace > maxChars * 0.7 ? lastSpace : maxChars;
+  return slice.slice(0, cut).trim() + '…';
 }
 
 // v3.13: First sidebar slot gets a hero treatment with a small image
@@ -550,8 +552,12 @@ function injectHomeStyles() {
     .lead-dek-big {
       font-size: clamp(15px, 1.4vw, 19px) !important;
       line-height: 1.5 !important;
-      color: var(--paper-subtle, #a0a8b4) !important;
-      margin-bottom: 14px !important;
+      font-style: normal !important;          /* v3.16: kill italics */
+      font-weight: 400 !important;
+      color: rgba(255, 255, 255, 0.92) !important;  /* v3.16: high contrast */
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);     /* v3.16: legibility on busy bg */
+      margin-bottom: 16px !important;
+      max-width: 64ch;                                /* readability cap */
     }
     .lead-impact-badge {
       display: inline-flex;
