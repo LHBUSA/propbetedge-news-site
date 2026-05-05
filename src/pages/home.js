@@ -2,38 +2,28 @@
  * src/pages/home.js
  * Editorial homepage — magazine layout
  *
+ * v3.15: ⏱ Lead carousel freshness gate
+ *   - Articles older than 5 hours are excluded from the lead carousel
+ *   - Exception: if nothing fresh exists (overnight / slow news days), fall
+ *     back to the top articles regardless of age so the lead is never empty
+ *   - Logic applies BOTH to initial render AND auto-refresh
+ *
+ * v3.14: 🎠 Lead story carousel — rotates through top articles every 8 sec
+ *   - Crossfade transitions, pause-on-hover, click-dots manual navigation
+ *   - Pool refreshes when auto-refresh brings in new articles
+ *   - Sidebar/latest unchanged (some overlap is expected like real news sites)
+ *
  * v3.13: 🔄 Auto-refresh + restored bigger story sizing
- *   - Background re-fetches breaking/homepage/sport data every 3 min,
- *     diffs against current top article, only re-renders if content changed
- *   - Lead story upgraded with bigger image, larger headline (clamps up to
- *     56px), heavier visual weight
- *   - Top Stories sidebar item gets bigger lead photo on the #1 slot
- *   - Latest grid: first card now spans 2 columns (visual anchor) on
- *     desktop. Mobile stays 1-up.
- *   - cleanup interval registered on beforeunload + popstate so we don't
- *     leak intervals when navigating away
+ *   - Background re-fetches breaking/homepage/sport data every 3 min
+ *   - Lead story upgraded with bigger image, larger headline (clamps to 56px)
+ *   - Top Stories sidebar #1 slot gets a small image preview
+ *   - Latest grid first card spans 2 cols (visual anchor) on desktop
  *
  * v3.12.3: breaking banner two-tier — prefer fresh (< 12hr) non-recap news
- * v3.12.2: breaking banner adds recency filter (max 4hr)
+ * v3.12.2: breaking banner adds recency filter
  * v3.12.1: breaking banner excludes recaps
- * v3.12: morning-coffee hero priority (fresh recaps win lead in morning)
+ * v3.12: morning-coffee hero priority
  * v3.11: trust API ordering for lead/sidebar
- *
- *  Structure:
- *  ┌─────────────────────────────────────────────────────┐
- *  │ Breaking ribbon (impact 5/5 only)                  │
- *  └─────────────────────────────────────────────────────┘
- *  ┌─────────────────────────┬───────────────────────────┐
- *  │  LEAD STORY (bigger)    │  Top Stories sidebar     │
- *  │  (big photo + headline) │  (4 stories, #1 bigger)  │
- *  └─────────────────────────┴───────────────────────────┘
- *  ─── Latest ──────────────────────────────────────────
- *  ┌─────────────┬──────┐
- *  │ FEATURED    │ card │  ← v3.13: anchor card spans 2 cols
- *  │ (2-col)     │ card │
- *  ├──────┬──────┼──────┤
- *  │ card │ card │ card │
- *  └──────┴──────┴──────┘
  */
 
 import { api } from '../api.js';
@@ -52,6 +42,20 @@ const REFRESH_INTERVAL_MS = 3 * 60 * 1000;  // 3 min
 const REFRESH_FADE_MS = 280;                 // crossfade duration when content swaps
 let _refreshHandle = null;
 let _currentRoot = null;
+
+// v3.14: lead carousel state
+const LEAD_CYCLE_MS = 8000;       // 8 sec per slide
+const LEAD_POOL_SIZE = 5;         // rotate through top 5 stories
+const LEAD_RESUME_DELAY_MS = 12000; // resume auto-cycle 12s after manual nav
+// v3.15: anything older than this is excluded from the lead carousel —
+// unless nothing fresh exists (overnight / slow news days), in which case
+// we fall back to whatever's available so the lead is never empty.
+const MAX_LEAD_AGE_MS = 5 * 60 * 60 * 1000;  // 5 hours
+let _leadPool = [];
+let _leadIndex = 0;
+let _leadCycleHandle = null;
+let _leadResumeHandle = null;
+let _leadHovering = false;
 
 export async function renderHome(root) {
   _currentRoot = root;
@@ -145,15 +149,27 @@ function stopAutoRefresh() {
     clearInterval(_refreshHandle);
     _refreshHandle = null;
   }
+  // v3.14: also stop the carousel
+  stopLeadCycle();
+  if (_leadResumeHandle) {
+    clearTimeout(_leadResumeHandle);
+    _leadResumeHandle = null;
+  }
 }
 
-// Check if the new data has fresher content than what's currently rendered
+// Check if the new data has fresher content than what's currently in the
+// carousel pool. v3.14: any change in top-5 article IDs (order or set)
+// triggers re-population so newly published articles appear in rotation.
 function hasFreshContent(data) {
-  const newTopId = (data.homepage.articles || [])[0]?.id;
-  const currentTopId = document.querySelector('.lead-story')?.dataset?.articleId;
-  if (!newTopId) return false;
-  if (!currentTopId) return true;  // initial unrendered state
-  return String(newTopId) !== String(currentTopId);
+  const newTop5 = (data.homepage.articles || []).slice(0, LEAD_POOL_SIZE).map((a) => String(a.id));
+  const currentTop5 = _leadPool.map((a) => String(a.id));
+  if (newTop5.length === 0) return false;
+  if (currentTop5.length === 0) return true;
+  if (newTop5.length !== currentTop5.length) return true;
+  for (let i = 0; i < newTop5.length; i++) {
+    if (newTop5[i] !== currentTop5[i]) return true;
+  }
+  return false;
 }
 
 // Brief visual indicator that content was just refreshed
@@ -205,15 +221,22 @@ function populateHome(data, opts = {}) {
     return;
   }
 
-  // Lead
-  const lead = pickLead(all);
+  // Lead — v3.15: carousel pool with 5-hour freshness gate
+  const newPool = buildLeadPool(all);
+  if (newPool.length === 0) {
+    // No articles at all — show empty state (covered above by !all.length check)
+    return;
+  }
+  const leadPick = newPool[0];
   if (leadSlot) {
-    leadSlot.innerHTML = renderLeadStory(lead);
+    setLeadPool(newPool, { animate });
     if (animate) crossfade(leadSlot);
   }
 
-  // Sidebar — first slot gets bigger v3.13 treatment
-  const remaining = all.filter((a) => a.id !== lead.id);
+  // Sidebar — top stories below the lead pool. Some overlap with carousel
+  // is expected (real news sites do this — same story is often featured AND
+  // listed in Top Stories). Filter out only the CURRENTLY-displayed lead.
+  const remaining = all.filter((a) => a.id !== leadPick.id);
   const sidebarStories = remaining.slice(0, 4);
   if (sidebarSlot) {
     sidebarSlot.innerHTML = `
@@ -226,6 +249,7 @@ function populateHome(data, opts = {}) {
   }
 
   // Latest grid — first card (anchor) is bigger
+  // remaining = articles minus the carousel's currently-displayed lead
   const latest = remaining.slice(4, 10);
   if (latestGrid) {
     latestGrid.innerHTML = latest.length
@@ -287,26 +311,147 @@ function crossfade(el) {
   });
 }
 
-// ─── Lead pick logic (unchanged from v3.12) ──────────────────────────────
-function pickLead(articles) {
-  const FRESH_RECAP_MS = 12 * 60 * 60 * 1000;
+// ─── v3.14: Lead carousel ────────────────────────────────────────────────
+function setLeadPool(newPool, opts = {}) {
+  if (!newPool?.length) return;
+  // Try to keep showing the same article if it's still in the new pool
+  const currentArticleId = _leadPool[_leadIndex]?.id;
+  _leadPool = newPool;
+  const sameIdx = currentArticleId
+    ? newPool.findIndex((a) => String(a.id) === String(currentArticleId))
+    : -1;
+  _leadIndex = sameIdx >= 0 ? sameIdx : 0;
+  showLeadIndex(_leadIndex, { skipFade: !opts.animate });
+  if (newPool.length > 1) {
+    startLeadCycle();
+  } else {
+    stopLeadCycle();
+  }
+  attachLeadHoverHandlers();
+}
+
+function showLeadIndex(idx, opts = {}) {
+  const article = _leadPool[idx];
+  if (!article) return;
+  const slot = document.getElementById('lead-slot');
+  if (!slot) return;
+
+  if (opts.skipFade) {
+    slot.innerHTML = renderLeadStory(article) + renderLeadDots(idx);
+    wireLeadDots();
+    return;
+  }
+
+  // Crossfade: fade out, swap content, fade in
+  slot.style.transition = `opacity 320ms ease`;
+  slot.style.opacity = '0';
+  setTimeout(() => {
+    slot.innerHTML = renderLeadStory(article) + renderLeadDots(idx);
+    wireLeadDots();
+    requestAnimationFrame(() => {
+      slot.style.opacity = '1';
+    });
+  }, 280);
+}
+
+function advanceLead() {
+  if (_leadHovering) return;  // pause cycling while hovered
+  if (!_leadPool.length) return;
+  _leadIndex = (_leadIndex + 1) % _leadPool.length;
+  showLeadIndex(_leadIndex);
+}
+
+function startLeadCycle() {
+  stopLeadCycle();
+  if (_leadPool.length <= 1) return;
+  _leadCycleHandle = setInterval(advanceLead, LEAD_CYCLE_MS);
+}
+
+function stopLeadCycle() {
+  if (_leadCycleHandle) {
+    clearInterval(_leadCycleHandle);
+    _leadCycleHandle = null;
+  }
+}
+
+function attachLeadHoverHandlers() {
+  const slot = document.getElementById('lead-slot');
+  if (!slot || slot.dataset.hoverWired === '1') return;
+  slot.dataset.hoverWired = '1';
+  slot.addEventListener('mouseenter', () => { _leadHovering = true; });
+  slot.addEventListener('mouseleave', () => { _leadHovering = false; });
+}
+
+function renderLeadDots(activeIdx) {
+  if (_leadPool.length <= 1) return '';
+  const dots = _leadPool.map((_, i) =>
+    `<button class="lead-dot${i === activeIdx ? ' lead-dot-active' : ''}" data-lead-dot="${i}" aria-label="Show story ${i + 1}"></button>`
+  ).join('');
+  return `<div class="lead-dots">${dots}</div>`;
+}
+
+function wireLeadDots() {
+  const slot = document.getElementById('lead-slot');
+  if (!slot) return;
+  slot.querySelectorAll('[data-lead-dot]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.leadDot, 10);
+      if (Number.isNaN(idx)) return;
+      _leadIndex = idx;
+      showLeadIndex(idx);
+      // Pause auto-cycle, then resume after a delay so user has time to read
+      stopLeadCycle();
+      if (_leadResumeHandle) clearTimeout(_leadResumeHandle);
+      _leadResumeHandle = setTimeout(startLeadCycle, LEAD_RESUME_DELAY_MS);
+    });
+  });
+}
+
+// ─── v3.15 Lead pool with freshness gate ─────────────────────────────────
+// Returns array of up to LEAD_POOL_SIZE articles for the carousel.
+// Hard rule: nothing older than MAX_LEAD_AGE_MS (5h) leads, UNLESS no fresh
+// articles exist (overnight / slow news days), in which case we fall back
+// to the top articles regardless of age.
+function buildLeadPool(articles) {
+  if (!articles?.length) return [];
+
   const now = Date.now();
+  const FRESH_RECAP_MS = 12 * 60 * 60 * 1000;
+  const ageOf = (a) => now - new Date(a.published_at).getTime();
 
-  const freshRecaps = articles
-    .filter((a) =>
-      (a.category === 'recap' || a.topic_kind === 'recap') &&
-      a.image_url &&
-      (now - new Date(a.published_at).getTime()) < FRESH_RECAP_MS
-    )
-    .sort((a, b) =>
-      (b.relevance_score || b.take?.impact_score || 0) -
-      (a.relevance_score || a.take?.impact_score || 0)
+  // Fresh = < 5 hours old. Prefer items with images.
+  const fresh = articles.filter((a) => ageOf(a) < MAX_LEAD_AGE_MS);
+  const freshWithImage = fresh.filter((a) => a.image_url);
+
+  if (freshWithImage.length > 0) {
+    // Within fresh-with-image, sort recaps by impact_score (morning-coffee
+    // priority from v3.12) ahead of non-recaps which keep API order.
+    const freshRecaps = freshWithImage
+      .filter((a) =>
+        (a.category === 'recap' || a.topic_kind === 'recap') &&
+        ageOf(a) < FRESH_RECAP_MS
+      )
+      .sort((x, y) =>
+        (y.relevance_score || y.take?.impact_score || 0) -
+        (x.relevance_score || x.take?.impact_score || 0)
+      );
+    const freshNonRecaps = freshWithImage.filter((a) =>
+      a.category !== 'recap' && a.topic_kind !== 'recap'
     );
+    // Dedupe by id, cap at pool size
+    const pool = [...freshRecaps, ...freshNonRecaps]
+      .filter((a, i, arr) => arr.findIndex((x) => x.id === a.id) === i)
+      .slice(0, LEAD_POOL_SIZE);
+    if (pool.length > 0) return pool;
+  }
 
-  if (freshRecaps.length > 0) return freshRecaps[0];
-
-  const firstWithImage = articles.find((a) => a.image_url);
-  return firstWithImage || articles[0];
+  // No fresh articles — slow news / overnight fallback.
+  // Use top articles regardless of age, prefer those with images.
+  const withImage = articles.filter((a) => a.image_url);
+  const fallbackPool = (withImage.length ? withImage : articles).slice(0, LEAD_POOL_SIZE);
+  return fallbackPool;
 }
 
 // ─── Renderers (lead/sidebar/skeletons) ──────────────────────────────────
@@ -506,6 +651,37 @@ function injectHomeStyles() {
     }
     .refresh-pulse.refresh-pulse-on {
       opacity: 1;
+    }
+
+    /* ─── v3.14 lead carousel dots ────────────────────────────── */
+    .lead-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 18px;
+      padding: 4px 0;
+    }
+    .lead-dot {
+      width: 28px;
+      height: 4px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.18);
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      transition: all 0.25s ease;
+    }
+    .lead-dot:hover {
+      background: rgba(255,255,255,0.4);
+    }
+    .lead-dot-active {
+      background: var(--gold, #F5A623);
+      width: 44px;
+      box-shadow: 0 0 12px rgba(245,166,35,0.4);
+    }
+    /* Subtle "paused" indicator when user hovers the lead */
+    .lead-story-big {
+      position: relative;
     }
   `;
   document.head.appendChild(s);
