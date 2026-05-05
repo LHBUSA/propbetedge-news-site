@@ -1,6 +1,12 @@
 /**
  * src/pages/home.js
  * Editorial homepage — magazine layout
+ *
+ * v3.12: morning-coffee hero priority. Fresh recaps (< 12hr old) with images
+ *        win the lead slot, sorted by impact_score. After 12hr, fall back to
+ *        v3.11 API recency ordering so evening users see tonight's lineup /
+ *        breaking news instead of stale recaps.
+ *
  * v3.11: trust API ordering for lead/sidebar (was: client-side re-sort by impact_score
  *        only, which buried fresh news under yesterday's high-impact bangers)
  *
@@ -107,6 +113,7 @@ export async function renderHome(root) {
   }
 
   // 1. Lead story = first article with image (API already sorted by recency_score)
+  //    v3.12: pickLead now prefers fresh recaps in the morning window.
   const lead = pickLead(all);
   document.getElementById('lead-slot').innerHTML = renderLeadStory(lead);
 
@@ -158,10 +165,33 @@ export async function renderHome(root) {
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────
-// v3.11: API now returns articles sorted by recency-weighted homepage_score.
-// Trust that ordering. Just pick the first article that has an image for the lead.
-// (Old version re-sorted by impact_score only, which buried fresh news.)
+// v3.12: Morning-coffee hero priority. Fresh recaps (< 12hr old) with images
+// win the lead slot, sorted by impact_score. After 12hr, fall back to v3.11
+// recency-weighted API ordering. Recaps that age past 12hr drop out of the
+// hero so evening readers see tonight's lineup news / breaking stories
+// instead of stale game recaps.
+//
+// v3.11: API returns articles sorted by recency-weighted homepage_score.
+// Old version re-sorted by impact_score only, which buried fresh news.
 function pickLead(articles) {
+  const FRESH_RECAP_MS = 12 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  // Fresh recaps with images, ranked by impact_score
+  const freshRecaps = articles
+    .filter((a) =>
+      (a.category === 'recap' || a.topic_kind === 'recap') &&
+      a.image_url &&
+      (now - new Date(a.published_at).getTime()) < FRESH_RECAP_MS
+    )
+    .sort((a, b) =>
+      (b.relevance_score || b.take?.impact_score || 0) -
+      (a.relevance_score || a.take?.impact_score || 0)
+    );
+
+  if (freshRecaps.length > 0) return freshRecaps[0];
+
+  // v3.11 fallback: first article with image (API already recency-sorted)
   const firstWithImage = articles.find((a) => a.image_url);
   return firstWithImage || articles[0];
 }
