@@ -2,16 +2,23 @@
  * src/pages/home.js
  * Editorial homepage — magazine layout
  *
- * v3.16: 📝 Lead dek readability pass
- *   - Removed italics on the lead-story dek (was hard to read at a glance)
- *   - Bumped contrast: rgba(255,255,255,0.92) on lead, with subtle text-shadow
- *     for legibility against busy hero images
- *   - Added 200-char truncation on word boundary so dek stays punchy
- *   - Kept original copy in tooltip (title attr) for full context on hover
+ * v3.17: 🎬 Cinematic hero overlay + sport rail completeness + mobile pass
+ *   - Lead story is now an OVERLAID hero card (image fills, headline +
+ *     dek overlay the bottom with a darkening gradient — same pattern as
+ *     The Athletic / BBC Sport / NYT Sports). Major visual upgrade.
+ *   - Dropped the title-attr tooltip on dek (mobile users couldn't see it).
+ *     200-char truncation is sufficient; full text is one click away.
+ *   - All 4 sport rails ALWAYS render with header. If a sport has no
+ *     recent articles, we show a placeholder card with archive link
+ *     instead of hiding the rail entirely. Keeps brand consistency.
+ *   - Mobile: hero aspect shifts to 4:5 portrait, headline sizing
+ *     respecified for small viewports, sidebar hero-img shrinks
+ *     proportionally, latest-anchor reverts to single-col.
  *
- * v3.15: ⏱ Lead carousel freshness gate (5h max age, slow-time fallback)
- * v3.14: 🎠 Lead story carousel — rotates top stories every 8 sec
- * v3.13: 🔄 Auto-refresh + bigger story sizing
+ * v3.16: lead dek readability (no italic, high contrast, truncated)
+ * v3.15: 5h freshness gate on lead carousel with overnight fallback
+ * v3.14: lead story carousel rotates top stories every 8s
+ * v3.13: auto-refresh + bigger story sizing
  * v3.12.x: breaking banner tiers + recap exclusion
  * v3.12: morning-coffee hero priority
  * v3.11: trust API ordering
@@ -252,7 +259,8 @@ function populateHome(data, opts = {}) {
     if (animate) crossfade(latestGrid);
   }
 
-  // Per-sport rails
+  // Per-sport rails — v3.17: always show all 4 sports for brand consistency.
+  // Empty sports get a placeholder with an archive link instead of being hidden.
   const sportData = {
     mlb: data.mlbData,
     nfl: data.nflData,
@@ -261,23 +269,43 @@ function populateHome(data, opts = {}) {
   };
   const railsEl = document.getElementById('sport-rails');
   if (!railsEl) return;
-  const sportsToShow = ['mlb', 'nfl', 'nba', 'nhl'].filter((s) => (sportData[s].articles || []).length > 0);
-  railsEl.innerHTML = sportsToShow.map((sport) => {
+  const allSports = ['mlb', 'nfl', 'nba', 'nhl'];
+  railsEl.innerHTML = allSports.map((sport) => {
     const sd = sportData[sport];
     const articles = (sd.articles || []).slice(0, 4);
     const total = sd.total || articles.length;
+    const hasContent = articles.length > 0;
+    const headerHtml = `
+      <div class="sport-rail-heading">
+        <h2 class="sport-rail-title">
+          <span class="sport-rail-emoji">${SPORT_FALLBACK[sport]}</span>
+          ${sport.toUpperCase()}
+          <span class="sport-rail-meta">· ${SPORT_LABELS[sport]} · ${total} ${total === 1 ? 'story' : 'stories'}</span>
+        </h2>
+        <a href="/news/${sport}" class="sport-rail-more">${hasContent ? `All ${sport.toUpperCase()}` : 'Explore archive'} →</a>
+      </div>
+    `;
+    if (hasContent) {
+      return `
+        <section class="sport-rail-section">
+          ${headerHtml}
+          <div class="article-grid uniform-grid fade-stagger">
+            ${articles.map((a) => renderArticleCard(a)).join('')}
+          </div>
+        </section>
+      `;
+    }
+    // Empty state — placeholder card
     return `
-      <section class="sport-rail-section">
-        <div class="sport-rail-heading">
-          <h2 class="sport-rail-title">
-            <span class="sport-rail-emoji">${SPORT_FALLBACK[sport]}</span>
-            ${sport.toUpperCase()}
-            <span class="sport-rail-meta">· ${SPORT_LABELS[sport]} · ${total} ${total === 1 ? 'story' : 'stories'}</span>
-          </h2>
-          <a href="/news/${sport}" class="sport-rail-more">All ${sport.toUpperCase()} →</a>
-        </div>
-        <div class="article-grid uniform-grid fade-stagger">
-          ${articles.map((a) => renderArticleCard(a)).join('')}
+      <section class="sport-rail-section sport-rail-empty">
+        ${headerHtml}
+        <div class="sport-rail-empty-card">
+          <div class="sport-rail-empty-emoji">${SPORT_FALLBACK[sport]}</div>
+          <div class="sport-rail-empty-body">
+            <div class="sport-rail-empty-title">${sport.toUpperCase()} coverage incoming</div>
+            <div class="sport-rail-empty-sub">${total > 0 ? `${total} ${total === 1 ? 'archive story' : 'archive stories'} available` : 'New coverage launching this season'}</div>
+          </div>
+          <a href="/news/${sport}" class="sport-rail-empty-cta">Visit /news/${sport} →</a>
         </div>
       </section>
     `;
@@ -447,40 +475,43 @@ function buildLeadPool(articles) {
 
 // ─── Renderers (lead/sidebar/skeletons) ──────────────────────────────────
 
-// v3.13: Bigger lead story — larger image area, bolder headline, more visual weight
-// v3.16: Dek truncated to ~200 chars, italic removed, higher contrast
+// v3.17: Cinematic overlay hero — image fills card, content overlays bottom
+// with darkening gradient (Athletic / BBC / NYT Sports pattern)
 function renderLeadStory(article) {
   const url = article.url || `/news/${article.sport}/${article.slug}`;
   const date = new Date(article.published_at);
   const sport = article.sport;
   const dekFull = article.take?.summary || article.summary || '';
-  const dek = truncateDek(dekFull, 200);
+  const dek = truncateDek(dekFull, 180);
   const impact = article.take?.impact_score;
 
   const imgBlock = article.image_url
-    ? `<div class="lead-image lead-image-big">
-         <img src="${escapeAttr(proxyImage(article.image_url))}" alt="${escapeAttr(article.title)}" class="hero-image-img" onerror="this.classList.add('img-broken')" />
-         <div class="img-fallback">${SPORT_FALLBACK[sport] || '◆'}</div>
-       </div>`
-    : `<div class="lead-image lead-image-big"><div class="img-fallback">${SPORT_FALLBACK[sport] || '◆'}</div></div>`;
+    ? `<img src="${escapeAttr(proxyImage(article.image_url))}" alt="${escapeAttr(article.title)}" class="lead-overlay-img" onerror="this.classList.add('img-broken')" />
+       <div class="lead-overlay-fallback">${SPORT_FALLBACK[sport] || '◆'}</div>`
+    : `<div class="lead-overlay-fallback lead-overlay-fallback-only">${SPORT_FALLBACK[sport] || '◆'}</div>`;
 
   const impactBadge = impact >= 4
     ? `<span class="lead-impact-badge">⚡ Impact ${impact}/5</span>`
     : '';
 
   return `
-    <a href="${escapeAttr(url)}" class="lead-story lead-story-big fade-in" data-article-id="${escapeAttr(article.id)}">
-      ${imgBlock}
-      <div class="lead-meta">
-        <span class="sport-tag">${escapeHtml(sport.toUpperCase())}</span>
-        <span class="dot">·</span>
-        <span class="timestamp">${formatRelative(date)}</span>
-        ${impactBadge}
+    <a href="${escapeAttr(url)}" class="lead-story lead-story-overlay fade-in" data-article-id="${escapeAttr(article.id)}">
+      <div class="lead-overlay-image-wrap">
+        ${imgBlock}
+        <div class="lead-overlay-gradient"></div>
       </div>
-      <h1 class="lead-headline lead-headline-big">${escapeHtml(article.title)}</h1>
-      ${dek ? `<p class="lead-dek lead-dek-big" title="${escapeAttr(dekFull)}">${escapeHtml(dek)}</p>` : ''}
-      <div class="lead-byline">
-        <span>By <strong style="color:var(--paper)">${escapeHtml(article.author || 'PropBetEdge Staff')}</strong></span>
+      <div class="lead-overlay-content">
+        <div class="lead-meta">
+          <span class="sport-tag">${escapeHtml(sport.toUpperCase())}</span>
+          <span class="dot">·</span>
+          <span class="timestamp">${formatRelative(date)}</span>
+          ${impactBadge}
+        </div>
+        <h1 class="lead-headline-overlay">${escapeHtml(article.title)}</h1>
+        ${dek ? `<p class="lead-dek-overlay">${escapeHtml(dek)}</p>` : ''}
+        <div class="lead-byline-overlay">
+          <span>By <strong>${escapeHtml(article.author || 'PropBetEdge Staff')}</strong></span>
+        </div>
       </div>
     </a>
   `;
@@ -526,46 +557,138 @@ function injectHomeStyles() {
   const s = document.createElement('style');
   s.id = 'pbe-home-v313-styles';
   s.textContent = `
-    /* ─── v3.13 bigger lead story ───────────────────────────── */
-    .lead-story-big .lead-image-big {
-      aspect-ratio: 16 / 9;
-      margin-bottom: 18px;
-      border-radius: 10px;
+    /* ─── v3.17 cinematic overlay hero ───────────────────────── */
+    .lead-story-overlay {
+      position: relative;
+      display: block;
+      border-radius: 14px;
+      overflow: hidden;
+      aspect-ratio: 16 / 10;
+      text-decoration: none !important;
+      color: inherit;
+      background: #0a0a0a;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+    .lead-story-overlay:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .lead-overlay-image-wrap {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
       overflow: hidden;
     }
-    .lead-story-big .lead-image-big img {
+    .lead-overlay-img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.4s ease;
+      transition: transform 0.5s ease;
     }
-    .lead-story-big:hover .lead-image-big img {
-      transform: scale(1.03);
+    .lead-story-overlay:hover .lead-overlay-img {
+      transform: scale(1.025);
     }
-    .lead-headline-big {
-      font-size: clamp(28px, 4.4vw, 56px) !important;
-      line-height: 1.05 !important;
-      font-weight: 800 !important;
-      margin: 12px 0 10px !important;
+    .lead-overlay-fallback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(80px, 14vw, 140px);
+      opacity: 0.18;
+      pointer-events: none;
+    }
+    .lead-overlay-fallback-only {
+      background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
+      opacity: 0.5;
+    }
+    .lead-overlay-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(0,0,0,0) 0%,
+        rgba(0,0,0,0) 28%,
+        rgba(0,0,0,0.55) 60%,
+        rgba(0,0,0,0.92) 100%
+      );
+      pointer-events: none;
+      z-index: 2;
+    }
+    .lead-overlay-content {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: clamp(20px, 3vw, 40px);
+      z-index: 3;
+      color: #fff;
+    }
+    .lead-overlay-content .lead-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 11px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.85);
+      margin-bottom: 14px;
+    }
+    .lead-overlay-content .sport-tag {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.28);
+      color: #fff;
+      padding: 3px 9px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+    }
+    .lead-overlay-content .dot {
+      color: rgba(255,255,255,0.4);
+    }
+    .lead-overlay-content .timestamp {
+      color: rgba(255,255,255,0.78);
+      font-weight: 500;
+    }
+    .lead-headline-overlay {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: clamp(24px, 3.8vw, 50px);
+      line-height: 1.06;
+      font-weight: 800;
       letter-spacing: -0.5px;
+      margin: 0 0 14px;
+      color: #fff;
+      text-shadow: 0 2px 16px rgba(0,0,0,0.6);
     }
-    .lead-dek-big {
-      font-size: clamp(15px, 1.4vw, 19px) !important;
-      line-height: 1.5 !important;
-      font-style: normal !important;          /* v3.16: kill italics */
-      font-weight: 400 !important;
-      color: rgba(255, 255, 255, 0.92) !important;  /* v3.16: high contrast */
-      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);     /* v3.16: legibility on busy bg */
-      margin-bottom: 16px !important;
-      max-width: 64ch;                                /* readability cap */
+    .lead-dek-overlay {
+      font-size: clamp(14px, 1.2vw, 17px);
+      line-height: 1.5;
+      font-style: normal;
+      font-weight: 400;
+      color: rgba(255,255,255,0.92);
+      text-shadow: 0 1px 8px rgba(0,0,0,0.7);
+      margin: 0 0 14px;
+      max-width: 64ch;
+    }
+    .lead-byline-overlay {
+      font-size: 12px;
+      letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.78);
+    }
+    .lead-byline-overlay strong {
+      color: #fff;
+      font-weight: 700;
     }
     .lead-impact-badge {
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      background: linear-gradient(135deg, rgba(245,166,35,0.18), rgba(245,166,35,0.06));
-      border: 1px solid rgba(245,166,35,0.4);
-      color: var(--gold, #F5A623);
+      background: linear-gradient(135deg, rgba(245,166,35,0.28), rgba(245,166,35,0.12));
+      border: 1px solid rgba(245,166,35,0.55);
+      color: #FFD78A;
       padding: 2px 9px;
       border-radius: 999px;
       font-size: 10px;
@@ -573,6 +696,7 @@ function injectHomeStyles() {
       letter-spacing: 1.2px;
       text-transform: uppercase;
       margin-left: 8px;
+      box-shadow: 0 0 12px rgba(245,166,35,0.25);
     }
 
     /* ─── Sidebar #1 hero treatment ─────────────────────────── */
@@ -637,6 +761,56 @@ function injectHomeStyles() {
       }
     }
 
+    /* ─── Empty sport rail placeholder ───────────────────────── */
+    .sport-rail-empty .sport-rail-empty-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 22px 24px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px dashed var(--line, rgba(255,255,255,0.12));
+      border-radius: 10px;
+    }
+    .sport-rail-empty-emoji {
+      font-size: 36px;
+      opacity: 0.55;
+      flex-shrink: 0;
+    }
+    .sport-rail-empty-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .sport-rail-empty-title {
+      font-family: var(--font-d, 'Oswald', sans-serif);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--paper, #fff);
+      margin-bottom: 3px;
+    }
+    .sport-rail-empty-sub {
+      font-size: 12px;
+      color: var(--paper-subtle, #a0a8b4);
+      letter-spacing: 0.3px;
+    }
+    .sport-rail-empty-cta {
+      flex-shrink: 0;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      color: var(--gold, #F5A623);
+      text-decoration: none;
+      padding: 8px 14px;
+      border: 1px solid rgba(245,166,35,0.3);
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+    .sport-rail-empty-cta:hover {
+      background: rgba(245,166,35,0.1);
+      border-color: rgba(245,166,35,0.6);
+    }
+
     /* ─── Refresh pulse indicator ───────────────────────────── */
     .refresh-pulse {
       display: inline-flex;
@@ -664,7 +838,7 @@ function injectHomeStyles() {
       display: flex;
       justify-content: center;
       gap: 8px;
-      margin-top: 18px;
+      margin-top: 16px;
       padding: 4px 0;
     }
     .lead-dot {
@@ -685,9 +859,61 @@ function injectHomeStyles() {
       width: 44px;
       box-shadow: 0 0 12px rgba(245,166,35,0.4);
     }
-    /* Subtle "paused" indicator when user hovers the lead */
-    .lead-story-big {
-      position: relative;
+
+    /* ─── v3.17 mobile pass ──────────────────────────────────── */
+    @media (max-width: 700px) {
+      .lead-story-overlay {
+        aspect-ratio: 4 / 5;  /* taller for portrait phones */
+        border-radius: 10px;
+      }
+      .lead-overlay-content {
+        padding: 18px 18px 20px;
+      }
+      .lead-headline-overlay {
+        font-size: clamp(20px, 5.4vw, 28px);
+        line-height: 1.1;
+        margin-bottom: 10px;
+      }
+      .lead-dek-overlay {
+        font-size: 13px;
+        line-height: 1.45;
+        margin-bottom: 10px;
+        /* hide dek on very small screens to keep hero clean */
+      }
+      .lead-overlay-content .lead-meta {
+        margin-bottom: 10px;
+        font-size: 10px;
+      }
+      .lead-byline-overlay {
+        font-size: 11px;
+      }
+      /* Bigger touch targets for carousel dots on mobile */
+      .lead-dot {
+        height: 6px;
+        width: 32px;
+      }
+      .lead-dot-active {
+        width: 48px;
+      }
+      /* Sidebar hero img scales down */
+      .sidebar-hero-img {
+        aspect-ratio: 16 / 10;
+      }
+      .sidebar-headline-hero {
+        font-size: 15px;
+      }
+      /* Latest anchor reverts to single col on mobile */
+      .latest-section .latest-anchor {
+        grid-column: auto;
+        grid-row: auto;
+      }
+      /* Empty rail card stacks vertical */
+      .sport-rail-empty .sport-rail-empty-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 16px;
+      }
     }
   `;
   document.head.appendChild(s);
