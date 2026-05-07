@@ -5,6 +5,7 @@
  * Routes: /authors/justin-erickson
  *         /authors/donneal-green
  *         /authors/eric-esters
+ *         /authors/erik-schwartz
  *         /authors/propbetedge-editorial-team
  *
  * Strong E-E-A-T signal for Google: real authors with role, bio, and article portfolio.
@@ -102,6 +103,31 @@ Eric's belief: the difference between a 52% bettor and a 56% bettor isn't access
     initials: 'EE',
     accent: 'gold',
   },
+  'erik-schwartz': {
+    name: 'Erik Schwartz',
+    role: 'Senior Editorial — Hockey, Football & Baseball',
+    title: 'Senior Editorial Contributor, PropBetEdge',
+    bio: `Erik Schwartz is a senior editorial contributor at PropBetEdge covering NHL, NFL, and MLB — and the lead voice on hockey across the masthead. His NHL coverage is the deepest on the staff: line-shuffle implications for shots-on-goal markets, goaltender form trends across back-to-backs, special-teams matchups that move power-play-points props, and the kind of late-warmup news (a top-six winger reassigned to the fourth line, a starter pulled for "maintenance," a third pair suddenly skating top-pair minutes) that reshapes lines hours before puck drop but rarely surfaces in a national headline.
+
+On football, Erik focuses on snap-share volatility and target-tree shifts — the second-order roster math that emerges after a Wednesday practice report, a Friday designation, or a midweek transaction. While most NFL coverage chases the injury headline itself, his angle is the workload realignment that follows: who absorbs the targets, who picks up the early-down snaps, and which prop markets are slowest to reprice the change. On baseball, he writes strikeout props, hitter total bases, and the bullpen-usage gymnastics that turn a "safe" over into a coin flip in the seventh.
+
+Erik also contributes select NBA coverage during the regular season, focusing on rotation-driven prop volatility on heavy-slate nights — when bookmakers spread their attention thin and analytical edges open up across multiple props simultaneously. His cross-sport range makes him the editorial workload anchor on weeks when one league's news cycle goes quiet and another spikes.
+
+Articles published under Erik's byline combine breaking-news editorial response with prop-market translation — taking the headlines other outlets stop at and pushing them one layer deeper to the actual betting implications. Methodology is transparent, AI-assisted research is disclosed, and every take stands on cited sources.`,
+    expertise: [
+      'NHL line combinations, goaltender form & special-teams matchups',
+      'NFL snap-share, target-tree & late-week workload realignment',
+      'MLB strikeout props & bullpen-usage forecasting',
+      'Multi-sport breaking news → prop market translation',
+    ],
+    credentials: [
+      'Senior Editorial Contributor — PropBetEdge',
+      'Lead voice on NHL editorial coverage',
+      'Multi-sport coverage across NHL, NFL, MLB & select NBA',
+    ],
+    initials: 'ES',
+    accent: 'gold',
+  },
   'propbetedge-editorial-team': {
     name: 'PropBetEdge Editorial Team',
     role: 'AI-Assisted Editorial',
@@ -110,7 +136,7 @@ Eric's belief: the difference between a 52% bettor and a 56% bettor isn't access
 
 Our editorial methodology is intentionally transparent. Every article published under this byline goes through three phases: (1) source identification and verification against the original reporting, (2) AI-assisted drafting with a structured editorial framework focused on prop-bet impact, and (3) human review on the strategic conclusions, betting angles, and any data citations. We disclose AI assistance openly because we believe readers deserve to know how their information is produced — and because we believe the future of sports media is hybrid, not adversarial, when done with rigor.
 
-This byline covers the rapid-response volume work that no single human can produce in real time: breaking injury news with prop-impact analysis within minutes of the wire report, post-game implication coverage on yesterday's games, and the kind of cross-sport editorial response that keeps PropBetEdge readers ahead of the market. For deeper takes, daily picks, and signature columns, articles are published under the bylines of our human staff: <a href="/authors/justin-erickson">Justin Erickson</a>, <a href="/authors/donneal-green">Donneal Green</a>, and <a href="/authors/eric-esters">Eric Esters</a>.
+This byline covers the rapid-response volume work that no single human can produce in real time: breaking injury news with prop-impact analysis within minutes of the wire report, post-game implication coverage on yesterday's games, and the kind of cross-sport editorial response that keeps PropBetEdge readers ahead of the market. For deeper takes, daily picks, and signature columns, articles are published under the bylines of our human staff: <a href="/authors/justin-erickson">Justin Erickson</a>, <a href="/authors/donneal-green">Donneal Green</a>, <a href="/authors/eric-esters">Eric Esters</a>, and <a href="/authors/erik-schwartz">Erik Schwartz</a>.
 
 Our standards: <a href="/editorial-standards">read our editorial standards</a>.`,
     expertise: [
