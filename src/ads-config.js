@@ -8,6 +8,7 @@
  *        1-800-GAMBLER inline tag on sportsbook ads (state law)
  *        Same-page frequency cap to prevent duplicate brand showings
  *        Improved pickBrand fallback (random vs always-first)
+ * v3.17: Discord invite updated → discord.gg/hXhm33SE (replaces stale e9S6pFq9).
  * ─────────────────────────────────────────────────────────────────────────
  */
 
@@ -46,7 +47,7 @@ export const PROPBET_LINKS = {
   k_props:     'https://mlb.propbetedge.ai/kprops',
   hr_targets:  'https://mlb.propbetedge.ai/picks',
   learn:       'https://learn.propbetedge.ai',
-  discord:     'https://discord.gg/e9S6pFq9',
+  discord:     'https://discord.gg/hXhm33SE',
   twitter:     'https://x.com/propbetedgeai',
   reddit:      'https://www.reddit.com/r/PropBetEdge/',
   linkedin:    'https://www.linkedin.com/company/propbetedge-ai/',
