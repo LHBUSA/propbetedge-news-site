@@ -106,14 +106,14 @@ Eric's belief: the difference between a 52% bettor and a 56% bettor isn't access
     name: 'Erik Schwartz',
     role: 'Senior Editorial — Hockey, Football, Baseball',
     title: 'Senior Editorial, PropBetEdge',
-    bio: `Erik is a senior editorial contributor at PropBetEdge covering NHL, NFL, and MLB — the cross-sport workload writer for the daily slate. On the hockey side, he tracks line shuffles, goalie usage patterns, and the special-teams matchups that move shots-on-goal and points props from morning skate to puck drop. On the football side, he focuses on snap-share volatility, target tree shifts after injuries, and the late-week practice signals that institutional bettors don't read until Sunday. On the baseball side, he covers strikeout props, hitter total bases, and the kind of bullpen-usage gymnastics that turn a "safe" over into a coin flip in the seventh. He also contributes select NBA coverage during the regular season, focusing on rotation-driven prop volatility on heavy-slate nights.
+    bio: `Erik is a senior editorial contributor at PropBetEdge covering NHL, NFL, and MLB — the cross-sport workload writer for the daily slate. On the hockey side, he tracks line shuffles, goalie usage patterns, and the special-teams matchups that move shots-on-goal and points props from morning skate to puck drop. On the football side, he focuses on snap-share volatility, target tree shifts after injuries, and the late-week practice signals that institutional bettors don't read until Sunday. On the baseball side, he covers strikeout props, hitter total bases, and the kind of bullpen-usage gymnastics that turn a "safe" over into a coin flip in the seventh.
 
 Articles published under Erik's byline combine breaking-news editorial response with prop-market translation — taking the headlines other outlets stop at and pushing them one layer deeper to the actual betting implications. Methodology is transparent, AI-assisted research is disclosed, and every take stands on cited sources. Editorial standards: <a href="/editorial-standards">read our standards</a>.`,
     expertise: [
       'NHL line combinations & goalie workload modeling',
       'NFL snap-share & target volatility analysis',
       'MLB strikeout props & bullpen-usage forecasting',
-      'Multi-sport breaking news → prop market translation (NHL/NFL/MLB primary, select NBA)',
+      'Cross-sport breaking news → prop market translation',
     ],
     credentials: [
       'Multi-sport coverage across NHL, NFL, and MLB',
