@@ -6,6 +6,7 @@
  *         /authors/donneal-green
  *         /authors/eric-esters
  *         /authors/erik-schwartz
+ *         /authors/ty-whitney
  *         /authors/propbetedge-editorial-team
  *
  * Strong E-E-A-T signal for Google: real authors with role, bio, and article portfolio.
@@ -128,6 +129,32 @@ Articles published under Erik's byline combine breaking-news editorial response 
     initials: 'ES',
     accent: 'gold',
   },
+  'ty-whitney': {
+    name: 'Ty Whitney',
+    role: 'Senior Research Analyst & Data Scientist',
+    title: 'Senior Research Analyst, PropBetEdge',
+    bio: `Ty Whitney is a Senior Research Analyst at PropBetEdge, joining the editorial team to anchor the platform's quantitative coverage across MLB, NFL, NBA, and NHL. He brings years of heavy data-science and applied research experience from the technology sector — the kind of background that produces rigorous model-builders rather than narrative-first analysts — paired with a lifelong obsession with sports that started long before he ever ran a regression on a player projection. The combination is the rarer-than-it-should-be middle ground that makes him a natural fit for the masthead.
+
+Most quants who migrate into sports come in cold to the games themselves; most sports writers who reach for data lean on whatever a spreadsheet template happens to surface. Ty's lane is the work that sits between those two failure modes: pulling features from primary data sources, validating signal against noise, stress-testing models against out-of-sample seasons, and then translating the output into prop-market angles a reader can act on without needing a graduate degree in statistics. The result is coverage that holds up under scrutiny — the math is real, the sourcing is clean, and the takeaway is something a bettor can use the same night.
+
+His coverage emphasizes the analytical bedrock most outlets skip — the regressions, base rates, and predictive frameworks underneath any defensible pick. On MLB, that's situational modeling for hitter and pitcher props that goes beyond season averages into matchup-specific expected outcomes. On NFL, it's snap-share trend analysis and target-share predictive modeling that moves before Wednesday's injury report does. On NBA, lineup-level efficiency and pace-adjusted scoring projections. On NHL, shot-share modeling and goaltender form quantification. Across all four sports, the same lens: where does the data say the market is wrong, and how confident should a reader actually be in that read?
+
+Ty's belief: the prop-bet market is not efficient, but it's nowhere near as inefficient as the influencer ecosystem will tell you. The real edges are smaller than most public analysis admits, and finding them takes more rigor than most are willing to put in. Articles under Ty's byline reflect that work — and PropBetEdge readers are the ones who benefit from it.`,
+    expertise: [
+      'Quantitative prop modeling & predictive analytics',
+      'Multi-sport feature engineering & signal validation',
+      'Backtesting, out-of-sample testing & model calibration',
+      'Translating model output into actionable prop-market reads',
+    ],
+    credentials: [
+      'Senior Research Analyst — PropBetEdge',
+      'Years of data-science & applied research experience in tech',
+      'Multi-sport quantitative coverage across MLB, NFL, NBA, NHL',
+      'Background bridging statistical research and sports analysis',
+    ],
+    initials: 'TW',
+    accent: 'algo',
+  },
   'propbetedge-editorial-team': {
     name: 'PropBetEdge Editorial Team',
     role: 'AI-Assisted Editorial',
@@ -136,7 +163,7 @@ Articles published under Erik's byline combine breaking-news editorial response 
 
 Our editorial methodology is intentionally transparent. Every article published under this byline goes through three phases: (1) source identification and verification against the original reporting, (2) AI-assisted drafting with a structured editorial framework focused on prop-bet impact, and (3) human review on the strategic conclusions, betting angles, and any data citations. We disclose AI assistance openly because we believe readers deserve to know how their information is produced — and because we believe the future of sports media is hybrid, not adversarial, when done with rigor.
 
-This byline covers the rapid-response volume work that no single human can produce in real time: breaking injury news with prop-impact analysis within minutes of the wire report, post-game implication coverage on yesterday's games, and the kind of cross-sport editorial response that keeps PropBetEdge readers ahead of the market. For deeper takes, daily picks, and signature columns, articles are published under the bylines of our human staff: <a href="/authors/justin-erickson">Justin Erickson</a>, <a href="/authors/donneal-green">Donneal Green</a>, <a href="/authors/eric-esters">Eric Esters</a>, and <a href="/authors/erik-schwartz">Erik Schwartz</a>.
+This byline covers the rapid-response volume work that no single human can produce in real time: breaking injury news with prop-impact analysis within minutes of the wire report, post-game implication coverage on yesterday's games, and the kind of cross-sport editorial response that keeps PropBetEdge readers ahead of the market. For deeper takes, daily picks, and signature columns, articles are published under the bylines of our human staff: <a href="/authors/justin-erickson">Justin Erickson</a>, <a href="/authors/donneal-green">Donneal Green</a>, <a href="/authors/eric-esters">Eric Esters</a>, <a href="/authors/erik-schwartz">Erik Schwartz</a>, and <a href="/authors/ty-whitney">Ty Whitney</a>.
 
 Our standards: <a href="/editorial-standards">read our editorial standards</a>.`,
     expertise: [
