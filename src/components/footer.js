@@ -45,8 +45,8 @@ export function renderFooter() {
             <a href="/authors/justin-erickson">Justin Erickson</a>
             <a href="/authors/donneal-green">Donneal Green</a>
             <a href="/authors/eric-esters">Eric Esters</a>
-            <a href="/authors/erik-schwartz">Erik Schwartz</a>
             <a href="/authors/ty-whitney">Ty Whitney</a>
+            <a href="/authors/erik-schwartz">Erik Schwartz</a>
             <a href="/authors/propbetedge-editorial-team">Editorial Team</a>
             <a href="/editorial-standards">Editorial Standards</a>
           </div>
