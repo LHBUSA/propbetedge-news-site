@@ -9,10 +9,17 @@
  *        Same-page frequency cap to prevent duplicate brand showings
  *        Improved pickBrand fallback (random vs always-first)
  * v3.17: Discord invite updated → discord.gg/hXhm33SE (replaces stale e9S6pFq9).
- * v3.18: Added PropBetEdge Sports News API to BRAND_FAMILY rotation. This
- *        product is sold ONLY on RapidAPI (no standalone Stripe site), so its
- *        ad points at the RapidAPI listing. PropSports/PropData are unchanged —
- *        they have their own checkout. New link: PROPBET_LINKS.api_news.
+ * v3.18: Added PropBetEdge Sports News API to BRAND_FAMILY rotation. Sold ONLY
+ *        on RapidAPI (no standalone site). New link: PROPBET_LINKS.api_news.
+ * v3.19: CONTEXTUAL TARGETING. Ad functions now use the article's sport.
+ *        - Brands carry `sports` (relevance) + optional `hrefBySport` (routing).
+ *        - PropBetEdge Pro now links to the matching sport's picks page
+ *          (NBA article → nba.propbetedge.ai instead of always MLB).
+ *        - Sport-relevant brands get a CONTEXT_BOOST in the rotation so a
+ *          sports reader sees sports inventory, not a rental-data ad.
+ *        - Degrades gracefully: with no ctx.sport, behaves exactly like v3.18.
+ *        INTEGRATION: pass { sport } from the article render into the ad calls,
+ *        e.g. ad_in_article_mid({ sport: article.sport }).
  * ─────────────────────────────────────────────────────────────────────────
  */
 
@@ -62,6 +69,13 @@ export const PROPBET_LINKS = {
 // ═════════════════════════════════════════════════════════════════════════
 // FAMILY OF BRANDS — Justin's products advertised cross-business
 // Each click is tagged with UTM params for attribution.
+//
+// CONTEXTUAL FIELDS (v3.19, both optional):
+//   sports:      array of sports this brand is relevant to. On a matching-sport
+//                article it gets a CONTEXT_BOOST in the rotation. Omit = neutral
+//                cross-promo (still shown, never boosted) — e.g. real estate.
+//   hrefBySport: per-sport destination override. Lets one brand route to the
+//                right sport's page (PropBetEdge Pro → that sport's picks site).
 // ═════════════════════════════════════════════════════════════════════════
 function withUtm(href, slot, brandKey) {
   const url = new URL(href);
@@ -79,7 +93,14 @@ export const BRAND_FAMILY = [
     headline: 'Tonight\'s sharpest picks. AI-built. $29/mo.',
     sub: 'Live odds, prop edges, and The Algo — every league, all season.',
     cta: 'Get the picks',
-    href: PROPBET_LINKS.picks_mlb,
+    href: PROPBET_LINKS.picks_mlb, // default / fallback when sport unknown
+    hrefBySport: {
+      mlb: PROPBET_LINKS.picks_mlb,
+      nfl: PROPBET_LINKS.picks_nfl,
+      nba: PROPBET_LINKS.picks_nba,
+      nhl: PROPBET_LINKS.picks_nhl,
+    },
+    sports: ['mlb', 'nfl', 'nba', 'nhl'],
     tone: 'gold',
     weight: 4, // weighted higher — it's the money play
   },
@@ -91,7 +112,7 @@ export const BRAND_FAMILY = [
     cta: 'Get free API key',
     href: 'https://propdata.proptechusa.ai/',
     tone: 'algo',
-    weight: 1,
+    weight: 1, // neutral cross-promo (no `sports` → never sport-boosted)
   },
   {
     key: 'propsports',
@@ -100,6 +121,7 @@ export const BRAND_FAMILY = [
     sub: '37+ endpoints across MLB, NFL, NBA, NHL. Owned Statcast. We don\'t scrape DK — we generate odds.',
     cta: 'Get free MLB key',
     href: 'https://propsports.proptechusa.ai/',
+    sports: ['mlb', 'nfl', 'nba', 'nhl'],
     tone: 'algo',
     weight: 2,
   },
@@ -110,6 +132,7 @@ export const BRAND_FAMILY = [
     sub: 'Every story Claude-scored 1–5 for line impact and tagged by player, team & prop type. /algo/affecting-tonight returns tonight\'s edges LLM-ready in one call. MLB · NFL · NBA · NHL.',
     cta: 'View on RapidAPI',
     href: PROPBET_LINKS.api_news,
+    sports: ['mlb', 'nfl', 'nba', 'nhl'],
     tone: 'algo',
     weight: 1,
   },
@@ -165,19 +188,45 @@ export const BRAND_FAMILY = [
   },
 ];
 
+// How much more often a sport-relevant brand shows on a matching-sport article.
+// 2 = a relevant brand's effective weight doubles when ctx.sport matches.
+// Higher = more aggressive relevance tilt (and less real-estate cross-promo).
+const CONTEXT_BOOST = 2;
+
 // Same-page frequency cap — avoid showing the same brand back-to-back.
 // Module-level state persists across calls in the same render pass.
 let _lastBrandKey = null;
 
+// Effective weight for a brand given article context: base weight, doubled
+// (×CONTEXT_BOOST) when the brand is relevant to the article's sport.
+function contextWeight(brand, ctx = {}) {
+  let w = brand.weight || 1;
+  if (ctx.sport && brand.sports && brand.sports.includes(ctx.sport)) {
+    w *= CONTEXT_BOOST;
+  }
+  return w;
+}
+
+// Resolve a brand's destination, preferring a per-sport override when the
+// article's sport is known (PropBetEdge Pro → that sport's picks page).
+function resolveHref(brand, ctx = {}) {
+  if (brand.hrefBySport && ctx.sport && brand.hrefBySport[ctx.sport]) {
+    return brand.hrefBySport[ctx.sport];
+  }
+  return brand.href;
+}
+
 // Weighted random pick — PropBetEdge Pro shows ~4x more often than other brands.
 // Skips the most recently shown brand to avoid duplicates on a single page.
-function pickBrand() {
+// v3.19: weights are context-adjusted so sport-relevant brands surface more on
+// matching articles. With no ctx.sport this is identical to the old behavior.
+function pickBrand(ctx = {}) {
   const eligible = BRAND_FAMILY.filter((b) => b.key !== _lastBrandKey);
   const pool = eligible.length ? eligible : BRAND_FAMILY;
-  const total = pool.reduce((s, b) => s + (b.weight || 1), 0);
+  const total = pool.reduce((s, b) => s + contextWeight(b, ctx), 0);
   let r = Math.random() * total;
   for (const brand of pool) {
-    r -= brand.weight || 1;
+    r -= contextWeight(brand, ctx);
     if (r <= 0) {
       _lastBrandKey = brand.key;
       return brand;
@@ -202,12 +251,13 @@ function pick(arr) {
 // SLOT: brand_family — rotating cross-promo ad for any article position
 // Used after lead image, after take, end of article
 // Disclosure is rendered by CSS .ad-brand-family::before automatically
+// v3.19: accepts ctx ({ sport }) for relevance-weighted rotation + routing.
 // ═════════════════════════════════════════════════════════════════════════
-export function ad_brand_family(slotName = 'brand_slot') {
-  const brand = pickBrand();
-  const trackedHref = withUtm(brand.href, slotName, brand.key);
+export function ad_brand_family(slotName = 'brand_slot', ctx = {}) {
+  const brand = pickBrand(ctx);
+  const trackedHref = withUtm(resolveHref(brand, ctx), slotName, brand.key);
   return `
-    <a href="${trackedHref}" class="ad-block ad-brand-family ad-tone-${brand.tone}" target="_blank" rel="noopener sponsored" data-ad-slot="${slotName}" data-ad-brand="${brand.key}">
+    <a href="${trackedHref}" class="ad-block ad-brand-family ad-tone-${brand.tone}" target="_blank" rel="noopener sponsored" data-ad-slot="${slotName}" data-ad-brand="${brand.key}" data-ad-sport="${ctx.sport || 'none'}">
       <div class="ad-block-content">
         <span class="ad-block-eyebrow">${brand.eyebrow}</span>
         <h3 class="ad-block-headline">${brand.headline}</h3>
@@ -220,15 +270,17 @@ export function ad_brand_family(slotName = 'brand_slot') {
 
 // ═════════════════════════════════════════════════════════════════════════
 // SLOT: header_banner — between topbar and masthead, every page
+// v3.19: routes the "picks" creatives to the matching sport when known.
 // ═════════════════════════════════════════════════════════════════════════
-export function ad_header_banner() {
+export function ad_header_banner(ctx = {}) {
+  const picksHref = (ctx.sport && PROPBET_LINKS[`picks_${ctx.sport}`]) || PROPBET_LINKS.picks_mlb;
   const creatives = [
     {
       tone: 'gold',
       eyebrow: '🔥 Tonight\'s slate',
       headline: 'AI-built picks across MLB, NFL, NBA & NHL',
       cta: 'See tonight\'s picks',
-      href: PROPBET_LINKS.picks_mlb,
+      href: picksHref,
     },
     {
       tone: 'algo',
@@ -242,7 +294,7 @@ export function ad_header_banner() {
       eyebrow: '🎯 The Edge',
       headline: 'Sharp lines, AI prop analysis — all in one place',
       cta: 'Get the picks',
-      href: PROPBET_LINKS.picks_mlb,
+      href: picksHref,
     },
   ];
   return renderAdBanner(pick(creatives));
@@ -252,20 +304,23 @@ export function ad_header_banner() {
 // SLOT: in_article_after_take — right after AI take callout
 // v3.9.2: Now rotates brand_family ads (cross-promo + PropBetEdge Pro weighted).
 // Sportsbook ads moved to mid_article only — eliminates back-to-back ad stacking.
+// v3.19: forwards article context (sport) into the rotation.
 // ═════════════════════════════════════════════════════════════════════════
 export function ad_in_article_after_take(articleContext = {}) {
-  return ad_brand_family('after_take');
+  return ad_brand_family('after_take', articleContext);
 }
 
 // ═════════════════════════════════════════════════════════════════════════
 // SLOT: in_article_mid — auto-injected after 3rd paragraph of body
 // v3.9.2: 50/50 split between brand_family and sportsbook offers.
 // Sportsbook ads ONLY appear here — deep in article where reader is engaged.
+// v3.19: forwards article context (sport) into the brand_family rotation.
+//        (Sportsbook geo-targeting is the next pass — #3.)
 // ═════════════════════════════════════════════════════════════════════════
 export function ad_in_article_mid(articleContext = {}) {
   // 50% brand_family (cross-promo), 50% sportsbook offers
   if (Math.random() < 0.5) {
-    return ad_brand_family('mid_article');
+    return ad_brand_family('mid_article', articleContext);
   }
 
   const sportsbookCreatives = [
