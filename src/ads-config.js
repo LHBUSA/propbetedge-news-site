@@ -9,6 +9,10 @@
  *        Same-page frequency cap to prevent duplicate brand showings
  *        Improved pickBrand fallback (random vs always-first)
  * v3.17: Discord invite updated → discord.gg/hXhm33SE (replaces stale e9S6pFq9).
+ * v3.18: Added PropBetEdge Sports News API to BRAND_FAMILY rotation. This
+ *        product is sold ONLY on RapidAPI (no standalone Stripe site), so its
+ *        ad points at the RapidAPI listing. PropSports/PropData are unchanged —
+ *        they have their own checkout. New link: PROPBET_LINKS.api_news.
  * ─────────────────────────────────────────────────────────────────────────
  */
 
@@ -51,6 +55,8 @@ export const PROPBET_LINKS = {
   twitter:     'https://x.com/propbetedgeai',
   reddit:      'https://www.reddit.com/r/PropBetEdge/',
   linkedin:    'https://www.linkedin.com/company/propbetedge-ai/',
+  // Sports News API — sold only on RapidAPI (no standalone site).
+  api_news:    'https://rapidapi.com/propdata-propdata-default/api/propbetedge-sports-news-api',
 };
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -96,6 +102,16 @@ export const BRAND_FAMILY = [
     href: 'https://propsports.proptechusa.ai/',
     tone: 'algo',
     weight: 2,
+  },
+  {
+    key: 'propbetedge_news_api',
+    eyebrow: '🗞️ Sports News API',
+    headline: 'AI sports news, scored for prop-bet impact.',
+    sub: 'Every story Claude-scored 1–5 for line impact and tagged by player, team & prop type. /algo/affecting-tonight returns tonight\'s edges LLM-ready in one call. MLB · NFL · NBA · NHL.',
+    cta: 'View on RapidAPI',
+    href: PROPBET_LINKS.api_news,
+    tone: 'algo',
+    weight: 1,
   },
   {
     key: 'intelligenthomebuying',
