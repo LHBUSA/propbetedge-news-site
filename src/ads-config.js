@@ -146,8 +146,8 @@ export const BRAND_FAMILY = [
   {
     key: 'proptechusa',
     eyebrow: '🛠️ PropTechUSA.ai',
-    headline: 'The dev studio behind PropData, IntelligentSTR & more.',
-    sub: '200+ Cloudflare Workers in production. Real estate intelligence built from scratch.',
+    headline: 'The dev studio behind PropBetEdge.ai, PropData & more.',
+    sub: '270+ Cloudflare Workers in production. Real estate intelligence built from scratch.',
     cta: 'See the stack',
     href: 'https://proptechusa.ai',
     tone: 'algo',
