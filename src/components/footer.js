@@ -60,8 +60,6 @@ export function renderFooter() {
             <a href="${PROPBET_LINKS.twitter}" target="_blank" rel="noopener">
               <span class="footer-icon">𝕏</span> X / Twitter
             </a>
-            <a href="${PROPBET_LINKS.reddit}" target="_blank" rel="noopener">
-              <span class="footer-icon">ℝ</span> r/PropBetEdge
             </a>
             <a href="${PROPBET_LINKS.linkedin}" target="_blank" rel="noopener">
               <span class="footer-icon">in</span> LinkedIn
