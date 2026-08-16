@@ -9,81 +9,119 @@ async function get(path) {
   return await r.json();
 }
 
-// Homepage lead ranking is driven by published_at. A bad future timestamp can
-// therefore make an old story look like the newest story forever. Normalize
-// clearly-future/invalid dates first, then keep the homepage itself fresh by
-// excluding stories older than 24 hours. Older stories remain available via
-// /news and per-sport archive endpoints; they just cannot occupy homepage hero,
-// Top Stories, or Latest slots.
-function normalizeHomepageDates(data) {
+const FUTURE_SKEW_MS = 2 * 60 * 1000;
+const STALE_FALLBACK_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_HOME_AGE_MS = 24 * 60 * 60 * 1000;
+
+function validPastTs(value, now = Date.now()) {
+  const ts = new Date(value).getTime();
+  return Number.isFinite(ts) && ts <= now + FUTURE_SKEW_MS ? ts : null;
+}
+
+// Correct invalid/future published_at values using a trustworthy timestamp
+// already carried by the article. If none exists, deliberately make it stale
+// instead of allowing bogus future data to rank as current news.
+function normalizeArticleDate(article, now = Date.now()) {
+  if (!article) return article;
+
+  const publishedTs = new Date(article.published_at).getTime();
+  const isClearlyFuture = Number.isFinite(publishedTs) && publishedTs > now + FUTURE_SKEW_MS;
+  const isInvalid = !Number.isFinite(publishedTs);
+
+  if (!isClearlyFuture && !isInvalid) return article;
+
+  const fallbackFields = [
+    article.source_published_at,
+    article.original_published_at,
+    article.created_at,
+    article.ingested_at,
+    article.updated_at,
+  ];
+  const fallbackTimes = fallbackFields
+    .map((value) => validPastTs(value, now))
+    .filter((ts) => ts !== null);
+
+  const correctedTs = fallbackTimes.length
+    ? Math.max(...fallbackTimes)
+    : now - STALE_FALLBACK_MS;
+
+  return {
+    ...article,
+    published_at: new Date(correctedTs).toISOString(),
+    _published_at_corrected: true,
+  };
+}
+
+function normalizeArticleList(data, { maxAgeMs = null, limit = null } = {}) {
   if (!data || !Array.isArray(data.articles)) return data;
 
   const now = Date.now();
-  const FUTURE_SKEW_MS = 2 * 60 * 1000;
-  const STALE_FALLBACK_MS = 7 * 24 * 60 * 60 * 1000;
-  const MAX_HOME_AGE_MS = 24 * 60 * 60 * 1000;
+  let articles = data.articles
+    .map((article) => normalizeArticleDate(article, now))
+    .filter(Boolean)
+    .sort((a, b) => {
+      const aTs = new Date(a.published_at).getTime();
+      const bTs = new Date(b.published_at).getTime();
+      return (Number.isFinite(bTs) ? bTs : 0) - (Number.isFinite(aTs) ? aTs : 0);
+    });
 
-  const validPastTs = (value) => {
-    const ts = new Date(value).getTime();
-    return Number.isFinite(ts) && ts <= now + FUTURE_SKEW_MS ? ts : null;
-  };
+  if (maxAgeMs != null) {
+    articles = articles.filter((article) => {
+      const ts = new Date(article.published_at).getTime();
+      if (!Number.isFinite(ts)) return false;
+      const ageMs = now - ts;
+      return ageMs >= -FUTURE_SKEW_MS && ageMs <= maxAgeMs;
+    });
+  }
 
-  const normalized = data.articles.map((article) => {
-    const publishedTs = new Date(article.published_at).getTime();
-    const isClearlyFuture = Number.isFinite(publishedTs) && publishedTs > now + FUTURE_SKEW_MS;
-    const isInvalid = !Number.isFinite(publishedTs);
-
-    if (!isClearlyFuture && !isInvalid) return article;
-
-    const fallbackFields = [
-      article.source_published_at,
-      article.original_published_at,
-      article.created_at,
-      article.ingested_at,
-      article.updated_at,
-    ];
-    const fallbackTimes = fallbackFields
-      .map(validPastTs)
-      .filter((ts) => ts !== null);
-
-    const correctedTs = fallbackTimes.length
-      ? Math.max(...fallbackTimes)
-      : now - STALE_FALLBACK_MS;
-
-    return {
-      ...article,
-      published_at: new Date(correctedTs).toISOString(),
-      _published_at_corrected: true,
-    };
-  });
-
-  const articles = normalized.filter((article) => {
-    const ts = new Date(article.published_at).getTime();
-    if (!Number.isFinite(ts)) return false;
-    const ageMs = now - ts;
-    return ageMs >= -FUTURE_SKEW_MS && ageMs <= MAX_HOME_AGE_MS;
-  });
+  if (limit != null) articles = articles.slice(0, limit);
 
   return { ...data, articles };
 }
 
 export const api = {
-  homepage:    async () => normalizeHomepageDates(await get('/news/homepage')),
-  breaking:    () => get('/news/breaking'),
+  // Homepage hero / Top Stories / Latest: never surface >24h-old stories.
+  homepage: async () => normalizeArticleList(
+    await get('/news/homepage'),
+    { maxAgeMs: MAX_HOME_AGE_MS }
+  ),
+
+  breaking: async () => normalizeArticleList(await get('/news/breaking')),
 
   // Returns { page, limit, total, totalPages, hasMore, articles, ... }
-  newsAll:     (limit = 20, page = 1) => get(`/news?limit=${limit}&page=${page}`),
+  // Normalize bogus future dates globally, but preserve archive history.
+  newsAll: async (limit = 20, page = 1) => normalizeArticleList(
+    await get(`/news?limit=${limit}&page=${page}`)
+  ),
 
-  // v3.15: now accepts page param + returns pagination metadata
-  newsBySport: (sport, limit = 20, page = 1) =>
-    get(`/news/by-sport/${encodeURIComponent(sport)}?limit=${limit}&page=${page}`),
+  // v3.15: now accepts page param + returns pagination metadata.
+  // Homepage sport rails call limit=4,page=1. For that compact rail only,
+  // fetch a deeper candidate pool so a stale/badly dated record cannot consume
+  // one of the four slots, then restrict the rail to the last 24 hours.
+  // Full sport pages retain their normal historical archive behavior.
+  newsBySport: async (sport, limit = 20, page = 1) => {
+    const isHomeRail = limit === 4 && page === 1;
+    const fetchLimit = isHomeRail ? 12 : limit;
+    const data = await get(`/news/by-sport/${encodeURIComponent(sport)}?limit=${fetchLimit}&page=${page}`);
 
-  article:     (slug) => get(`/news/article/${encodeURIComponent(slug)}`),
-  sports:      () => get('/news/sports'),
+    return normalizeArticleList(data, isHomeRail
+      ? { maxAgeMs: MAX_HOME_AGE_MS, limit }
+      : {}
+    );
+  },
+
+  article: async (slug) => {
+    const data = await get(`/news/article/${encodeURIComponent(slug)}`);
+    return data?.article
+      ? { ...data, article: normalizeArticleDate(data.article) }
+      : data;
+  },
+
+  sports: () => get('/news/sports'),
 
   // v3.9.4: client-side author filter (uses /news endpoint, filters in browser)
   byAuthor: async (authorName, limit = 20) => {
-    const all = await get(`/news?limit=100&page=1`);
+    const all = normalizeArticleList(await get(`/news?limit=100&page=1`));
     const matches = (all.articles || []).filter((a) =>
       a.author && a.author.toLowerCase() === authorName.toLowerCase()
     );
