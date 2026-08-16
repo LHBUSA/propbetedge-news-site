@@ -11,22 +11,24 @@ async function get(path) {
 
 // Homepage lead ranking is driven by published_at. A bad future timestamp can
 // therefore make an old story look like the newest story forever. Normalize
-// only clearly-future dates here, preferring any sane source/ingest timestamp
-// already present on the article. If none exists, mark it safely stale rather
-// than allowing it to outrank current news.
+// clearly-future/invalid dates first, then keep the homepage itself fresh by
+// excluding stories older than 24 hours. Older stories remain available via
+// /news and per-sport archive endpoints; they just cannot occupy homepage hero,
+// Top Stories, or Latest slots.
 function normalizeHomepageDates(data) {
   if (!data || !Array.isArray(data.articles)) return data;
 
   const now = Date.now();
   const FUTURE_SKEW_MS = 2 * 60 * 1000;
   const STALE_FALLBACK_MS = 7 * 24 * 60 * 60 * 1000;
+  const MAX_HOME_AGE_MS = 24 * 60 * 60 * 1000;
 
   const validPastTs = (value) => {
     const ts = new Date(value).getTime();
     return Number.isFinite(ts) && ts <= now + FUTURE_SKEW_MS ? ts : null;
   };
 
-  const articles = data.articles.map((article) => {
+  const normalized = data.articles.map((article) => {
     const publishedTs = new Date(article.published_at).getTime();
     const isClearlyFuture = Number.isFinite(publishedTs) && publishedTs > now + FUTURE_SKEW_MS;
     const isInvalid = !Number.isFinite(publishedTs);
@@ -53,6 +55,13 @@ function normalizeHomepageDates(data) {
       published_at: new Date(correctedTs).toISOString(),
       _published_at_corrected: true,
     };
+  });
+
+  const articles = normalized.filter((article) => {
+    const ts = new Date(article.published_at).getTime();
+    if (!Number.isFinite(ts)) return false;
+    const ageMs = now - ts;
+    return ageMs >= -FUTURE_SKEW_MS && ageMs <= MAX_HOME_AGE_MS;
   });
 
   return { ...data, articles };
