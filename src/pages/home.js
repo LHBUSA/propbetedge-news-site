@@ -2,6 +2,11 @@
  * src/pages/home.js
  * Editorial homepage — magazine layout
  *
+ * v3.23: 🎠 Keep carousel full on slow news mornings
+ *   - Fresh (<5h) stories still lead the rotation
+ *   - Fill remaining carousel slots from the already-vetted 24h homepage feed
+ *   - Prevent a single fresh story from collapsing the carousel to one item
+ *
  * v3.22: ⏱️ Lead timer lifecycle fix
  *   - Auto-refresh no longer kills the lead carousel interval on page load
  *   - Refresh polling and hero rotation now manage independent timers
@@ -51,9 +56,10 @@ let _currentRoot = null;
 const LEAD_CYCLE_MS = 8000;       // 8 sec per slide
 const LEAD_POOL_SIZE = 5;         // rotate through top 5 stories
 const LEAD_RESUME_DELAY_MS = 12000; // resume auto-cycle 12s after manual nav
-// v3.15: anything older than this is excluded from the lead carousel —
-// unless nothing fresh exists (overnight / slow news days), in which case
-// we fall back to whatever's available so the lead is never empty.
+// v3.15/v3.23: stories under 5h get priority, but we fill any remaining
+// carousel slots from the homepage feed (already limited to 24h in api.js).
+// This keeps the carousel alive overnight / on slow news mornings without
+// allowing genuinely stale week-old stories back onto the homepage.
 const MAX_LEAD_AGE_MS = 5 * 60 * 60 * 1000;  // 5 hours
 let _leadPool = [];
 let _leadIndex = 0;
@@ -235,7 +241,7 @@ function populateHome(data, opts = {}) {
     return;
   }
 
-  // Lead — v3.15: carousel pool with 5-hour freshness gate
+  // Lead — fresh stories first, then fill from the still-current homepage feed.
   const newPool = buildLeadPool(all);
   if (newPool.length === 0) {
     // No articles at all — show empty state (covered above by !all.length check)
@@ -433,9 +439,10 @@ function wireLeadDots() {
   });
 }
 
-// ─── v3.21 Lead pool with freshness gate ─────────────────────────────────
-// Returns the newest unique stories (up to LEAD_POOL_SIZE). Fresh stories do
-// not require an image because renderLeadStory already has sport fallback art.
+// ─── v3.23 Lead pool: fresh-first, always fill available slots ───────────
+// The API has already limited homepage articles to 24h. Prioritize stories
+// under the 5h freshness target, then fill remaining positions from the rest
+// of that still-current feed so one fresh story cannot disable the carousel.
 function buildLeadPool(articles) {
   if (!articles?.length) return [];
 
@@ -450,10 +457,11 @@ function buildLeadPool(articles) {
     (a, i, arr) => arr.findIndex((x) => String(x.id) === String(a.id)) === i
   );
 
-  const fresh = articles.filter((a) => ageOf(a) < MAX_LEAD_AGE_MS);
-  const source = fresh.length ? fresh : articles;
+  const uniqueSorted = dedupe([...articles].sort(newestFirst));
+  const fresh = uniqueSorted.filter((a) => ageOf(a) >= 0 && ageOf(a) < MAX_LEAD_AGE_MS);
+  const fallback = uniqueSorted.filter((a) => !fresh.some((f) => String(f.id) === String(a.id)));
 
-  return dedupe([...source].sort(newestFirst)).slice(0, LEAD_POOL_SIZE);
+  return [...fresh, ...fallback].slice(0, LEAD_POOL_SIZE);
 }
 
 // ─── Renderers (lead/sidebar/skeletons) ──────────────────────────────────
