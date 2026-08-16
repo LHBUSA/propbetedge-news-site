@@ -2,6 +2,10 @@
  * src/components/article-card.js
  * Editorial photo-forward card — magazine style
  *
+ * v3.10: relative timestamp guard
+ *   - Future/invalid published_at values no longer render as "Just now"
+ *   - Small clock skew is tolerated; larger future dates render absolute dates
+ *
  * v3.9: image error fallback uses CSS + data attributes instead of inline JS,
  * eliminating the broken `'" />` leak that appeared below cards.
  */
@@ -84,11 +88,24 @@ export function renderSidebarStory(article) {
 
 // Helpers
 export function formatRelative(date) {
-  const now = new Date();
-  const diffMs = now - date;
-  const mins = Math.floor(diffMs / 60000);
-  const hours = Math.floor(diffMs / 3600000);
-  const days = Math.floor(diffMs / 86400000);
+  const ts = date instanceof Date ? date.getTime() : NaN;
+  if (!Number.isFinite(ts)) return '';
+
+  const nowTs = Date.now();
+  const diffMs = nowTs - ts;
+  const FUTURE_SKEW_MS = 2 * 60 * 1000;
+
+  // A bad future timestamp used to produce negative minutes, which satisfied
+  // `mins < 1` and incorrectly displayed "Just now". Only tolerate tiny
+  // clock skew; otherwise show the source date instead of pretending it's new.
+  if (diffMs < -FUTURE_SKEW_MS) {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  const safeDiffMs = Math.max(0, diffMs);
+  const mins = Math.floor(safeDiffMs / 60000);
+  const hours = Math.floor(safeDiffMs / 3600000);
+  const days = Math.floor(safeDiffMs / 86400000);
   if (mins < 1) return 'Just now';
   if (mins < 60) return `${mins}m ago`;
   if (hours < 24) return `${hours}h ago`;
