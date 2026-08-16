@@ -2,6 +2,11 @@
  * src/pages/home.js
  * Editorial homepage — magazine layout
  *
+ * v3.22: ⏱️ Lead timer lifecycle fix
+ *   - Auto-refresh no longer kills the lead carousel interval on page load
+ *   - Refresh polling and hero rotation now manage independent timers
+ *   - Defensive restart keeps the lead cycle alive when a pool has 2+ stories
+ *
  * v3.21: 📰 Lead carousel freshness + rotation fix
  *   - Compare refreshes against the actual filtered lead pool
  *   - Promote newly arrived stories to lead slot #1 immediately
@@ -122,10 +127,16 @@ async function fetchHomeData() {
 
 // ─── Auto-refresh loop ──────────────────────────────────────────────────
 function startAutoRefresh() {
-  stopAutoRefresh();
+  // Refresh polling owns only its own interval. Do NOT call stopAutoRefresh()
+  // here because that also tears down the independent lead carousel timer.
+  if (_refreshHandle) {
+    clearInterval(_refreshHandle);
+    _refreshHandle = null;
+  }
+
   _refreshHandle = setInterval(async () => {
     if (!document.getElementById('lead-slot')) {
-      // We've navigated away — stop polling
+      // We've navigated away — stop all homepage timers
       stopAutoRefresh();
       return;
     }
@@ -140,6 +151,12 @@ function startAutoRefresh() {
       console.warn('[home auto-refresh]', e.message);
     }
   }, REFRESH_INTERVAL_MS);
+
+  // Defensive: initial populate should already have started this, but keep
+  // rotation alive if another caller restarted refresh polling independently.
+  if (_leadPool.length > 1 && !_leadCycleHandle) {
+    startLeadCycle();
+  }
 }
 
 function stopAutoRefresh() {
@@ -147,7 +164,7 @@ function stopAutoRefresh() {
     clearInterval(_refreshHandle);
     _refreshHandle = null;
   }
-  // v3.14: also stop the carousel
+  // Navigating away from home should stop the carousel too.
   stopLeadCycle();
   if (_leadResumeHandle) {
     clearTimeout(_leadResumeHandle);
