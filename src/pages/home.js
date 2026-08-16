@@ -2,6 +2,12 @@
  * src/pages/home.js
  * Editorial homepage — magazine layout
  *
+ * v3.21: 📰 Lead carousel freshness + rotation fix
+ *   - Compare refreshes against the actual filtered lead pool
+ *   - Promote newly arrived stories to lead slot #1 immediately
+ *   - Allow fresh no-image stories to rotate using the existing fallback art
+ *   - Keep auto-rotation running even while the hero is hovered
+ *
  * v3.20: 🔆 Sidebar timestamp readability
  *   - Sidebar timestamps ("48M AGO", "2H AGO") were rendered in muted
  *     paper-subtle gray that was barely legible against the sidebar bg
@@ -48,7 +54,6 @@ let _leadPool = [];
 let _leadIndex = 0;
 let _leadCycleHandle = null;
 let _leadResumeHandle = null;
-let _leadHovering = false;
 
 export async function renderHome(root) {
   _currentRoot = root;
@@ -150,19 +155,18 @@ function stopAutoRefresh() {
   }
 }
 
-// Check if the new data has fresher content than what's currently in the
-// carousel pool. v3.14: any change in top-5 article IDs (order or set)
-// triggers re-population so newly published articles appear in rotation.
+// Check refreshes against the same filtered/sorted pool the carousel uses.
+// This prevents raw API order from drifting out of sync with the visible hero.
 function hasFreshContent(data) {
-  const newTop5 = (data.homepage.articles || []).slice(0, LEAD_POOL_SIZE).map((a) => String(a.id));
-  const currentTop5 = _leadPool.map((a) => String(a.id));
-  if (newTop5.length === 0) return false;
-  if (currentTop5.length === 0) return true;
-  if (newTop5.length !== currentTop5.length) return true;
-  for (let i = 0; i < newTop5.length; i++) {
-    if (newTop5[i] !== currentTop5[i]) return true;
-  }
-  return false;
+  const newPool = buildLeadPool(data.homepage.articles || []);
+  const newIds = newPool.map((a) => String(a.id));
+  const currentIds = _leadPool.map((a) => String(a.id));
+
+  if (newIds.length === 0) return false;
+  if (currentIds.length === 0) return true;
+  if (newIds.length !== currentIds.length) return true;
+
+  return newIds.some((id, i) => id !== currentIds[i]);
 }
 
 // Brief visual indicator that content was just refreshed
@@ -327,20 +331,19 @@ function crossfade(el) {
 // ─── v3.14: Lead carousel ────────────────────────────────────────────────
 function setLeadPool(newPool, opts = {}) {
   if (!newPool?.length) return;
-  // Try to keep showing the same article if it's still in the new pool
-  const currentArticleId = _leadPool[_leadIndex]?.id;
+
   _leadPool = newPool;
-  const sameIdx = currentArticleId
-    ? newPool.findIndex((a) => String(a.id) === String(currentArticleId))
-    : -1;
-  _leadIndex = sameIdx >= 0 ? sameIdx : 0;
-  showLeadIndex(_leadIndex, { skipFade: !opts.animate });
+
+  // A changed pool means a newer story arrived (or freshness order changed).
+  // Put the current #1 on screen immediately so hero/sidebar stay in sync.
+  _leadIndex = 0;
+  showLeadIndex(0, { skipFade: !opts.animate });
+
   if (newPool.length > 1) {
     startLeadCycle();
   } else {
     stopLeadCycle();
   }
-  attachLeadHoverHandlers();
 }
 
 function showLeadIndex(idx, opts = {}) {
@@ -368,7 +371,6 @@ function showLeadIndex(idx, opts = {}) {
 }
 
 function advanceLead() {
-  if (_leadHovering) return;  // pause cycling while hovered
   if (!_leadPool.length) return;
   _leadIndex = (_leadIndex + 1) % _leadPool.length;
   showLeadIndex(_leadIndex);
@@ -385,14 +387,6 @@ function stopLeadCycle() {
     clearInterval(_leadCycleHandle);
     _leadCycleHandle = null;
   }
-}
-
-function attachLeadHoverHandlers() {
-  const slot = document.getElementById('lead-slot');
-  if (!slot || slot.dataset.hoverWired === '1') return;
-  slot.dataset.hoverWired = '1';
-  slot.addEventListener('mouseenter', () => { _leadHovering = true; });
-  slot.addEventListener('mouseleave', () => { _leadHovering = false; });
 }
 
 function renderLeadDots(activeIdx) {
@@ -422,49 +416,27 @@ function wireLeadDots() {
   });
 }
 
-// ─── v3.15 Lead pool with freshness gate ─────────────────────────────────
-// Returns array of up to LEAD_POOL_SIZE articles for the carousel.
-// Hard rule: nothing older than MAX_LEAD_AGE_MS (5h) leads, UNLESS no fresh
-// articles exist (overnight / slow news days), in which case we fall back
-// to the top articles regardless of age.
+// ─── v3.21 Lead pool with freshness gate ─────────────────────────────────
+// Returns the newest unique stories (up to LEAD_POOL_SIZE). Fresh stories do
+// not require an image because renderLeadStory already has sport fallback art.
 function buildLeadPool(articles) {
   if (!articles?.length) return [];
 
   const now = Date.now();
-  const FRESH_RECAP_MS = 12 * 60 * 60 * 1000;
-  const ageOf = (a) => now - new Date(a.published_at).getTime();
+  const publishedTs = (a) => {
+    const ts = new Date(a.published_at).getTime();
+    return Number.isFinite(ts) ? ts : 0;
+  };
+  const ageOf = (a) => now - publishedTs(a);
+  const newestFirst = (a, b) => publishedTs(b) - publishedTs(a);
+  const dedupe = (items) => items.filter(
+    (a, i, arr) => arr.findIndex((x) => String(x.id) === String(a.id)) === i
+  );
 
-  // Fresh = < 5 hours old. Prefer items with images.
   const fresh = articles.filter((a) => ageOf(a) < MAX_LEAD_AGE_MS);
-  const freshWithImage = fresh.filter((a) => a.image_url);
+  const source = fresh.length ? fresh : articles;
 
-  if (freshWithImage.length > 0) {
-    // Within fresh-with-image, sort recaps by impact_score (morning-coffee
-    // priority from v3.12) ahead of non-recaps which keep API order.
-    const freshRecaps = freshWithImage
-      .filter((a) =>
-        (a.category === 'recap' || a.topic_kind === 'recap') &&
-        ageOf(a) < FRESH_RECAP_MS
-      )
-      .sort((x, y) =>
-        (y.relevance_score || y.take?.impact_score || 0) -
-        (x.relevance_score || x.take?.impact_score || 0)
-      );
-    const freshNonRecaps = freshWithImage.filter((a) =>
-      a.category !== 'recap' && a.topic_kind !== 'recap'
-    );
-    // Dedupe by id, cap at pool size
-    const pool = [...freshRecaps, ...freshNonRecaps]
-      .filter((a, i, arr) => arr.findIndex((x) => x.id === a.id) === i)
-      .slice(0, LEAD_POOL_SIZE);
-    if (pool.length > 0) return pool;
-  }
-
-  // No fresh articles — slow news / overnight fallback.
-  // Use top articles regardless of age, prefer those with images.
-  const withImage = articles.filter((a) => a.image_url);
-  const fallbackPool = (withImage.length ? withImage : articles).slice(0, LEAD_POOL_SIZE);
-  return fallbackPool;
+  return dedupe([...source].sort(newestFirst)).slice(0, LEAD_POOL_SIZE);
 }
 
 // ─── Renderers (lead/sidebar/skeletons) ──────────────────────────────────
