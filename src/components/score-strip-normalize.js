@@ -1,19 +1,6 @@
 /**
  * src/components/score-strip-normalize.js
- *
- * Shared normalizer — extracts the per-league game-shape mapping that
- * games-hub.js already uses, so score-strip.js and games-hub.js never drift.
- *
- * If you ever update a normalizer for one, update it here and both pick it up.
- *
- * Output shape (consumed by both score-strip and games-hub):
- *   {
- *     sport, sportLabel, gameId, state ('live'|'final'|'pre'),
- *     statusText,
- *     home: { name, abbr, logo, score, record },
- *     away: { name, abbr, logo, score, record },
- *     detailUrl, gameDate
- *   }
+ * Shared normalizer for the multi-sport score strip and games hub.
  */
 
 export function normalizeAll(data) {
@@ -33,13 +20,9 @@ export function normalizeMLB(games) {
                 : 'pre'
     const ls = g.linescore || {}
     return {
-      sport: 'mlb',
-      sportLabel: '⚾ MLB',
-      gameId: g.gamePk,
-      state,
-      statusText: state === 'live'
-        ? `${ls.inningHalf || 'Live'} ${ls.currentInningOrdinal || ''}`.trim()
-        : state === 'final' ? 'Final' : formatTime(g.gameDate),
+      sport: 'mlb', sportLabel: '⚾ MLB', gameId: g.gamePk, state,
+      statusText: state === 'live' ? `${ls.inningHalf || 'Live'} ${ls.currentInningOrdinal || ''}`.trim()
+                : state === 'final' ? 'Final' : formatTime(g.gameDate),
       home: {
         name: g.teams?.home?.team?.name || '',
         abbr: g.teams?.home?.team?.abbreviation || teamAbbr(g.teams?.home?.team?.name),
@@ -66,21 +49,11 @@ export function normalizeNBA(games) {
     const stateRaw = g.statusState || ''
     const state = stateRaw === 'in' ? 'live' : stateRaw === 'post' ? 'final' : 'pre'
     return {
-      sport: 'nba',
-      sportLabel: '🏀 NBA',
-      gameId: g.id,
-      state,
+      sport: 'nba', sportLabel: '🏀 NBA', gameId: g.id, state,
       statusText: state === 'live' ? `Q${g.period || ''} ${g.clock || ''}`.trim()
-                : state === 'final' ? 'Final'
-                : g.statusDetail || formatTime(g.date),
-      home: {
-        name: g.home, abbr: g.homeAbbr, logo: g.homeLogo,
-        score: g.homeScore ?? '', record: '',
-      },
-      away: {
-        name: g.away, abbr: g.awayAbbr, logo: g.awayLogo,
-        score: g.awayScore ?? '', record: '',
-      },
+                : state === 'final' ? 'Final' : g.statusDetail || formatTime(g.date),
+      home: { name: g.home, abbr: g.homeAbbr, logo: g.homeLogo, score: g.homeScore ?? '', record: '' },
+      away: { name: g.away, abbr: g.awayAbbr, logo: g.awayLogo, score: g.awayScore ?? '', record: '' },
       detailUrl: `/games/nba/${g.id}`,
       gameDate: g.date,
     }
@@ -92,23 +65,12 @@ export function normalizeNHL(games) {
     const status = String(g.status || '').toUpperCase()
     const state = ['LIVE', 'CRIT'].includes(status) ? 'live'
                 : ['OFF', 'FINAL', 'OVER'].includes(status) ? 'final'
-                : 'pre'  // FUT, PRE, etc. all map to pre-game
+                : 'pre'
     return {
-      sport: 'nhl',
-      sportLabel: '🏒 NHL',
-      gameId: g.id,
-      state,
-      statusText: state === 'live' ? 'Live'
-                : state === 'final' ? 'Final'
-                : formatTime(g.date),
-      home: {
-        name: g.home, abbr: g.homeAbbr || teamAbbr(g.home), logo: g.homeLogo || null,
-        score: g.homeScore ?? '', record: '',
-      },
-      away: {
-        name: g.away, abbr: g.awayAbbr || teamAbbr(g.away), logo: g.awayLogo || null,
-        score: g.awayScore ?? '', record: '',
-      },
+      sport: 'nhl', sportLabel: '🏒 NHL', gameId: g.id, state,
+      statusText: state === 'live' ? 'Live' : state === 'final' ? 'Final' : formatTime(g.date),
+      home: { name: g.home, abbr: g.homeAbbr || teamAbbr(g.home), logo: g.homeLogo || null, score: g.homeScore ?? '', record: '' },
+      away: { name: g.away, abbr: g.awayAbbr || teamAbbr(g.away), logo: g.awayLogo || null, score: g.awayScore ?? '', record: '' },
       detailUrl: null,
       gameDate: g.date,
     }
@@ -117,25 +79,30 @@ export function normalizeNHL(games) {
 
 export function normalizeNFL(games) {
   return games.map((g) => {
-    const status = (g.status || '').toLowerCase()
-    const state = status.includes('in progress') ? 'live'
-                : status.includes('final') ? 'final'
+    const rawState = String(g.statusState || '').toLowerCase()
+    const status = String(g.status || '').toLowerCase()
+    const state = rawState === 'in' || status.includes('in progress') ? 'live'
+                : rawState === 'post' || status.includes('final') ? 'final'
                 : 'pre'
+    const liveDetail = g.statusDetail || [g.period ? `Q${g.period}` : '', g.clock || ''].filter(Boolean).join(' ')
     return {
-      sport: 'nfl',
-      sportLabel: '🏈 NFL',
-      gameId: g.id,
-      state,
-      statusText: state === 'live' ? 'Live'
+      sport: 'nfl', sportLabel: '🏈 NFL', gameId: g.id, state,
+      statusText: state === 'live' ? (liveDetail || 'Live')
                 : state === 'final' ? 'Final'
-                : formatTime(g.date),
+                : (g.statusDetail || formatTime(g.date)),
       home: {
-        name: g.home, abbr: teamAbbr(g.home), logo: null,
-        score: g.homeScore ?? '', record: '',
+        name: g.home,
+        abbr: g.homeAbbr || teamAbbr(g.home),
+        logo: g.homeLogo || null,
+        score: g.homeScore ?? '',
+        record: g.homeRecord || '',
       },
       away: {
-        name: g.away, abbr: teamAbbr(g.away), logo: null,
-        score: g.awayScore ?? '', record: '',
+        name: g.away,
+        abbr: g.awayAbbr || teamAbbr(g.away),
+        logo: g.awayLogo || null,
+        score: g.awayScore ?? '',
+        record: g.awayRecord || '',
       },
       detailUrl: null,
       gameDate: g.date,
