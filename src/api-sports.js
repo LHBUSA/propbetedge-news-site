@@ -1,41 +1,27 @@
 /**
- * src/api-sports.js — v3
+ * src/api-sports.js — v4
  *
- * Direct public API calls (matches the pattern used in pbecast.js,
- * mlb-api.js, and other parts of the propbetedge stack).
- *
- *   MLB → statsapi.mlb.com           (CORS open)
- *   NBA → site.api.espn.com          (CORS open)
- *   NHL → api-web.nhle.com           (CORS BLOCKED → proxied through propbetedge-cors)
- *   NFL → site.api.espn.com          (CORS open)
- *
- * v3 fix: NHL is hit through propbetedge-cors.sales-fd3.workers.dev because
- * api-web.nhle.com does not send Access-Control-Allow-Origin headers.
- * The proxy worker has an allowlist (only NHL hosts, only propbetedge origins)
- * so it's not an open relay.
+ * Direct public API calls for the four-sport PropBetEdge score strip.
+ * NFL now preserves ESPN team abbreviations, logos and records so the
+ * shared score-strip renderer can display football teams visually.
  */
 
 const NHL_PROXY = 'https://propbetedge-cors.sales-fd3.workers.dev';
 
-// Today in ET (matches MLB API's date format)
 function todayET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
-// Today in YYYYMMDD (ESPN's preferred format)
 function todayESPN() {
   return todayET().replace(/-/g, '');
 }
 
 async function fetchJson(url, opts = {}) {
   const r = await fetch(url, { credentials: 'omit', ...opts });
-  if (!r.ok) {
-    throw new Error(`${url.split('?')[0]} ${r.status}`);
-  }
+  if (!r.ok) throw new Error(`${url.split('?')[0]} ${r.status}`);
   return r.json();
 }
 
-// ─── MLB (statsapi.mlb.com — public, CORS open) ────────────────────────────
 async function mlbScheduleRaw(date) {
   const d = date || todayET();
   const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${d}&hydrate=probablePitcher,venue,team,linescore`;
@@ -43,7 +29,6 @@ async function mlbScheduleRaw(date) {
   return { date: d, games: data?.dates?.[0]?.games || [] };
 }
 
-// ─── NBA (ESPN scoreboard — public, CORS open) ─────────────────────────────
 async function nbaScheduleRaw(date) {
   const d = date || todayESPN();
   let events = [];
@@ -122,17 +107,12 @@ async function nbaSummaryRaw(gameId) {
   };
 }
 
-// ─── NHL (proxied through propbetedge-cors — NHL API blocks browser CORS) ──
 async function nhlScheduleRaw(date) {
   const d = date || todayET();
   const target = `https://api-web.nhle.com/v1/schedule/${d}`;
   const proxied = `${NHL_PROXY}/?url=${encodeURIComponent(target)}`;
   const data = await fetchJson(proxied);
-
-  // gameWeek is an array of days. Find today's day specifically (not just [0])
-  // because the API may return today + future days.
   const today = (data?.gameWeek || []).find(w => w.date === d) || data?.gameWeek?.[0] || { games: [] };
-
   const games = (today.games || []).map((g) => ({
     id: g.id,
     date: g.startTimeUTC,
@@ -150,7 +130,14 @@ async function nhlScheduleRaw(date) {
   return { games };
 }
 
-// ─── NFL (ESPN scoreboard — public, CORS open) ─────────────────────────────
+function espnTeamLogo(team) {
+  return team?.logo || team?.logos?.[0]?.href || null;
+}
+
+function recordSummary(competitor) {
+  return competitor?.records?.find(r => r?.summary)?.summary || competitor?.records?.[0]?.summary || '';
+}
+
 async function nflScheduleRaw() {
   const data = await fetchJson('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard').catch(() => ({ events: [] }));
   const events = data?.events || [];
@@ -163,8 +150,18 @@ async function nflScheduleRaw() {
       name: e.name,
       date: e.date,
       status: e.status?.type?.description,
+      statusState: e.status?.type?.state,
+      statusDetail: e.status?.type?.shortDetail,
+      period: e.status?.period,
+      clock: e.status?.displayClock,
       home: home.team?.displayName,
+      homeAbbr: home.team?.abbreviation,
+      homeLogo: espnTeamLogo(home.team),
+      homeRecord: recordSummary(home),
       away: away.team?.displayName,
+      awayAbbr: away.team?.abbreviation,
+      awayLogo: espnTeamLogo(away.team),
+      awayRecord: recordSummary(away),
       homeScore: home.score,
       awayScore: away.score,
     };
@@ -172,26 +169,22 @@ async function nflScheduleRaw() {
   return { games };
 }
 
-// ─── Public API ────────────────────────────────────────────────────────────
 export const sports = {
   mlbSchedule: (date) => mlbScheduleRaw(date),
   nbaSchedule: (date) => nbaScheduleRaw(date),
   nhlSchedule: (date) => nhlScheduleRaw(date),
-  nflSchedule: ()     => nflScheduleRaw(),
+  nflSchedule: () => nflScheduleRaw(),
 
-  // ── MLB game detail ───────────────────────────────────────────────────
   mlbLinescore: (gamePk) => fetchJson(`https://statsapi.mlb.com/api/v1/game/${gamePk}/linescore`),
-  mlbBoxscore:  (gamePk) => fetchJson(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`),
+  mlbBoxscore: (gamePk) => fetchJson(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`),
   async mlbPlays(gamePk, limit = 30) {
     const data = await fetchJson(`https://statsapi.mlb.com/api/v1/game/${gamePk}/playByPlay?startIndex=0`);
     const plays = data?.allPlays || [];
     return { gamePk, total: plays.length, recent: plays.slice(-limit) };
   },
 
-  // ── NBA game detail ───────────────────────────────────────────────────
   nbaSummary: (gameId) => nbaSummaryRaw(gameId),
 
-  // ── Convenience: 4-sport hub fetch ────────────────────────────────────
   async allTodayScoreboards() {
     const results = await Promise.allSettled([
       this.mlbSchedule(),
