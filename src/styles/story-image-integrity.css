@@ -1,0 +1,35 @@
+/* PropBetEdge story image integrity guard
+ * Healthy editorial images always win over recovery/fallback UI.
+ * The recovery state may only appear when the primary image is absent or has
+ * explicitly failed with .img-broken.
+ */
+
+/* Hero renderer always includes a fallback sibling even when image_url exists.
+   The media-backfill layer styles that fallback, so explicitly suppress it while
+   any healthy primary/recovered image is present. */
+.lead-overlay-image-wrap:has(> img:not(.img-broken)) > .lead-overlay-fallback,
+.card-image:has(> img:not(.img-broken)) > .img-fallback,
+.sidebar-hero-img:has(> img:not(.img-broken)) > .img-fallback,
+.lead-image:has(> img:not(.img-broken)) > .img-fallback {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* When the renderer marks the primary as broken, keep it from obscuring a
+   recovered image or the restrained fallback. */
+.lead-overlay-image-wrap > img.img-broken,
+.card-image > img.img-broken,
+.sidebar-hero-img > img.img-broken,
+.lead-image > img.img-broken {
+  display: none !important;
+}
+
+/* A recovered contextual image is authoritative too. */
+.lead-overlay-image-wrap:has(> img[data-pbe-recovered-media="1"]) > .lead-overlay-fallback,
+.card-image:has(> img[data-pbe-recovered-media="1"]) > .img-fallback,
+.sidebar-hero-img:has(> img[data-pbe-recovered-media="1"]) > .img-fallback,
+.lead-image:has(> img[data-pbe-recovered-media="1"]) > .img-fallback {
+  display: none !important;
+  opacity: 0 !important;
+}
