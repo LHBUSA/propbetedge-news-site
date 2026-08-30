@@ -1,5 +1,6 @@
 import './styles/story-image-integrity.css';
 import './styles/pbe-publication-unify.css';
+import './styles/pbe-header-polish.css';
 import { initSiteEnhancements } from './site-enhancements.js';
 import { initStoryMediaBackfill } from './media-backfill.js';
 import { initArticleTrustLayer } from './article-trust.js';
