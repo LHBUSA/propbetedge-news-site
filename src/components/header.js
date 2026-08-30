@@ -1,20 +1,8 @@
 /**
  * src/components/header.js
  * Editorial masthead with PBE chrome logo + header banner ad
- *
- * v3.16: 🆕 Added ⚡ Edges link → /odds (with live edge counter)
- *        🆕 Renamed "Live Games" → "PBEcast" (branded)
- *        🆕 Contrast tuning on nav links (was too dim)
- *
- * v3.14: 🆕 Replaced thin topbar with sticky multi-sport SCORE STRIP
- *        (ESPN-pattern). Same vertical real estate, way more conversion value.
- *        Auto-fetches from PropSports API, refreshes every 60s.
- *        MLB tiles → /games/mlb/{id} (paywall funnel via game-detail page)
- *        NFL/NBA/NHL tiles → their respective subdomains.
- * v3.11: renamed "Live" → "Live Games" + added Leaders nav link
- * v3.10: 🆕 added 🔴 Live link pointing to /games scoreboard hub
  */
-import { ad_header_banner } from '../ads-config.js';
+import { ad_header_banner, PROPBET_LINKS } from '../ads-config.js';
 import { renderScoreStripShell, mountScoreStrip } from './score-strip.js';
 
 const EV_FINDER_URL = 'https://propbetedge-ev-finder.sales-fd3.workers.dev/edges-today';
@@ -25,10 +13,9 @@ export function renderHeader() {
   const isLive    = path === '/games'   || path.startsWith('/games/');
   const isLeaders = path === '/leaders' || path.startsWith('/leaders/');
   const isOdds    = path === '/odds';
+  const sport = inferSport(path);
+  const primaryCta = headerCtaForSport(sport);
 
-  // Schedule the score-strip mount + edge-count fetch for the next tick — by then
-  // the header HTML is in the DOM. Idempotent: mountScoreStrip() guards against
-  // double-wiring. Using queueMicrotask so it fires before the next paint.
   if (typeof window !== 'undefined') {
     queueMicrotask(() => {
       if (document.getElementById('pbe-score-strip')) {
@@ -43,7 +30,7 @@ export function renderHeader() {
 
   return `
     ${renderScoreStripShell()}
-    ${ad_header_banner()}
+    ${ad_header_banner(sport ? { sport } : {})}
     <header class="masthead">
       <div class="container masthead-inner">
         <div class="masthead-left">
@@ -69,11 +56,23 @@ export function renderHeader() {
           <a href="/odds" class="nav-link edges-link ${isOdds ? 'active' : ''}">
             <span class="edges-bolt">⚡</span><span class="edges-label">Edges</span><span class="edges-count" id="edges-count" aria-live="polite"></span>
           </a>
-          <a href="https://mlb.propbetedge.ai" class="nav-link cta">Picks &rarr;</a>
+          <a href="${primaryCta.href}" class="nav-link cta"${primaryCta.external ? ' target="_blank" rel="noopener"' : ''}>${primaryCta.label} &rarr;</a>
         </div>
       </div>
     </header>
   `;
+}
+
+function inferSport(path) {
+  const match = String(path || '').match(/\/(?:news|games|leaders)\/(mlb|nfl|nba|nhl)(?:\/|$)/i);
+  return match?.[1]?.toLowerCase() || null;
+}
+
+function headerCtaForSport(sport) {
+  if (sport === 'nfl') return { href: PROPBET_LINKS.picks_nfl, label: 'NFL Intelligence', external: true };
+  if (sport === 'nba') return { href: '/news/nba', label: 'NBA · Coming Soon', external: false };
+  if (sport === 'nhl') return { href: '/news/nhl', label: 'NHL · Coming Soon', external: false };
+  return { href: PROPBET_LINKS.picks_mlb, label: 'MLB Intelligence', external: true };
 }
 
 async function fetchEdgeCount() {
