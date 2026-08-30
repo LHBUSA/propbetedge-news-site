@@ -52,12 +52,36 @@ function normalizeArticleDate(article, now = Date.now()) {
   };
 }
 
+function isHouseBrandImageUrl(raw) {
+  const value = String(raw || '').toLowerCase();
+  if (!value) return false;
+  return value.includes('/logo/')
+    || value.includes('pbe-mark')
+    || value.includes('pbe-full')
+    || value.includes('propbetedge-logo')
+    || value.includes('propbetedge_logo')
+    || value.includes('placeholder-pbe');
+}
+
+// A house logo is branding, not editorial photography. Treat it exactly like a
+// missing image so the media-backfill layer can recover contextual player/team
+// imagery or use the restrained sport fallback instead.
+function normalizeArticleImage(article) {
+  if (!article) return article;
+  if (!isHouseBrandImageUrl(article.image_url)) return article;
+  return {
+    ...article,
+    image_url: null,
+    _image_url_rejected: 'house_brand_asset',
+  };
+}
+
 function normalizeArticleList(data, { maxAgeMs = null, limit = null } = {}) {
   if (!data || !Array.isArray(data.articles)) return data;
 
   const now = Date.now();
   let articles = data.articles
-    .map((article) => normalizeArticleDate(article, now))
+    .map((article) => normalizeArticleImage(normalizeArticleDate(article, now)))
     .filter(Boolean)
     .sort((a, b) => {
       const aTs = new Date(a.published_at).getTime();
@@ -113,7 +137,7 @@ export const api = {
   article: async (slug) => {
     const data = await get(`/news/article/${encodeURIComponent(slug)}`);
     return data?.article
-      ? { ...data, article: normalizeArticleDate(data.article) }
+      ? { ...data, article: normalizeArticleImage(normalizeArticleDate(data.article)) }
       : data;
   },
 
