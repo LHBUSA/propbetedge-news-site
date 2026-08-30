@@ -1,51 +1,48 @@
 /**
  * src/pages/leaders-nfl.js — /leaders/nfl
  *
- * v3.12 — NFL is in offseason (Apr 2026). Placeholder page with:
- *   - "Coming this fall" framing
- *   - Reference to past season leaders (rough static list, optional)
- *   - Link to NFL news + Picks app
- *
- * Will be wired to ESPN's NFL leaders endpoint when training camp opens
- * (late July / early August).
+ * Pre-Week 1 production state. PropBetEdge intentionally excludes preseason
+ * exhibition totals from regular-season leaderboards; live 2026 passing,
+ * rushing, receiving and defensive leaderboards activate with Week 1.
  */
 
 import { leadersPageShell } from './leaders-shared.js';
 
 export async function renderNflLeadersPage(root) {
-  const dek = "NFL season starts in September. Leaderboards return when training camp opens — until then, follow the news beat or check picks across the active sports.";
+  const dek = '2026 regular-season leaderboards activate with Week 1. Preseason exhibition totals are intentionally excluded from the production rankings.';
+
   root.innerHTML = leadersPageShell('nfl', 'NFL', dek, `
     <div class="nfl-offseason">
       <div class="nfl-offseason-icon">🏈</div>
-      <h2 class="nfl-offseason-title">Leaderboards return this fall</h2>
+      <h2 class="nfl-offseason-title">2026 leaderboards go live with Week 1</h2>
       <p class="nfl-offseason-dek">
-        Training camps open in late July. Preseason starts mid-August. Regular season Week 1 kicks off in September.
-        We'll have full passing, rushing, receiving, and defensive leaderboards from kickoff onward —
-        plus advanced metrics and prop-bet impact analysis.
+        PropBetEdge keeps preseason exhibition stats separate from the regular-season record.
+        Once Week 1 begins, this page will surface live passing, rushing, receiving and defensive leaders
+        with the same player-level research and prop-market context used across the NFL intelligence product.
       </p>
 
       <div class="nfl-offseason-nav">
+        <a href="https://nfl.propbetedge.ai" class="nfl-offseason-link" target="_blank" rel="noopener">
+          <div class="nfl-offseason-link-icon">⚡</div>
+          <div class="nfl-offseason-link-title">NFL Intelligence</div>
+          <div class="nfl-offseason-link-dek">Model Lab, Market Watch, line simulation, SGP research and deeper football intelligence</div>
+        </a>
         <a href="/news/nfl" class="nfl-offseason-link">
           <div class="nfl-offseason-link-icon">📰</div>
           <div class="nfl-offseason-link-title">NFL News</div>
-          <div class="nfl-offseason-link-dek">Offseason moves, draft analysis, training camp updates</div>
+          <div class="nfl-offseason-link-dek">Roster moves, injuries, depth-chart changes and the stories shaping Week 1 markets</div>
+        </a>
+        <a href="/games" class="nfl-offseason-link">
+          <div class="nfl-offseason-link-icon">📊</div>
+          <div class="nfl-offseason-link-title">Game Center</div>
+          <div class="nfl-offseason-link-dek">Scores and live game context across the PropBetEdge sports network</div>
         </a>
         <a href="/leaders/mlb" class="nfl-offseason-link">
           <div class="nfl-offseason-link-icon">⚾</div>
           <div class="nfl-offseason-link-title">MLB Leaders</div>
-          <div class="nfl-offseason-link-dek">In-season action — batting, pitching, and advanced sabermetrics</div>
-        </a>
-        <a href="/leaders/nhl" class="nfl-offseason-link">
-          <div class="nfl-offseason-link-icon">🏒</div>
-          <div class="nfl-offseason-link-title">NHL Leaders</div>
-          <div class="nfl-offseason-link-dek">Stanley Cup playoff scoring + season totals</div>
-        </a>
-        <a href="/leaders/nba" class="nfl-offseason-link">
-          <div class="nfl-offseason-link-icon">🏀</div>
-          <div class="nfl-offseason-link-title">NBA Leaders</div>
-          <div class="nfl-offseason-link-dek">Finals run + season averages with TS%/eFG%</div>
+          <div class="nfl-offseason-link-dek">In-season batting, pitching and advanced leaderboards</div>
         </a>
       </div>
     </div>
-  `, 'OFFSEASON');
+  `, 'WEEK 1 NEXT');
 }
