@@ -1,6 +1,8 @@
 import './styles/story-image-integrity.css';
 import './styles/pbe-publication-unify.css';
 import './styles/pbe-header-polish.css';
+import './styles/background-selector.css';
+import { initBackgroundSelector } from './background-selector.js';
 import { initSiteEnhancements } from './site-enhancements.js';
 import { initStoryMediaBackfill } from './media-backfill.js';
 import { initArticleTrustLayer } from './article-trust.js';
@@ -8,6 +10,7 @@ import { initArticleFunnel } from './article-funnel.js';
 import { initAnalytics } from './analytics.js';
 import { initRouter } from './router.js';
 
+initBackgroundSelector();
 initSiteEnhancements();
 initStoryMediaBackfill();
 initArticleTrustLayer();
