@@ -1,0 +1,43 @@
+/*
+ * Preview-image reliability layer.
+ * Use the four league photos that are already proven to load in production.
+ * Alternate scene cards vary crop/filter rather than depending on additional
+ * remote image IDs that can disappear or fail to resolve.
+ */
+
+.pbe-scene-option[data-scene='network'] .pbe-scene-preview {
+  background-image: url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=680&q=66') !important;
+  background-position: center 50% !important;
+  filter: grayscale(78%) sepia(8%) saturate(42%) brightness(.58) contrast(1.16) !important;
+}
+
+.pbe-scene-option[data-scene='mlb-summer'] .pbe-scene-preview {
+  background-image: url('https://images.unsplash.com/photo-1778050203444-90920c7a5652?auto=format&fit=crop&w=680&q=66') !important;
+  background-position: center 62% !important;
+  filter: sepia(14%) saturate(96%) brightness(.84) contrast(1.05) !important;
+}
+
+.pbe-scene-option[data-scene='nfl-gridiron'] .pbe-scene-preview {
+  background-image: url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=680&q=66') !important;
+  background-position: center 65% !important;
+  filter: grayscale(48%) sepia(14%) saturate(72%) brightness(.70) contrast(1.16) !important;
+}
+
+.pbe-scene-option[data-scene='nba-hardwood'] .pbe-scene-preview {
+  background-image: url('https://images.unsplash.com/photo-1771882856158-c8e083134ee3?auto=format&fit=crop&w=680&q=66') !important;
+  background-position: center 58% !important;
+  filter: grayscale(24%) sepia(16%) saturate(86%) brightness(.77) contrast(1.10) !important;
+}
+
+.pbe-scene-option[data-scene='nhl-blueline'] .pbe-scene-preview {
+  background-image: url('https://images.unsplash.com/photo-1614239039918-3653d97bf483?auto=format&fit=crop&w=680&q=66') !important;
+  background-position: center 58% !important;
+  filter: grayscale(52%) saturate(66%) brightness(.80) contrast(1.10) !important;
+}
+
+.pbe-scene-option[data-scene='blackout'] .pbe-scene-preview {
+  background-image:
+    radial-gradient(circle at 72% 18%, rgba(212,175,55,.22), transparent 31%),
+    linear-gradient(145deg, #1b160f 0%, #080706 72%) !important;
+  filter: none !important;
+}
