@@ -142,7 +142,7 @@ function renderAll({ initial = false } = {}) {
   renderIntelligence();
   renderFreshness();
 
-  if (initial) loadLeadersTeaser('mlb');
+  if (initial) loadLeadersTeaser(activeSport);
 }
 
 function wireControls() {
@@ -153,7 +153,7 @@ function wireControls() {
       renderFeatured();
       renderBoard();
       renderIntelligence();
-      loadLeadersTeaser(activeSport === 'all' || activeSport === 'nfl' ? 'mlb' : activeSport);
+      loadLeadersTeaser(activeSport);
       trackFilter('sport', activeSport);
     });
   });
