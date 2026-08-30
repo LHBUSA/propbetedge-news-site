@@ -69,10 +69,14 @@ function inferSport(path) {
 }
 
 function headerCtaForSport(sport) {
+  if (sport === 'mlb') return { href: PROPBET_LINKS.picks_mlb, label: 'MLB Intelligence', external: true };
   if (sport === 'nfl') return { href: PROPBET_LINKS.picks_nfl, label: 'NFL Intelligence', external: true };
   if (sport === 'nba') return { href: '/news/nba', label: 'NBA · Coming Soon', external: false };
   if (sport === 'nhl') return { href: '/news/nhl', label: 'NHL · Coming Soon', external: false };
-  return { href: PROPBET_LINKS.picks_mlb, label: 'MLB Intelligence', external: true };
+
+  // NFL is the network's next major launch, so generic surfaces should point
+  // football-first while sport-specific pages continue to respect context.
+  return { href: PROPBET_LINKS.picks_nfl, label: 'NFL Intelligence', external: true };
 }
 
 async function fetchEdgeCount() {
