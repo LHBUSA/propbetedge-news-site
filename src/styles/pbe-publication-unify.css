@@ -1,0 +1,611 @@
+/*
+ * PropBetEdge publication unification layer
+ *
+ * Keeps the live score infrastructure and games experience on the same
+ * visual system as the newsroom: warm ink, paper, gold and restrained red.
+ * Loaded globally so the shared score strip/header stack cannot drift into
+ * a separate neon sports-app theme again.
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SCORE STRIP — warm-black editorial chrome, league color only as an accent
+   ═══════════════════════════════════════════════════════════════════════ */
+#pbe-score-strip {
+  height: 78px !important;
+  background:
+    linear-gradient(180deg, rgba(20,17,13,.995) 0%, rgba(29,25,20,.985) 100%) !important;
+  border-bottom: 1px solid rgba(212,175,55,.24) !important;
+  box-shadow: 0 7px 24px rgba(0,0,0,.28) !important;
+  color: var(--paper) !important;
+}
+
+#pbe-score-strip .pss-filter {
+  background: rgba(20,17,13,.96) !important;
+  border-right-color: rgba(255,245,220,.10) !important;
+}
+
+#pbe-score-strip .pss-filter-trigger,
+#pbe-score-strip .pss-filter-btn.active {
+  background: rgba(212,175,55,.11) !important;
+  border-color: rgba(212,175,55,.48) !important;
+  color: var(--gold-bright) !important;
+}
+
+#pbe-score-strip .pss-filter-dropdown {
+  background: rgba(20,17,13,.99) !important;
+  border-color: rgba(212,175,55,.28) !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,.48) !important;
+}
+
+#pbe-score-strip .pss-filter-btn {
+  border-color: rgba(255,245,220,.14) !important;
+  color: var(--paper-dim) !important;
+}
+
+#pbe-score-strip .pss-filter-btn:hover {
+  color: var(--paper) !important;
+  border-color: rgba(212,175,55,.36) !important;
+  background: rgba(212,175,55,.055) !important;
+}
+
+#pbe-score-strip .pss-date,
+#pbe-score-strip .pss-tile-top,
+#pbe-score-strip .pss-status-inline.pre,
+#pbe-score-strip .pss-status-inline.final {
+  color: var(--paper-dim) !important;
+}
+
+#pbe-score-strip .pss-tile {
+  border-right-color: rgba(255,245,220,.085) !important;
+  background: transparent !important;
+}
+
+#pbe-score-strip .pss-tile:hover {
+  background: rgba(245,241,235,.035) !important;
+}
+
+#pbe-score-strip .pss-tile.pss-tile-updated {
+  animation-name: pbe-publication-score-flash !important;
+}
+
+@keyframes pbe-publication-score-flash {
+  0% { background: rgba(212,175,55,.14); }
+  45% { background: rgba(212,175,55,.055); }
+  100% { background: transparent; }
+}
+
+#pbe-score-strip .pss-tile-accent {
+  width: 2px !important;
+  opacity: .58 !important;
+}
+
+#pbe-score-strip .pss-sport-tag,
+#pbe-score-strip .pss-team-record {
+  color: var(--paper-faint) !important;
+}
+
+#pbe-score-strip .pss-team-name,
+#pbe-score-strip .pss-team-score {
+  color: var(--paper) !important;
+}
+
+#pbe-score-strip .pss-team-row.winner .pss-team-name,
+#pbe-score-strip .pss-team-row.winner .pss-team-score {
+  color: var(--gold-bright) !important;
+}
+
+#pbe-score-strip .pss-team-row.loser .pss-team-name,
+#pbe-score-strip .pss-team-row.loser .pss-team-score {
+  color: var(--paper-faint) !important;
+}
+
+#pbe-score-strip .pss-team-logo-placeholder {
+  background: rgba(245,241,235,.07) !important;
+  color: var(--paper-dim) !important;
+}
+
+#pbe-score-strip .pss-status-inline.live {
+  background: var(--crimson) !important;
+  color: #fff !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TOP PUBLICATION STACK — score strip → network rail → masthead → breaking
+   ═══════════════════════════════════════════════════════════════════════ */
+.ad-banner.ad-tone-gold {
+  background:
+    linear-gradient(90deg, rgba(20,17,13,.99), rgba(29,25,20,.98) 52%, rgba(20,17,13,.99)) !important;
+  border-top: 1px solid rgba(212,175,55,.10) !important;
+  border-bottom: 1px solid rgba(212,175,55,.22) !important;
+}
+
+.ad-banner.ad-tone-gold::before {
+  background:
+    linear-gradient(90deg, transparent 18%, rgba(212,175,55,.075) 50%, transparent 82%) !important;
+}
+
+.ad-banner-inner {
+  min-height: 38px;
+  padding-top: 7px !important;
+  padding-bottom: 7px !important;
+  gap: 14px !important;
+}
+
+.ad-banner-eyebrow {
+  color: var(--gold) !important;
+  font-size: 10px !important;
+  letter-spacing: .14em !important;
+}
+
+.ad-banner-headline {
+  color: var(--paper-2) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+
+.ad-banner-cta {
+  color: var(--gold-bright) !important;
+  border-color: rgba(212,175,55,.28) !important;
+  background: rgba(212,175,55,.055) !important;
+  padding: 4px 10px !important;
+}
+
+.masthead {
+  background: rgba(20,17,13,.91) !important;
+  border-bottom-color: rgba(255,245,220,.11) !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,.16) !important;
+}
+
+.masthead-inner {
+  padding-top: 15px !important;
+  padding-bottom: 15px !important;
+}
+
+.masthead-mark {
+  height: 48px !important;
+}
+
+.masthead-logo .tagline {
+  margin-top: 1px !important;
+  color: var(--paper-faint) !important;
+  letter-spacing: .28em !important;
+}
+
+.nav-link {
+  color: var(--paper-dim) !important;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: var(--paper) !important;
+}
+
+.breaking {
+  padding: 8px 0 !important;
+  background: linear-gradient(90deg, #8f1b2e 0%, var(--crimson) 50%, #8f1b2e 100%) !important;
+  border-top-color: rgba(255,255,255,.08) !important;
+  border-bottom-color: rgba(0,0,0,.42) !important;
+  box-shadow: 0 5px 18px rgba(0,0,0,.14) !important;
+}
+
+.breaking-inner { gap: 12px !important; }
+.breaking-tag { padding: 3px 9px !important; }
+.breaking-text { font-size: 13px !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   /GAMES — publication-first, stadium atmosphere visible again
+   ═══════════════════════════════════════════════════════════════════════ */
+.pbe-games-worldclass {
+  --gh5-bg: var(--ink) !important;
+  --gh5-panel: rgba(29,25,20,.92) !important;
+  --gh5-panel-2: rgba(42,36,28,.92) !important;
+  --gh5-line: rgba(255,245,220,.10) !important;
+  --gh5-line-strong: rgba(255,245,220,.18) !important;
+  --gh5-text: var(--paper) !important;
+  --gh5-dim: var(--paper-dim) !important;
+  --gh5-faint: var(--paper-faint) !important;
+  --gh5-gold: var(--gold) !important;
+  --gh5-live: var(--crimson-bright) !important;
+  --gh5-mlb: #bf4352 !important;
+  --gh5-nfl: #9b8a63 !important;
+  --gh5-nba: #b47643 !important;
+  --gh5-nhl: #728c94 !important;
+  background:
+    linear-gradient(180deg, rgba(20,17,13,.42) 0%, rgba(20,17,13,.70) 46%, rgba(20,17,13,.86) 100%) !important;
+  color: var(--paper) !important;
+}
+
+.pbe-games-worldclass .gh5-stage {
+  border-bottom-color: rgba(255,245,220,.10) !important;
+  background:
+    linear-gradient(180deg, rgba(20,17,13,.54), rgba(20,17,13,.80)),
+    radial-gradient(820px 440px at 82% 8%, rgba(212,175,55,.09), transparent 62%),
+    radial-gradient(720px 420px at 10% 12%, rgba(193,39,61,.065), transparent 64%) !important;
+}
+
+.pbe-games-worldclass .gh5-stage::after {
+  background-image:
+    linear-gradient(90deg, transparent 0%, rgba(212,175,55,.04) 50%, transparent 100%) !important;
+  background-size: 100% 1px !important;
+  opacity: .7 !important;
+}
+
+.pbe-games-worldclass .gh5-stage-orb-one {
+  background: var(--gold) !important;
+  opacity: .075 !important;
+}
+
+.pbe-games-worldclass .gh5-stage-orb-two {
+  background: var(--crimson) !important;
+  opacity: .065 !important;
+}
+
+.pbe-games-worldclass .gh5-overline,
+.pbe-games-worldclass .gh5-section-kicker {
+  color: var(--gold) !important;
+}
+
+.pbe-games-worldclass .gh5-overline > span:not(.gh5-live-pulse) {
+  color: var(--paper-subtle) !important;
+}
+
+.pbe-games-worldclass .gh5-hero-grid h1 {
+  font-family: var(--font-serif) !important;
+  color: var(--paper) !important;
+  font-weight: 800 !important;
+  letter-spacing: -.035em !important;
+  text-shadow: 0 3px 18px rgba(0,0,0,.26) !important;
+}
+
+.pbe-games-worldclass .gh5-hero-grid h1 em {
+  color: var(--gold-bright) !important;
+  font-weight: 700 !important;
+}
+
+.pbe-games-worldclass .gh5-hero-grid p {
+  color: var(--paper-dim) !important;
+}
+
+.pbe-games-worldclass .gh5-data-line,
+.pbe-games-worldclass .gh5-data-line strong {
+  color: var(--paper-faint) !important;
+}
+
+.pbe-games-worldclass .gh5-data-line strong {
+  color: var(--paper-2) !important;
+}
+
+.pbe-games-worldclass .gh5-data-dot {
+  background: var(--gold) !important;
+  box-shadow: 0 0 12px rgba(212,175,55,.38) !important;
+}
+
+.pbe-games-worldclass .gh5-scoreboard-summary,
+.pbe-games-worldclass .gh5-featured-shell,
+.pbe-games-worldclass .gh5-control-deck,
+.pbe-games-worldclass .gh5-game-card,
+.pbe-games-worldclass .gh5-network-card,
+.pbe-games-worldclass .gh5-empty {
+  border-color: rgba(255,245,220,.11) !important;
+  background: linear-gradient(180deg, rgba(29,25,20,.92), rgba(20,17,13,.94)) !important;
+  box-shadow: 0 18px 48px rgba(0,0,0,.20) !important;
+}
+
+.pbe-games-worldclass .gh5-scoreboard-summary {
+  backdrop-filter: blur(14px) !important;
+}
+
+.pbe-games-worldclass .gh5-summary-cell {
+  border-color: rgba(255,245,220,.09) !important;
+}
+
+.pbe-games-worldclass .gh5-summary-cell span,
+.pbe-games-worldclass .gh5-summary-cell small {
+  color: var(--paper-faint) !important;
+}
+
+.pbe-games-worldclass .gh5-summary-cell strong {
+  color: var(--paper) !important;
+  font-family: var(--font-serif) !important;
+}
+
+.pbe-games-worldclass .gh5-summary-cell.live strong {
+  color: var(--crimson-bright) !important;
+  text-shadow: none !important;
+}
+
+.pbe-games-worldclass .gh5-summary-cell.live::before {
+  background: linear-gradient(135deg, rgba(193,39,61,.065), transparent 62%) !important;
+}
+
+.pbe-games-worldclass .gh5-featured-shell::before {
+  inset: 0 0 auto 0 !important;
+  height: 3px !important;
+  opacity: 1 !important;
+  background: linear-gradient(90deg, var(--gold), var(--crimson)) !important;
+}
+
+.pbe-games-worldclass .gh5-featured-copy h2,
+.pbe-games-worldclass .gh5-section-head h2,
+.pbe-games-worldclass .gh5-network-head h2,
+.pbe-games-worldclass .gh5-intel-copy h2 {
+  font-family: var(--font-serif) !important;
+  color: var(--paper) !important;
+  font-weight: 800 !important;
+  letter-spacing: -.025em !important;
+}
+
+.pbe-games-worldclass .gh5-featured-copy h2 em {
+  color: var(--paper-faint) !important;
+}
+
+.pbe-games-worldclass .gh5-featured-context,
+.pbe-games-worldclass .gh5-network-head p,
+.pbe-games-worldclass .gh5-intel-copy p,
+.pbe-games-worldclass .gh5-empty span {
+  color: var(--paper-dim) !important;
+}
+
+.pbe-games-worldclass .gh5-featured-status {
+  color: var(--paper-dim) !important;
+  background: rgba(245,241,235,.025) !important;
+  border-color: rgba(255,245,220,.12) !important;
+}
+
+.pbe-games-worldclass .gh5-featured-status.live {
+  color: #ff8f98 !important;
+  background: rgba(193,39,61,.08) !important;
+  border-color: rgba(230,57,70,.25) !important;
+}
+
+.pbe-games-worldclass .gh5-featured-league,
+.pbe-games-worldclass .gh5-featured-team > span,
+.pbe-games-worldclass .gh5-featured-team > small,
+.pbe-games-worldclass .gh5-featured-middle span,
+.pbe-games-worldclass .gh5-board-meta,
+.pbe-games-worldclass .gh5-game-group-head,
+.pbe-games-worldclass .gh5-game-group-head b {
+  color: var(--paper-faint) !important;
+}
+
+.pbe-games-worldclass .gh5-featured-team > strong,
+.pbe-games-worldclass .gh5-featured-middle strong {
+  color: var(--paper-2) !important;
+}
+
+.pbe-games-worldclass .gh5-featured-matchup {
+  background: rgba(245,241,235,.018) !important;
+  border-color: rgba(255,245,220,.09) !important;
+}
+
+.pbe-games-worldclass .gh5-featured-logo-fallback,
+.pbe-games-worldclass .gh5-card-logo-fallback {
+  background: rgba(245,241,235,.035) !important;
+  border-color: rgba(255,245,220,.10) !important;
+  color: var(--paper-dim) !important;
+}
+
+.pbe-games-worldclass .gh5-primary-cta,
+.pbe-games-worldclass .gh5-intel-actions a:first-child {
+  background: var(--gold) !important;
+  color: var(--ink) !important;
+  border-color: var(--gold) !important;
+  box-shadow: 0 7px 20px rgba(212,175,55,.14) !important;
+}
+
+.pbe-games-worldclass .gh5-secondary-cta,
+.pbe-games-worldclass .gh5-intel-actions a {
+  background: rgba(245,241,235,.025) !important;
+  border-color: rgba(255,245,220,.12) !important;
+  color: var(--paper-2) !important;
+}
+
+.pbe-games-worldclass .gh5-control-deck {
+  background: rgba(20,17,13,.91) !important;
+  border-color: rgba(212,175,55,.14) !important;
+  box-shadow: 0 14px 34px rgba(0,0,0,.18) !important;
+}
+
+.pbe-games-worldclass .gh5-tab {
+  color: var(--paper-faint) !important;
+}
+
+.pbe-games-worldclass .gh5-tab:hover {
+  color: var(--paper) !important;
+  background: rgba(245,241,235,.035) !important;
+}
+
+.pbe-games-worldclass .gh5-tab.active {
+  color: var(--paper) !important;
+  background: rgba(212,175,55,.09) !important;
+  border-color: rgba(212,175,55,.25) !important;
+  box-shadow: inset 0 -2px 0 var(--gold) !important;
+}
+
+.pbe-games-worldclass .gh5-tab span[data-count] {
+  color: var(--paper-subtle) !important;
+}
+
+.pbe-games-worldclass .gh5-game-card::before {
+  width: 2px !important;
+  opacity: .66 !important;
+}
+
+.pbe-games-worldclass .gh5-game-card:hover,
+.pbe-games-worldclass .gh5-network-card:hover {
+  border-color: rgba(212,175,55,.24) !important;
+  box-shadow: 0 20px 42px rgba(0,0,0,.24) !important;
+}
+
+.pbe-games-worldclass .gh5-game-card.live {
+  border-color: rgba(230,57,70,.22) !important;
+  background: linear-gradient(180deg, rgba(193,39,61,.05), rgba(20,17,13,.94) 56%) !important;
+}
+
+.pbe-games-worldclass .gh5-card-top,
+.pbe-games-worldclass .gh5-card-team + .gh5-card-team,
+.pbe-games-worldclass .gh5-card-context,
+.pbe-games-worldclass .gh5-card-footer {
+  border-color: rgba(255,245,220,.075) !important;
+}
+
+.pbe-games-worldclass .gh5-card-top,
+.pbe-games-worldclass .gh5-card-context,
+.pbe-games-worldclass .gh5-card-footer,
+.pbe-games-worldclass .gh5-card-team small {
+  color: var(--paper-faint) !important;
+}
+
+.pbe-games-worldclass .gh5-card-team strong,
+.pbe-games-worldclass .gh5-card-footer b {
+  color: var(--paper-2) !important;
+}
+
+.pbe-games-worldclass .gh5-card-team > b {
+  color: var(--paper-dim) !important;
+}
+
+.pbe-games-worldclass .gh5-card-team.winner > b {
+  color: var(--gold-bright) !important;
+}
+
+.pbe-games-worldclass .gh5-intelligence {
+  border-color: rgba(212,175,55,.20) !important;
+  background:
+    linear-gradient(135deg, rgba(212,175,55,.055), rgba(20,17,13,.74)) !important;
+}
+
+.pbe-games-worldclass .gh5-network {
+  border-top-color: rgba(255,245,220,.10) !important;
+}
+
+.pbe-games-worldclass .gh5-network-card::before {
+  inset: 0 0 auto 0 !important;
+  height: 3px !important;
+  opacity: .88 !important;
+  background: var(--gold) !important;
+}
+
+.pbe-games-worldclass .gh5-network-card.mlb::before {
+  background: var(--crimson) !important;
+}
+
+.pbe-games-worldclass .gh5-network-card.nfl::before {
+  background: var(--gold) !important;
+}
+
+.pbe-games-worldclass .gh5-network-card.api::before {
+  background: linear-gradient(90deg, var(--gold), var(--paper-faint)) !important;
+}
+
+.pbe-games-worldclass .gh5-network-card > span,
+.pbe-games-worldclass .gh5-network-card > p {
+  color: var(--paper-faint) !important;
+}
+
+.pbe-games-worldclass .gh5-network-card > strong {
+  color: var(--paper) !important;
+  font-family: var(--font-serif) !important;
+}
+
+.pbe-games-worldclass .gh5-network-card > b {
+  color: var(--gold-bright) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   INDIVIDUAL GAME PAGE — more premium scoreboard hierarchy
+   ═══════════════════════════════════════════════════════════════════════ */
+.game-detail-back {
+  margin-top: 28px !important;
+  margin-bottom: 14px !important;
+}
+
+.game-hero {
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 32px 28px !important;
+  background:
+    linear-gradient(145deg, rgba(29,25,20,.94), rgba(20,17,13,.94)) !important;
+  border-color: rgba(255,245,220,.13) !important;
+  box-shadow: 0 22px 56px rgba(0,0,0,.22) !important;
+}
+
+.game-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--crimson));
+  pointer-events: none;
+}
+
+.game-hero-team-name,
+.game-hero-team-score,
+.game-section-title {
+  color: var(--paper) !important;
+  text-shadow: 0 2px 12px rgba(0,0,0,.20);
+}
+
+.game-hero-team.winner .game-hero-team-name,
+.game-hero-team.winner .game-hero-team-score {
+  color: var(--gold-bright) !important;
+}
+
+.game-hero-status {
+  color: var(--crimson-bright) !important;
+}
+
+.game-section {
+  background: rgba(29,25,20,.84) !important;
+  border-color: rgba(255,245,220,.11) !important;
+  box-shadow: 0 14px 34px rgba(0,0,0,.12) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* ═══ RESPONSIVE TOP-STACK COMPRESSION ═══ */
+@media (max-width: 880px) {
+  .masthead-inner {
+    gap: 8px !important;
+    padding-top: 11px !important;
+    padding-bottom: 11px !important;
+  }
+  .masthead-mark { height: 42px !important; }
+  .nav-link { padding: 5px 8px !important; font-size: 9px !important; }
+}
+
+@media (max-width: 700px) {
+  #pbe-score-strip { height: 70px !important; }
+  #pbe-score-strip .pss-tile {
+    padding-top: 8px !important;
+    padding-bottom: 9px !important;
+  }
+
+  .ad-banner-inner {
+    min-height: 34px;
+    padding: 6px 16px !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+  .ad-banner-headline { display: none !important; }
+  .ad-banner-eyebrow { font-size: 9px !important; }
+  .ad-banner-cta { font-size: 9px !important; padding: 4px 8px !important; }
+
+  .breaking { padding: 7px 0 !important; }
+  .breaking-inner { gap: 8px !important; }
+  .breaking-tag { font-size: 9px !important; }
+  .breaking-text { font-size: 12px !important; line-height: 1.35 !important; }
+
+  .pbe-games-worldclass .gh5-stage-inner {
+    padding-top: 32px !important;
+    padding-bottom: 30px !important;
+  }
+  .pbe-games-worldclass .gh5-hero-grid h1 {
+    font-size: clamp(42px, 14vw, 62px) !important;
+  }
+  .pbe-games-worldclass .gh5-body { padding-top: 22px !important; }
+  .pbe-games-worldclass .gh5-control-deck {
+    background: rgba(20,17,13,.95) !important;
+  }
+
+  .game-hero { padding: 25px 18px !important; }
+}
