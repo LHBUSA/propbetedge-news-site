@@ -151,8 +151,9 @@ function neutralizeFallback(fallback) {
   const sport = storyContextFromElement(fallback)?.sport || sportFromFallback(fallback);
   const meta = SPORT_META[sport] || { emoji: '◆', label: 'Sports' };
 
-  // Keep data-pbe-branded="1" if the older enhancement already set it. That
-  // prevents the old observer from trying to re-brand this node on later DOM work.
+  // Mark as already handled so the older site-enhancements observer cannot
+  // turn this node back into a giant PBE-logo fallback after our recovery pass.
+  fallback.dataset.pbeBranded = '1';
   fallback.dataset.pbeEditorialFallback = '1';
   fallback.classList.add('pbe-editorial-fallback');
   fallback.textContent = '';
