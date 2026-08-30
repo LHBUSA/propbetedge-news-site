@@ -1,38 +1,59 @@
-const STORAGE_SCENE = 'pbe_background_scene_v1';
-const STORAGE_AUTO = 'pbe_background_auto_v1';
-const VALID_SCENES = new Set(['mlb', 'nfl', 'nba', 'nhl']);
+const STORAGE_SCENE = 'pbe_background_scene_v2';
+const STORAGE_AUTO = 'pbe_background_auto_v2';
+const VALID_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl']);
 
 const SCENES = {
-  mlb: { label: 'MLB', name: 'Ballpark lights', note: 'Baseball after dark' },
-  nfl: { label: 'NFL', name: 'Stadium night', note: 'Sunday under the lights' },
-  nba: { label: 'NBA', name: 'Arena glow', note: 'Courtside atmosphere' },
-  nhl: { label: 'NHL', name: 'Ice house', note: 'Cold rink intensity' },
+  network: { label: 'PBE', name: 'Network Night', note: 'Signature black + gold' },
+  mlb: { label: 'MLB', name: 'Ballpark Lights', note: 'Baseball after dark' },
+  'mlb-summer': { label: 'MLB', name: 'Summer Classic', note: 'Warm ballpark energy' },
+  nfl: { label: 'NFL', name: 'Stadium Night', note: 'Sunday under the lights' },
+  'nfl-gridiron': { label: 'NFL', name: 'Gridiron Gold', note: 'Field-level football energy' },
+  nba: { label: 'NBA', name: 'Arena Glow', note: 'Courtside atmosphere' },
+  'nba-hardwood': { label: 'NBA', name: 'Hardwood Night', note: 'Warm arena floor lights' },
+  nhl: { label: 'NHL', name: 'Ice House', note: 'Cold rink intensity' },
+  'nhl-blueline': { label: 'NHL', name: 'Blue Line', note: 'Clean rink-side atmosphere' },
+  blackout: { label: 'PBE', name: 'Blackout', note: 'Maximum focus, minimal photo' },
+};
+
+const VALID_SCENES = new Set(Object.keys(SCENES));
+const FOLLOW_SCENE = {
+  mlb: 'mlb',
+  nfl: 'nfl',
+  nba: 'nba',
+  nhl: 'nhl',
 };
 
 let initialized = false;
 let observer = null;
 let routeSyncTimer = null;
 let transitionTimer = null;
-let manualScene = 'mlb';
+let manualScene = 'network';
 let autoScene = true;
+let viewSportHint = null;
+let lastPathname = '';
 
 export function initBackgroundSelector() {
   if (initialized || typeof window === 'undefined' || typeof document === 'undefined') return;
   initialized = true;
 
-  manualScene = readStoredScene() || 'mlb';
+  manualScene = readStoredScene() || readLegacyScene() || 'network';
   autoScene = readStoredAuto();
+  lastPathname = window.location.pathname;
 
+  patchHistorySignals();
   applyResolvedScene(false);
   ensureSelector();
 
   document.addEventListener('click', handleDocumentClick);
   document.addEventListener('keydown', handleKeydown);
-  window.addEventListener('popstate', scheduleRouteSync);
+  window.addEventListener('popstate', handleLocationChange);
+  window.addEventListener('pbe:locationchange', handleLocationChange);
+  window.addEventListener('pbe:sport-view', handleSportViewEvent);
 
   observer = new MutationObserver(() => {
     ensureSelector();
-    scheduleRouteSync();
+    if (window.location.pathname !== lastPathname) handleLocationChange();
+    else scheduleRouteSync();
   });
   observer.observe(document.documentElement, { childList: true, subtree: true });
 }
@@ -47,7 +68,7 @@ function ensureSelector() {
     <button class="pbe-scene-trigger" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="pbe-scene-panel">
       <span class="pbe-scene-trigger-icon" aria-hidden="true">◈</span>
       <span class="pbe-scene-trigger-label">Background</span>
-      <span class="pbe-scene-trigger-value">${escapeHtml(SCENES[currentScene()]?.label || 'MLB')}</span>
+      <span class="pbe-scene-trigger-value">${escapeHtml(triggerLabel())}</span>
       <span class="pbe-scene-chevron" aria-hidden="true">▼</span>
     </button>
     <div class="pbe-scene-panel" id="pbe-scene-panel" role="dialog" aria-label="Choose your sports background" hidden>
@@ -55,13 +76,16 @@ function ensureSelector() {
         <div>
           <span class="pbe-scene-panel-kicker">YOUR PBE · YOUR ATMOSPHERE</span>
           <strong class="pbe-scene-panel-title">Choose the backdrop.</strong>
+          <span class="pbe-scene-panel-sub">Ten looks. Four leagues. One PropBetEdge system.</span>
         </div>
         <button class="pbe-scene-close" type="button" aria-label="Close background selector">×</button>
       </div>
       <div class="pbe-scene-grid" role="group" aria-label="Sports backgrounds">
         ${Object.entries(SCENES).map(([key, scene]) => `
           <button class="pbe-scene-option" type="button" data-scene="${key}" aria-pressed="false">
-            <span class="pbe-scene-preview" aria-hidden="true"><span class="pbe-scene-league">${scene.label}</span></span>
+            <span class="pbe-scene-preview" aria-hidden="true">
+              <span class="pbe-scene-league">${scene.label}</span>
+            </span>
             <span class="pbe-scene-copy">
               <strong>${scene.name}</strong>
               <small>${scene.note}</small>
@@ -74,9 +98,10 @@ function ensureSelector() {
         <span class="pbe-scene-auto-toggle" aria-hidden="true"></span>
         <span class="pbe-scene-auto-copy">
           <strong>Follow what I’m viewing</strong>
-          <small>Automatically match MLB, NFL, NBA or NHL pages.</small>
+          <small>News, articles, leader pages and PBEcast sport filters automatically match MLB, NFL, NBA or NHL.</small>
         </span>
       </label>
+      <div class="pbe-scene-follow-status" aria-live="polite"></div>
     </div>
   `;
 
@@ -115,7 +140,33 @@ function ensureSelector() {
 }
 
 function currentScene() {
-  return autoScene ? (sportFromPath(window.location.pathname) || manualScene) : manualScene;
+  if (!autoScene) return VALID_SCENES.has(manualScene) ? manualScene : 'network';
+  const sport = viewedSport();
+  return sport ? FOLLOW_SCENE[sport] : 'network';
+}
+
+function viewedSport() {
+  const fromPath = sportFromPath(window.location.pathname);
+  if (fromPath) return fromPath;
+  if (VALID_SPORTS.has(viewSportHint)) return viewSportHint;
+  return sportFromActiveControls();
+}
+
+function sportFromActiveControls() {
+  const selectors = [
+    '#gh5-sport-tabs [data-sport].active',
+    '.sport-tabs [data-sport].active',
+    '.odds-sport-tabs [data-sport].active',
+    '[role="tab"][data-sport][aria-selected="true"]',
+  ];
+
+  for (const selector of selectors) {
+    const node = document.querySelector(selector);
+    const sport = String(node?.dataset?.sport || '').toLowerCase();
+    if (VALID_SPORTS.has(sport)) return sport;
+    if (sport === 'all') return null;
+  }
+  return null;
 }
 
 function applyResolvedScene(animate = true) {
@@ -139,8 +190,10 @@ function applyResolvedScene(animate = true) {
 function syncControlState(control) {
   if (!(control instanceof Element)) return;
   const scene = currentScene();
+  const sceneMeta = SCENES[scene] || SCENES.network;
+  const sport = viewedSport();
   const value = control.querySelector('.pbe-scene-trigger-value');
-  if (value) value.textContent = SCENES[scene]?.label || 'MLB';
+  if (value) value.textContent = triggerLabel();
 
   control.querySelectorAll('.pbe-scene-option').forEach((button) => {
     button.setAttribute('aria-pressed', button.dataset.scene === scene ? 'true' : 'false');
@@ -148,6 +201,20 @@ function syncControlState(control) {
 
   const autoInput = control.querySelector('.pbe-scene-auto-input');
   if (autoInput) autoInput.checked = autoScene;
+
+  const status = control.querySelector('.pbe-scene-follow-status');
+  if (status) {
+    status.textContent = autoScene
+      ? `AUTO · Following ${sport ? sport.toUpperCase() : 'the PBE network'} · ${sceneMeta.name}`
+      : `MANUAL · ${sceneMeta.label} · ${sceneMeta.name}`;
+    status.classList.toggle('is-auto', autoScene);
+  }
+}
+
+function triggerLabel() {
+  const scene = currentScene();
+  const sceneMeta = SCENES[scene] || SCENES.network;
+  return autoScene ? `AUTO · ${sceneMeta.label}` : sceneMeta.label;
 }
 
 function togglePanel(control) {
@@ -174,6 +241,19 @@ function closeAllPanels() {
 }
 
 function handleDocumentClick(event) {
+  const sportControl = event.target.closest?.(
+    '#gh5-sport-tabs [data-sport], .sport-tabs [data-sport], .odds-sport-tabs [data-sport], [role="tab"][data-sport]'
+  );
+
+  if (sportControl) {
+    const sport = String(sportControl.dataset.sport || '').toLowerCase();
+    viewSportHint = VALID_SPORTS.has(sport) ? sport : null;
+    if (autoScene) setTimeout(() => applyResolvedScene(true), 0);
+  }
+
+  const internalLink = event.target.closest?.('a[href^="/"]');
+  if (internalLink) setTimeout(handleLocationChange, 0);
+
   if (event.target.closest?.('.pbe-scene-control')) return;
   closeAllPanels();
 }
@@ -189,17 +269,51 @@ function handleKeydown(event) {
   openControl.querySelector('.pbe-scene-trigger')?.focus();
 }
 
+function handleSportViewEvent(event) {
+  const sport = String(event?.detail?.sport || '').toLowerCase();
+  viewSportHint = VALID_SPORTS.has(sport) ? sport : null;
+  if (autoScene) applyResolvedScene(true);
+}
+
+function handleLocationChange() {
+  const pathChanged = window.location.pathname !== lastPathname;
+  if (pathChanged) {
+    lastPathname = window.location.pathname;
+    viewSportHint = null;
+  }
+  scheduleRouteSync();
+}
+
 function scheduleRouteSync() {
   clearTimeout(routeSyncTimer);
   routeSyncTimer = setTimeout(() => {
     if (autoScene) applyResolvedScene(true);
     else document.querySelectorAll('.pbe-scene-control').forEach(syncControlState);
-  }, 60);
+  }, 50);
+}
+
+function patchHistorySignals() {
+  if (window.history.__pbeSceneSignalsPatched) return;
+  window.history.__pbeSceneSignalsPatched = true;
+
+  ['pushState', 'replaceState'].forEach((method) => {
+    const original = window.history[method];
+    if (typeof original !== 'function') return;
+    window.history[method] = function pbeHistorySignal(...args) {
+      const result = original.apply(this, args);
+      window.dispatchEvent(new Event('pbe:locationchange'));
+      return result;
+    };
+  });
 }
 
 function sportFromPath(pathname) {
-  const match = String(pathname || '').match(/\/(?:news|games|leaders)\/(mlb|nfl|nba|nhl)(?:\/|$)/i);
-  return match?.[1]?.toLowerCase() || null;
+  const path = String(pathname || '');
+  const match = path.match(/\/(?:news|games|leaders)\/(mlb|nfl|nba|nhl)(?:\/|$)/i);
+  if (match?.[1]) return match[1].toLowerCase();
+
+  const standalone = path.match(/^\/(mlb|nfl|nba|nhl)(?:\/|$)/i);
+  return standalone?.[1]?.toLowerCase() || null;
 }
 
 function readStoredScene() {
@@ -211,10 +325,21 @@ function readStoredScene() {
   }
 }
 
+function readLegacyScene() {
+  try {
+    const value = window.localStorage.getItem('pbe_background_scene_v1');
+    return VALID_SCENES.has(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 function readStoredAuto() {
   try {
     const value = window.localStorage.getItem(STORAGE_AUTO);
-    return value === null ? true : value !== '0';
+    if (value !== null) return value !== '0';
+    const legacy = window.localStorage.getItem('pbe_background_auto_v1');
+    return legacy === null ? true : legacy !== '0';
   } catch {
     return true;
   }
