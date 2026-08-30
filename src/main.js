@@ -4,6 +4,7 @@ import './styles/pbe-header-polish.css';
 import './styles/background-selector.css';
 import './styles/background-selector-overlay-fix.css';
 import { initBackgroundSelector } from './background-selector.js';
+import { initNflLaunchPriority } from './nfl-launch-priority.js';
 import { initSiteEnhancements } from './site-enhancements.js';
 import { initStoryMediaBackfill } from './media-backfill.js';
 import { initArticleTrustLayer } from './article-trust.js';
@@ -12,6 +13,7 @@ import { initAnalytics } from './analytics.js';
 import { initRouter } from './router.js';
 
 initBackgroundSelector();
+initNflLaunchPriority();
 initSiteEnhancements();
 initStoryMediaBackfill();
 initArticleTrustLayer();
