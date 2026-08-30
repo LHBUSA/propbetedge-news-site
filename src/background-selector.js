@@ -2,17 +2,26 @@ const STORAGE_SCENE = 'pbe_background_scene_v2';
 const STORAGE_AUTO = 'pbe_background_auto_v2';
 const VALID_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl']);
 
+const PREVIEW_IMAGES = {
+  mlb: 'https://images.unsplash.com/photo-1778050203444-90920c7a5652?auto=format&fit=crop&w=680&q=66',
+  nfl: 'https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=680&q=66',
+  nba: 'https://images.unsplash.com/photo-1771882856158-c8e083134ee3?auto=format&fit=crop&w=680&q=66',
+  nhl: 'https://images.unsplash.com/photo-1614239039918-3653d97bf483?auto=format&fit=crop&w=680&q=66',
+};
+
+// League-first ordering keeps the four core sports together, then presents
+// alternate looks and finally the two PBE-wide atmospheres.
 const SCENES = {
-  network: { label: 'PBE', name: 'Network Night', note: 'Signature black + gold' },
-  mlb: { label: 'MLB', name: 'Ballpark Lights', note: 'Baseball after dark' },
-  'mlb-summer': { label: 'MLB', name: 'Summer Classic', note: 'Warm ballpark energy' },
-  nfl: { label: 'NFL', name: 'Stadium Night', note: 'Sunday under the lights' },
-  'nfl-gridiron': { label: 'NFL', name: 'Gridiron Gold', note: 'Field-level football energy' },
-  nba: { label: 'NBA', name: 'Arena Glow', note: 'Courtside atmosphere' },
-  'nba-hardwood': { label: 'NBA', name: 'Hardwood Night', note: 'Warm arena floor lights' },
-  nhl: { label: 'NHL', name: 'Ice House', note: 'Cold rink intensity' },
-  'nhl-blueline': { label: 'NHL', name: 'Blue Line', note: 'Clean rink-side atmosphere' },
-  blackout: { label: 'PBE', name: 'Blackout', note: 'Maximum focus, minimal photo' },
+  mlb: { label: 'MLB', name: 'Ballpark Lights', note: 'Baseball after dark', preview: PREVIEW_IMAGES.mlb },
+  nfl: { label: 'NFL', name: 'Stadium Night', note: 'Sunday under the lights', preview: PREVIEW_IMAGES.nfl },
+  nba: { label: 'NBA', name: 'Arena Glow', note: 'Courtside atmosphere', preview: PREVIEW_IMAGES.nba },
+  nhl: { label: 'NHL', name: 'Ice House', note: 'Cold rink intensity', preview: PREVIEW_IMAGES.nhl },
+  'mlb-summer': { label: 'MLB', name: 'Summer Classic', note: 'Warm ballpark energy', preview: PREVIEW_IMAGES.mlb },
+  'nfl-gridiron': { label: 'NFL', name: 'Gridiron Gold', note: 'Field-level football energy', preview: PREVIEW_IMAGES.nfl },
+  'nba-hardwood': { label: 'NBA', name: 'Hardwood Night', note: 'Warm arena floor lights', preview: PREVIEW_IMAGES.nba },
+  'nhl-blueline': { label: 'NHL', name: 'Blue Line', note: 'Clean rink-side atmosphere', preview: PREVIEW_IMAGES.nhl },
+  network: { label: 'PBE', name: 'Network Night', note: 'Signature black + gold', preview: null },
+  blackout: { label: 'PBE', name: 'Blackout', note: 'Maximum focus, minimal photo', preview: null },
 };
 
 const VALID_SCENES = new Set(Object.keys(SCENES));
@@ -83,7 +92,7 @@ function ensureSelector() {
       <div class="pbe-scene-grid" role="group" aria-label="Sports backgrounds">
         ${Object.entries(SCENES).map(([key, scene]) => `
           <button class="pbe-scene-option" type="button" data-scene="${key}" aria-pressed="false">
-            <span class="pbe-scene-preview" aria-hidden="true">
+            <span class="pbe-scene-preview" aria-hidden="true"${scene.preview ? ` style="background-image:url('${escapeHtml(scene.preview)}')"` : ''}>
               <span class="pbe-scene-league">${scene.label}</span>
             </span>
             <span class="pbe-scene-copy">
@@ -338,8 +347,9 @@ function readStoredAuto() {
   try {
     const value = window.localStorage.getItem(STORAGE_AUTO);
     if (value !== null) return value !== '0';
-    const legacy = window.localStorage.getItem('pbe_background_auto_v1');
-    return legacy === null ? true : legacy !== '0';
+    // V2 turns follow mode on by default. Old manual state was the source of
+    // the confusing "NFL background on an NBA page" behavior during rollout.
+    return true;
   } catch {
     return true;
   }
