@@ -2,6 +2,7 @@ import './styles/story-image-integrity.css';
 import './styles/pbe-publication-unify.css';
 import './styles/pbe-header-polish.css';
 import './styles/background-selector.css';
+import './styles/background-selector-overlay-fix.css';
 import { initBackgroundSelector } from './background-selector.js';
 import { initSiteEnhancements } from './site-enhancements.js';
 import { initStoryMediaBackfill } from './media-backfill.js';
