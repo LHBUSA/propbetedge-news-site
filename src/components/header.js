@@ -33,10 +33,12 @@ export function renderHeader() {
     ${ad_header_banner(sport ? { sport } : {})}
     <header class="masthead">
       <div class="container masthead-inner">
-        <div class="masthead-left">
+        <div class="masthead-left masthead-leagues" aria-label="League coverage">
           <a href="/news" class="nav-link ${path === '/news' ? 'active' : ''}">All News</a>
           <a href="/news/mlb" class="nav-link ${path.startsWith('/news/mlb') ? 'active' : ''}">MLB</a>
           <a href="/news/nfl" class="nav-link ${path.startsWith('/news/nfl') ? 'active' : ''}">NFL</a>
+          <a href="/news/nba" class="nav-link ${path.startsWith('/news/nba') ? 'active' : ''}">NBA</a>
+          <a href="/news/nhl" class="nav-link ${path.startsWith('/news/nhl') ? 'active' : ''}">NHL</a>
         </div>
         <a href="/" class="masthead-logo" aria-label="PropBetEdge home">
           <img
@@ -48,9 +50,7 @@ export function renderHeader() {
           />
           <span class="tagline">Sports News &middot; Prop-Bet Intelligence</span>
         </a>
-        <div class="masthead-right">
-          <a href="/news/nba" class="nav-link ${path.startsWith('/news/nba') ? 'active' : ''}">NBA</a>
-          <a href="/news/nhl" class="nav-link ${path.startsWith('/news/nhl') ? 'active' : ''}">NHL</a>
+        <div class="masthead-right masthead-tools" aria-label="PropBetEdge tools">
           <a href="/games" class="nav-link live-link ${isLive ? 'active' : ''}">PBEcast</a>
           <a href="/leaders" class="nav-link ${isLeaders ? 'active' : ''}">Leaders</a>
           <a href="/odds" class="nav-link edges-link ${isOdds ? 'active' : ''}">
