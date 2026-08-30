@@ -1,0 +1,74 @@
+/*
+ * League-first masthead balance.
+ * All four league desks stay together left of the centered PBE mark.
+ * Product tools and the conversion CTA stay together on the right.
+ */
+
+.masthead-leagues,
+.masthead-tools {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.masthead-leagues {
+  justify-content: flex-start;
+  gap: 6px !important;
+  padding-right: 16px;
+}
+
+.masthead-tools {
+  justify-content: flex-end;
+  padding-left: 16px;
+}
+
+/* League labels are intentionally a touch tighter than product controls so
+   MLB / NFL / NBA / NHL read as one editorial family. */
+.masthead-leagues .nav-link {
+  padding-left: 9px !important;
+  padding-right: 9px !important;
+}
+
+@media (max-width: 1320px) and (min-width: 881px) {
+  .masthead-leagues {
+    gap: 1px !important;
+    padding-right: 8px;
+  }
+
+  .masthead-leagues .nav-link {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    font-size: 9px !important;
+  }
+
+  .masthead-tools {
+    padding-left: 8px;
+  }
+}
+
+@media (max-width: 1040px) and (min-width: 881px) {
+  /* 'All News' is duplicated by the section rail immediately below on news
+     pages; hide only that broad label before sacrificing a league desk. */
+  .masthead-leagues .nav-link:first-child {
+    display: none !important;
+  }
+}
+
+@media (max-width: 880px) {
+  .masthead-leagues,
+  .masthead-tools {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .masthead-leagues {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 2px !important;
+  }
+
+  .masthead-tools {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
