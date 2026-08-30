@@ -4,6 +4,7 @@ import './styles/pbe-header-polish.css';
 import './styles/background-selector.css';
 import './styles/background-selector-overlay-fix.css';
 import './styles/pbe-personalization-polish.css';
+import './styles/pbe-header-league-group.css';
 import { initBackgroundSelector } from './background-selector.js';
 import { initNflLaunchPriority } from './nfl-launch-priority.js';
 import { initSiteEnhancements } from './site-enhancements.js';
