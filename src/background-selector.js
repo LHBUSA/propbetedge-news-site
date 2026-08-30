@@ -2,31 +2,31 @@ const STORAGE_SCENE = 'pbe_background_scene_v2';
 const STORAGE_AUTO = 'pbe_background_auto_v2';
 const VALID_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl']);
 
-const PREVIEW_IMAGES = {
-  mlb: 'https://images.unsplash.com/photo-1778050203444-90920c7a5652?auto=format&fit=crop&w=680&q=66',
-  nfl: 'https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=680&q=66',
-  nba: 'https://images.unsplash.com/photo-1771882856158-c8e083134ee3?auto=format&fit=crop&w=680&q=66',
-  nhl: 'https://images.unsplash.com/photo-1614239039918-3653d97bf483?auto=format&fit=crop&w=680&q=66',
-};
+const ASSET_ROOT = '/backgrounds/pbe/';
+const ORIGINAL_WRIGLEY = 'https://images.unsplash.com/photo-1666366330282-b11566b272cf?w=1800&q=72&auto=format&fit=crop';
+const LEGACY_BALLPARK = 'https://images.unsplash.com/photo-1778050203444-90920c7a5652?auto=format&fit=crop&w=1200&q=70';
 
-// League-first ordering keeps the four core sports together, then presents
-// alternate looks and finally the two PBE-wide atmospheres.
+// Put the signature venue first, then the four league anchors, then alternate
+// atmospheres. The generated PBE pack is hosted locally so it cannot disappear
+// when a third-party image URL changes.
 const SCENES = {
-  mlb: { label: 'MLB', name: 'Ballpark Lights', note: 'Baseball after dark', preview: PREVIEW_IMAGES.mlb },
-  nfl: { label: 'NFL', name: 'Stadium Night', note: 'Sunday under the lights', preview: PREVIEW_IMAGES.nfl },
-  nba: { label: 'NBA', name: 'Arena Glow', note: 'Courtside atmosphere', preview: PREVIEW_IMAGES.nba },
-  nhl: { label: 'NHL', name: 'Ice House', note: 'Cold rink intensity', preview: PREVIEW_IMAGES.nhl },
-  'mlb-summer': { label: 'MLB', name: 'Summer Classic', note: 'Warm ballpark energy', preview: PREVIEW_IMAGES.mlb },
-  'nfl-gridiron': { label: 'NFL', name: 'Gridiron Gold', note: 'Field-level football energy', preview: PREVIEW_IMAGES.nfl },
-  'nba-hardwood': { label: 'NBA', name: 'Hardwood Night', note: 'Warm arena floor lights', preview: PREVIEW_IMAGES.nba },
-  'nhl-blueline': { label: 'NHL', name: 'Blue Line', note: 'Clean rink-side atmosphere', preview: PREVIEW_IMAGES.nhl },
+  wrigley: { label: 'MLB', name: 'Wrigley Field', note: 'The original Chicago backdrop', preview: ORIGINAL_WRIGLEY },
+  mlb: { label: 'MLB', name: 'Wrigley Lights', note: 'Chicago baseball after dark', preview: `${ASSET_ROOT}wrigley-lights.webp` },
+  nfl: { label: 'NFL', name: 'Stadium Night', note: 'Sunday under the lights', preview: `${ASSET_ROOT}stadium-night.webp` },
+  nba: { label: 'NBA', name: 'Arena Glow', note: 'Big-game hardwood atmosphere', preview: `${ASSET_ROOT}arena-glow.webp` },
+  nhl: { label: 'NHL', name: 'Ice House', note: 'Cold rink intensity', preview: `${ASSET_ROOT}ice-house.webp` },
+  'mlb-summer': { label: 'MLB', name: 'Summer Classic', note: 'Golden-hour ivy and baseball', preview: `${ASSET_ROOT}summer-classic.webp` },
+  'mlb-ballpark': { label: 'MLB', name: 'Ballpark Lights', note: 'Modern baseball after dark', preview: LEGACY_BALLPARK },
+  'nfl-gridiron': { label: 'NFL', name: 'Gridiron Gold', note: 'Field-level football energy', preview: `${ASSET_ROOT}gridiron-gold.webp` },
+  'nba-hardwood': { label: 'NBA', name: 'Hardwood Night', note: 'Warm arena floor lights', preview: `${ASSET_ROOT}arena-glow.webp` },
+  'nhl-blueline': { label: 'NHL', name: 'Blue Line', note: 'Blue-white rink atmosphere', preview: `${ASSET_ROOT}ice-house.webp` },
   network: { label: 'PBE', name: 'Network Night', note: 'Signature black + gold', preview: null },
   blackout: { label: 'PBE', name: 'Blackout', note: 'Maximum focus, minimal photo', preview: null },
 };
 
 const VALID_SCENES = new Set(Object.keys(SCENES));
 const FOLLOW_SCENE = {
-  mlb: 'mlb',
+  mlb: 'wrigley',
   nfl: 'nfl',
   nba: 'nba',
   nhl: 'nhl',
@@ -85,7 +85,7 @@ function ensureSelector() {
         <div>
           <span class="pbe-scene-panel-kicker">YOUR PBE · YOUR ATMOSPHERE</span>
           <strong class="pbe-scene-panel-title">Choose the backdrop.</strong>
-          <span class="pbe-scene-panel-sub">Ten looks. Four leagues. One PropBetEdge system.</span>
+          <span class="pbe-scene-panel-sub">Twelve looks. Four leagues. One PropBetEdge system.</span>
         </div>
         <button class="pbe-scene-close" type="button" aria-label="Close background selector">×</button>
       </div>
@@ -347,8 +347,6 @@ function readStoredAuto() {
   try {
     const value = window.localStorage.getItem(STORAGE_AUTO);
     if (value !== null) return value !== '0';
-    // V2 turns follow mode on by default. Old manual state was the source of
-    // the confusing "NFL background on an NBA page" behavior during rollout.
     return true;
   } catch {
     return true;
