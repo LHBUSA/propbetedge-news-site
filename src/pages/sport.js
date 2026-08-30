@@ -1,8 +1,6 @@
 /**
  * src/pages/sport.js
- * Sport-section landing — like a magazine section front
- * v3.15: pagination added (?page=N), everything else unchanged
- * v3.16: Hero article must be fresh (36h window) — fixes stale top story on section pages
+ * Sport-section landing — magazine section front with clean-route pagination.
  */
 
 import { api } from '../api.js';
@@ -25,15 +23,26 @@ const SPORT_TAGLINES = {
 const SECTIONS = ['mlb', 'nfl', 'nba', 'nhl'];
 const PAGE_SIZE = 20;
 
-function getPageFromUrl() {
+function queryPage() {
   const params = new URLSearchParams(window.location.search);
-  const p = parseInt(params.get('page'), 10);
-  return p > 0 ? p : 1;
+  const page = parseInt(params.get('page'), 10);
+  return page > 0 ? page : 1;
 }
 
-export async function renderSport(root, sport) {
+function normalizePage(sport, requestedPage) {
+  const requested = Number.parseInt(requestedPage, 10);
+  if (Number.isFinite(requested) && requested > 1) return requested;
+  const legacy = queryPage();
+  if (legacy > 1) {
+    window.history.replaceState({}, '', `/news/${sport}/page/${legacy}`);
+    return legacy;
+  }
+  return 1;
+}
+
+export async function renderSport(root, sport, requestedPage = 1) {
   const tagline = SPORT_TAGLINES[sport] || '';
-  const currentPage = getPageFromUrl();
+  const currentPage = normalizePage(sport, requestedPage);
 
   root.innerHTML = `
     ${renderHeader()}
@@ -66,7 +75,6 @@ export async function renderSport(root, sport) {
   const articles = data.articles || [];
   const sportLabel = sport.toUpperCase();
 
-  // Schema (unchanged)
   injectSchemas([
     organizationSchema(),
     websiteSchema(),
@@ -95,8 +103,6 @@ export async function renderSport(root, sport) {
     return;
   }
 
-  // Lead = first article (or one with image preferred) — only on page 1
-  // On pages 2+, just show the grid (no lead+sidebar treatment)
   if (currentPage === 1) {
     const lead = pickLead(articles);
     const rest = articles.filter((a) => a.id !== lead.id);
@@ -121,7 +127,6 @@ export async function renderSport(root, sport) {
       </div>
     ` : '';
   } else {
-    // Pages 2+ — simple grid with section heading, no lead story
     document.getElementById('lead-slot').innerHTML = '';
     document.getElementById('rest-slot').innerHTML = `
       <div class="section-heading">
@@ -134,56 +139,48 @@ export async function renderSport(root, sport) {
     `;
   }
 
-  // Pagination controls
   const total = data.total || articles.length;
   const totalPages = data.totalPages || (total ? Math.ceil(total / PAGE_SIZE) : Math.max(currentPage, 1));
-  document.getElementById('pagination').innerHTML = renderPagination(currentPage, totalPages);
+  document.getElementById('pagination').innerHTML = renderPagination(currentPage, totalPages, `/news/${sport}`);
 }
 
-function renderPagination(current, total) {
+function renderPagination(current, total, baseHref) {
   if (total <= 1) return '';
-
-  const prev = current > 1 ? `<a href="?page=${current - 1}" class="page-btn">← Prev</a>` : `<span class="page-btn disabled">← Prev</span>`;
-  const next = current < total ? `<a href="?page=${current + 1}" class="page-btn">Next →</a>` : `<span class="page-btn disabled">Next →</span>`;
+  const pageHref = (page) => page === 1 ? baseHref : `${baseHref}/page/${page}`;
+  const prev = current > 1 ? `<a href="${pageHref(current - 1)}" class="page-btn" rel="prev">← Prev</a>` : `<span class="page-btn disabled">← Prev</span>`;
+  const next = current < total ? `<a href="${pageHref(current + 1)}" class="page-btn" rel="next">Next →</a>` : `<span class="page-btn disabled">Next →</span>`;
 
   const pages = [];
   const start = Math.max(1, current - 2);
   const end = Math.min(total, current + 2);
-
   if (start > 1) {
-    pages.push(`<a href="?page=1" class="page-num">1</a>`);
+    pages.push(`<a href="${pageHref(1)}" class="page-num">1</a>`);
     if (start > 2) pages.push(`<span class="page-ellipsis">…</span>`);
   }
   for (let i = start; i <= end; i++) {
-    if (i === current) pages.push(`<span class="page-num current">${i}</span>`);
-    else pages.push(`<a href="?page=${i}" class="page-num">${i}</a>`);
+    if (i === current) pages.push(`<span class="page-num current" aria-current="page">${i}</span>`);
+    else pages.push(`<a href="${pageHref(i)}" class="page-num">${i}</a>`);
   }
   if (end < total) {
     if (end < total - 1) pages.push(`<span class="page-ellipsis">…</span>`);
-    pages.push(`<a href="?page=${total}" class="page-num">${total}</a>`);
+    pages.push(`<a href="${pageHref(total)}" class="page-num">${total}</a>`);
   }
 
   return `
-    <div class="pagination-inner">
+    <nav class="pagination-inner" aria-label="${baseHref.split('/').pop().toUpperCase()} news pagination">
       ${prev}
       <div class="page-numbers">${pages.join('')}</div>
       ${next}
-    </div>
+    </nav>
     <div class="pagination-meta">Page ${current} of ${total}</div>
   `;
 }
 
-// v3.16: Hero must be both relevant AND fresh.
-// Look for the highest-impact article from the last 36 hours that has an image.
-// Fall back gracefully if no recent article qualifies.
 function pickLead(articles) {
-  const FRESH_WINDOW_MS = 36 * 60 * 60 * 1000; // 36 hours
+  const FRESH_WINDOW_MS = 36 * 60 * 60 * 1000;
   const now = Date.now();
-
   const withImage = articles.filter((a) => a.image_url);
 
-  // Tier 1: Fresh articles (last 36h) with images, sorted by impact_score DESC,
-  // with published_at DESC as tiebreaker.
   const fresh = withImage.filter((a) => {
     if (!a.published_at) return false;
     const age = now - new Date(a.published_at).getTime();
@@ -198,14 +195,10 @@ function pickLead(articles) {
     })[0];
   }
 
-  // Tier 2: No fresh article with image — fall back to the freshest article with an image (any age).
   if (withImage.length) {
-    return withImage.sort((a, b) =>
-      new Date(b.published_at) - new Date(a.published_at)
-    )[0];
+    return withImage.sort((a, b) => new Date(b.published_at) - new Date(a.published_at))[0];
   }
 
-  // Tier 3: No images at all — take whatever the API sent first (already published_at DESC).
   return articles[0];
 }
 
