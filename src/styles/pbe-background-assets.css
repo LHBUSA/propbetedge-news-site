@@ -1,0 +1,208 @@
+/*
+ * PropBetEdge owned atmosphere library.
+ * Final visual authority for the background selector.
+ * The new sports pack is served from /public/backgrounds/pbe so the experience
+ * no longer depends on third-party image URLs. The original Wrigley photo is
+ * intentionally preserved because it was part of the original publication look.
+ */
+
+/* --- Full-page scene authority --- */
+body[data-pbe-scene='wrigley'] {
+  --pbe-scene-image: url('https://images.unsplash.com/photo-1666366330282-b11566b272cf?w=2200&q=72&auto=format&fit=crop');
+  --pbe-scene-position: center 48%;
+  --pbe-scene-opacity: .24;
+  --pbe-scene-filter: grayscale(8%) sepia(4%) saturate(88%) brightness(.76) contrast(1.11);
+  --pbe-scene-orb-one: rgba(212,175,55,.13);
+  --pbe-scene-orb-two: rgba(193,39,61,.04);
+}
+
+body[data-pbe-scene='mlb'] {
+  --pbe-scene-image: url('/backgrounds/pbe/wrigley-lights.webp');
+  --pbe-scene-position: center 52%;
+  --pbe-scene-opacity: .28;
+  --pbe-scene-filter: grayscale(16%) sepia(5%) saturate(82%) brightness(.70) contrast(1.16);
+  --pbe-scene-orb-one: rgba(212,175,55,.15);
+  --pbe-scene-orb-two: rgba(193,39,61,.04);
+}
+
+body[data-pbe-scene='mlb-summer'] {
+  --pbe-scene-image: url('/backgrounds/pbe/summer-classic.webp');
+  --pbe-scene-position: center 50%;
+  --pbe-scene-opacity: .285;
+  --pbe-scene-filter: sepia(10%) saturate(90%) brightness(.72) contrast(1.08);
+  --pbe-scene-orb-one: rgba(233,199,90,.16);
+  --pbe-scene-orb-two: rgba(193,39,61,.035);
+}
+
+body[data-pbe-scene='mlb-ballpark'] {
+  --pbe-scene-image: url('https://images.unsplash.com/photo-1778050203444-90920c7a5652?auto=format&fit=crop&w=2200&q=74');
+  --pbe-scene-position: center 48%;
+  --pbe-scene-opacity: .235;
+  --pbe-scene-filter: grayscale(28%) saturate(70%) brightness(.68) contrast(1.14);
+  --pbe-scene-orb-one: rgba(212,175,55,.12);
+  --pbe-scene-orb-two: rgba(193,39,61,.035);
+}
+
+body[data-pbe-scene='nfl'] {
+  --pbe-scene-image: url('/backgrounds/pbe/stadium-night.webp');
+  --pbe-scene-position: center 48%;
+  --pbe-scene-opacity: .285;
+  --pbe-scene-filter: grayscale(20%) sepia(7%) saturate(78%) brightness(.68) contrast(1.17);
+  --pbe-scene-orb-one: rgba(233,199,90,.16);
+  --pbe-scene-orb-two: rgba(193,39,61,.035);
+}
+
+body[data-pbe-scene='nfl-gridiron'] {
+  --pbe-scene-image: url('/backgrounds/pbe/gridiron-gold.webp');
+  --pbe-scene-position: center 60%;
+  --pbe-scene-opacity: .30;
+  --pbe-scene-filter: grayscale(28%) sepia(12%) saturate(78%) brightness(.68) contrast(1.18);
+  --pbe-scene-orb-one: rgba(233,199,90,.17);
+  --pbe-scene-orb-two: rgba(154,134,94,.055);
+}
+
+body[data-pbe-scene='nba'],
+body[data-pbe-scene='nba-hardwood'] {
+  --pbe-scene-image: url('/backgrounds/pbe/arena-glow.webp');
+  --pbe-scene-opacity: .285;
+  --pbe-scene-orb-one: rgba(233,199,90,.145);
+  --pbe-scene-orb-two: rgba(193,39,61,.05);
+}
+
+body[data-pbe-scene='nba'] {
+  --pbe-scene-position: center 48%;
+  --pbe-scene-filter: grayscale(20%) sepia(8%) saturate(82%) brightness(.69) contrast(1.14);
+}
+
+body[data-pbe-scene='nba-hardwood'] {
+  --pbe-scene-position: center 62%;
+  --pbe-scene-filter: grayscale(30%) sepia(15%) saturate(88%) brightness(.72) contrast(1.12);
+}
+
+body[data-pbe-scene='nhl'],
+body[data-pbe-scene='nhl-blueline'] {
+  --pbe-scene-image: url('/backgrounds/pbe/ice-house.webp');
+  --pbe-scene-opacity: .27;
+  --pbe-scene-orb-one: rgba(233,199,90,.075);
+  --pbe-scene-orb-two: rgba(214,224,230,.075);
+}
+
+body[data-pbe-scene='nhl'] {
+  --pbe-scene-position: center 48%;
+  --pbe-scene-filter: grayscale(26%) saturate(68%) brightness(.74) contrast(1.13);
+}
+
+body[data-pbe-scene='nhl-blueline'] {
+  --pbe-scene-position: center 58%;
+  --pbe-scene-filter: grayscale(48%) saturate(62%) brightness(.78) contrast(1.12);
+}
+
+/* --- Selector card image authority ---
+   These rules intentionally load after the old preview fallback layer. */
+.pbe-scene-option[data-scene='wrigley'] .pbe-scene-preview {
+  background-image: url('https://images.unsplash.com/photo-1666366330282-b11566b272cf?w=900&q=72&auto=format&fit=crop') !important;
+  background-position: center 50% !important;
+  filter: grayscale(6%) sepia(4%) saturate(92%) brightness(.82) contrast(1.08) !important;
+}
+
+.pbe-scene-option[data-scene='mlb'] .pbe-scene-preview {
+  background-image: url('/backgrounds/pbe/wrigley-lights.webp') !important;
+  background-position: center 54% !important;
+  filter: grayscale(12%) sepia(4%) saturate(88%) brightness(.78) contrast(1.12) !important;
+}
+
+.pbe-scene-option[data-scene='mlb-summer'] .pbe-scene-preview {
+  background-image: url('/backgrounds/pbe/summer-classic.webp') !important;
+  background-position: center 54% !important;
+  filter: sepia(8%) saturate(96%) brightness(.82) contrast(1.06) !important;
+}
+
+.pbe-scene-option[data-scene='mlb-ballpark'] .pbe-scene-preview {
+  background-image: url('https://images.unsplash.com/photo-1778050203444-90920c7a5652?auto=format&fit=crop&w=900&q=70') !important;
+  background-position: center 52% !important;
+  filter: grayscale(20%) saturate(78%) brightness(.74) contrast(1.12) !important;
+}
+
+.pbe-scene-option[data-scene='nfl'] .pbe-scene-preview {
+  background-image: url('/backgrounds/pbe/stadium-night.webp') !important;
+  background-position: center 50% !important;
+  filter: grayscale(16%) sepia(6%) saturate(84%) brightness(.76) contrast(1.13) !important;
+}
+
+.pbe-scene-option[data-scene='nfl-gridiron'] .pbe-scene-preview {
+  background-image: url('/backgrounds/pbe/gridiron-gold.webp') !important;
+  background-position: center 63% !important;
+  filter: grayscale(26%) sepia(12%) saturate(82%) brightness(.75) contrast(1.14) !important;
+}
+
+.pbe-scene-option[data-scene='nba'] .pbe-scene-preview {
+  background-image: url('/backgrounds/pbe/arena-glow.webp') !important;
+  background-position: center 48% !important;
+  filter: grayscale(14%) sepia(7%) saturate(86%) brightness(.77) contrast(1.10) !important;
+}
+
+.pbe-scene-option[data-scene='nba-hardwood'] .pbe-scene-preview {
+  background-image: url('/backgrounds/pbe/arena-glow.webp') !important;
+  background-position: center 64% !important;
+  filter: grayscale(26%) sepia(14%) saturate(90%) brightness(.76) contrast(1.11) !important;
+}
+
+.pbe-scene-option[data-scene='nhl'] .pbe-scene-preview {
+  background-image: url('/backgrounds/pbe/ice-house.webp') !important;
+  background-position: center 48% !important;
+  filter: grayscale(20%) saturate(72%) brightness(.80) contrast(1.10) !important;
+}
+
+.pbe-scene-option[data-scene='nhl-blueline'] .pbe-scene-preview {
+  background-image: url('/backgrounds/pbe/ice-house.webp') !important;
+  background-position: center 62% !important;
+  filter: grayscale(46%) saturate(64%) brightness(.81) contrast(1.10) !important;
+}
+
+/* --- Give the selector the visual weight of a real personalization surface. */
+@media (min-width: 700px) {
+  .pbe-scene-panel {
+    width: min(620px, calc(100vw - 28px)) !important;
+  }
+}
+
+.pbe-scene-preview {
+  height: 108px !important;
+}
+
+.pbe-scene-option {
+  background: linear-gradient(180deg, rgba(20,17,13,.82), rgba(28,24,18,.94)) !important;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease !important;
+}
+
+.pbe-scene-option:hover {
+  transform: translateY(-2px);
+  border-color: rgba(233,199,90,.44) !important;
+  box-shadow: 0 10px 28px rgba(0,0,0,.28);
+}
+
+.pbe-scene-option[data-scene='wrigley'] {
+  border-color: rgba(233,199,90,.36) !important;
+  box-shadow: inset 0 0 0 1px rgba(212,175,55,.035);
+}
+
+.pbe-scene-option[data-scene='wrigley'] .pbe-scene-copy strong::after {
+  content: '  ORIGINAL';
+  color: var(--gold-bright);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  vertical-align: 2px;
+}
+
+.pbe-scene-option[aria-pressed='true'] {
+  border-color: var(--gold-bright) !important;
+  box-shadow: 0 0 0 1px rgba(233,199,90,.18), 0 12px 30px rgba(0,0,0,.30) !important;
+}
+
+@media (max-width: 520px) {
+  .pbe-scene-preview {
+    height: 126px !important;
+  }
+}
