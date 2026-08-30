@@ -1,18 +1,12 @@
 /**
  * src/pages/news-index.js
- * All News — categorized sections + pagination
- *
- * v3.9: Restructured from a single flat grid into:
- *   • Breaking Now (top impact, last 24h)
- *   • Top Stories (impact 4+)
- *   • Per-sport rails (MLB / NFL / NBA / NHL)
- *   • Latest (paginated, all sports, 12 per page)
+ * All News — categorized sections + clean-route pagination
  */
 
 import { api } from '../api.js';
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
-import { renderArticleCard, renderSidebarStory } from '../components/article-card.js';
+import { renderArticleCard } from '../components/article-card.js';
 import { renderBreakingBanner } from '../components/breaking-banner.js';
 import {
   organizationSchema, websiteSchema, breadcrumbSchema,
@@ -21,22 +15,33 @@ import {
 
 const SPORTS = [
   { key: 'all', label: 'All News', href: '/news' },
-  { key: 'mlb', label: 'MLB',      href: '/news/mlb' },
-  { key: 'nfl', label: 'NFL',      href: '/news/nfl' },
-  { key: 'nba', label: 'NBA',      href: '/news/nba' },
-  { key: 'nhl', label: 'NHL',      href: '/news/nhl' },
+  { key: 'mlb', label: 'MLB', href: '/news/mlb' },
+  { key: 'nfl', label: 'NFL', href: '/news/nfl' },
+  { key: 'nba', label: 'NBA', href: '/news/nba' },
+  { key: 'nhl', label: 'NHL', href: '/news/nhl' },
 ];
 
 const PAGE_SIZE = 12;
 
-function getPageFromUrl() {
+function queryPage() {
   const params = new URLSearchParams(window.location.search);
-  const p = parseInt(params.get('page'), 10);
-  return p > 0 ? p : 1;
+  const page = parseInt(params.get('page'), 10);
+  return page > 0 ? page : 1;
 }
 
-export async function renderNewsIndex(root) {
-  const currentPage = getPageFromUrl();
+function normalizePage(requestedPage) {
+  const requested = Number.parseInt(requestedPage, 10);
+  if (Number.isFinite(requested) && requested > 1) return requested;
+  const legacy = queryPage();
+  if (legacy > 1) {
+    window.history.replaceState({}, '', `/news/page/${legacy}`);
+    return legacy;
+  }
+  return 1;
+}
+
+export async function renderNewsIndex(root, requestedPage = 1) {
+  const currentPage = normalizePage(requestedPage);
 
   root.innerHTML = `
     ${renderHeader()}
@@ -52,7 +57,6 @@ export async function renderNewsIndex(root) {
       </div>
 
       <div class="container" style="padding-top:36px">
-        <!-- Section 1: Top Stories (high-impact) -->
         <section id="top-stories-section" class="news-section">
           <div class="section-heading">
             <h2>🔥 Top Stories</h2>
@@ -61,12 +65,10 @@ export async function renderNewsIndex(root) {
           <div id="top-stories-grid" class="article-grid fade-stagger">${cardSkeleton(3)}</div>
         </section>
 
-        <!-- Section 2: Per-sport rails -->
         <section id="sport-rails" class="news-section sport-rails-section">
           <div id="sport-rails-content"></div>
         </section>
 
-        <!-- Section 3: Latest (paginated) -->
         <section id="latest-section" class="news-section">
           <div class="section-heading">
             <h2>📰 Latest</h2>
@@ -80,7 +82,6 @@ export async function renderNewsIndex(root) {
     ${renderFooter()}
   `;
 
-  // Fetch everything in parallel
   const [breaking, latest, mlb, nfl, nba, nhl] = await Promise.all([
     api.breaking().catch(() => ({ articles: [] })),
     api.newsAll(PAGE_SIZE, currentPage).catch(() => ({ articles: [], total: 0 })),
@@ -90,7 +91,6 @@ export async function renderNewsIndex(root) {
     api.newsBySport('nhl', 4).catch(() => ({ articles: [] })),
   ]);
 
-  // 🆕 v3.9.6: Schema for /news index page
   injectSchemas([
     organizationSchema(),
     websiteSchema(),
@@ -106,12 +106,10 @@ export async function renderNewsIndex(root) {
     ]),
   ], 'jsonld-news');
 
-  // Breaking banner
   if (breaking.articles?.length) {
     document.getElementById('breaking-slot').innerHTML = renderBreakingBanner(breaking.articles[0]);
   }
 
-  // Top Stories — high-impact across all sports (impact >= 4)
   const allFresh = [
     ...(mlb.articles || []),
     ...(nfl.articles || []),
@@ -130,7 +128,6 @@ export async function renderNewsIndex(root) {
     topGrid.innerHTML = topStories.map((a, i) => renderArticleCard(a, { featured: i === 0 })).join('');
   }
 
-  // Per-sport rails
   const railsHTML = [
     renderSportRail('MLB', '⚾', mlb.articles, '/news/mlb'),
     renderSportRail('NFL', '🏈', nfl.articles, '/news/nfl'),
@@ -139,23 +136,21 @@ export async function renderNewsIndex(root) {
   ].filter(Boolean).join('');
   document.getElementById('sport-rails-content').innerHTML = railsHTML;
 
-  // Latest grid + pagination
   const latestGrid = document.getElementById('latest-grid');
   if (!latest.articles?.length) {
     latestGrid.innerHTML = `
       <div class="empty" style="grid-column:1/-1">
         <h3>No more articles</h3>
-        <p>You've reached the end. Try page 1.</p>
+        <p>You've reached the end. <a href="/news" style="color:var(--gold)">Return to page 1.</a></p>
       </div>
     `;
   } else {
     latestGrid.innerHTML = latest.articles.map((a) => renderArticleCard(a)).join('');
   }
 
-  // Pagination controls
   const total = latest.total || latest.articles?.length || 0;
-  const totalPages = total ? Math.ceil(total / PAGE_SIZE) : Math.max(currentPage, 1);
-  document.getElementById('pagination').innerHTML = renderPagination(currentPage, totalPages);
+  const totalPages = latest.totalPages || (total ? Math.ceil(total / PAGE_SIZE) : Math.max(currentPage, 1));
+  document.getElementById('pagination').innerHTML = renderPagination(currentPage, totalPages, '/news');
 }
 
 function renderSportRail(label, emoji, articles, href) {
@@ -174,36 +169,36 @@ function renderSportRail(label, emoji, articles, href) {
   `;
 }
 
-function renderPagination(current, total) {
+function renderPagination(current, total, baseHref) {
   if (total <= 1) return '';
+  const pageHref = (page) => page === 1 ? baseHref : `${baseHref}/page/${page}`;
 
-  const prev = current > 1 ? `<a href="?page=${current - 1}" class="page-btn">← Prev</a>` : `<span class="page-btn disabled">← Prev</span>`;
-  const next = current < total ? `<a href="?page=${current + 1}" class="page-btn">Next →</a>` : `<span class="page-btn disabled">Next →</span>`;
+  const prev = current > 1 ? `<a href="${pageHref(current - 1)}" class="page-btn" rel="prev">← Prev</a>` : `<span class="page-btn disabled">← Prev</span>`;
+  const next = current < total ? `<a href="${pageHref(current + 1)}" class="page-btn" rel="next">Next →</a>` : `<span class="page-btn disabled">Next →</span>`;
 
-  // Build numbered links — show 5 surrounding pages
   const pages = [];
   const start = Math.max(1, current - 2);
   const end = Math.min(total, current + 2);
 
   if (start > 1) {
-    pages.push(`<a href="?page=1" class="page-num">1</a>`);
+    pages.push(`<a href="${pageHref(1)}" class="page-num">1</a>`);
     if (start > 2) pages.push(`<span class="page-ellipsis">…</span>`);
   }
   for (let i = start; i <= end; i++) {
-    if (i === current) pages.push(`<span class="page-num current">${i}</span>`);
-    else pages.push(`<a href="?page=${i}" class="page-num">${i}</a>`);
+    if (i === current) pages.push(`<span class="page-num current" aria-current="page">${i}</span>`);
+    else pages.push(`<a href="${pageHref(i)}" class="page-num">${i}</a>`);
   }
   if (end < total) {
     if (end < total - 1) pages.push(`<span class="page-ellipsis">…</span>`);
-    pages.push(`<a href="?page=${total}" class="page-num">${total}</a>`);
+    pages.push(`<a href="${pageHref(total)}" class="page-num">${total}</a>`);
   }
 
   return `
-    <div class="pagination-inner">
+    <nav class="pagination-inner" aria-label="News pagination">
       ${prev}
       <div class="page-numbers">${pages.join('')}</div>
       ${next}
-    </div>
+    </nav>
     <div class="pagination-meta">Page ${current} of ${total}</div>
   `;
 }
