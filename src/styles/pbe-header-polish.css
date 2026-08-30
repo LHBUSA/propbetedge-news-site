@@ -1,0 +1,252 @@
+/*
+ * PropBetEdge masthead polish
+ *
+ * Final pass on the publication header: strong contrast, aligned nav labels,
+ * a readable intelligence CTA, and tighter premium spacing.
+ */
+
+/* Network rail: crisp enough to read without turning into a bright ad slab. */
+.ad-banner.ad-tone-gold {
+  background: linear-gradient(180deg, rgba(14,13,11,.995), rgba(20,17,13,.995)) !important;
+  border-top-color: rgba(212,175,55,.14) !important;
+  border-bottom-color: rgba(212,175,55,.34) !important;
+}
+
+.ad-banner-inner {
+  min-height: 42px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  align-items: center !important;
+}
+
+.ad-banner-eyebrow {
+  color: var(--gold-bright) !important;
+  font-weight: 800 !important;
+  opacity: 1 !important;
+  text-shadow: 0 0 14px rgba(212,175,55,.12);
+}
+
+.ad-banner-headline {
+  color: var(--paper) !important;
+  font-weight: 650 !important;
+  opacity: 1 !important;
+}
+
+.ad-banner-cta {
+  color: var(--gold-bright) !important;
+  background: rgba(212,175,55,.045) !important;
+  border: 1px solid rgba(233,199,90,.52) !important;
+  font-weight: 800 !important;
+  opacity: 1 !important;
+  white-space: nowrap !important;
+}
+
+.ad-banner-cta:hover {
+  color: var(--ink) !important;
+  background: var(--gold-bright) !important;
+  border-color: var(--gold-bright) !important;
+}
+
+/* Main masthead: give the logo, labels and controls one shared baseline. */
+.masthead {
+  background: rgba(15,14,12,.965) !important;
+  border-bottom-color: rgba(212,175,55,.24) !important;
+}
+
+.masthead-inner {
+  max-width: 1460px !important;
+  min-height: 98px !important;
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+  column-gap: 28px !important;
+}
+
+.masthead-left,
+.masthead-right {
+  min-width: 0;
+  align-items: center !important;
+}
+
+.masthead-left {
+  gap: 10px !important;
+}
+
+.masthead-right {
+  gap: 8px !important;
+}
+
+.masthead .nav-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 36px !important;
+  padding: 8px 11px !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  top: auto !important;
+  transform: none !important;
+  line-height: 1 !important;
+  color: var(--paper-2) !important;
+  opacity: 1 !important;
+  white-space: nowrap !important;
+}
+
+.masthead .nav-link:hover,
+.masthead .nav-link.active {
+  color: #fffaf0 !important;
+}
+
+/* PBEcast had visually dropped below the rest of the nav. Force it onto the
+   same box and baseline while preserving the live dot and gold active rail. */
+.masthead .live-link {
+  align-self: center !important;
+  min-height: 36px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  line-height: 1 !important;
+}
+
+.masthead .live-link::before {
+  top: 1px !important;
+}
+
+.masthead .nav-link.active::after {
+  bottom: 0 !important;
+  left: 10px !important;
+  right: 10px !important;
+  height: 2px !important;
+  background: var(--gold-bright) !important;
+}
+
+/* The prior global nav override was washing the gold CTA text out. */
+.masthead .nav-link.cta,
+.masthead .nav-link.cta:visited {
+  min-height: 48px !important;
+  padding: 11px 18px !important;
+  margin-left: 14px !important;
+  background: linear-gradient(180deg, #e3bf45 0%, #cda62f 100%) !important;
+  border: 1px solid rgba(255,235,158,.42) !important;
+  color: #100e0b !important;
+  font-weight: 900 !important;
+  letter-spacing: .09em !important;
+  text-shadow: none !important;
+  box-shadow: 0 7px 22px rgba(212,175,55,.22) !important;
+}
+
+.masthead .nav-link.cta::after {
+  display: none !important;
+}
+
+.masthead .nav-link.cta:hover {
+  background: var(--gold-bright) !important;
+  color: #0c0b09 !important;
+  border-color: rgba(255,245,220,.68) !important;
+  box-shadow: 0 8px 28px rgba(212,175,55,.34) !important;
+}
+
+/* Center brand lockup: clean, readable and deliberately aligned. */
+.masthead-logo {
+  gap: 5px !important;
+  align-self: center !important;
+  justify-self: center !important;
+  transform: none !important;
+}
+
+.masthead-mark {
+  height: 51px !important;
+}
+
+.masthead-logo .tagline {
+  margin-top: 0 !important;
+  color: #bdb7aa !important;
+  font-size: 9px !important;
+  font-weight: 750 !important;
+  line-height: 1.25 !important;
+  letter-spacing: .27em !important;
+  opacity: 1 !important;
+  text-shadow: 0 1px 8px rgba(0,0,0,.5);
+}
+
+/* Keep the live indicator visible without letting it disturb text position. */
+.masthead .live-link::before {
+  box-shadow: 0 0 10px rgba(230,57,70,.42) !important;
+}
+
+/* Slightly calmer edge treatment so the header reads as one publication bar. */
+.masthead::after {
+  width: 80px !important;
+  height: 2px !important;
+  background: var(--gold-bright) !important;
+  box-shadow: 0 0 10px rgba(212,175,55,.16);
+}
+
+@media (max-width: 1120px) and (min-width: 881px) {
+  .masthead-inner {
+    column-gap: 16px !important;
+  }
+
+  .masthead-left,
+  .masthead-right {
+    gap: 2px !important;
+  }
+
+  .masthead .nav-link {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    font-size: 10px !important;
+  }
+
+  .masthead .nav-link.cta {
+    margin-left: 6px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}
+
+@media (max-width: 880px) {
+  .masthead-inner {
+    min-height: 0 !important;
+    padding-top: 13px !important;
+    padding-bottom: 13px !important;
+    gap: 10px !important;
+  }
+
+  .masthead-right {
+    gap: 4px !important;
+  }
+
+  .masthead .nav-link {
+    min-height: 32px !important;
+    padding: 6px 8px !important;
+    font-size: 10px !important;
+  }
+
+  .masthead .nav-link.cta {
+    min-height: 38px !important;
+    margin-left: 4px !important;
+    padding: 8px 11px !important;
+  }
+
+  .masthead-mark {
+    height: 45px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .ad-banner-inner {
+    min-height: 38px !important;
+  }
+
+  .ad-banner-eyebrow {
+    font-size: 9px !important;
+  }
+
+  .ad-banner-cta {
+    font-size: 9px !important;
+    padding: 5px 8px !important;
+  }
+
+  .masthead .nav-link.cta {
+    color: #100e0b !important;
+  }
+}
