@@ -1,0 +1,243 @@
+/*
+ * PropBetEdge personalization polish
+ * - expands the visual background library
+ * - keeps the scene control compact enough that NBA/NHL never collide with logo
+ * - makes auto-follow state explicit and readable
+ */
+
+/* ---------- Additional scenes ---------- */
+body[data-pbe-scene='network'] {
+  --pbe-scene-image: url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=2200&q=74');
+  --pbe-scene-position: center 48%;
+  --pbe-scene-opacity: .145;
+  --pbe-scene-filter: grayscale(72%) saturate(32%) brightness(.56) contrast(1.16);
+  --pbe-scene-orb-one: rgba(212,175,55,.12);
+  --pbe-scene-orb-two: rgba(193,39,61,.035);
+}
+
+body[data-pbe-scene='mlb-summer'] {
+  --pbe-scene-image: url('https://images.unsplash.com/photo-1778050203444-90920c7a5652?auto=format&fit=crop&w=2200&q=76');
+  --pbe-scene-position: center 54%;
+  --pbe-scene-opacity: .265;
+  --pbe-scene-filter: grayscale(8%) sepia(12%) saturate(92%) brightness(.82) contrast(1.05);
+  --pbe-scene-orb-one: rgba(233,199,90,.13);
+  --pbe-scene-orb-two: rgba(193,39,61,.04);
+}
+
+body[data-pbe-scene='nfl-gridiron'] {
+  --pbe-scene-image: url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=2200&q=76');
+  --pbe-scene-position: center 58%;
+  --pbe-scene-opacity: .255;
+  --pbe-scene-filter: grayscale(48%) sepia(10%) saturate(68%) brightness(.68) contrast(1.17);
+  --pbe-scene-orb-one: rgba(233,199,90,.15);
+  --pbe-scene-orb-two: rgba(154,134,94,.055);
+}
+
+body[data-pbe-scene='nba-hardwood'] {
+  --pbe-scene-image: url('https://images.unsplash.com/photo-1771882856158-c8e083134ee3?auto=format&fit=crop&w=2200&q=76');
+  --pbe-scene-position: center 52%;
+  --pbe-scene-opacity: .255;
+  --pbe-scene-filter: grayscale(26%) sepia(14%) saturate(82%) brightness(.73) contrast(1.10);
+  --pbe-scene-orb-one: rgba(233,199,90,.14);
+  --pbe-scene-orb-two: rgba(193,39,61,.045);
+}
+
+body[data-pbe-scene='nhl-blueline'] {
+  --pbe-scene-image: url('https://images.unsplash.com/photo-1614239039918-3653d97bf483?auto=format&fit=crop&w=2200&q=76');
+  --pbe-scene-position: center 52%;
+  --pbe-scene-opacity: .255;
+  --pbe-scene-filter: grayscale(55%) saturate(62%) brightness(.78) contrast(1.10);
+  --pbe-scene-orb-one: rgba(233,199,90,.075);
+  --pbe-scene-orb-two: rgba(214,224,230,.065);
+}
+
+body[data-pbe-scene='blackout'] {
+  --pbe-scene-image: none;
+  --pbe-scene-opacity: 0;
+  --pbe-scene-filter: none;
+  --pbe-scene-orb-one: rgba(212,175,55,.055);
+  --pbe-scene-orb-two: rgba(193,39,61,.025);
+}
+
+/* ---------- New preview cards ---------- */
+.pbe-scene-option[data-scene='network'] .pbe-scene-preview {
+  background-image:
+    linear-gradient(135deg, rgba(212,175,55,.22), transparent 45%),
+    url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=680&q=64');
+  filter: grayscale(72%) saturate(38%) brightness(.64) contrast(1.12);
+}
+
+.pbe-scene-option[data-scene='mlb-summer'] .pbe-scene-preview {
+  background-image: url('https://images.unsplash.com/photo-1778050203444-90920c7a5652?auto=format&fit=crop&w=680&q=70');
+  filter: sepia(12%) saturate(88%) brightness(.85) contrast(1.05);
+  background-position: center 60%;
+}
+
+.pbe-scene-option[data-scene='nfl-gridiron'] .pbe-scene-preview {
+  background-image: url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=680&q=70');
+  filter: grayscale(45%) sepia(10%) saturate(72%) brightness(.72) contrast(1.14);
+  background-position: center 62%;
+}
+
+.pbe-scene-option[data-scene='nba-hardwood'] .pbe-scene-preview {
+  background-image: url('https://images.unsplash.com/photo-1771882856158-c8e083134ee3?auto=format&fit=crop&w=680&q=70');
+  filter: grayscale(24%) sepia(14%) saturate(82%) brightness(.78) contrast(1.08);
+  background-position: center 56%;
+}
+
+.pbe-scene-option[data-scene='nhl-blueline'] .pbe-scene-preview {
+  background-image: url('https://images.unsplash.com/photo-1614239039918-3653d97bf483?auto=format&fit=crop&w=680&q=70');
+  filter: grayscale(48%) saturate(60%) brightness(.82) contrast(1.08);
+  background-position: center 56%;
+}
+
+.pbe-scene-option[data-scene='blackout'] .pbe-scene-preview {
+  background-image:
+    radial-gradient(circle at 72% 18%, rgba(212,175,55,.20), transparent 30%),
+    linear-gradient(145deg, #17130e, #080706 72%);
+  filter: none;
+}
+
+/* ---------- Panel improvements ---------- */
+.pbe-scene-panel {
+  width: min(560px, calc(100vw - 28px)) !important;
+  max-height: min(78vh, 760px);
+  overflow: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(233,199,90,.38) rgba(255,255,255,.03);
+}
+
+.pbe-scene-panel-head {
+  position: sticky;
+  top: -14px;
+  z-index: 3;
+  margin: -2px -2px 10px;
+  padding: 14px 4px 12px !important;
+  background: linear-gradient(180deg, rgba(15,14,12,.995) 78%, rgba(15,14,12,.93));
+}
+
+.pbe-scene-panel-sub {
+  display: block;
+  margin-top: 5px;
+  color: var(--paper-faint);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.pbe-scene-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.pbe-scene-follow-status {
+  margin-top: 8px;
+  padding: 7px 9px;
+  border: 1px solid rgba(255,245,220,.08);
+  background: rgba(245,241,235,.018);
+  color: var(--paper-faint);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.pbe-scene-follow-status.is-auto {
+  border-color: rgba(233,199,90,.25);
+  color: var(--gold-bright);
+  background: rgba(212,175,55,.04);
+}
+
+/* ---------- Header collision fix ----------
+   The prior selector label made the right rail wider than its grid track,
+   causing flex overflow to paint leftward into the centered brand lockup. */
+@media (min-width: 881px) {
+  .masthead-inner {
+    grid-template-columns: minmax(0, 1fr) 232px minmax(0, 1fr) !important;
+  }
+
+  .masthead-logo {
+    width: 232px;
+    min-width: 232px;
+  }
+
+  .masthead-right {
+    min-width: 0 !important;
+    padding-left: 14px;
+    flex-wrap: nowrap !important;
+  }
+
+  .masthead-left {
+    min-width: 0 !important;
+    padding-right: 14px;
+  }
+
+  .pbe-scene-trigger-label {
+    display: none !important;
+  }
+
+  .pbe-scene-trigger {
+    min-width: 0 !important;
+    max-width: 92px;
+    gap: 5px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .pbe-scene-trigger-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 1320px) and (min-width: 881px) {
+  .masthead-inner {
+    grid-template-columns: minmax(0, 1fr) 214px minmax(0, 1fr) !important;
+    column-gap: 14px !important;
+  }
+
+  .masthead-logo {
+    width: 214px;
+    min-width: 214px;
+  }
+
+  .masthead .nav-link {
+    padding-left: 7px !important;
+    padding-right: 7px !important;
+  }
+
+  .masthead-right {
+    gap: 2px !important;
+    padding-left: 8px;
+  }
+
+  .masthead .nav-link.cta {
+    margin-left: 4px !important;
+    padding-left: 11px !important;
+    padding-right: 11px !important;
+  }
+
+  .pbe-scene-trigger {
+    max-width: 76px;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+}
+
+@media (max-width: 880px) {
+  .pbe-scene-panel {
+    width: min(480px, calc(100vw - 18px)) !important;
+    max-height: 72vh;
+  }
+}
+
+@media (max-width: 520px) {
+  .pbe-scene-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pbe-scene-panel-head {
+    top: -11px;
+  }
+}
