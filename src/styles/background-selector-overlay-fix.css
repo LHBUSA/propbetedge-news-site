@@ -1,0 +1,34 @@
+/* Background selector overlay authority.
+ * The selector lives inside the masthead, so the masthead itself must own a
+ * stacking layer above routed article/game content. A high z-index on the
+ * child panel alone cannot escape a lower parent stacking context.
+ */
+.masthead {
+  position: relative !important;
+  z-index: 5000 !important;
+  overflow: visible !important;
+}
+
+.masthead-inner,
+.masthead-right,
+.pbe-scene-control {
+  overflow: visible !important;
+}
+
+.pbe-scene-control {
+  position: relative !important;
+  z-index: 5100 !important;
+}
+
+.pbe-scene-panel {
+  z-index: 5200 !important;
+}
+
+/* Keep sticky section bars and article cards underneath an open selector. */
+.section-bar,
+.article-page,
+.article-with-rail,
+#pbe-article-rail,
+.pbe-games-worldclass {
+  z-index: auto !important;
+}
