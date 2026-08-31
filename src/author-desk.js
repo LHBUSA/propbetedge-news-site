@@ -42,7 +42,8 @@ async function sync() {
     const response = await api.byAuthor(author.name, 24);
     if (!document.contains(desk)) return;
     const articles = response?.articles || [];
-    desk.innerHTML = renderDesk(author, articles, response?.total || articles.length);
+    const total = Number.isFinite(Number(response?.total)) ? Number(response.total) : articles.length;
+    desk.innerHTML = renderDesk(author, articles, total);
   } catch {
     desk.remove();
     activeKey = '';
@@ -65,11 +66,15 @@ function mountFollow(hero, slug, author) {
 function toggleFollow(slug, author, button) {
   const items = getFollowed();
   const index = items.findIndex((item) => item.slug === slug);
+  const following = index < 0;
   if (index >= 0) items.splice(index, 1);
   else items.push({ slug, name: author.name, role: author.role, initials: author.initials, accent: author.accent });
   saveFollowed(items);
   paintFollow(button, slug);
-  window.dispatchEvent(new CustomEvent('pbe:author-follow-changed', { detail: { slug, author: author.name } }));
+  window.dispatchEvent(new CustomEvent('pbe:author-follow-changed', { detail: { slug, author: author.name, following } }));
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', 'author_follow_changed', { author_slug: slug, author_name: author.name, following });
+  }
 }
 
 function paintFollow(button, slug) {
@@ -88,8 +93,9 @@ function renderDesk(author, articles, total) {
   }
   const coverage = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
   const highImpact = recent
-    .filter((article) => Number.isFinite(Number(article?.take?.impact_score)))
-    .sort((a, b) => Number(b.take.impact_score) - Number(a.take.impact_score) || new Date(b.published_at) - new Date(a.published_at))[0];
+    .map((article) => ({ article, score: impactScore(article) }))
+    .filter((item) => item.score != null)
+    .sort((a, b) => b.score - a.score || new Date(b.article.published_at) - new Date(a.article.published_at))[0];
   const latest = recent[0];
 
   return `
@@ -98,12 +104,8 @@ function renderDesk(author, articles, total) {
       <small>Based on the latest ${Math.min(articles.length, 24)} loaded stories</small>
     </div>
     <div class="pbe-author-desk-grid">
-      <div class="pbe-author-desk-stat">
-        <span>PUBLISHED</span><strong>${escapeHtml(String(total))}</strong><small>articles in the author feed</small>
-      </div>
-      <div class="pbe-author-desk-stat">
-        <span>LATEST</span><strong>${latest ? escapeHtml(formatRelative(latest.published_at)) : '—'}</strong><small>${latest ? escapeHtml(shorten(latest.title, 62)) : 'No recent story returned'}</small>
-      </div>
+      <div class="pbe-author-desk-stat"><span>PUBLISHED</span><strong>${escapeHtml(String(total))}</strong><small>articles in the author feed</small></div>
+      <div class="pbe-author-desk-stat"><span>LATEST</span><strong>${latest ? escapeHtml(formatRelative(latest.published_at)) : '—'}</strong><small>${latest ? escapeHtml(shorten(latest.title, 62)) : 'No recent story returned'}</small></div>
       <div class="pbe-author-desk-stat pbe-author-desk-coverage">
         <span>RECENT COVERAGE MIX</span>
         <div>${coverage.length ? coverage.map(([sport, count]) => {
@@ -113,22 +115,26 @@ function renderDesk(author, articles, total) {
       </div>
       <div class="pbe-author-desk-stat">
         <span>HIGHEST RECENT IMPACT</span>
-        ${highImpact ? `<a href="/news/${escapeAttr(highImpact.sport)}/${escapeAttr(highImpact.slug)}"><strong>${escapeHtml(String(highImpact.take.impact_score))}/5</strong><small>${escapeHtml(shorten(highImpact.title, 70))}</small></a>` : '<strong>—</strong><small>No scored story in the loaded sample</small>'}
+        ${highImpact ? `<a href="/news/${escapeAttr(highImpact.article.sport)}/${escapeAttr(highImpact.article.slug)}"><strong>${escapeHtml(String(highImpact.score))}/5</strong><small>${escapeHtml(shorten(highImpact.article.title, 70))}</small></a>` : '<strong>—</strong><small>No scored story in the loaded sample</small>'}
       </div>
     </div>
     <div class="pbe-author-desk-note">This desk reports published activity and story metadata only. It does not manufacture betting records or analyst hit rates.</div>
   `;
 }
 
+function impactScore(article) {
+  const raw = article?.take?.impact_score;
+  if (raw == null || raw === '') return null;
+  const score = Number(raw);
+  return Number.isFinite(score) ? score : null;
+}
 function getFollowed() {
   try {
     const parsed = JSON.parse(localStorage.getItem(FOLLOW_KEY) || '[]');
     return Array.isArray(parsed) ? parsed : [];
   } catch { return []; }
 }
-function saveFollowed(items) {
-  try { localStorage.setItem(FOLLOW_KEY, JSON.stringify(items)); } catch {}
-}
+function saveFollowed(items) { try { localStorage.setItem(FOLLOW_KEY, JSON.stringify(items)); } catch {} }
 function formatRelative(value) {
   const ts = new Date(value).getTime();
   if (!Number.isFinite(ts)) return '';
@@ -137,11 +143,6 @@ function formatRelative(value) {
   if (minutes < 1440) return `${Math.round(minutes / 60)}h ago`;
   return `${Math.round(minutes / 1440)}d ago`;
 }
-function shorten(value, max) {
-  const text = String(value || '');
-  return text.length > max ? `${text.slice(0, max - 1).trim()}…` : text;
-}
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-}
+function shorten(value, max) { const text = String(value || ''); return text.length > max ? `${text.slice(0, max - 1).trim()}…` : text; }
+function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
 function escapeAttr(value) { return escapeHtml(value); }
