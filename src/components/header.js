@@ -10,9 +10,9 @@ let _edgeCountFetched = false;
 
 export function renderHeader() {
   const path = window.location.pathname;
-  const isLive    = path === '/games'   || path.startsWith('/games/');
+  const isLive = path === '/games' || path.startsWith('/games/');
   const isLeaders = path === '/leaders' || path.startsWith('/leaders/');
-  const isOdds    = path === '/odds';
+  const isOdds = path === '/odds';
   const sport = inferSport(path);
   const primaryCta = headerCtaForSport(sport);
 
@@ -35,10 +35,10 @@ export function renderHeader() {
       <div class="container masthead-inner">
         <div class="masthead-left masthead-leagues" aria-label="League coverage">
           <a href="/news" class="nav-link ${path === '/news' ? 'active' : ''}">All News</a>
-          <a href="/news/mlb" class="nav-link ${path.startsWith('/news/mlb') ? 'active' : ''}">MLB</a>
-          <a href="/news/nfl" class="nav-link ${path.startsWith('/news/nfl') ? 'active' : ''}">NFL</a>
-          <a href="/news/nba" class="nav-link ${path.startsWith('/news/nba') ? 'active' : ''}">NBA</a>
-          <a href="/news/nhl" class="nav-link ${path.startsWith('/news/nhl') ? 'active' : ''}">NHL</a>
+          <a href="/news/mlb" class="nav-link ${sportPathActive(path, 'mlb') ? 'active' : ''}">MLB</a>
+          <a href="/news/nfl" class="nav-link ${sportPathActive(path, 'nfl') ? 'active' : ''}">NFL</a>
+          <a href="/news/nba" class="nav-link ${sportPathActive(path, 'nba') ? 'active' : ''}">NBA</a>
+          <a href="/news/nhl" class="nav-link ${sportPathActive(path, 'nhl') ? 'active' : ''}">NHL</a>
         </div>
         <a href="/" class="masthead-logo" aria-label="PropBetEdge home">
           <img
@@ -63,8 +63,12 @@ export function renderHeader() {
   `;
 }
 
+function sportPathActive(path, sport) {
+  return inferSport(path) === sport;
+}
+
 function inferSport(path) {
-  const match = String(path || '').match(/\/(?:news|games|leaders)\/(mlb|nfl|nba|nhl)(?:\/|$)/i);
+  const match = String(path || '').match(/\/(?:news|games|leaders|team|standings|player)\/(mlb|nfl|nba|nhl)(?:\/|$)/i);
   return match?.[1]?.toLowerCase() || null;
 }
 
@@ -74,8 +78,6 @@ function headerCtaForSport(sport) {
   if (sport === 'nba') return { href: '/news/nba', label: 'NBA · Coming Soon', external: false };
   if (sport === 'nhl') return { href: '/news/nhl', label: 'NHL · Coming Soon', external: false };
 
-  // NFL is the network's next major launch, so generic surfaces should point
-  // football-first while sport-specific pages continue to respect context.
   return { href: PROPBET_LINKS.picks_nfl, label: 'NFL Intelligence', external: true };
 }
 
@@ -94,7 +96,7 @@ async function fetchEdgeCount() {
       el.textContent = '';
       el.classList.remove('has-edges');
     }
-  } catch (e) {
+  } catch {
     // Silent fail — count badge just won't appear
   }
 }
