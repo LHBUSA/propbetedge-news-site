@@ -93,8 +93,11 @@ export function renderEdgeStrip(sportSlug = 'nfl') {
   `;
 }
 
-// ─── Premium analytics upsell card (advanced stats blocked by CORS) ────
+// ─── Advanced-stat promotion, always matched to the current league ─────
 export function renderPremiumStatCard(label, color, statName, dek) {
+  const sport = String(window.location.pathname || '').match(/^\/leaders\/(mlb|nfl|nba|nhl)(?:\/|$)/i)?.[1]?.toLowerCase() || 'mlb';
+  const config = getSportConfig(sport) || getSportConfig('mlb');
+  const productExternal = /^https?:\/\//i.test(config.productUrl || '');
   return `
     <div class="leader-card leader-card-premium">
       <div class="leader-card-head" style="border-color:${color}33">
@@ -104,7 +107,7 @@ export function renderPremiumStatCard(label, color, statName, dek) {
       <div class="premium-card-body">
         <div class="premium-stat-name">${statName}</div>
         <div class="premium-dek">${dek}</div>
-        <a href="https://mlb.propbetedge.ai" class="premium-cta">Premium analytics in picks app →</a>
+        <a href="${escapeAttr(config.productUrl)}" class="premium-cta"${productExternal ? ' target="_blank" rel="noopener"' : ''}>${escapeHtml(config.primaryCta)} →</a>
       </div>
     </div>
   `;
