@@ -32,28 +32,41 @@ async function syncImpactGraph() {
 
   try {
     const response = await fetch(`${NEWS_API}/news/article/${encodeURIComponent(slug)}`, { credentials: 'omit' });
-    if (!response.ok) return;
+    if (!response.ok) {
+      activeKey = '';
+      return;
+    }
     const payload = await response.json();
     const article = payload?.article;
-    if (!article?.take) return;
-    renderGraph(anchor, article, sport);
+    if (!article?.take) {
+      activeKey = '';
+      return;
+    }
+    const rendered = renderGraph(anchor, article, sport);
+    if (!rendered) activeKey = '';
   } catch {
+    activeKey = '';
     // The article stays fully usable when the intelligence graph cannot load.
   }
 }
 
 function renderGraph(anchor, article, sport) {
-  if (document.querySelector('.pbe-impact-graph')) return;
+  if (document.querySelector('.pbe-impact-graph')) return false;
   const take = article.take || {};
   const config = getSportConfig(sport);
-  if (!config) return;
+  if (!config) return false;
 
   const players = unique(take.players).slice(0, 4);
   const teams = unique(take.teams).slice(0, 3);
   const props = unique(take.prop_types).slice(0, 5);
   const score = Number.isFinite(Number(take.impact_score)) ? Math.max(0, Math.min(5, Number(take.impact_score))) : null;
   const hasEntities = players.length || teams.length || props.length;
-  if (!hasEntities && score == null && !take.advice) return;
+  if (!hasEntities && score == null && !take.advice) return false;
+
+  const productHref = config.productUrl;
+  const picksHref = config.picksUrl || productHref;
+  const productAttrs = externalAttrs(productHref);
+  const picksAttrs = externalAttrs(picksHref);
 
   const section = document.createElement('section');
   section.className = 'pbe-impact-graph';
@@ -87,7 +100,7 @@ function renderGraph(anchor, article, sport) {
         <div class="pbe-impact-node pbe-impact-prop"><span>PROP</span><strong>${escapeHtml(formatProp(prop))}</strong></div>
       `).join('')}
       <span class="pbe-impact-arrow">→</span>
-      <a class="pbe-impact-node pbe-impact-market" href="${escapeAttr(config.picksUrl || config.productUrl)}" target="_blank" rel="noopener">
+      <a class="pbe-impact-node pbe-impact-market" href="${escapeAttr(picksHref)}"${picksAttrs}>
         <span>PBE INTELLIGENCE</span><strong>Live model + market view</strong>
       </a>
     </div>
@@ -96,11 +109,16 @@ function renderGraph(anchor, article, sport) {
 
     <div class="pbe-impact-footer">
       <span>Known nodes are rendered from the current story analysis. Line movement and outcome history attach only when verified data is available.</span>
-      <a href="${escapeAttr(config.productUrl)}" target="_blank" rel="noopener">${escapeHtml(config.primaryCta)} →</a>
+      <a href="${escapeAttr(productHref)}"${productAttrs}>${escapeHtml(config.primaryCta)} →</a>
     </div>
   `;
 
   anchor.insertAdjacentElement('afterend', section);
+  return true;
+}
+
+function externalAttrs(href) {
+  return /^https?:\/\//i.test(String(href || '')) ? ' target="_blank" rel="noopener"' : '';
 }
 
 function unique(values) {
