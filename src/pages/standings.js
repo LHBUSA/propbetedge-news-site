@@ -17,8 +17,39 @@ function valueFor(entry, names) {
   return '—';
 }
 
-function pctFor(entry) {
-  return valueFor(entry, ['winPercent', 'PCT', 'winPercentage']);
+const STANDING_COLUMNS = Object.freeze({
+  nfl: [
+    { label: 'W', names: ['wins', 'W'] },
+    { label: 'L', names: ['losses', 'L'] },
+    { label: 'T', names: ['ties', 'T'] },
+    { label: 'PCT', names: ['winPercent', 'winPercentage', 'PCT'] },
+    { label: 'SEED', names: ['playoffSeed', 'seed'] },
+  ],
+  mlb: [
+    { label: 'W', names: ['wins', 'W'] },
+    { label: 'L', names: ['losses', 'L'] },
+    { label: 'PCT', names: ['winPercent', 'winPercentage', 'PCT'] },
+    { label: 'GB', names: ['gamesBehind', 'GB'] },
+    { label: 'DIFF', names: ['differential', 'runDifferential', 'DIFF'] },
+  ],
+  nba: [
+    { label: 'W', names: ['wins', 'W'] },
+    { label: 'L', names: ['losses', 'L'] },
+    { label: 'PCT', names: ['winPercent', 'winPercentage', 'PCT'] },
+    { label: 'GB', names: ['gamesBehind', 'GB'] },
+    { label: 'SEED', names: ['playoffSeed', 'seed'] },
+  ],
+  nhl: [
+    { label: 'W', names: ['wins', 'W'] },
+    { label: 'L', names: ['losses', 'L'] },
+    { label: 'OTL', names: ['overtimeLosses', 'OTL'] },
+    { label: 'PTS', names: ['points', 'PTS'] },
+    { label: 'PCT', names: ['pointPct', 'pointPercentage', 'winPercent', 'PCT'] },
+  ],
+});
+
+function columnsFor(sport) {
+  return STANDING_COLUMNS[sport] || STANDING_COLUMNS.nfl;
 }
 
 function normalizeGroups(data) {
@@ -46,13 +77,17 @@ function normalizeGroups(data) {
   return groups;
 }
 
-function renderRow(entry, sport) {
+function rowGrid(columns) {
+  return `grid-template-columns:minmax(200px,1.8fr) repeat(${columns.length},minmax(48px,.45fr))`;
+}
+
+function renderRow(entry, sport, columns) {
   const team = entry?.team || {};
   const name = team.displayName || team.name || team.abbreviation || 'Team';
   const logo = team.logos?.[0]?.href || team.logo || '';
   const slug = slugifyEntity(name);
   return `
-    <a class="pbe-standings-row" href="/team/${sport}/${slug}">
+    <a class="pbe-standings-row" style="${rowGrid(columns)}" href="/team/${sport}/${slug}">
       <span class="pbe-standings-team">
         ${logo ? `<img src="${escapeAttr(logo)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'" />` : ''}
         <span>
@@ -60,16 +95,13 @@ function renderRow(entry, sport) {
           <small>${escapeHtml(team.abbreviation || '')}</small>
         </span>
       </span>
-      <span>${escapeHtml(valueFor(entry, ['wins', 'W']))}</span>
-      <span>${escapeHtml(valueFor(entry, ['losses', 'L']))}</span>
-      <span>${escapeHtml(valueFor(entry, ['ties', 'T']))}</span>
-      <span>${escapeHtml(pctFor(entry))}</span>
-      <span>${escapeHtml(valueFor(entry, ['gamesBehind', 'GB', 'playoffSeed']))}</span>
+      ${columns.map((column) => `<span>${escapeHtml(valueFor(entry, column.names))}</span>`).join('')}
     </a>
   `;
 }
 
 function renderGroup(group, sport) {
+  const columns = columnsFor(sport);
   return `
     <section class="pbe-standings-card">
       <div class="pbe-standings-card-head">
@@ -80,10 +112,10 @@ function renderGroup(group, sport) {
         <span>LIVE TABLE</span>
       </div>
       <div class="pbe-standings-table" role="table" aria-label="${escapeAttr(group.name)} standings">
-        <div class="pbe-standings-row pbe-standings-labels" role="row">
-          <span>Team</span><span>W</span><span>L</span><span>T</span><span>PCT</span><span>GB / Seed</span>
+        <div class="pbe-standings-row pbe-standings-labels" style="${rowGrid(columns)}" role="row">
+          <span>Team</span>${columns.map((column) => `<span>${escapeHtml(column.label)}</span>`).join('')}
         </div>
-        ${group.entries.map((entry) => renderRow(entry, sport)).join('')}
+        ${group.entries.map((entry) => renderRow(entry, sport, columns)).join('')}
       </div>
     </section>
   `;
