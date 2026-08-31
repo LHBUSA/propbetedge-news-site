@@ -9,6 +9,8 @@
 
 const NFL_URL = 'https://nfl.propbetedge.ai';
 const NFL_TRACKED = 'https://nfl.propbetedge.ai/?utm_source=propbetedge&utm_medium=house_ad&utm_campaign=nfl_launch_priority';
+const NFL_PROP_BOARD = 'https://nfl.propbetedge.ai/#propboard';
+const NFL_MODEL_LAB = 'https://nfl.propbetedge.ai/#picks';
 
 let timer = null;
 let observer = null;
@@ -38,8 +40,39 @@ function sync() {
     syncGenericNetworkAds();
   }
 
+  // NFL pages must never leak readers into MLB-only Ask The Algo surfaces.
+  // This is a defensive DOM pass in addition to the sport-aware article funnel,
+  // so legacy templates and future injected CTAs remain football-native.
+  if (sport === 'nfl') {
+    syncNflNativeCtas();
+  }
+
   syncFooterPriority();
   syncGamesPriority();
+}
+
+function syncNflNativeCtas() {
+  document.querySelectorAll('a').forEach((link) => {
+    const href = String(link.getAttribute('href') || '');
+    const label = String(link.textContent || '').trim();
+    const isAlgoLink = /askalgo/i.test(href) || /ask\s+the\s+algo/i.test(label);
+
+    if (isAlgoLink) {
+      link.href = NFL_PROP_BOARD;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = 'See Live Prop Board';
+      link.dataset.pbeNflNativeCta = 'propboard';
+      return;
+    }
+
+    if (/NFL\s+Picks\s+This\s+Week/i.test(label)) {
+      link.href = NFL_MODEL_LAB;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.dataset.pbeNflNativeCta = 'modellab';
+    }
+  });
 }
 
 function syncGenericHeader() {
