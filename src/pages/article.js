@@ -2,6 +2,7 @@
  * src/pages/article.js
  * Editorial long-form article — magazine layout with in-content ads
  *
+ * v3.16: sport-native conversion CTAs at render source
  * v3.15: 🆕 Media embeds rendered after take callout (MLB.tv + YouTube)
  * v3.14: ESPN-pattern right rail
  */
@@ -289,8 +290,18 @@ function renderTakeCallout(article) {
 
 function renderPicksCTA(article) {
   const sportPicksMap = {
-    mlb: { url: 'https://mlb.propbetedge.ai/picks', label: 'MLB Picks Tonight' },
-    nfl: { url: 'https://nfl.propbetedge.ai',       label: 'NFL Picks This Week' },
+    mlb: {
+      url: 'https://mlb.propbetedge.ai/picks',
+      label: 'MLB Picks Tonight',
+      secondaryUrl: 'https://mlb.propbetedge.ai/askalgo',
+      secondaryLabel: 'Ask The Algo',
+    },
+    nfl: {
+      url: 'https://nfl.propbetedge.ai/#picks',
+      label: 'NFL Picks This Week',
+      secondaryUrl: 'https://nfl.propbetedge.ai/#propboard',
+      secondaryLabel: 'See Live Prop Board',
+    },
   };
   const cta = sportPicksMap[article.sport];
   if (!cta) return '';
@@ -306,7 +317,7 @@ function renderPicksCTA(article) {
       <p class="picks-cta-sub">${personalized} The same AI behind this take grades model picks against live odds, 24/7.</p>
       <div class="picks-cta-buttons">
         <a href="${cta.url}" class="btn btn-primary" target="_blank" rel="noopener">${cta.label} →</a>
-        <a href="https://mlb.propbetedge.ai/askalgo" class="btn btn-ghost" target="_blank" rel="noopener">Ask The Algo</a>
+        <a href="${cta.secondaryUrl}" class="btn btn-ghost" target="_blank" rel="noopener">${cta.secondaryLabel}</a>
       </div>
     </aside>
   `;
