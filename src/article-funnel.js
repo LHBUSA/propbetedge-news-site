@@ -19,8 +19,10 @@ const CAMPAIGNS = {
     eyebrow: '🏈 PROPBETEDGE NFL',
     title: 'Take this story into NFL Intelligence.',
     sub: 'Continue into Model Lab, Market Watch, line simulation, SGP research and the deeper football intelligence layer.',
-    href: 'https://nfl.propbetedge.ai',
-    cta: 'Open NFL Intelligence →',
+    href: 'https://nfl.propbetedge.ai/#picks',
+    cta: 'NFL Picks This Week →',
+    secondaryHref: 'https://nfl.propbetedge.ai/#propboard',
+    secondaryCta: 'See Live Prop Board',
   },
   nba: {
     eyebrow: '🏀 PROPBETEDGE NBA · COMING SOON',
