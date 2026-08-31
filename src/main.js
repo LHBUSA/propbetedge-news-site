@@ -7,6 +7,7 @@ import './styles/pbe-personalization-polish.css';
 import './styles/pbe-header-league-group.css';
 import './styles/pbe-scene-preview-fix.css';
 import './styles/pbe-background-assets.css';
+import './styles/pbe-intelligence-graph.css';
 import { initBackgroundSelector } from './background-selector.js';
 import { initNflLaunchPriority } from './nfl-launch-priority.js';
 import { initSiteEnhancements } from './site-enhancements.js';
