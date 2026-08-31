@@ -7,27 +7,15 @@
  *      the current article). Plain-text list, sport tag, relative time.
  *
  *   2. MODEL NOTES — articles where take.advice exists and impact_score >= 3.
- *      Shows the bet_advice line in italic — the bettor angle no other site
- *      has. Sourced client-side from the same homepage feed (zero new infra).
+ *      Shows the bettor angle sourced from the same homepage feed.
  *
- *   3. PICKS CTA — one soft block at the bottom linking to mlb.propbetedge.ai.
- *      ESPN-style: rail's job is adjacent value, not aggressive conversion.
- *      The score strip already does aggressive teasing site-wide.
- *
- * USAGE — from article.js:
- *
- *     import { renderRailShell, mountArticleRail } from '../components/right-rail.js'
- *     // ...inside renderArticle, after main HTML is in place:
- *     mountArticleRail({ currentSlug: article.slug, currentSport: article.sport })
- *
- * The shell renders synchronously inside the article.js layout. The mount
- * fetches data via api.homepage() (already cached on most page loads) and
- * paints both zones. No new API endpoints. No new exports anywhere else.
+ *   3. SPORT-NATIVE CTA — the conversion block is rendered for the sport being
+ *      read. NFL never renders MLB copy or an MLB destination first.
  */
 
 import { api } from '../api.js'
 
-const SPORT_LABELS   = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', nhl: 'NHL' }
+const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', nhl: 'NHL' }
 
 const PROP_TYPE_LABELS = {
   k_prop: 'Strikeouts',
@@ -41,6 +29,44 @@ const PROP_TYPE_LABELS = {
   moneyline: 'Moneyline',
 }
 
+const RAIL_CTAS = {
+  mlb: {
+    eyebrow: '⚾ PROPBETEDGE MLB · LIVE',
+    title: 'Take this story into MLB Intelligence.',
+    sub: 'Move from the headline into live game context, player research, model analysis and prop intelligence.',
+    href: 'https://mlb.propbetedge.ai',
+    label: 'Open MLB Intelligence →',
+  },
+  nfl: {
+    eyebrow: '🏈 PROPBETEDGE NFL',
+    title: 'Take this story into NFL Intelligence.',
+    sub: 'Continue into the live Prop Board, Model Lab, Market Watch, simulation and deeper football intelligence.',
+    href: 'https://nfl.propbetedge.ai/#propboard',
+    label: 'See Live Prop Board →',
+  },
+  nba: {
+    eyebrow: '🏀 PROPBETEDGE NBA · COMING SOON',
+    title: 'Basketball is next on the intelligence network.',
+    sub: 'Keep following NBA coverage while the full basketball intelligence product comes online.',
+    href: '/news/nba',
+    label: 'Follow NBA Coverage →',
+  },
+  nhl: {
+    eyebrow: '🏒 PROPBETEDGE NHL · COMING SOON',
+    title: 'Hockey is next on the intelligence network.',
+    sub: 'Keep following NHL coverage while the full hockey intelligence product comes online.',
+    href: '/news/nhl',
+    label: 'Follow NHL Coverage →',
+  },
+  network: {
+    eyebrow: '⚡ PROPBETEDGE SPORTS NETWORK',
+    title: 'Go deeper than the headline.',
+    sub: 'Move from sports coverage into the connected PropBetEdge intelligence network.',
+    href: 'https://propbetedge.ai',
+    label: 'Explore PropBetEdge →',
+  },
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
  * STYLES — scoped under #pbe-article-rail
  * ────────────────────────────────────────────────────────────────────────*/
@@ -49,9 +75,6 @@ function injectStyles() {
   const s = document.createElement('style')
   s.id = 'pbe-article-rail-styles'
   s.textContent = `
-    /* Outer wrapper — flexbox layout that keeps the article at its natural
-       container-narrow reading width and adds the rail beside it on desktop.
-       Below 1100px, single column with article on top and rail below. */
     .article-with-rail {
       display: flex;
       flex-direction: column;
@@ -88,8 +111,6 @@ function injectStyles() {
         flex: 0 0 320px;
         width: 320px;
         max-width: 320px;
-        /* Rail starts at the top of the article hero photo. Clears the
-           back-link, meta row, full title block, dek, and byline. */
         margin-top: 520px;
       }
     }
@@ -103,7 +124,6 @@ function injectStyles() {
       min-width: 0;
     }
 
-    /* Each card */
     .par-card {
       background: var(--surface, rgba(255, 255, 255, 0.03));
       border: 1px solid var(--line, rgba(255, 255, 255, 0.08));
@@ -111,12 +131,10 @@ function injectStyles() {
       padding: 18px 18px 16px;
     }
 
-    /* Sticky behavior for the model notes + CTA — keeps the conversion lever
-       visible while the user reads. Top headlines scrolls naturally. */
     @media (min-width: 1100px) {
       .par-card.par-sticky {
         position: sticky;
-        top: 88px; /* 48px score strip + 40px breathing room */
+        top: 88px;
       }
     }
 
@@ -158,7 +176,6 @@ function injectStyles() {
       50% { opacity: 0.5; }
     }
 
-    /* ── Headlines list ──────────────────────────────────────────── */
     .par-headlines {
       display: flex;
       flex-direction: column;
@@ -181,7 +198,7 @@ function injectStyles() {
       font-size: 9.5px;
       font-weight: 700;
       letter-spacing: 0.08em;
-      color: #b8c2d4;  /* readable instead of near-invisible */
+      color: #b8c2d4;
       text-transform: uppercase;
       margin-bottom: 6px;
     }
@@ -189,9 +206,7 @@ function injectStyles() {
       color: #ffd24a;
       font-weight: 800;
     }
-    .par-headline-dot {
-      color: #64748b;
-    }
+    .par-headline-dot { color: #64748b; }
     .par-headline-title {
       font-size: 14px;
       font-weight: 600;
@@ -201,7 +216,6 @@ function injectStyles() {
       margin: 0;
     }
 
-    /* ── Model Notes ─────────────────────────────────────────────── */
     .par-notes {
       display: flex;
       flex-direction: column;
@@ -244,21 +258,19 @@ function injectStyles() {
       letter-spacing: 0.1em;
       font-weight: 800;
     }
-    .par-note-impact {
-      color: #b8c2d4;
-    }
+    .par-note-impact { color: #b8c2d4; }
     .par-note-advice {
       font-size: 13px;
       font-weight: 500;
       font-style: italic;
       line-height: 1.55;
-      color: #f5f8ff;  /* full white for max contrast against dark bg */
+      color: #f5f8ff;
       margin: 0 0 8px;
     }
     .par-note-source {
       font-size: 10.5px;
       font-weight: 500;
-      color: #b8c2d4;  /* readable mid-gray instead of near-invisible */
+      color: #b8c2d4;
       margin: 0;
       line-height: 1.4;
     }
@@ -268,7 +280,6 @@ function injectStyles() {
       font-weight: 700;
     }
 
-    /* ── Picks CTA ───────────────────────────────────────────────── */
     .par-cta {
       background: linear-gradient(155deg, rgba(255, 210, 74, 0.08), rgba(255, 210, 74, 0.02));
       border: 1px solid rgba(255, 210, 74, 0.25);
@@ -315,7 +326,6 @@ function injectStyles() {
       box-shadow: 0 6px 20px rgba(255, 210, 74, 0.3);
     }
 
-    /* ── Loading + empty ─────────────────────────────────────────── */
     .par-skel {
       display: flex;
       flex-direction: column;
@@ -339,7 +349,6 @@ function injectStyles() {
       padding: 10px 0;
     }
 
-    /* Mobile — Top Headlines collapses but stays compact, model notes stay full */
     @media (max-width: 640px) {
       #pbe-article-rail { gap: 18px; }
       .par-card { padding: 14px 14px 12px; }
@@ -375,7 +384,6 @@ function relativeTime(iso) {
 }
 
 function articleHref(article) {
-  // Match the routing pattern article.js uses
   return article.url || `/news/${article.sport}/${article.slug}`
 }
 
@@ -385,9 +393,12 @@ function topPropType(article) {
   return PROP_TYPE_LABELS[types[0]] || types[0].replace(/_/g, ' ')
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
- * RENDERING
- * ────────────────────────────────────────────────────────────────────────*/
+function activeSportFromPath() {
+  if (typeof window === 'undefined') return null
+  const match = String(window.location.pathname || '').match(/^\/news\/(mlb|nfl|nba|nhl)(?:\/|$)/i)
+  return match?.[1]?.toLowerCase() || null
+}
+
 function renderHeadline(article) {
   const sport = (article.sport || '').toLowerCase()
   return `
@@ -424,16 +435,16 @@ function renderModelNote(article) {
 }
 
 function renderShellHTML() {
+  const sport = activeSportFromPath()
+  const cta = RAIL_CTAS[sport] || RAIL_CTAS.network
+  const external = /^https?:\/\//i.test(cta.href)
+
   return `
     <aside id="pbe-article-rail" role="complementary" aria-label="Related coverage and betting angles">
-
-      <!-- Zone 1: Top Headlines -->
       <section class="par-card" id="par-headlines-card">
         <header class="par-heading">
           <h2 class="par-heading-title">Top Headlines</h2>
-          <span class="par-heading-meta">
-            <span class="par-heading-pulse"></span>Live
-          </span>
+          <span class="par-heading-meta"><span class="par-heading-pulse"></span>Live</span>
         </header>
         <div class="par-headlines" id="par-headlines">
           <div class="par-skel">
@@ -447,9 +458,7 @@ function renderShellHTML() {
         </div>
       </section>
 
-      <!-- Zone 2 + 3 wrapper, sticky on desktop -->
       <div class="par-sticky-wrap">
-        <!-- Zone 2: Model Notes -->
         <section class="par-card par-sticky" id="par-notes-card">
           <header class="par-heading">
             <h2 class="par-heading-title">Model Notes</h2>
@@ -464,13 +473,12 @@ function renderShellHTML() {
           </div>
         </section>
 
-        <!-- Zone 3: Soft CTA -->
-        <section class="par-card par-cta" id="par-cta-card">
-          <div class="par-cta-eyebrow">⚡ Tonight's Slate</div>
-          <h2 class="par-cta-title">See live MLB picks.</h2>
-          <p class="par-cta-sub">The same model behind Model Notes grades picks against live odds, every night.</p>
-          <a href="https://mlb.propbetedge.ai" class="par-cta-btn" target="_blank" rel="noopener">
-            View tonight's picks →
+        <section class="par-card par-cta" id="par-cta-card" data-pbe-render-sport="${escape(sport || 'network')}">
+          <div class="par-cta-eyebrow">${escape(cta.eyebrow)}</div>
+          <h2 class="par-cta-title">${escape(cta.title)}</h2>
+          <p class="par-cta-sub">${escape(cta.sub)}</p>
+          <a href="${escape(cta.href)}" class="par-cta-btn"${external ? ' target="_blank" rel="noopener"' : ''}>
+            ${escape(cta.label)}
           </a>
         </section>
       </div>
@@ -478,29 +486,13 @@ function renderShellHTML() {
   `
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
- * PUBLIC API
- * ────────────────────────────────────────────────────────────────────────*/
-
-/**
- * Synchronous shell — drop into the article.js layout where the rail goes.
- * Renders skeleton placeholders. mountArticleRail() populates with live data.
- */
 export function renderRailShell() {
   return renderShellHTML()
 }
 
-/**
- * Fetch + paint. Call once after the page renders.
- *
- * @param {object} opts
- * @param {string} opts.currentSlug  - the slug of the article being read (excluded from headlines)
- * @param {string} opts.currentSport - sport of the current article (used to bias model notes)
- */
 export async function mountArticleRail({ currentSlug, currentSport } = {}) {
   injectStyles()
 
-  // If shell isn't on the page, bail silently — nothing to populate
   if (!document.getElementById('pbe-article-rail')) return
 
   let articles = []
@@ -513,16 +505,12 @@ export async function mountArticleRail({ currentSlug, currentSport } = {}) {
     return
   }
 
-  // Exclude the article being read
   const others = articles.filter(a => a.slug !== currentSlug)
 
-  // Top Headlines: latest 5 by published_at, mixed sports, current article excluded
   const headlines = [...others]
     .sort((a, b) => new Date(b.published_at) - new Date(a.published_at))
     .slice(0, 5)
 
-  // Model Notes: any article where take.advice exists and impact >= 3.
-  // Prefer the current sport but fall back to any sport if current sport is dry.
   const noteCandidates = others
     .filter(a => a.take?.advice && (a.take?.impact_score || 0) >= 3)
     .sort((a, b) => (b.take.impact_score || 0) - (a.take.impact_score || 0))
@@ -531,7 +519,6 @@ export async function mountArticleRail({ currentSlug, currentSport } = {}) {
     ? noteCandidates.filter(a => (a.sport || '').toLowerCase() === currentSport.toLowerCase())
     : []
 
-  // Show 3 same-sport notes if available, else mix in others up to 3 total
   let notes = sameSportNotes.slice(0, 3)
   if (notes.length < 3) {
     const filler = noteCandidates.filter(a => !notes.includes(a)).slice(0, 3 - notes.length)
