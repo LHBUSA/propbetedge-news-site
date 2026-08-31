@@ -1,0 +1,232 @@
+.pbe-impact-graph {
+  margin: 22px 0 30px;
+  overflow: hidden;
+  border: 1px solid rgba(20,17,13,.10);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 100% 0, rgba(212,175,55,.10), transparent 34%),
+    rgba(255,255,255,.88);
+  box-shadow: 0 12px 34px rgba(20,17,13,.055);
+}
+
+.pbe-impact-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 22px;
+  border-bottom: 1px solid rgba(20,17,13,.08);
+}
+
+.pbe-impact-head > div:first-child > span,
+.pbe-impact-read > span,
+.pbe-impact-node > span,
+.pbe-my-edge-head span,
+.pbe-my-edge-onboard > div:first-child > span,
+.pbe-my-edge-teamline span,
+.pbe-my-edge-story > span {
+  color: var(--gold-dark, #8a6b00);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.pbe-impact-head h2 {
+  margin: 5px 0 0;
+  color: var(--ink, #14110d);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 28px;
+  line-height: 1.08;
+}
+
+.pbe-impact-score {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #14110d;
+  color: #fff;
+}
+.pbe-impact-score strong { color: #d4af37; font: 900 21px/1 'JetBrains Mono', monospace; }
+.pbe-impact-score span { font: 800 8px/1 'JetBrains Mono', monospace; letter-spacing: .08em; }
+
+.pbe-impact-flow {
+  display: flex;
+  align-items: stretch;
+  gap: 7px;
+  padding: 18px 20px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.pbe-impact-node {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  min-width: 128px;
+  max-width: 190px;
+  padding: 11px 13px;
+  border: 1px solid rgba(20,17,13,.09);
+  border-radius: 11px;
+  background: #fff;
+  color: var(--ink, #14110d);
+  text-decoration: none;
+}
+.pbe-impact-node strong { font-size: 11px; line-height: 1.3; }
+.pbe-impact-story { min-width: 190px; background: #14110d; color: #fff; }
+.pbe-impact-story > span { color: #d4af37; }
+.pbe-impact-market { border-color: rgba(212,175,55,.30); background: rgba(212,175,55,.08); }
+.pbe-impact-node[href] { transition: transform .15s ease, box-shadow .15s ease; }
+.pbe-impact-node[href]:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(20,17,13,.09); }
+.pbe-impact-arrow { align-self: center; color: rgba(20,17,13,.30); font: 900 14px/1 'JetBrains Mono', monospace; }
+
+.pbe-impact-read {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 14px;
+  padding: 0 22px 18px;
+}
+.pbe-impact-read p { margin: 0; color: rgba(20,17,13,.72); font-size: 13px; line-height: 1.55; }
+
+.pbe-impact-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 20px;
+  border-top: 1px solid rgba(20,17,13,.07);
+  background: rgba(20,17,13,.025);
+}
+.pbe-impact-footer span { max-width: 610px; color: rgba(20,17,13,.48); font-size: 9px; line-height: 1.45; }
+.pbe-impact-footer a { flex: 0 0 auto; color: var(--gold-dark, #8a6b00); font-size: 10px; font-weight: 900; text-decoration: none; }
+
+.pbe-my-edge {
+  margin: 24px 0 34px;
+  padding: 0;
+}
+.pbe-my-edge-head,
+.pbe-my-edge-onboard {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+.pbe-my-edge-head h2,
+.pbe-my-edge-onboard h2 {
+  margin: 4px 0 0;
+  color: var(--ink, #14110d);
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(26px, 3.5vw, 38px);
+  line-height: 1.05;
+}
+.pbe-my-edge-head small { color: rgba(20,17,13,.45); font-size: 10px; font-weight: 700; }
+
+.pbe-my-edge-onboard {
+  align-items: center;
+  margin: 0;
+  padding: 22px 24px;
+  border: 1px solid rgba(212,175,55,.20);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 100% 0, rgba(212,175,55,.12), transparent 38%),
+    linear-gradient(145deg, #14110d, #201a13);
+  color: #fff;
+}
+.pbe-my-edge-onboard h2 { color: #fff; }
+.pbe-my-edge-onboard p { max-width: 680px; margin: 8px 0 0; color: rgba(255,255,255,.66); font-size: 12px; line-height: 1.55; }
+.pbe-my-edge-sports { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+.pbe-my-edge-sports a {
+  padding: 9px 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.pbe-my-edge-sports a:hover { border-color: rgba(212,175,55,.55); background: rgba(212,175,55,.10); }
+
+.pbe-my-edge-loading {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(20,17,13,.08);
+  border-radius: 14px;
+  color: rgba(20,17,13,.48);
+  font-size: 11px;
+}
+
+.pbe-my-edge-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.pbe-my-edge-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(20,17,13,.09);
+  border-radius: 14px;
+  background: rgba(255,255,255,.90);
+  box-shadow: 0 8px 24px rgba(20,17,13,.045);
+}
+.pbe-my-edge-teamline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(20,17,13,.07);
+}
+.pbe-my-edge-teamline img { width: 38px; height: 38px; flex: 0 0 38px; object-fit: contain; }
+.pbe-my-edge-teamline div { min-width: 0; }
+.pbe-my-edge-teamline strong { display: block; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink, #14110d); font-size: 12px; }
+
+.pbe-my-edge-story {
+  display: grid;
+  gap: 5px;
+  min-height: 112px;
+  padding: 14px;
+  color: var(--ink, #14110d);
+  text-decoration: none;
+}
+.pbe-my-edge-story strong { font-family: 'Playfair Display', Georgia, serif; font-size: 16px; line-height: 1.2; }
+.pbe-my-edge-story small { align-self: end; color: rgba(20,17,13,.42); font-size: 9px; font-weight: 700; }
+.pbe-my-edge-story.is-empty strong { color: rgba(20,17,13,.58); font-family: Inter, sans-serif; font-size: 12px; }
+.pbe-my-edge-hub {
+  display: block;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(20,17,13,.07);
+  color: var(--gold-dark, #8a6b00);
+  font-size: 9px;
+  font-weight: 900;
+  text-decoration: none;
+}
+.pbe-my-edge-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 9px;
+  color: rgba(20,17,13,.43);
+  font-size: 9px;
+}
+.pbe-my-edge-foot a { color: var(--gold-dark, #8a6b00); font-weight: 900; text-decoration: none; }
+
+@media (max-width: 980px) {
+  .pbe-my-edge-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .pbe-impact-head,
+  .pbe-impact-footer,
+  .pbe-my-edge-head,
+  .pbe-my-edge-onboard { align-items: flex-start; flex-direction: column; }
+  .pbe-impact-flow { padding-inline: 14px; }
+  .pbe-impact-read { grid-template-columns: 1fr; }
+  .pbe-impact-footer a { flex: 1 1 auto; }
+  .pbe-my-edge-grid { grid-template-columns: 1fr; }
+  .pbe-my-edge-sports { justify-content: flex-start; }
+}

@@ -1,6 +1,10 @@
 /**
  * src/router.js
  *
+ * v3.17 additions:
+ *   /team/:sport/:team        → connected team intelligence hub
+ *   /standings/:sport         → live standings with team entity links
+ *
  * v3.16 additions:
  *   /odds                     → public +EV edge board (fed by EV Finder Worker)
  *
@@ -8,8 +12,6 @@
  *   /news/page/N              → paginated all-news
  *   /news/:sport/page/N       → paginated per-sport
  *   Page 1 redirects to bare URL (canonicalization)
- *
- * Pre-existing routes unchanged.
  */
 
 import { renderHome } from './pages/home.js';
@@ -31,8 +33,11 @@ import { renderNhlPlayerPage } from './pages/player-nhl.js';
 import { renderNbaPlayerPage } from './pages/player-nba.js';
 import { renderNflPlayerPage } from './pages/player-nfl.js';
 import { renderOdds } from './pages/odds.js';
+import { renderTeamPage } from './pages/team.js';
+import { renderStandingsPage } from './pages/standings.js';
 
 const VALID_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl']);
+const DEFAULT_OG_IMAGE = 'https://propbetedge.ai/logo/pbe-full-600.png';
 
 function setMeta({ title, description, canonical, ogImage }) {
   if (title) document.title = title;
@@ -55,10 +60,10 @@ function setMeta({ title, description, canonical, ogImage }) {
     link.href = canonical;
     setOrCreateMeta('property', 'og:url', canonical);
   }
-  if (ogImage) {
-    setOrCreateMeta('property', 'og:image', ogImage);
-    setOrCreateMeta('name', 'twitter:image', ogImage);
-  }
+
+  const socialImage = ogImage || DEFAULT_OG_IMAGE;
+  setOrCreateMeta('property', 'og:image', socialImage);
+  setOrCreateMeta('name', 'twitter:image', socialImage);
 }
 
 function setOrCreateMeta(attr, name, value) {
@@ -85,7 +90,6 @@ function clearAndRoute() {
     return renderHome(root);
   }
 
-  // 🆕 v3.16 — /odds (public +EV edge board)
   if (path === '/odds') {
     setMeta({
       title: "Today's +EV Edges — PropBetEdge",
@@ -95,7 +99,6 @@ function clearAndRoute() {
     return renderOdds(root);
   }
 
-  // 🆕 v3.15 — /news/page/N (paginated all-news)
   const newsPageMatch = path.match(/^\/news\/page\/(\d+)$/);
   if (newsPageMatch) {
     const page = parseInt(newsPageMatch[1], 10);
@@ -106,7 +109,6 @@ function clearAndRoute() {
     return renderNewsIndex(root, page, setMeta);
   }
 
-  // 🆕 v3.15 — /news/:sport/page/N (paginated per-sport)
   const sportPageMatch = path.match(/^\/news\/([a-z]+)\/page\/(\d+)$/);
   if (sportPageMatch) {
     const sport = sportPageMatch[1].toLowerCase();
@@ -119,11 +121,8 @@ function clearAndRoute() {
     return renderSport(root, sport, page, setMeta);
   }
 
-  if (path === '/news') {
-    return renderNewsIndex(root, 1, setMeta);
-  }
+  if (path === '/news') return renderNewsIndex(root, 1, setMeta);
 
-  // 🆕 Live Games hub
   if (path === '/games') {
     setMeta({
       title: 'Live Games — PropBetEdge',
@@ -181,45 +180,23 @@ function clearAndRoute() {
   }
 
   const authorMatch = path.match(/^\/authors\/([a-z0-9-]+)$/);
-  if (authorMatch) {
-    const slug = authorMatch[1];
-    return renderAuthor(root, slug, setMeta);
-  }
+  if (authorMatch) return renderAuthor(root, authorMatch[1], setMeta);
 
-  if (path === '/editorial-standards') {
-    return renderEditorialStandards(root, setMeta);
-  }
+  if (path === '/editorial-standards') return renderEditorialStandards(root, setMeta);
 
   const teamMatch = path.match(/^\/team\/([a-z]+)\/([\w-]+)$/);
   if (teamMatch) {
     const sport = teamMatch[1].toLowerCase();
+    const teamSlug = teamMatch[2];
     if (!VALID_SPORTS.has(sport)) return renderNotFound(root);
-    setMeta({
-      title: `${sport.toUpperCase()} Team — PropBetEdge`,
-      description: 'Team page coming soon — roster, stats, schedule, standings.',
-    });
-    return renderComingSoon(root, {
-      kicker: `${sport.toUpperCase()} TEAM PAGE`,
-      title: 'Team pages launching soon',
-      dek: 'Roster, stats, schedule, and standings — coming next. For now, head back to live games or check the latest news.',
-      cta: { href: '/games', label: '← Back to live games' },
-    });
+    return renderTeamPage(root, sport, teamSlug, setMeta);
   }
 
   const standingsMatch = path.match(/^\/standings\/([a-z]+)$/);
   if (standingsMatch) {
     const sport = standingsMatch[1].toLowerCase();
     if (!VALID_SPORTS.has(sport)) return renderNotFound(root);
-    setMeta({
-      title: `${sport.toUpperCase()} Standings — PropBetEdge`,
-      description: 'Standings tables coming soon.',
-    });
-    return renderComingSoon(root, {
-      kicker: `${sport.toUpperCase()} STANDINGS`,
-      title: 'Standings tables coming soon',
-      dek: 'Division and conference standings, Wild Card races, and full season splits — launching next sprint.',
-      cta: { href: '/games', label: '← Back to live games' },
-    });
+    return renderStandingsPage(root, sport, setMeta);
   }
 
   const playerMatch = path.match(/^\/player\/([a-z]+)\/([\w-]+)$/);
@@ -235,29 +212,6 @@ function clearAndRoute() {
 
   setMeta({ title: 'Not found — PropBetEdge', description: 'Page not found.' });
   return renderNotFound(root);
-}
-
-function renderComingSoon(root, opts) {
-  root.innerHTML = `
-    <main>
-      <div class="container">
-        <div class="leaders-hero" style="margin-top:32px">
-          <div class="leaders-hero-mesh"></div>
-          <div class="leaders-hero-inner">
-            <div class="leaders-hero-kicker">
-              <span class="live-dot-big" style="background:var(--gold);box-shadow:0 0 0 0 rgba(212,175,55,0.5)"></span>
-              <span>${opts.kicker}</span>
-            </div>
-            <h1 class="leaders-hero-title">${opts.title}</h1>
-            <p class="leaders-hero-dek">${opts.dek}</p>
-            <p style="margin-top:18px">
-              <a href="${opts.cta.href}" style="color:var(--gold);font-size:15px;font-weight:600;text-decoration:none">${opts.cta.label}</a>
-            </p>
-          </div>
-        </div>
-      </div>
-    </main>
-  `;
 }
 
 export function navigate(href) {

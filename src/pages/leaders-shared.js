@@ -1,6 +1,6 @@
 /**
  * src/pages/leaders-shared.js
- * v3.12 — shared rendering primitives used by all 4 per-sport leader pages.
+ * v3.17 — shared rendering primitives used by all 4 per-sport leader pages.
  *
  * Centralizes the player card, leader row, hero, sport-tab strip, advanced-stat
  * upsell card, and computed-stat helpers so each sport file stays focused on
@@ -9,6 +9,7 @@
 
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
+import { getSportConfig } from '../sport-config.js';
 
 // ─── Hero ────────────────────────────────────────────────────────────────
 export function renderLeadersHero(sportLabel, dek, kickerSuffix = '') {
@@ -55,43 +56,48 @@ export function leadersPageShell(sportSlug, sportLabel, dek, bodyHtml, kickerSuf
         ${renderLeadersHero(sportLabel, dek, kickerSuffix)}
         ${renderSportTabStrip(sportSlug)}
         ${bodyHtml}
-        ${renderEdgeStrip()}
+        ${renderEdgeStrip(sportSlug)}
       </div>
     </main>
     ${renderFooter()}
   `;
 }
 
-// ─── Edge strip CTA (same on every leaders page) ───────────────────────
-export function renderEdgeStrip() {
+// ─── Sport-native intelligence strip ───────────────────────────────────
+export function renderEdgeStrip(sportSlug = 'nfl') {
+  const config = getSportConfig(sportSlug) || getSportConfig('nfl');
+  const productExternal = /^https?:\/\//i.test(config.productUrl || '');
   return `
     <section class="games-edge-strip">
       <div class="games-edge-grid">
         <div class="games-edge-cell">
           <div class="games-edge-icon">🎯</div>
-          <div class="games-edge-title">PropBetEdge Picks</div>
-          <div class="games-edge-dek">Daily AI-scored prop picks built on stats deeper than what's shown here.</div>
-          <a href="https://mlb.propbetedge.ai" class="games-edge-cta">See picks →</a>
+          <div class="games-edge-title">${config.label} Intelligence</div>
+          <div class="games-edge-dek">Take the stat board into the deeper PropBetEdge model and research experience for this league.</div>
+          <a href="${escapeAttr(config.productUrl)}" class="games-edge-cta"${productExternal ? ' target="_blank" rel="noopener"' : ''}>${escapeHtml(config.primaryCta)} →</a>
         </div>
         <div class="games-edge-cell">
           <div class="games-edge-icon">📡</div>
           <div class="games-edge-title">PropSports API</div>
-          <div class="games-edge-dek">47 endpoints · 4 sports · Statcast · model odds. Free demo key.</div>
-          <a href="https://propsports.proptechusa.ai" class="games-edge-cta">API docs →</a>
+          <div class="games-edge-dek">Multi-sport scores, stats and structured sports data for applications and automated workflows.</div>
+          <a href="https://propsports.proptechusa.ai" class="games-edge-cta" target="_blank" rel="noopener">API docs →</a>
         </div>
         <div class="games-edge-cell">
-          <div class="games-edge-icon">🔒</div>
-          <div class="games-edge-title">Free MLB for life</div>
-          <div class="games-edge-dek">Subscribe before May 15 to lock in MLB picks free forever. After: $29/mo.</div>
-          <a href="https://mlb.propbetedge.ai" class="games-edge-cta">Subscribe →</a>
+          <div class="games-edge-icon">🏟️</div>
+          <div class="games-edge-title">${config.label} Team Hubs</div>
+          <div class="games-edge-dek">Move from league leaders into standings, team identity, schedules, rosters and connected coverage.</div>
+          <a href="/standings/${escapeAttr(sportSlug)}" class="games-edge-cta">Explore ${config.label} teams →</a>
         </div>
       </div>
     </section>
   `;
 }
 
-// ─── Premium analytics upsell card (advanced stats blocked by CORS) ────
+// ─── Advanced-stat promotion, always matched to the current league ─────
 export function renderPremiumStatCard(label, color, statName, dek) {
+  const sport = String(window.location.pathname || '').match(/^\/leaders\/(mlb|nfl|nba|nhl)(?:\/|$)/i)?.[1]?.toLowerCase() || 'mlb';
+  const config = getSportConfig(sport) || getSportConfig('mlb');
+  const productExternal = /^https?:\/\//i.test(config.productUrl || '');
   return `
     <div class="leader-card leader-card-premium">
       <div class="leader-card-head" style="border-color:${color}33">
@@ -101,7 +107,7 @@ export function renderPremiumStatCard(label, color, statName, dek) {
       <div class="premium-card-body">
         <div class="premium-stat-name">${statName}</div>
         <div class="premium-dek">${dek}</div>
-        <a href="https://mlb.propbetedge.ai" class="premium-cta">Premium analytics in picks app →</a>
+        <a href="${escapeAttr(config.productUrl)}" class="premium-cta"${productExternal ? ' target="_blank" rel="noopener"' : ''}>${escapeHtml(config.primaryCta)} →</a>
       </div>
     </div>
   `;
