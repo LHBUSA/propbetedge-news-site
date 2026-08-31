@@ -40,7 +40,7 @@ export function renderHeader() {
           <a href="/news/nba" class="nav-link ${sportPathActive(path, 'nba') ? 'active' : ''}">NBA</a>
           <a href="/news/nhl" class="nav-link ${sportPathActive(path, 'nhl') ? 'active' : ''}">NHL</a>
         </div>
-        <a href="/" class="masthead-logo" aria-label="PropBetEdge home">
+        <div class="masthead-logo" aria-label="PropBetEdge">
           <img
             src="/logo/pbe-mark-160.png"
             srcset="/logo/pbe-mark-80.png 1x, /logo/pbe-mark-160.png 2x, /logo/pbe-mark-240.png 3x"
@@ -49,8 +49,11 @@ export function renderHeader() {
             width="207" height="80"
           />
           <span class="tagline">Sports News &middot; Prop-Bet Intelligence</span>
-        </a>
+        </div>
         <div class="masthead-right masthead-tools" aria-label="PropBetEdge tools">
+          <button type="button" class="nav-link pbe-search-trigger" data-pbe-search-open aria-label="Search PropBetEdge">
+            <span>Search</span><kbd>/</kbd>
+          </button>
           <a href="/games" class="nav-link live-link ${isLive ? 'active' : ''}">PBEcast</a>
           <a href="/leaders" class="nav-link ${isLeaders ? 'active' : ''}">Leaders</a>
           <a href="/odds" class="nav-link edges-link ${isOdds ? 'active' : ''}">
