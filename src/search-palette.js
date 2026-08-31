@@ -12,6 +12,7 @@ let records = [];
 let selectedIndex = 0;
 let indexPromise = null;
 let teamCacheAt = 0;
+let lastFocused = null;
 
 export function initSearchPalette() {
   if (installed || typeof document === 'undefined') return;
@@ -34,6 +35,10 @@ function handleGlobalKeydown(event) {
     if (event.key === 'Escape') {
       event.preventDefault();
       closeSearch();
+      return;
+    }
+    if (event.key === 'Tab') {
+      trapFocus(event);
       return;
     }
     if (event.key === 'ArrowDown') {
@@ -99,7 +104,10 @@ function ensurePalette() {
   status = overlay.querySelector('.pbe-search-status');
 
   overlay.addEventListener('click', (event) => {
-    if (event.target?.closest?.('[data-pbe-search-close]')) closeSearch();
+    if (event.target?.closest?.('[data-pbe-search-close]')) {
+      closeSearch();
+      return;
+    }
     const row = event.target?.closest?.('[data-search-index]');
     if (row) {
       selectedIndex = Number(row.dataset.searchIndex) || 0;
@@ -111,6 +119,7 @@ function ensurePalette() {
 
 async function openSearch() {
   ensurePalette();
+  if (!overlay.classList.contains('is-open')) lastFocused = document.activeElement;
   overlay.classList.add('is-open');
   overlay.setAttribute('aria-hidden', 'false');
   document.documentElement.classList.add('pbe-search-open');
@@ -136,6 +145,26 @@ function closeSearch() {
   overlay.classList.remove('is-open');
   overlay.setAttribute('aria-hidden', 'true');
   document.documentElement.classList.remove('pbe-search-open');
+  if (lastFocused instanceof HTMLElement && document.contains(lastFocused)) {
+    window.setTimeout(() => lastFocused.focus({ preventScroll: true }), 0);
+  }
+}
+
+function trapFocus(event) {
+  const dialog = overlay?.querySelector('.pbe-search-dialog');
+  if (!dialog) return;
+  const focusable = [...dialog.querySelectorAll('button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')]
+    .filter((node) => !node.hidden && node.getClientRects().length);
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 async function buildIndex() {
@@ -202,6 +231,7 @@ function articleRecord(article) {
 
 function buildStaticRecords() {
   const core = [
+    { type: 'home', eyebrow: 'PROPBETEDGE', title: 'PropBetEdge Home', subtitle: 'Your sports news and intelligence front page', href: '/', keywords: ['home', 'front page', 'my edge', 'propbetedge'] },
     { type: 'tool', eyebrow: 'PBE TOOL', title: 'PBEcast Live Games', subtitle: 'Live scores and game centers across every league', href: '/games', keywords: ['scores', 'live games', 'game center', 'pbecast'] },
     { type: 'tool', eyebrow: 'PBE TOOL', title: 'Stat Leaders', subtitle: 'League leaders, advanced stats and player intelligence', href: '/leaders', keywords: ['leaders', 'stats', 'players'] },
     { type: 'tool', eyebrow: 'PBE TOOL', title: 'Today’s Edges', subtitle: 'Current +EV intelligence and model edges', href: '/odds', keywords: ['odds', 'edges', 'ev', 'props', 'model'] },
@@ -217,7 +247,7 @@ function buildStaticRecords() {
 }
 
 function renderQuickLinks() {
-  const quick = buildStaticRecords().slice(0, 7);
+  const quick = buildStaticRecords().slice(0, 8);
   selectedIndex = 0;
   list.innerHTML = `
     <div class="pbe-search-section-label">Jump anywhere</div>
@@ -234,19 +264,22 @@ function renderResults() {
     return;
   }
 
-  const ranked = records
+  const ranked = rankedResults(query);
+  selectedIndex = 0;
+  status.textContent = ranked.length ? `${ranked.length} best matches` : 'No exact match in the current PBE index';
+  list.innerHTML = ranked.length
+    ? ranked.map((record, index) => renderRecord(record, index)).join('')
+    : `<div class="pbe-search-empty"><strong>No match yet.</strong><span>Try a team, player name, league, headline, “standings”, “leaders”, or “edges”.</span></div>`;
+  paintSelection();
+}
+
+function rankedResults(query) {
+  return records
     .map((record) => ({ record, score: scoreRecord(record, query) }))
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score || recentFirst(a.record, b.record))
     .slice(0, MAX_RESULTS)
     .map((item) => item.record);
-
-  selectedIndex = 0;
-  status.textContent = ranked.length ? `${ranked.length} best matches` : 'No exact match in the current PBE index';
-  list.innerHTML = ranked.length
-    ? ranked.map((record, index) => renderRecord(record, index, query)).join('')
-    : `<div class="pbe-search-empty"><strong>No match yet.</strong><span>Try a team, player name, league, headline, “standings”, “leaders”, or “edges”.</span></div>`;
-  paintSelection();
 }
 
 function scoreRecord(record, query) {
@@ -311,13 +344,7 @@ function activateSelected() {
   const row = rows[selectedIndex];
   if (!row) return;
   const query = normalize(input?.value || '');
-  const resultSet = query
-    ? records.map((record) => ({ record, score: scoreRecord(record, query) }))
-      .filter((item) => item.score > 0)
-      .sort((a, b) => b.score - a.score || recentFirst(a.record, b.record))
-      .slice(0, MAX_RESULTS)
-      .map((item) => item.record)
-    : buildStaticRecords().slice(0, 7);
+  const resultSet = query ? rankedResults(query) : buildStaticRecords().slice(0, 8);
   const record = resultSet[selectedIndex];
   if (!record) return;
 
@@ -357,6 +384,7 @@ function recentFirst(a, b) {
 
 function iconFor(type, sport) {
   if (sport && SPORT_CONFIG[sport]) return SPORT_CONFIG[sport].emoji;
+  if (type === 'home') return '⌂';
   if (type === 'story' || type === 'news') return '✦';
   if (type === 'team') return '◆';
   if (type === 'standings') return '▥';
