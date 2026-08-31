@@ -29,13 +29,19 @@ function syncReadingExperience() {
     return;
   }
 
+  const sport = match[1].toLowerCase();
   const page = document.querySelector('.article-page');
   const hero = page?.querySelector('.article-hero');
   const bodySegments = [...(page?.querySelectorAll('.article-body') || [])];
   if (!page || !hero || !bodySegments.length) return;
 
-  const key = `${match[1].toLowerCase()}:${decodeURIComponent(match[2])}`;
+  const key = `${sport}:${decodeURIComponent(match[2])}`;
   if (activeArticleKey === key && document.querySelector('.pbe-reading-progress')) {
+    // Entity imagery is hydrated asynchronously by site-enhancements. Keep
+    // checking the same article so team chips become real navigation as soon
+    // as they arrive without rebuilding the rest of the reading UI.
+    wireTeamEntityLinks(sport);
+    if (!document.querySelector('.pbe-article-outline')) addOutline(page, bodySegments);
     scheduleProgress();
     return;
   }
@@ -45,7 +51,7 @@ function syncReadingExperience() {
   addProgressBar();
   addReadTime(hero, bodySegments);
   addOutline(page, bodySegments);
-  wireTeamEntityLinks(match[1].toLowerCase());
+  wireTeamEntityLinks(sport);
   scheduleProgress();
 }
 
@@ -78,6 +84,7 @@ function addReadTime(hero, bodySegments) {
 }
 
 function addOutline(page, bodySegments) {
+  if (page.querySelector('.pbe-article-outline')) return;
   const headings = bodySegments
     .flatMap((segment) => [...segment.querySelectorAll('h2, h3')])
     .filter((heading) => String(heading.textContent || '').trim().length > 2)
