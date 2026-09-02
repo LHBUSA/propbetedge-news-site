@@ -59,7 +59,7 @@ export async function renderEditorialStandards(root, setMeta) {
           <p class="editorial-subtitle">
             How PropBetEdge produces, reviews, and stands behind every article we publish.
           </p>
-          <p class="editorial-meta">Last updated: May 7, 2026</p>
+          <p class="editorial-meta">Last updated: September 2, 2026</p>
         </header>
 
         <section class="editorial-section">
@@ -87,7 +87,7 @@ export async function renderEditorialStandards(root, setMeta) {
             <li><strong>Prop-bet relevance.</strong> Articles are filtered for prop-bet impact. We don't publish recap content for the sake of volume.</li>
             <li><strong>Fact-first, opinion second.</strong> Statistical claims are verifiable. Our editorial takes are clearly labeled as analysis, not fact.</li>
             <li><strong>No undisclosed conflicts.</strong> Affiliate links to sportsbooks (DraftKings, FanDuel, etc.) are clearly disclosed. We don't pretend to be neutral when we have skin in the game.</li>
-            <li><strong>Real bylines.</strong> Articles are bylined by their actual author — human (Justin Erickson, Donneal Green, Eric Esters, Ty Whitney, Erik Schwartz) or our editorial system (PropBetEdge Editorial Team).</li>
+            <li><strong>Real bylines.</strong> Articles are bylined by their actual author — human (Justin Erickson, Eric Esters, Ty Whitney, Erik Schwartz) or our editorial system (PropBetEdge Editorial Team).</li>
           </ul>
         </section>
 
@@ -103,10 +103,10 @@ export async function renderEditorialStandards(root, setMeta) {
             with structured editorial frameworks, and human review on the strategic angles.
           </p>
           <p>
-            <strong>Articles bylined under a human author</strong> (Justin Erickson, Donneal Green, Eric
-            Esters, Ty Whitney, Erik Schwartz) reflect that author's direct work and editorial
-            judgment. AI tools may be used for research, fact-checking, or drafting assistance,
-            but the final analysis, picks, and betting angles are the author's own.
+            <strong>Articles bylined under a human author</strong> (Justin Erickson, Eric Esters, Ty Whitney,
+            Erik Schwartz) reflect that author's direct work and editorial judgment. AI tools may be
+            used for research, fact-checking, or drafting assistance, but the final analysis, picks,
+            and betting angles are the author's own.
           </p>
           <p>
             We don't believe AI assistance is something to hide. We believe it's something to do
@@ -210,7 +210,7 @@ export async function renderEditorialStandards(root, setMeta) {
         <footer class="editorial-footer-note">
           <p>
             These standards are living. We update them as our editorial operation evolves,
-            and we date every change. Last updated: May 7, 2026.
+            and we date every change. Last updated: September 2, 2026.
           </p>
         </footer>
 
