@@ -12,10 +12,16 @@ async function get(path) {
 const FUTURE_SKEW_MS = 2 * 60 * 1000;
 const STALE_FALLBACK_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_HOME_AGE_MS = 24 * 60 * 60 * 1000;
+const RETIRED_AUTHORS = new Set(['donneal green']);
 
 function validPastTs(value, now = Date.now()) {
   const ts = new Date(value).getTime();
   return Number.isFinite(ts) && ts <= now + FUTURE_SKEW_MS ? ts : null;
+}
+
+function isRetiredAuthor(article) {
+  const name = String(article?.author || '').trim().toLowerCase();
+  return name && RETIRED_AUTHORS.has(name);
 }
 
 // Correct invalid/future published_at values using a trustworthy timestamp
@@ -81,6 +87,7 @@ function normalizeArticleList(data, { maxAgeMs = null, limit = null } = {}) {
 
   const now = Date.now();
   let articles = data.articles
+    .filter((article) => !isRetiredAuthor(article))
     .map((article) => normalizeArticleImage(normalizeArticleDate(article, now)))
     .filter(Boolean)
     .sort((a, b) => {
@@ -136,9 +143,10 @@ export const api = {
 
   article: async (slug) => {
     const data = await get(`/news/article/${encodeURIComponent(slug)}`);
-    return data?.article
-      ? { ...data, article: normalizeArticleImage(normalizeArticleDate(data.article)) }
-      : data;
+    if (!data?.article || isRetiredAuthor(data.article)) {
+      return data ? { ...data, article: null } : data;
+    }
+    return { ...data, article: normalizeArticleImage(normalizeArticleDate(data.article)) };
   },
 
   sports: () => get('/news/sports'),
