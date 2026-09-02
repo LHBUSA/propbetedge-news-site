@@ -12,16 +12,28 @@ async function get(path) {
 const FUTURE_SKEW_MS = 2 * 60 * 1000;
 const STALE_FALLBACK_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_HOME_AGE_MS = 24 * 60 * 60 * 1000;
-const RETIRED_AUTHORS = new Set(['donneal green']);
+const RETIRED_AUTHOR_FINGERPRINTS = new Set([2793981073]);
 
 function validPastTs(value, now = Date.now()) {
   const ts = new Date(value).getTime();
   return Number.isFinite(ts) && ts <= now + FUTURE_SKEW_MS ? ts : null;
 }
 
+function authorFingerprint(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return null;
+
+  let hash = 2166136261;
+  for (let i = 0; i < normalized.length; i++) {
+    hash ^= normalized.charCodeAt(i);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return hash;
+}
+
 function isRetiredAuthor(article) {
-  const name = String(article?.author || '').trim().toLowerCase();
-  return name && RETIRED_AUTHORS.has(name);
+  const fingerprint = authorFingerprint(article?.author);
+  return fingerprint !== null && RETIRED_AUTHOR_FINGERPRINTS.has(fingerprint);
 }
 
 // Correct invalid/future published_at values using a trustworthy timestamp
