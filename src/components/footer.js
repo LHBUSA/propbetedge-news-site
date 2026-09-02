@@ -50,7 +50,6 @@ export function renderFooter() {
           <div class="footer-col">
             <h4>✍️ Editorial</h4>
             <a href="/authors/justin-erickson">Justin Erickson</a>
-            <a href="/authors/donneal-green">Donneal Green</a>
             <a href="/authors/eric-esters">Eric Esters</a>
             <a href="/authors/ty-whitney">Ty Whitney</a>
             <a href="/authors/erik-schwartz">Erik Schwartz</a>
