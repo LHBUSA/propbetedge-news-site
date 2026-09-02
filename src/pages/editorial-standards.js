@@ -134,7 +134,7 @@ export async function renderEditorialStandards(root, setMeta) {
             <li><strong>Factual errors</strong> (player stats, dates, scores, names) are corrected within the article and noted at the bottom with the date of correction.</li>
             <li><strong>Significant errors</strong> that materially change a pick or analysis are flagged at the top of the article in a clearly labeled correction notice.</li>
             <li><strong>Pick results</strong> are graded honestly — if a pick loses, it loses. We don't quietly delete cold weeks.</li>
-            <li><strong>Reader-submitted corrections</strong> are reviewed within 24 hours. Email <a href="mailto:editorial@propbetedge.ai">editorial@propbetedge.ai</a> with the article URL and the issue.</li>
+            <li><strong>Reader-submitted corrections</strong> are reviewed within 24 hours. Email <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a> with the article URL and the issue.</li>
           </ul>
         </section>
 
@@ -144,7 +144,7 @@ export async function renderEditorialStandards(root, setMeta) {
             We want to hear from you when we get it right and especially when we get it wrong.
           </p>
           <ul class="editorial-list">
-            <li><strong>Email:</strong> <a href="mailto:editorial@propbetedge.ai">editorial@propbetedge.ai</a> for editorial feedback, corrections, or tips.</li>
+            <li><strong>Email:</strong> <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a> for editorial feedback, corrections, or tips.</li>
             <li><strong>Discord:</strong> Join our community to discuss picks, debate angles, and call us out in real time.</li>
             <li><strong>X / Twitter:</strong> <a href="https://x.com/propbetedgeai" target="_blank" rel="noopener">@propbetedgeai</a> for public discussion.</li>
             <li><strong>Reddit:</strong> <a href="https://www.reddit.com/r/PropBetEdge/" target="_blank" rel="noopener">r/PropBetEdge</a> for longer-form community conversation.</li>
@@ -201,9 +201,9 @@ export async function renderEditorialStandards(root, setMeta) {
             and IntelligentSTR.com.
           </p>
           <p>
-            <strong>Editorial inquiries:</strong> <a href="mailto:editorial@propbetedge.ai">editorial@propbetedge.ai</a><br>
-            <strong>Business inquiries:</strong> <a href="mailto:hello@propbetedge.ai">hello@propbetedge.ai</a><br>
-            <strong>Press:</strong> <a href="mailto:press@propbetedge.ai">press@propbetedge.ai</a>
+            <strong>Editorial inquiries:</strong> <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a><br>
+            <strong>Business inquiries:</strong> <a href="mailto:hello@proptechusa.ai">hello@proptechusa.ai</a><br>
+            <strong>Press:</strong> <a href="mailto:press@proptechusa.ai">press@proptechusa.ai</a>
           </p>
         </section>
 
