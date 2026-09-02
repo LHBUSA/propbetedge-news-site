@@ -3,7 +3,6 @@
  * Author profile page — bio, role, latest articles
  *
  * Routes: /authors/justin-erickson
- *         /authors/donneal-green
  *         /authors/eric-esters
  *         /authors/erik-schwartz
  *         /authors/ty-whitney
@@ -53,31 +52,6 @@ When he writes about sports, the lens is always the same: where is the market mi
     location: 'Saint Paul, MN',
     initials: 'JE',
     accent: 'gold',
-  },
-  'donneal-green': {
-    name: 'Donneal Green',
-    role: 'VP, Player Markets & Picks',
-    title: 'Vice President of Player Markets, PropBetEdge',
-    bio: `Donneal Green is the Vice President of Player Markets at PropBetEdge, leading the daily pick generation operation across MLB, NFL, NBA, and NHL. He is the architect and human voice behind PropBetEdge's K Props lineup — the strikeout-prop product that has become the platform's signature MLB offering — and works the early-morning slate review every day before lineups are even confirmed.
-
-Donneal's edge is methodical. Where most analysts default to narrative-driven picks ("this guy is due"), he cross-references current-form metrics with situational splits, umpire profiles, park-factor adjustments, and the kind of micro-news — a pitcher's velocity dipping in his last bullpen, a hitter quietly shifting his stance in BP — that reshapes lines hours before first pitch but rarely makes the box score recap. His approach is closer to a sportsbook trader than a typical handicapper: find where the market is slow to price information, then move before it adjusts.
-
-His MLB strikeout work draws on Statcast-grade pitcher data, recent CSW% trends, and lineup handedness splits — but he writes across all four sports with the same lens. On NFL, he tracks running back workload distribution and target share shifts that move under-the-radar receivers' totals. On NBA, he focuses on rotation reads and minutes restrictions in playoff series. On NHL, he leans into goaltender form and shot-share matchups.
-
-When Donneal publishes a pick, it has been pressure-tested against the data — not just the narrative. That's the standard at PropBetEdge.`,
-    expertise: [
-      'MLB strikeout props & K Props daily lineup',
-      'NFL workload & target share analysis',
-      'Pitcher matchup modeling (CSW%, swstr%, recent form)',
-      'Multi-sport prop research & line value timing',
-    ],
-    credentials: [
-      'VP, Player Markets — PropBetEdge',
-      'Lead architect of the K Props daily product',
-      'Daily slate review across MLB, NFL, NBA, NHL',
-    ],
-    initials: 'DG',
-    accent: 'algo',
   },
   'eric-esters': {
     name: 'Eric Esters',
@@ -163,7 +137,7 @@ Ty's belief: the prop-bet market is not efficient, but it's nowhere near as inef
 
 Our editorial methodology is intentionally transparent. Every article published under this byline goes through three phases: (1) source identification and verification against the original reporting, (2) AI-assisted drafting with a structured editorial framework focused on prop-bet impact, and (3) human review on the strategic conclusions, betting angles, and any data citations. We disclose AI assistance openly because we believe readers deserve to know how their information is produced — and because we believe the future of sports media is hybrid, not adversarial, when done with rigor.
 
-This byline covers the rapid-response volume work that no single human can produce in real time: breaking injury news with prop-impact analysis within minutes of the wire report, post-game implication coverage on yesterday's games, and the kind of cross-sport editorial response that keeps PropBetEdge readers ahead of the market. For deeper takes, daily picks, and signature columns, articles are published under the bylines of our human staff: <a href="/authors/justin-erickson">Justin Erickson</a>, <a href="/authors/donneal-green">Donneal Green</a>, <a href="/authors/eric-esters">Eric Esters</a>, <a href="/authors/erik-schwartz">Erik Schwartz</a>, and <a href="/authors/ty-whitney">Ty Whitney</a>.
+This byline covers the rapid-response volume work that no single human can produce in real time: breaking injury news with prop-impact analysis within minutes of the wire report, post-game implication coverage on yesterday's games, and the kind of cross-sport editorial response that keeps PropBetEdge readers ahead of the market. For deeper takes, daily picks, and signature columns, articles are published under the bylines of our human staff: <a href="/authors/justin-erickson">Justin Erickson</a>, <a href="/authors/eric-esters">Eric Esters</a>, <a href="/authors/erik-schwartz">Erik Schwartz</a>, and <a href="/authors/ty-whitney">Ty Whitney</a>.
 
 Our standards: <a href="/editorial-standards">read our editorial standards</a>.`,
     expertise: [
