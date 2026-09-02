@@ -195,10 +195,21 @@ export async function renderEditorialStandards(root, setMeta) {
         <section class="editorial-section" id="contact">
           <h2>Contact &amp; Ownership</h2>
           <p>
-            PropBetEdge is operated by <strong>PropTechUSA.ai</strong>, founded and owned by
-            <a href="/authors/justin-erickson">Justin Erickson</a>. PropTechUSA.ai also operates
-            PropData (property records API), IntelligentHomeBuying.com, IntelligentLandlord.com,
-            and IntelligentSTR.com.
+            <strong>PropBetEdge is owned, built, and operated by PropTechUSA.ai</strong>, the technology company founded and owned by
+            <a href="/authors/justin-erickson">Justin Erickson</a>. PropBetEdge is not a standalone media project — it is part of the broader
+            PropTechUSA.ai product and infrastructure ecosystem, built on the same engineering, automation, API, data, and AI operating capabilities
+            used across the company's production platforms.
+          </p>
+          <p>
+            That ecosystem includes <a href="https://propdata.proptechusa.ai" target="_blank" rel="noopener"><strong>PropData</strong></a>,
+            PropTechUSA.ai's property intelligence and real-estate data infrastructure platform, and
+            <a href="https://propsports.proptechusa.ai" target="_blank" rel="noopener"><strong>PropSports</strong></a>, its sports data and API infrastructure.
+            PropTechUSA.ai also operates IntelligentHomeBuying.com, IntelligentLandlord.com, and IntelligentSTR.com.
+          </p>
+          <p>
+            PropBetEdge's newsroom, sports intelligence products, APIs, models, automation, and technical infrastructure are developed and operated
+            within that larger PropTechUSA.ai organization. Editorial independence governs what we publish; ownership, engineering, infrastructure,
+            and business operations remain with PropTechUSA.ai.
           </p>
           <p>
             <strong>Editorial inquiries:</strong> <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a><br>
