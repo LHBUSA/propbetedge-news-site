@@ -48,7 +48,7 @@ When he writes about sports, the lens is always the same: where is the market mi
       'Author of 20+ books on technology, real estate & AI',
       'Architect of 230+ production Cloudflare Workers',
     ],
-    twitter: 'https://x.com/propbetedgeai',
+    twitter: 'https://x.com/MLBHRALERTSPBE',
     location: 'Saint Paul, MN',
     initials: 'JE',
     accent: 'gold',

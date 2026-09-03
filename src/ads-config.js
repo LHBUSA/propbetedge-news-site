@@ -45,7 +45,7 @@ export const PROPBET_LINKS = {
   learn:       'https://learn.propbetedge.ai',
   propsports:  'https://propsports.proptechusa.ai',
   discord:     'https://discord.gg/8rMxrMG5',
-  twitter:     'https://x.com/propbetedgeai',
+  twitter:     'https://x.com/MLBHRALERTSPBE',
   reddit:      'https://www.reddit.com/r/PropBetEdge/',
   linkedin:    'https://www.linkedin.com/company/propbetedge-ai/',
   api_news:    'https://rapidapi.com/propdata-propdata-default/api/propbetedge-sports-news-api',

@@ -28,7 +28,7 @@ const SITE = {
   logo: 'https://propbetedge.ai/logo/pbe-full-400.png',
   logoSquare: 'https://propbetedge.ai/favicon-192.png',
   foundingDate: '2026-02-01',
-  twitter: 'https://x.com/propbetedgeai',
+  twitter: 'https://x.com/MLBHRALERTSPBE',
   linkedin: 'https://www.linkedin.com/company/propbetedge-ai/',
   reddit: 'https://www.reddit.com/r/PropBetEdge/',
 };

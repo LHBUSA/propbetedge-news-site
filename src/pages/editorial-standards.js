@@ -146,7 +146,7 @@ export async function renderEditorialStandards(root, setMeta) {
           <ul class="editorial-list">
             <li><strong>Email:</strong> <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a> for editorial feedback, corrections, or tips.</li>
             <li><strong>Discord:</strong> Join our community to discuss picks, debate angles, and call us out in real time.</li>
-            <li><strong>X / Twitter:</strong> <a href="https://x.com/propbetedgeai" target="_blank" rel="noopener">@propbetedgeai</a> for public discussion.</li>
+            <li><strong>X / Twitter:</strong> <a href="https://x.com/MLBHRALERTSPBE" target="_blank" rel="noopener">@MLBHRALERTSPBE</a> for public discussion.</li>
             <li><strong>Reddit:</strong> <a href="https://www.reddit.com/r/PropBetEdge/" target="_blank" rel="noopener">r/PropBetEdge</a> for longer-form community conversation.</li>
           </ul>
           <p>
