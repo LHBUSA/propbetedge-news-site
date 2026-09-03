@@ -23,7 +23,7 @@ jobs:
           import re
 
           root = Path('.')
-          skip_dirs = {'.git', 'node_modules', 'dist', 'build', '.vercel'}
+          skip_dirs = {'.git', '.github', 'node_modules', 'dist', 'build', '.vercel'}
           text_exts = {'.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.html', '.css', '.json', '.md', '.yml', '.yaml', '.txt'}
           changed = []
           url_pattern = re.compile(r'https://(?:www\.)?(?:x\.com|twitter\.com)/propbetedgeai/?', re.I)
