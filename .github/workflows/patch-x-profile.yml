@@ -1,0 +1,60 @@
+name: Patch PropBetEdge X Profile
+
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-x-profile.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Replace retired PropBetEdge X profile
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.')
+          skip_dirs = {'.git', 'node_modules', 'dist', 'build', '.vercel'}
+          text_exts = {'.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.html', '.css', '.json', '.md', '.yml', '.yaml', '.txt'}
+          changed = []
+          url_pattern = re.compile(r'https://(?:www\.)?(?:x\.com|twitter\.com)/propbetedgeai/?', re.I)
+          handle_pattern = re.compile(r'@propbetedgeai\b', re.I)
+
+          for path in root.rglob('*'):
+              if not path.is_file() or any(part in skip_dirs for part in path.parts):
+                  continue
+              if path.suffix.lower() not in text_exts:
+                  continue
+              try:
+                  original = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              updated = url_pattern.sub('https://x.com/MLBHRALERTSPBE', original)
+              updated = handle_pattern.sub('@MLBHRALERTSPBE', updated)
+              if updated != original:
+                  path.write_text(updated, encoding='utf-8')
+                  changed.append(str(path))
+
+          print('Changed files:')
+          for path in changed:
+              print(f' - {path}')
+          if not changed:
+              print(' - none')
+          PY
+
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "chore: update X profile to MLBHRALERTSPBE"
+            git push
+          fi
