@@ -1,0 +1,187 @@
+name: Current author cleanup
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/current-author-cleanup.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Remove retired author identity from current site
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          retired_name = "Eric " + "Esters"
+          retired_slug = "eric-" + "esters"
+          editorial_name = "PropBetEdge Editorial Team"
+          editorial_slug = "propbetedge-editorial-team"
+          retired_fingerprint = "1775553382"
+
+          author_path = Path("src/pages/author.js")
+          text = author_path.read_text(encoding="utf-8")
+          text = text.replace(f" *         /authors/{retired_slug}\n", "")
+          pattern = re.compile(
+              r"  '" + re.escape(retired_slug) + r"': \{\n.*?\n  \},\n(?=  'erik-schwartz': \{)",
+              re.S,
+          )
+          text, count = pattern.subn("", text, count=1)
+          if count != 1:
+              raise SystemExit(f"Expected one retired author registry entry, removed {count}")
+          text = text.replace(
+              f', <a href="/authors/{retired_slug}">{retired_name}</a>',
+              "",
+          )
+          author_path.write_text(text, encoding="utf-8")
+
+          # Normalize historical stories authored by the retired identity to the
+          # publication byline while keeping the articles themselves live.
+          api_path = Path("src/api.js")
+          text = api_path.read_text(encoding="utf-8")
+          marker = "const RETIRED_AUTHOR_FINGERPRINTS = new Set([2793981073]);"
+          if marker not in text:
+              raise SystemExit("Retired-author marker not found in src/api.js")
+          text = text.replace(
+              marker,
+              marker + "\nconst RETIRED_AUTHOR_REATTRIBUTIONS = new Map([\n"
+              + f"  [{retired_fingerprint}, '{editorial_name}'],\n"
+              + "]);",
+              1,
+          )
+          retired_fn = """function isRetiredAuthor(article) {\n  const fingerprint = authorFingerprint(article?.author);\n  return fingerprint !== null && RETIRED_AUTHOR_FINGERPRINTS.has(fingerprint);\n}\n"""
+          replacement_fn = retired_fn + """\nfunction normalizeArticleAuthor(article) {\n  if (!article) return article;\n  const fingerprint = authorFingerprint(article.author);\n  const replacement = fingerprint === null ? null : RETIRED_AUTHOR_REATTRIBUTIONS.get(fingerprint);\n  if (!replacement) return article;\n  return { ...article, author: replacement, _author_reattributed: true };\n}\n"""
+          if retired_fn not in text:
+              raise SystemExit("isRetiredAuthor function shape changed")
+          text = text.replace(retired_fn, replacement_fn, 1)
+          old_map = ".map((article) => normalizeArticleImage(normalizeArticleDate(article, now)))"
+          new_map = ".map((article) => normalizeArticleImage(normalizeArticleDate(normalizeArticleAuthor(article), now)))"
+          if old_map not in text:
+              raise SystemExit("Article list normalization shape changed")
+          text = text.replace(old_map, new_map, 1)
+          old_article = "return { ...data, article: normalizeArticleImage(normalizeArticleDate(data.article)) };"
+          new_article = "return { ...data, article: normalizeArticleImage(normalizeArticleDate(normalizeArticleAuthor(data.article))) };"
+          if old_article not in text:
+              raise SystemExit("Single-article normalization shape changed")
+          text = text.replace(old_article, new_article, 1)
+          api_path.write_text(text, encoding="utf-8")
+
+          # Remove any stale followed-writer card saved in a visitor's localStorage
+          # without embedding the retired identity back into current source.
+          writers_path = Path("src/my-writers.js")
+          text = writers_path.read_text(encoding="utf-8")
+          follow_marker = "const FOLLOW_KEY = 'pbe_followed_authors_v1';"
+          if follow_marker not in text:
+              raise SystemExit("Follow key marker not found")
+          text = text.replace(
+              follow_marker,
+              follow_marker + "\nconst RETIRED_WRITER_FINGERPRINTS = new Set([" + retired_fingerprint + "]);",
+              1,
+          )
+          old_get = """function getFollowed() {\n  try {\n    const parsed = JSON.parse(localStorage.getItem(FOLLOW_KEY) || '[]');\n    return Array.isArray(parsed) ? parsed.filter((item) => item?.slug && item?.name) : [];\n  } catch { return []; }\n}\n"""
+          new_get = """function authorFingerprint(value) {\n  const normalized = String(value || '').trim().toLowerCase();\n  if (!normalized) return null;\n  let hash = 2166136261;\n  for (let i = 0; i < normalized.length; i++) {\n    hash ^= normalized.charCodeAt(i);\n    hash = Math.imul(hash, 16777619) >>> 0;\n  }\n  return hash;\n}\nfunction getFollowed() {\n  try {\n    const parsed = JSON.parse(localStorage.getItem(FOLLOW_KEY) || '[]');\n    if (!Array.isArray(parsed)) return [];\n    const cleaned = parsed.filter((item) =>\n      item?.slug && item?.name && !RETIRED_WRITER_FINGERPRINTS.has(authorFingerprint(item.name))\n    );\n    if (cleaned.length !== parsed.length) localStorage.setItem(FOLLOW_KEY, JSON.stringify(cleaned));\n    return cleaned;\n  } catch { return []; }\n}\n"""
+          if old_get not in text:
+              raise SystemExit("getFollowed function shape changed")
+          text = text.replace(old_get, new_get, 1)
+          writers_path.write_text(text, encoding="utf-8")
+
+          # Unknown/retired author slugs must return real 404 metadata instead of
+          # manufacturing an author name from the URL for crawlers.
+          middleware_path = Path("middleware.js")
+          text = middleware_path.read_text(encoding="utf-8")
+          sport_marker = "const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', nhl: 'NHL' };"
+          author_meta = """\nconst AUTHOR_META = {\n  'justin-erickson': { name: 'Justin Erickson', role: 'Founder & CTO' },\n  'erik-schwartz': { name: 'Erik Schwartz', role: 'Senior Editorial Contributor' },\n  'ty-whitney': { name: 'Ty Whitney', role: 'Senior Research Analyst' },\n  'propbetedge-editorial-team': { name: 'PropBetEdge Editorial Team', role: 'Editorial Operations' },\n};\n"""
+          if sport_marker not in text:
+              raise SystemExit("SPORT_LABELS marker not found")
+          text = text.replace(sport_marker, sport_marker + author_meta, 1)
+          old_author_meta = """  // Author pages\n  const authorMatch = pathname.match(/^\\/authors?\\/([a-z0-9-]+)$/);\n  if (authorMatch) {\n    const slug = authorMatch[1];\n    const name = slug.split('-').map((s) => s[0].toUpperCase() + s.slice(1)).join(' ');\n    return {\n      canonical: `${SITE}${pathname}`,\n      title: `${name} — PropBetEdge`,\n      description: `Articles by ${name} on PropBetEdge.`,\n      image: `${SITE}/logo/pbe-full-600.png`,\n    };\n  }\n"""
+          new_author_meta = """  // Author pages — only registered current authors are indexable.\n  const authorMatch = pathname.match(/^\\/authors?\\/([a-z0-9-]+)$/);\n  if (authorMatch) {\n    const slug = authorMatch[1];\n    const author = AUTHOR_META[slug];\n    if (!author) {\n      return {\n        canonical: `${SITE}/authors/propbetedge-editorial-team`,\n        title: 'Not found — PropBetEdge',\n        description: 'This author page is not available.',\n        image: `${SITE}/logo/pbe-full-600.png`,\n        robots: 'noindex, follow',\n        status: 404,\n      };\n    }\n    return {\n      canonical: `${SITE}/authors/${slug}`,\n      title: `${author.name} — ${author.role} · PropBetEdge`,\n      description: `Articles by ${author.name} on PropBetEdge.`,\n      image: `${SITE}/logo/pbe-full-600.png`,\n    };\n  }\n"""
+          if old_author_meta not in text:
+              raise SystemExit("Author middleware block shape changed")
+          text = text.replace(old_author_meta, new_author_meta, 1)
+          old_status = "status: response.status,"
+          if old_status not in text:
+              raise SystemExit("Middleware response status marker not found")
+          text = text.replace(old_status, "status: meta.status || response.status,", 1)
+          middleware_path.write_text(text, encoding="utf-8")
+
+          # Sweep any remaining current-site strings in rendered/source assets.
+          roots = [Path("src"), Path("public")]
+          files = [Path("index.html")]
+          for root in roots:
+              if root.exists():
+                  files.extend(p for p in root.rglob("*") if p.is_file())
+          text_exts = {'.js','.mjs','.cjs','.jsx','.ts','.tsx','.html','.css','.json','.md','.txt','.xml','.svg'}
+          for path in files:
+              if path.suffix.lower() not in text_exts:
+                  continue
+              try:
+                  value = path.read_text(encoding="utf-8")
+              except UnicodeDecodeError:
+                  continue
+              updated = value.replace(retired_name, editorial_name).replace(retired_slug, editorial_slug)
+              if updated != value:
+                  path.write_text(updated, encoding="utf-8")
+
+          # Extend the existing build guard so the retired identity cannot return.
+          verifier_path = Path("scripts/verify-retired-contributors.mjs")
+          text = verifier_path.read_text(encoding="utf-8")
+          needle = "  /donneal-green/i,\n"
+          addition = "  /" + retired_name + "/i,\n  /" + retired_slug + "/i,\n  /PropBetEdgeZen/i,\n  /PropBetEdge Zen/i,\n"
+          if needle not in text:
+              raise SystemExit("Verifier marker not found")
+          text = text.replace(needle, needle + addition, 1)
+          verifier_path.write_text(text, encoding="utf-8")
+
+          # Hard proof across current public source. The verifier intentionally
+          # lives in scripts/, so its banned patterns do not self-match.
+          dirty = []
+          for path in files:
+              if path.suffix.lower() not in text_exts:
+                  continue
+              try:
+                  value = path.read_text(encoding="utf-8")
+              except UnicodeDecodeError:
+                  continue
+              if retired_name.lower() in value.lower() or retired_slug.lower() in value.lower():
+                  dirty.append(str(path))
+          if dirty:
+              raise SystemExit("Retired author references remain: " + ", ".join(dirty[:20]))
+
+          print("Current-site retired author sweep: PASS")
+          PY
+
+      - name: Install and build
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: Commit cleaned site
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src public index.html middleware.js scripts/verify-retired-contributors.mjs
+          if git diff --cached --quiet; then
+            echo "No site changes to commit."
+            exit 0
+          fi
+          git commit -m "Remove retired author from PropBetEdge News current site"
+          git push origin HEAD:main
