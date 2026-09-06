@@ -57,33 +57,27 @@ const SPORT_CAMPAIGNS = {
   mlb: {
     key: 'propbetedge_mlb',
     tone: 'gold',
-    eyebrow: '⚾ PROPBETEDGE MLB · LIVE PRODUCT',
+    eyebrow: '⚾ PROPBETEDGE MLB · LIVE · MLB.PROPBETEDGE.AI',
     headline: 'Turn the MLB headline into a research edge.',
     sub: 'Live game context, player research, prop intelligence, model analysis and the data layer behind the coverage — all inside the dedicated MLB product.',
-    meta: 'Live Games · Player Research · Prop Models',
-    domain: 'mlb.propbetedge.ai',
     cta: 'Open MLB Intelligence',
     href: PROPBET_LINKS.picks_mlb,
   },
   nfl: {
     key: 'propbetedge_nfl',
     tone: 'gold',
-    eyebrow: '🏈 PROPBETEDGE NFL · LIVE PRODUCT',
+    eyebrow: '🏈 PROPBETEDGE NFL · LIVE · NFL.PROPBETEDGE.AI',
     headline: 'Track the football market before the next move.',
     sub: 'Market Board, Model Lab, line simulation and live game context connect the story to the numbers that actually move NFL decisions.',
-    meta: 'Market Board · Model Lab · Line Simulation',
-    domain: 'nfl.propbetedge.ai',
     cta: 'Open NFL Intelligence',
     href: PROPBET_LINKS.picks_nfl,
   },
   ufc: {
     key: 'propbetedge_ufc',
     tone: 'gold',
-    eyebrow: '🥊 PROPBETEDGE UFC · LIVE PRODUCT',
+    eyebrow: '🥊 PROPBETEDGE UFC · LIVE · UFC.PROPBETEDGE.AI',
     headline: 'Read the fight — not just the headline.',
     sub: 'Fight DNA, matchup intelligence, rankings, fight-week news and deep fighter research turn every card into a full fight-intelligence workspace.',
-    meta: 'Fight DNA · Matchups · Rankings',
-    domain: 'ufc.propbetedge.ai',
     cta: 'Open UFC Fight Intelligence',
     href: PROPBET_LINKS.picks_ufc,
   },
@@ -93,8 +87,6 @@ const SPORT_CAMPAIGNS = {
     eyebrow: '🏀 PROPBETEDGE NBA · COMING SOON',
     headline: 'The PropBetEdge intelligence layer is coming to basketball.',
     sub: 'News impact, player research, live context and prop intelligence are being built into the next sport-specific experience.',
-    meta: 'Coverage Live · Intelligence Product Next',
-    domain: 'propbetedge.ai/news/nba',
     cta: 'Follow NBA Coverage',
     href: PROPBET_LINKS.news_nba,
   },
@@ -104,8 +96,6 @@ const SPORT_CAMPAIGNS = {
     eyebrow: '🏒 PROPBETEDGE NHL · COMING SOON',
     headline: 'Hockey is next on the PropBetEdge intelligence network.',
     sub: 'Follow NHL coverage now as the full live-data, player-research and prop-intelligence product comes online.',
-    meta: 'Coverage Live · Intelligence Product Next',
-    domain: 'propbetedge.ai/news/nhl',
     cta: 'Follow NHL Coverage',
     href: PROPBET_LINKS.news_nhl,
   },
@@ -125,8 +115,6 @@ const PROPSPORTS_CAMPAIGN = {
   eyebrow: '⚡ PROPSPORTS API · FOR BUILDERS',
   headline: 'Building a sports product? Start with the data layer powering PropBetEdge.',
   sub: 'Production-ready sports data and intelligence infrastructure for apps, agents and AI products — built from the same data-first philosophy behind the PropBetEdge network.',
-  meta: 'Sports API · AI-ready · Production',
-  domain: 'propsports.proptechusa.ai',
   cta: 'Explore PropSports API',
   href: PROPBET_LINKS.propsports,
 };
@@ -137,8 +125,6 @@ const NEWS_API_CAMPAIGN = {
   eyebrow: '🗞️ SPORTS NEWS API · MACHINE READY',
   headline: 'Turn sports news into structured betting-impact intelligence.',
   sub: 'Stories scored for impact and tagged by player, team and prop type so products and AI systems can understand what actually matters.',
-  meta: 'Impact Scoring · Entity Tags · Prop Context',
-  domain: 'RapidAPI · PropBetEdge Sports News API',
   cta: 'Explore the News API',
   href: PROPBET_LINKS.api_news,
 };
@@ -146,11 +132,9 @@ const NEWS_API_CAMPAIGN = {
 const NETWORK_CAMPAIGN = {
   key: 'propbetedge_network',
   tone: 'gold',
-  eyebrow: '⚡ THE PROPBETEDGE SPORTS NETWORK',
+  eyebrow: '⚡ THE PROPBETEDGE SPORTS NETWORK · 3 LIVE PRODUCTS',
   headline: 'Three live intelligence products. One connected sports network.',
   sub: 'NFL, UFC and MLB each have dedicated intelligence products — purpose-built experiences connected by the same data-first PropBetEdge philosophy.',
-  meta: 'NFL · UFC · MLB',
-  domain: 'propbetedge.ai',
   cta: 'Explore the Sports Network',
   href: PROPBET_LINKS.network,
 };
@@ -262,15 +246,11 @@ export function ad_brand_family(slotName = 'brand_slot', ctx = {}) {
   const campaign = campaignForSlot(slotName, ctx);
   const trackedHref = withUtm(campaign.href, slotName, campaign.key, sport);
   return `
-    <a href="${trackedHref}" class="ad-block ad-brand-family ad-tone-${campaign.tone}" target="_blank" rel="noopener" data-ad-slot="${slotName}" data-ad-brand="${campaign.key}" data-ad-sport="${sport || 'network'}" data-ad-destination="${campaign.domain}">
+    <a href="${trackedHref}" class="ad-block ad-brand-family ad-tone-${campaign.tone}" target="_blank" rel="noopener" data-ad-slot="${slotName}" data-ad-brand="${campaign.key}" data-ad-sport="${sport || 'network'}">
       <div class="ad-block-content">
         <span class="ad-block-eyebrow">${campaign.eyebrow}</span>
         <h3 class="ad-block-headline">${campaign.headline}</h3>
         ${campaign.sub ? `<p class="ad-block-sub">${campaign.sub}</p>` : ''}
-        <div class="ad-block-meta" aria-hidden="true">
-          <span class="ad-block-proof">${campaign.meta}</span>
-          <span class="ad-block-domain">${campaign.domain}</span>
-        </div>
         <span class="ad-block-cta">${campaign.cta} →</span>
       </div>
     </a>
