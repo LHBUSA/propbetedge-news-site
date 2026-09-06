@@ -33,10 +33,12 @@ export const PROPBET_LINKS = {
   network:     'https://propbetedge.ai',
   picks_mlb:   'https://mlb.propbetedge.ai',
   picks_nfl:   'https://nfl.propbetedge.ai',
+  picks_ufc:   'https://ufc.propbetedge.ai',
   picks_nba:   'https://nba.propbetedge.ai',
   picks_nhl:   'https://nhl.propbetedge.ai',
   news_mlb:    'https://propbetedge.ai/news/mlb',
   news_nfl:    'https://propbetedge.ai/news/nfl',
+  news_ufc:    'https://ufc.propbetedge.ai/news',
   news_nba:    'https://propbetedge.ai/news/nba',
   news_nhl:    'https://propbetedge.ai/news/nhl',
   algo:        'https://mlb.propbetedge.ai/askalgo',
@@ -64,11 +66,20 @@ const SPORT_CAMPAIGNS = {
   nfl: {
     key: 'propbetedge_nfl',
     tone: 'gold',
-    eyebrow: '🏈 PROPBETEDGE NFL',
+    eyebrow: '🏈 PROPBETEDGE NFL · LIVE',
     headline: 'Football intelligence, built like an operating system.',
-    sub: 'Model Lab, Market Watch, line simulation, SGP research and deeper game intelligence — all connected to the PropBetEdge data layer.',
+    sub: 'Market Board, Model Lab, line simulation, live game context and deeper matchup intelligence — connected to the PropBetEdge data layer.',
     cta: 'Explore NFL Intelligence',
     href: PROPBET_LINKS.picks_nfl,
+  },
+  ufc: {
+    key: 'propbetedge_ufc',
+    tone: 'gold',
+    eyebrow: '🥊 PROPBETEDGE UFC · LIVE',
+    headline: 'Go from the headline to the full fight intelligence layer.',
+    sub: 'Every card, every fighter and every round — with Fight DNA, matchup intelligence, rankings, fight-week news and deep fighter research.',
+    cta: 'Explore UFC Fight Intelligence',
+    href: PROPBET_LINKS.picks_ufc,
   },
   nba: {
     key: 'propbetedge_nba',
@@ -90,12 +101,15 @@ const SPORT_CAMPAIGNS = {
   },
 };
 
+// Products that should receive meaningful discovery inventory right now.
+const LIVE_SPORT_KEYS = ['mlb', 'nfl', 'ufc'];
+
 const PROPSPORTS_CAMPAIGN = {
   key: 'propsports',
   tone: 'algo',
   eyebrow: '⚡ PROPSPORTS API · FOR BUILDERS',
   headline: 'Building a sports product? Start with the data layer powering PropBetEdge.',
-  sub: 'Production-ready sports data and intelligence infrastructure across MLB, NFL, NBA and NHL — built for apps, agents and AI products.',
+  sub: 'Production-ready sports data and intelligence infrastructure for apps, agents and AI products — built from the same data-first philosophy behind the PropBetEdge network.',
   cta: 'Explore PropSports API',
   href: PROPBET_LINKS.propsports,
 };
@@ -115,15 +129,16 @@ const NETWORK_CAMPAIGN = {
   tone: 'gold',
   eyebrow: '⚡ THE PROPBETEDGE SPORTS NETWORK',
   headline: 'News is the surface. The intelligence layer goes much deeper.',
-  sub: 'MLB is live. NFL is expanding now. NBA and NHL are next — all built on connected sports-data infrastructure.',
-  cta: 'Open MLB Intelligence',
-  href: PROPBET_LINKS.picks_mlb,
+  sub: 'MLB, NFL and UFC now have dedicated intelligence products — purpose-built experiences connected by the same data-first PropBetEdge network.',
+  cta: 'Explore the Sports Network',
+  href: PROPBET_LINKS.network,
 };
 
 // Public compatibility export: sports-only inventory. No real-estate brands.
 export const BRAND_FAMILY = [
   SPORT_CAMPAIGNS.mlb,
   SPORT_CAMPAIGNS.nfl,
+  SPORT_CAMPAIGNS.ufc,
   SPORT_CAMPAIGNS.nba,
   SPORT_CAMPAIGNS.nhl,
   PROPSPORTS_CAMPAIGN,
@@ -132,11 +147,18 @@ export const BRAND_FAMILY = [
 
 let _lastBrandKey = null;
 
+function normalizeSport(rawSport) {
+  const sport = String(rawSport || '').toLowerCase();
+  if (sport === 'mma') return 'ufc';
+  return SPORT_CAMPAIGNS[sport] ? sport : null;
+}
+
 function inferredSport(ctx = {}) {
-  if (ctx?.sport && SPORT_CAMPAIGNS[ctx.sport]) return ctx.sport;
+  const contextual = normalizeSport(ctx?.sport);
+  if (contextual) return contextual;
   if (typeof window === 'undefined') return null;
-  const match = String(window.location.pathname || '').match(/\/(?:news|games|leaders)\/(mlb|nfl|nba|nhl)(?:\/|$)/i);
-  return match?.[1]?.toLowerCase() || null;
+  const match = String(window.location.pathname || '').match(/\/(?:news|games|leaders)\/(mlb|nfl|ufc|mma|nba|nhl)(?:\/|$)/i);
+  return normalizeSport(match?.[1]);
 }
 
 function withUtm(href, slot, brandKey, sport = null) {
@@ -170,22 +192,33 @@ function weightedPick(items) {
   return fallback;
 }
 
+function liveSiblingInventory(currentSport, weight = 1) {
+  return LIVE_SPORT_KEYS
+    .filter((key) => key !== currentSport)
+    .map((key) => ({ campaign: SPORT_CAMPAIGNS[key], weight }));
+}
+
 function campaignForSlot(slotName, ctx = {}) {
   const sport = inferredSport(ctx);
-  const primary = sport ? SPORT_CAMPAIGNS[sport] : NETWORK_CAMPAIGN;
+  const primary = sport ? SPORT_CAMPAIGNS[sport] : null;
 
-  // The closer a reader gets to the AI take / end of article, the more strongly
-  // we push the sport product. Developer inventory remains a secondary lane.
+  // On a sport-specific story the corresponding product dominates, but readers
+  // can still discover the other live PropBetEdge products. On generic news,
+  // MLB/NFL/UFC rotate as first-class destinations instead of defaulting to MLB.
   if (slotName === 'after_take' || slotName === 'end_of_article') {
     return weightedPick([
-      { campaign: primary, weight: 8 },
+      ...(primary ? [{ campaign: primary, weight: 8 }] : LIVE_SPORT_KEYS.map((key) => ({ campaign: SPORT_CAMPAIGNS[key], weight: 4 }))),
+      ...(primary ? liveSiblingInventory(sport, 1) : []),
+      { campaign: NETWORK_CAMPAIGN, weight: 2 },
       { campaign: PROPSPORTS_CAMPAIGN, weight: 2 },
       { campaign: NEWS_API_CAMPAIGN, weight: 1 },
     ]);
   }
 
   return weightedPick([
-    { campaign: primary, weight: 6 },
+    ...(primary ? [{ campaign: primary, weight: 6 }] : LIVE_SPORT_KEYS.map((key) => ({ campaign: SPORT_CAMPAIGNS[key], weight: 3 }))),
+    ...(primary ? liveSiblingInventory(sport, 1) : []),
+    { campaign: NETWORK_CAMPAIGN, weight: 2 },
     { campaign: PROPSPORTS_CAMPAIGN, weight: 3 },
     { campaign: NEWS_API_CAMPAIGN, weight: 1 },
   ]);
@@ -213,7 +246,12 @@ export function ad_brand_family(slotName = 'brand_slot', ctx = {}) {
 
 export function ad_header_banner(ctx = {}) {
   const sport = inferredSport(ctx);
-  const campaign = sport ? SPORT_CAMPAIGNS[sport] : NETWORK_CAMPAIGN;
+  const campaign = sport
+    ? SPORT_CAMPAIGNS[sport]
+    : weightedPick([
+        ...LIVE_SPORT_KEYS.map((key) => ({ campaign: SPORT_CAMPAIGNS[key], weight: 3 })),
+        { campaign: NETWORK_CAMPAIGN, weight: 2 },
+      ]);
   return renderAdBanner({
     ...campaign,
     href: withUtm(campaign.href, 'header_banner', campaign.key, sport),
@@ -237,23 +275,23 @@ export function ad_footer_banner() {
         <div class="footer-cta-text">
           <span class="footer-cta-eyebrow">⚡ THE PROPBETEDGE SPORTS NETWORK</span>
           <h3 class="footer-cta-headline">Read the news. Then go deeper.</h3>
-          <p class="footer-cta-sub">Move from headlines into live sports intelligence — or build on the same data infrastructure powering the network.</p>
+          <p class="footer-cta-sub">Move from headlines into live MLB, NFL and UFC intelligence — or build on the data infrastructure powering the network.</p>
         </div>
         <div class="footer-cta-buttons">
           <a href="${withUtm(PROPBET_LINKS.picks_mlb, 'footer_banner', 'mlb', 'mlb')}" class="footer-cta-btn footer-cta-btn-mlb" target="_blank" rel="noopener">
-            <span class="sport-emoji">⚾</span><span>MLB · Live</span>
+            <span class="sport-emoji">⚾</span><span>MLB Intelligence</span>
           </a>
           <a href="${withUtm(PROPBET_LINKS.picks_nfl, 'footer_banner', 'nfl', 'nfl')}" class="footer-cta-btn footer-cta-btn-nfl" target="_blank" rel="noopener">
             <span class="sport-emoji">🏈</span><span>NFL Intelligence</span>
           </a>
-          <a href="${withUtm(PROPBET_LINKS.news_nba, 'footer_banner', 'nba', 'nba')}" class="footer-cta-btn footer-cta-btn-nba">
-            <span class="sport-emoji">🏀</span><span>NBA · Coming Soon</span>
+          <a href="${withUtm(PROPBET_LINKS.picks_ufc, 'footer_banner', 'ufc', 'ufc')}" class="footer-cta-btn footer-cta-btn-ufc" target="_blank" rel="noopener">
+            <span class="sport-emoji">🥊</span><span>UFC Fight Intelligence</span>
           </a>
-          <a href="${withUtm(PROPBET_LINKS.news_nhl, 'footer_banner', 'nhl', 'nhl')}" class="footer-cta-btn footer-cta-btn-nhl">
-            <span class="sport-emoji">🏒</span><span>NHL · Coming Soon</span>
+          <a href="${withUtm(PROPBET_LINKS.network, 'footer_banner', 'network')}" class="footer-cta-btn" target="_blank" rel="noopener">
+            <span class="sport-emoji">⚡</span><span>PropBetEdge Network</span>
           </a>
           <a href="${withUtm(PROPBET_LINKS.propsports, 'footer_banner', 'propsports')}" class="footer-cta-btn" target="_blank" rel="noopener">
-            <span class="sport-emoji">⚡</span><span>PropSports API</span>
+            <span class="sport-emoji">API</span><span>PropSports API</span>
           </a>
         </div>
       </div>
