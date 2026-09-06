@@ -37,6 +37,7 @@ export function renderHeader() {
           <a href="/news" class="nav-link ${path === '/news' ? 'active' : ''}">All News</a>
           <a href="/news/mlb" class="nav-link ${sportPathActive(path, 'mlb') ? 'active' : ''}">MLB</a>
           <a href="/news/nfl" class="nav-link ${sportPathActive(path, 'nfl') ? 'active' : ''}">NFL</a>
+          <a href="${PROPBET_LINKS.news_ufc}" class="nav-link ${sportPathActive(path, 'ufc') ? 'active' : ''}" target="_blank" rel="noopener">UFC</a>
           <a href="/news/nba" class="nav-link ${sportPathActive(path, 'nba') ? 'active' : ''}">NBA</a>
           <a href="/news/nhl" class="nav-link ${sportPathActive(path, 'nhl') ? 'active' : ''}">NHL</a>
         </div>
@@ -71,17 +72,19 @@ function sportPathActive(path, sport) {
 }
 
 function inferSport(path) {
-  const match = String(path || '').match(/\/(?:news|games|leaders|team|standings|player)\/(mlb|nfl|nba|nhl)(?:\/|$)/i);
-  return match?.[1]?.toLowerCase() || null;
+  const match = String(path || '').match(/\/(?:news|games|leaders|team|standings|player)\/(mlb|nfl|ufc|mma|nba|nhl)(?:\/|$)/i);
+  const value = match?.[1]?.toLowerCase() || null;
+  return value === 'mma' ? 'ufc' : value;
 }
 
 function headerCtaForSport(sport) {
   if (sport === 'mlb') return { href: PROPBET_LINKS.picks_mlb, label: 'MLB Intelligence', external: true };
   if (sport === 'nfl') return { href: PROPBET_LINKS.picks_nfl, label: 'NFL Intelligence', external: true };
+  if (sport === 'ufc') return { href: PROPBET_LINKS.picks_ufc, label: 'UFC Fight Intel', external: true };
   if (sport === 'nba') return { href: '/news/nba', label: 'NBA · Coming Soon', external: false };
   if (sport === 'nhl') return { href: '/news/nhl', label: 'NHL · Coming Soon', external: false };
 
-  return { href: PROPBET_LINKS.picks_nfl, label: 'NFL Intelligence', external: true };
+  return { href: PROPBET_LINKS.network, label: 'Live Intelligence', external: true };
 }
 
 async function fetchEdgeCount() {
