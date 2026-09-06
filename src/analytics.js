@@ -126,6 +126,7 @@ function destinationFor(href) {
     const host = new URL(href, window.location.origin).hostname.toLowerCase();
     if (host === 'mlb.propbetedge.ai') return 'mlb';
     if (host === 'nfl.propbetedge.ai') return 'nfl';
+    if (host === 'ufc.propbetedge.ai') return 'ufc';
     if (host === 'nba.propbetedge.ai') return 'nba';
     if (host === 'nhl.propbetedge.ai') return 'nhl';
     if (host === 'propsports.proptechusa.ai') return 'propsports';

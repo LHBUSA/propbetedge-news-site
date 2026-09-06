@@ -72,6 +72,8 @@ export function organizationSchema() {
       SITE.linkedin,
       SITE.reddit,
       'https://mlb.propbetedge.ai',
+      'https://nfl.propbetedge.ai',
+      'https://ufc.propbetedge.ai',
     ].filter(Boolean),
     diversityPolicy: `${SITE.url}/editorial-standards`,
     ethicsPolicy: `${SITE.url}/editorial-standards`,

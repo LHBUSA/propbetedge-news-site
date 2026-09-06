@@ -494,6 +494,7 @@
   background: var(--gold) !important;
 }
 
+.pbe-games-worldclass .gh5-network-card.ufc::before { background: radial-gradient(circle at 80% 0%, rgba(193,39,61,.55), transparent 52%); }
 .pbe-games-worldclass .gh5-network-card.api::before {
   background: linear-gradient(90deg, var(--gold), var(--paper-faint)) !important;
 }

@@ -32,6 +32,23 @@ export const SPORT_CONFIG = Object.freeze({
     primaryCta: 'Follow NBA Coverage',
     standingsLabel: 'NBA Standings',
   }),
+  // UFC is a combat-sport product: cards, fighters and rankings rather than
+  // teams, a schedule and standings. It is a network destination here; it
+  // does not get scoreboard, standings or team routes it cannot honour.
+  ufc: Object.freeze({
+    key: 'ufc',
+    label: 'UFC',
+    name: 'Ultimate Fighting Championship',
+    emoji: '🥊',
+    kind: 'combat',
+    espnPath: null,
+    productUrl: 'https://ufc.propbetedge.ai',
+    picksUrl: 'https://ufc.propbetedge.ai/events',
+    rankingsUrl: 'https://ufc.propbetedge.ai/rankings',
+    primaryCta: 'Open UFC Fight Intelligence',
+    standingsLabel: null,
+    isNew: true,
+  }),
   nhl: Object.freeze({
     key: 'nhl',
     label: 'NHL',

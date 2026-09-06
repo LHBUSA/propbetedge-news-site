@@ -1,6 +1,7 @@
 /*
  * League-first masthead balance.
- * All four league desks stay together left of the centered PBE mark.
+ * The league desks stay together left of the centered PBE mark, with the
+ * UFC product beside them as the network's newest destination.
  * Product tools and the conversion CTA stay together on the right.
  */
 
@@ -72,3 +73,13 @@
     flex-wrap: wrap;
   }
 }
+
+/* UFC is a product destination, not a news desk: it keeps the league-row
+   rhythm and carries one small NEW mark for the launch window. */
+.masthead-leagues .nav-link-ufc { display: inline-flex; align-items: center; gap: 5px; }
+.masthead-leagues .nav-new {
+  display: inline-block; padding: 1px 5px; border-radius: 2px;
+  background: var(--gold); color: var(--ink);
+  font-family: var(--font-mono); font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+}
+@media (max-width: 1320px) and (min-width: 881px) { .masthead-leagues .nav-new { font-size: 7px; padding: 1px 4px; } }

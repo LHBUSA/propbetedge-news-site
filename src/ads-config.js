@@ -33,6 +33,7 @@ export const PROPBET_LINKS = {
   network:     'https://propbetedge.ai',
   picks_mlb:   'https://mlb.propbetedge.ai',
   picks_nfl:   'https://nfl.propbetedge.ai',
+  picks_ufc:   'https://ufc.propbetedge.ai',
   picks_nba:   'https://nba.propbetedge.ai',
   picks_nhl:   'https://nhl.propbetedge.ai',
   news_mlb:    'https://propbetedge.ai/news/mlb',
@@ -69,6 +70,15 @@ const SPORT_CAMPAIGNS = {
     sub: 'Model Lab, Market Watch, line simulation, SGP research and deeper game intelligence — all connected to the PropBetEdge data layer.',
     cta: 'Explore NFL Intelligence',
     href: PROPBET_LINKS.picks_nfl,
+  },
+  ufc: {
+    key: 'propbetedge_ufc',
+    tone: 'gold',
+    eyebrow: '🥊 PROPBETEDGE UFC · NEW',
+    headline: 'Fight intelligence, built from the data layer up.',
+    sub: 'Fight cards, fighter profiles, rankings, historical results and matchup intelligence — the newest product on the PropBetEdge network.',
+    cta: 'Open UFC Fight Intelligence',
+    href: PROPBET_LINKS.picks_ufc,
   },
   nba: {
     key: 'propbetedge_nba',
@@ -115,7 +125,7 @@ const NETWORK_CAMPAIGN = {
   tone: 'gold',
   eyebrow: '⚡ THE PROPBETEDGE SPORTS NETWORK',
   headline: 'News is the surface. The intelligence layer goes much deeper.',
-  sub: 'MLB is live. NFL is expanding now. NBA and NHL are next — all built on connected sports-data infrastructure.',
+  sub: 'MLB and NFL are live. UFC Fight Intelligence is new. NBA and NHL are next — all built on connected sports-data infrastructure.',
   cta: 'Open MLB Intelligence',
   href: PROPBET_LINKS.picks_mlb,
 };
@@ -124,6 +134,7 @@ const NETWORK_CAMPAIGN = {
 export const BRAND_FAMILY = [
   SPORT_CAMPAIGNS.mlb,
   SPORT_CAMPAIGNS.nfl,
+  SPORT_CAMPAIGNS.ufc,
   SPORT_CAMPAIGNS.nba,
   SPORT_CAMPAIGNS.nhl,
   PROPSPORTS_CAMPAIGN,
@@ -187,6 +198,8 @@ function campaignForSlot(slotName, ctx = {}) {
   return weightedPick([
     { campaign: primary, weight: 6 },
     { campaign: PROPSPORTS_CAMPAIGN, weight: 3 },
+    // the newest product rotates through the general lane at a restrained weight
+    { campaign: SPORT_CAMPAIGNS.ufc, weight: 2 },
     { campaign: NEWS_API_CAMPAIGN, weight: 1 },
   ]);
 }

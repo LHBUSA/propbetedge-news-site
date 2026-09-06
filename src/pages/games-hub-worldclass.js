@@ -96,6 +96,9 @@ export async function renderGamesHub(root) {
             <a class="gh5-network-card nfl" href="https://nfl.propbetedge.ai" target="_blank" rel="noopener">
               <span>🏈 NFL · LIVE PRODUCT</span><strong>NFL Intelligence</strong><p>Model Lab, Market Watch, simulation, SGP research and football intelligence.</p><b>Open NFL →</b>
             </a>
+            <a class="gh5-network-card ufc" href="https://ufc.propbetedge.ai" target="_blank" rel="noopener">
+              <span>🥊 UFC · NEW PRODUCT</span><strong>UFC Fight Intelligence</strong><p>Fight cards, fighter profiles, rankings, historical results and matchup intelligence.</p><b>Open UFC →</b>
+            </a>
             <a class="gh5-network-card api" href="https://propsports.proptechusa.ai" target="_blank" rel="noopener">
               <span>⚡ FOR BUILDERS</span><strong>PropSports API</strong><p>The multi-sport data infrastructure behind the live experience.</p><b>Explore the API →</b>
             </a>

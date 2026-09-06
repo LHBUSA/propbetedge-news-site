@@ -39,6 +39,7 @@ export function renderHeader() {
           <a href="/news/nfl" class="nav-link ${sportPathActive(path, 'nfl') ? 'active' : ''}">NFL</a>
           <a href="/news/nba" class="nav-link ${sportPathActive(path, 'nba') ? 'active' : ''}">NBA</a>
           <a href="/news/nhl" class="nav-link ${sportPathActive(path, 'nhl') ? 'active' : ''}">NHL</a>
+          <a href="${PROPBET_LINKS.picks_ufc}" class="nav-link nav-link-ufc" target="_blank" rel="noopener" title="PropBetEdge UFC · Fight Intelligence">UFC<span class="nav-new" aria-label="new product">New</span></a>
         </div>
         <div class="masthead-logo" aria-label="PropBetEdge">
           <img

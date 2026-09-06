@@ -18,6 +18,7 @@ export function renderFooter() {
             <h4>⚡ Sports Intelligence</h4>
             <a href="${PROPBET_LINKS.picks_mlb}" target="_blank" rel="noopener">MLB Intelligence <span class="footer-badge">Live</span></a>
             <a href="${PROPBET_LINKS.picks_nfl}" target="_blank" rel="noopener">NFL Intelligence</a>
+            <a href="${PROPBET_LINKS.picks_ufc}" target="_blank" rel="noopener">UFC Fight Intelligence <span class="footer-badge">New</span></a>
             <a href="/news/nba">NBA Intelligence <span class="footer-badge-soft">Coming Soon</span></a>
             <a href="/news/nhl">NHL Intelligence <span class="footer-badge-soft">Coming Soon</span></a>
           </div>
@@ -44,7 +45,7 @@ export function renderFooter() {
             <a href="/news/nfl">NFL News</a>
             <a href="/news/nba">NBA News</a>
             <a href="/news/nhl">NHL News</a>
-            <a href="/news/rss.xml" target="_blank">RSS Feed</a>
+            <a href="/news/rss.xml" target="_blank" rel="noopener">RSS Feed</a>
           </div>
 
           <div class="footer-col">
