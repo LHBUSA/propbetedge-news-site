@@ -1,6 +1,7 @@
 import { api } from './api.js';
 
 const FOLLOW_KEY = 'pbe_followed_authors_v1';
+const RETIRED_WRITER_FINGERPRINTS = new Set([1775553382]);
 let timer = null;
 let renderKey = '';
 
@@ -76,10 +77,25 @@ function renderWriter({ author, article }) {
   `;
 }
 
+function authorFingerprint(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return null;
+  let hash = 2166136261;
+  for (let i = 0; i < normalized.length; i++) {
+    hash ^= normalized.charCodeAt(i);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return hash;
+}
 function getFollowed() {
   try {
     const parsed = JSON.parse(localStorage.getItem(FOLLOW_KEY) || '[]');
-    return Array.isArray(parsed) ? parsed.filter((item) => item?.slug && item?.name) : [];
+    if (!Array.isArray(parsed)) return [];
+    const cleaned = parsed.filter((item) =>
+      item?.slug && item?.name && !RETIRED_WRITER_FINGERPRINTS.has(authorFingerprint(item.name))
+    );
+    if (cleaned.length !== parsed.length) localStorage.setItem(FOLLOW_KEY, JSON.stringify(cleaned));
+    return cleaned;
   } catch { return []; }
 }
 function initials(name) { return String(name || '').split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase(); }

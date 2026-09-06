@@ -23,6 +23,13 @@ const SITE = 'https://propbetedge.ai';
 const NEWS_API = 'https://propbet-news-api.sales-fd3.workers.dev';
 
 const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', nhl: 'NHL' };
+const AUTHOR_META = {
+  'justin-erickson': { name: 'Justin Erickson', role: 'Founder & CTO' },
+  'erik-schwartz': { name: 'Erik Schwartz', role: 'Senior Editorial Contributor' },
+  'ty-whitney': { name: 'Ty Whitney', role: 'Senior Research Analyst' },
+  'propbetedge-editorial-team': { name: 'PropBetEdge Editorial Team', role: 'Editorial Operations' },
+};
+
 
 export default async function middleware(request) {
   const url = new URL(request.url);
@@ -42,7 +49,7 @@ export default async function middleware(request) {
   html = injectMeta(html, meta);
 
   return new Response(html, {
-    status: response.status,
+    status: meta.status || response.status,
     headers: {
       ...Object.fromEntries(response.headers.entries()),
       'content-type': 'text/html; charset=utf-8',
@@ -146,15 +153,25 @@ async function resolveMeta(pathname) {
     };
   }
 
-  // Author pages
+  // Author pages — only registered current authors are indexable.
   const authorMatch = pathname.match(/^\/authors?\/([a-z0-9-]+)$/);
   if (authorMatch) {
     const slug = authorMatch[1];
-    const name = slug.split('-').map((s) => s[0].toUpperCase() + s.slice(1)).join(' ');
+    const author = AUTHOR_META[slug];
+    if (!author) {
+      return {
+        canonical: `${SITE}/authors/propbetedge-editorial-team`,
+        title: 'Not found — PropBetEdge',
+        description: 'This author page is not available.',
+        image: `${SITE}/logo/pbe-full-600.png`,
+        robots: 'noindex, follow',
+        status: 404,
+      };
+    }
     return {
-      canonical: `${SITE}${pathname}`,
-      title: `${name} — PropBetEdge`,
-      description: `Articles by ${name} on PropBetEdge.`,
+      canonical: `${SITE}/authors/${slug}`,
+      title: `${author.name} — ${author.role} · PropBetEdge`,
+      description: `Articles by ${author.name} on PropBetEdge.`,
       image: `${SITE}/logo/pbe-full-600.png`,
     };
   }

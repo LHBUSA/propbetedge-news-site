@@ -3,7 +3,6 @@
  * Author profile page — bio, role, latest articles
  *
  * Routes: /authors/justin-erickson
- *         /authors/eric-esters
  *         /authors/erik-schwartz
  *         /authors/ty-whitney
  *         /authors/propbetedge-editorial-team
@@ -51,31 +50,6 @@ When he writes about sports, the lens is always the same: where is the market mi
     twitter: 'https://x.com/MLBHRALERTSPBE',
     location: 'Saint Paul, MN',
     initials: 'JE',
-    accent: 'gold',
-  },
-  'eric-esters': {
-    name: 'Eric Esters',
-    role: 'VP, Sports Strategy & Acquisitions',
-    title: 'Vice President of Sports Strategy, PropBetEdge',
-    bio: `Eric Esters is the Vice President of Sports Strategy at PropBetEdge and a seasoned operator across the LocalHomeBuyersUSA nationwide deal-flow network. His unique angle on sports betting comes from years spent underwriting cash real-estate transactions — work that demands the same skill set sharp prop bettors use: cut through the narrative, weight the verifiable signal, and act on the asymmetric edge before the market adjusts.
-
-Eric's strongest reads are on basketball rotation mechanics and NFL workload distribution — the second-order effects that emerge when a backup point guard gets promoted, a depth-chart shuffles in week 6, or a starter is scratched 30 minutes before puck drop. While most analysts cover the headline injury news, Eric's coverage tracks the contract leverage points and front-office mechanics that move long-tail props bookmakers are slow to reprice: minutes restrictions in back-to-backs, target-share concentration after a trade, and the kind of roster math that turns into prop-market value when nobody else is paying attention.
-
-His coverage spans all four major sports — ESPN-analyst style — with a focus on the long-tail edges institutional bettors miss. On NBA, he writes about rotation shifts and lineup-driven scoring concentration. On NFL, he focuses on red-zone target share, snap-count trends, and post-trade workload realignment. On MLB and NHL, he applies the same lens: where is the market still pricing yesterday's depth chart?
-
-Eric's belief: the difference between a 52% bettor and a 56% bettor isn't access to data. It's discipline about which data actually matters.`,
-    expertise: [
-      'NBA rotation, minutes & lineup edges',
-      'NFL workload, target share & snap-count trends',
-      'Front-office moves with prop-market implications',
-      'Multi-sport long-tail edge identification',
-    ],
-    credentials: [
-      'VP, Sports Strategy — PropBetEdge',
-      'Director of Acquisitions — LocalHomeBuyersUSA',
-      'Multi-sport prop coverage across four major leagues',
-    ],
-    initials: 'EE',
     accent: 'gold',
   },
   'erik-schwartz': {
@@ -137,7 +111,7 @@ Ty's belief: the prop-bet market is not efficient, but it's nowhere near as inef
 
 Our editorial methodology is intentionally transparent. Every article published under this byline goes through three phases: (1) source identification and verification against the original reporting, (2) AI-assisted drafting with a structured editorial framework focused on prop-bet impact, and (3) human review on the strategic conclusions, betting angles, and any data citations. We disclose AI assistance openly because we believe readers deserve to know how their information is produced — and because we believe the future of sports media is hybrid, not adversarial, when done with rigor.
 
-This byline covers the rapid-response volume work that no single human can produce in real time: breaking injury news with prop-impact analysis within minutes of the wire report, post-game implication coverage on yesterday's games, and the kind of cross-sport editorial response that keeps PropBetEdge readers ahead of the market. For deeper takes, daily picks, and signature columns, articles are published under the bylines of our human staff: <a href="/authors/justin-erickson">Justin Erickson</a>, <a href="/authors/eric-esters">Eric Esters</a>, <a href="/authors/erik-schwartz">Erik Schwartz</a>, and <a href="/authors/ty-whitney">Ty Whitney</a>.
+This byline covers the rapid-response volume work that no single human can produce in real time: breaking injury news with prop-impact analysis within minutes of the wire report, post-game implication coverage on yesterday's games, and the kind of cross-sport editorial response that keeps PropBetEdge readers ahead of the market. For deeper takes, daily picks, and signature columns, articles are published under the bylines of our human staff: <a href="/authors/justin-erickson">Justin Erickson</a>, <a href="/authors/erik-schwartz">Erik Schwartz</a>, and <a href="/authors/ty-whitney">Ty Whitney</a>.
 
 Our standards: <a href="/editorial-standards">read our editorial standards</a>.`,
     expertise: [

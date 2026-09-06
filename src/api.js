@@ -13,6 +13,9 @@ const FUTURE_SKEW_MS = 2 * 60 * 1000;
 const STALE_FALLBACK_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_HOME_AGE_MS = 24 * 60 * 60 * 1000;
 const RETIRED_AUTHOR_FINGERPRINTS = new Set([2793981073]);
+const RETIRED_AUTHOR_REATTRIBUTIONS = new Map([
+  [1775553382, 'PropBetEdge Editorial Team'],
+]);
 
 function validPastTs(value, now = Date.now()) {
   const ts = new Date(value).getTime();
@@ -34,6 +37,14 @@ function authorFingerprint(value) {
 function isRetiredAuthor(article) {
   const fingerprint = authorFingerprint(article?.author);
   return fingerprint !== null && RETIRED_AUTHOR_FINGERPRINTS.has(fingerprint);
+}
+
+function normalizeArticleAuthor(article) {
+  if (!article) return article;
+  const fingerprint = authorFingerprint(article.author);
+  const replacement = fingerprint === null ? null : RETIRED_AUTHOR_REATTRIBUTIONS.get(fingerprint);
+  if (!replacement) return article;
+  return { ...article, author: replacement, _author_reattributed: true };
 }
 
 // Correct invalid/future published_at values using a trustworthy timestamp
@@ -100,7 +111,7 @@ function normalizeArticleList(data, { maxAgeMs = null, limit = null } = {}) {
   const now = Date.now();
   let articles = data.articles
     .filter((article) => !isRetiredAuthor(article))
-    .map((article) => normalizeArticleImage(normalizeArticleDate(article, now)))
+    .map((article) => normalizeArticleImage(normalizeArticleDate(normalizeArticleAuthor(article), now)))
     .filter(Boolean)
     .sort((a, b) => {
       const aTs = new Date(a.published_at).getTime();
@@ -158,7 +169,7 @@ export const api = {
     if (!data?.article || isRetiredAuthor(data.article)) {
       return data ? { ...data, article: null } : data;
     }
-    return { ...data, article: normalizeArticleImage(normalizeArticleDate(data.article)) };
+    return { ...data, article: normalizeArticleImage(normalizeArticleDate(normalizeArticleAuthor(data.article))) };
   },
 
   sports: () => get('/news/sports'),

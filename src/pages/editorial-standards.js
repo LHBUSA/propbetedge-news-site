@@ -87,7 +87,7 @@ export async function renderEditorialStandards(root, setMeta) {
             <li><strong>Prop-bet relevance.</strong> Articles are filtered for prop-bet impact. We don't publish recap content for the sake of volume.</li>
             <li><strong>Fact-first, opinion second.</strong> Statistical claims are verifiable. Our editorial takes are clearly labeled as analysis, not fact.</li>
             <li><strong>No undisclosed conflicts.</strong> Affiliate links to sportsbooks (DraftKings, FanDuel, etc.) are clearly disclosed. We don't pretend to be neutral when we have skin in the game.</li>
-            <li><strong>Real bylines.</strong> Articles are bylined by their actual author — human (Justin Erickson, Eric Esters, Ty Whitney, Erik Schwartz) or our editorial system (PropBetEdge Editorial Team).</li>
+            <li><strong>Real bylines.</strong> Articles are bylined by their actual author — human (Justin Erickson, PropBetEdge Editorial Team, Ty Whitney, Erik Schwartz) or our editorial system (PropBetEdge Editorial Team).</li>
           </ul>
         </section>
 
@@ -103,7 +103,7 @@ export async function renderEditorialStandards(root, setMeta) {
             with structured editorial frameworks, and human review on the strategic angles.
           </p>
           <p>
-            <strong>Articles bylined under a human author</strong> (Justin Erickson, Eric Esters, Ty Whitney,
+            <strong>Articles bylined under a human author</strong> (Justin Erickson, PropBetEdge Editorial Team, Ty Whitney,
             Erik Schwartz) reflect that author's direct work and editorial judgment. AI tools may be
             used for research, fact-checking, or drafting assistance, but the final analysis, picks,
             and betting angles are the author's own.

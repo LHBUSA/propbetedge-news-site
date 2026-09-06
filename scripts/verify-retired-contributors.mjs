@@ -6,6 +6,10 @@ const ROOT_FILES = ['index.html'];
 const BANNED = [
   /Donneal Green/i,
   /donneal-green/i,
+  /Eric Esters/i,
+  /eric-esters/i,
+  /PropBetEdgeZen/i,
+  /PropBetEdge Zen/i,
 ];
 
 const TEXT_EXTENSIONS = new Set([
