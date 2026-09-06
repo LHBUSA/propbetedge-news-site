@@ -233,7 +233,7 @@ export function ad_brand_family(slotName = 'brand_slot', ctx = {}) {
   const campaign = campaignForSlot(slotName, ctx);
   const trackedHref = withUtm(campaign.href, slotName, campaign.key, sport);
   return `
-    <a href="${trackedHref}" class="ad-block ad-brand-family ad-tone-${campaign.tone}" target="_blank" rel="noopener sponsored" data-ad-slot="${slotName}" data-ad-brand="${campaign.key}" data-ad-sport="${sport || 'network'}">
+    <a href="${trackedHref}" class="ad-block ad-brand-family ad-tone-${campaign.tone}" target="_blank" rel="noopener" data-ad-slot="${slotName}" data-ad-brand="${campaign.key}" data-ad-sport="${sport || 'network'}">
       <div class="ad-block-content">
         <span class="ad-block-eyebrow">${campaign.eyebrow}</span>
         <h3 class="ad-block-headline">${campaign.headline}</h3>
@@ -302,7 +302,7 @@ export function ad_footer_banner() {
 function renderAdBanner({ tone, eyebrow, headline, cta, href }) {
   const isExternal = /^https?:\/\//i.test(href);
   return `
-    <a href="${href}" class="ad-banner ad-tone-${tone}" target="${isExternal ? '_blank' : '_self'}" rel="noopener sponsored">
+    <a href="${href}" class="ad-banner ad-tone-${tone}" target="${isExternal ? '_blank' : '_self'}" rel="noopener">
       <div class="ad-banner-inner">
         <span class="ad-banner-eyebrow">${eyebrow}</span>
         <span class="ad-banner-headline">${headline}</span>
@@ -314,8 +314,9 @@ function renderAdBanner({ tone, eyebrow, headline, cta, href }) {
 
 function renderAdBlock({ tone, eyebrow, headline, sub, cta, href, sportsbook }) {
   const isExternal = /^https?:\/\//i.test(href);
+  const rel = sportsbook ? 'noopener sponsored' : 'noopener';
   return `
-    <a href="${href}" class="ad-block ad-tone-${tone}" target="${isExternal ? '_blank' : '_self'}" rel="noopener sponsored"${sportsbook ? ` data-ad-sportsbook="${sportsbook}"` : ''}>
+    <a href="${href}" class="ad-block ad-tone-${tone}" target="${isExternal ? '_blank' : '_self'}" rel="${rel}"${sportsbook ? ` data-ad-sportsbook="${sportsbook}"` : ''}>
       <div class="ad-block-content">
         <span class="ad-block-eyebrow">${eyebrow}${sportsbook ? ` · Sponsored` : ''}</span>
         <h3 class="ad-block-headline">${headline}</h3>
