@@ -19,8 +19,8 @@ import {
   newsArticleSchema, injectSchemas,
 } from '../schema.js';
 
-const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', nhl: 'NHL' };
-const SPORT_FALLBACK = { mlb: '⚾', nfl: '🏈', nba: '🏀', nhl: '🏒' };
+const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', ufc: 'UFC', mma: 'UFC', nba: 'NBA', nhl: 'NHL' };
+const SPORT_FALLBACK = { mlb: '⚾', nfl: '🏈', ufc: '🥊', mma: '🥊', nba: '🏀', nhl: '🏒' };
 
 export async function renderArticle(root, sport, slug, setMeta) {
   // Skeleton
@@ -127,7 +127,7 @@ export async function renderArticle(root, sport, slug, setMeta) {
 
           ${bodyHtml}
 
-          ${ad_brand_family('end_of_article')}
+          ${ad_brand_family('end_of_article', articleContext)}
 
           ${renderPicksCTA(article)}
 
