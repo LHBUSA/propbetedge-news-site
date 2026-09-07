@@ -201,7 +201,12 @@ const main = () => {
     console.log(`  ${a.file.padEnd(34)} ${String(w).padStart(4)}x${String(h).padStart(4)}  ${a.use}`);
   }
   console.log(`\n${ASSETS.length} print files -> public/store/print/ (${(bytes / 1024).toFixed(1)} KB total)`);
-  console.log('Vector and transparent. Printful fetches these by URL, so they must be deployed before product creation runs.');
+  console.log('Vector and transparent. Printful fetches print files by URL, so these must be deployed first.');
+  console.log('');
+  console.log('NEXT STEP, and it is required: Printful accepts PNG and JPG, not SVG.');
+  console.log('Rasterise each file to PNG over its print area (apparel 1800x2400 at 150 DPI,');
+  console.log('cap 1200x600, mug 2475x1155) on transparency, into public/store/print/.');
+  console.log('SVG is the right source of truth and the wrong thing to hand a printer.');
 };
 
 if (process.argv[1] && process.argv[1].endsWith('build_assets.mjs')) main();

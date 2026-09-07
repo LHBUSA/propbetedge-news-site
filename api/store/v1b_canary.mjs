@@ -9,11 +9,34 @@
  * confirms an order: --draft-order creates an unconfirmed draft, which
  * Printful neither charges nor prints, and even that is opt-in.
  *
- * The token is read from the environment and never printed. Store metadata is
- * printed, because knowing which store a token controls is the point.
+ * The token is read from the environment or the repo's .env and is never
+ * printed. Store metadata is printed, because knowing which store a token
+ * controls is the point.
  */
-import { getStores, isConfigured, resolveStoreContext, getShippingRates, createFulfillmentOrder, ProviderError, ProviderNotConfigured } from '../_lib/printful.js';
-import { PRODUCTS, variantKey, providerConfigured } from '../../src/store/catalog.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/* Load .env / .env.local before anything reads process.env.
+ *
+ * Without this the canary only sees variables exported into the shell, so a
+ * token sitting in the repo's own .env reports as "not configured" and the
+ * run stops for a reason that is not true. Existing process env always wins,
+ * so a deliberately exported value is never shadowed by a stale file. */
+const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+for (const f of ['.env', '.env.local']) {
+  const file = path.join(REPO, f);
+  if (!fs.existsSync(file)) continue;
+  for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
+    const i = line.indexOf('=');
+    if (i <= 0 || line.trimStart().startsWith('#')) continue;
+    const k = line.slice(0, i).trim();
+    if (!process.env[k]) process.env[k] = line.slice(i + 1).trim().replace(/^["']|["']$/g, '');
+  }
+}
+
+const { getStores, isConfigured, resolveStoreContext, getShippingRates, createFulfillmentOrder, ProviderError, ProviderNotConfigured } = await import('../_lib/printful.js');
+const { PRODUCTS, variantKey, providerConfigured } = await import('../../src/store/catalog.js');
 
 const WANT_DRAFT = process.argv.includes('--draft-order');
 const results = [];
@@ -39,7 +62,7 @@ const main = async () => {
 
   /* 1. auth --------------------------------------------------------------- */
   if (!isConfigured()) {
-    step('auth', 'fail', 'PROVIDER_NOT_CONFIGURED: PRINTFUL_API_TOKEN is not set in this runtime');
+    step('auth', 'fail', 'PROVIDER_NOT_CONFIGURED: PRINTFUL_API_TOKEN not found in the environment or in .env / .env.local');
     console.log('\nNothing further can run. No order, no draft, no charge.');
     process.exit(3);
   }
