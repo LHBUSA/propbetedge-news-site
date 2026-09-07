@@ -61,6 +61,42 @@ function areaOf(svg, areas) {
   return null;
 }
 
+/* PNG carries physical resolution in a pHYs chunk: pixels per metre, plus a
+ * unit byte. Inserted immediately before IDAT, with its own CRC, because a
+ * chunk with a wrong CRC is worse than no chunk at all. */
+function setPngDpi(file, dpi) {
+  const buf = fs.readFileSync(file);
+  if (buf.includes(Buffer.from('pHYs'))) return;
+  const ppm = Math.round(dpi / 0.0254);
+  const data = Buffer.alloc(9);
+  data.writeUInt32BE(ppm, 0);
+  data.writeUInt32BE(ppm, 4);
+  data.writeUInt8(1, 8);                    // unit: metre
+  const type = Buffer.from('pHYs');
+  const len = Buffer.alloc(4);
+  len.writeUInt32BE(9, 0);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(Buffer.concat([type, data])) >>> 0, 0);
+  const idat = buf.indexOf(Buffer.from('IDAT'));
+  const at = idat - 4;                      // start of the IDAT length field
+  fs.writeFileSync(file, Buffer.concat([buf.subarray(0, at), len, type, data, crc, buf.subarray(at)]));
+}
+
+const CRC_TABLE = (() => {
+  const t = new Int32Array(256);
+  for (let n = 0; n < 256; n += 1) {
+    let c = n;
+    for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c;
+  }
+  return t;
+})();
+function crc32(buf) {
+  let c = 0xffffffff;
+  for (let i = 0; i < buf.length; i += 1) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
 const main = async () => {
   const areasPath = opt('--areas');
   const areas = { ...DEFAULT_AREAS };
@@ -90,7 +126,11 @@ const main = async () => {
 
   for (const f of files) {
     const svg = fs.readFileSync(path.join(DIR, f), 'utf8');
-    const key = areaOf(svg, DEFAULT_AREAS);
+    /* Against the MERGED areas, not the defaults. Passing --areas and then
+     * matching against the built-in table meant a file authored at a live
+     * area was skipped as unrecognised — the override was accepted and then
+     * ignored, which is the worst of both. */
+    const key = areaOf(svg, areas);
     if (!key) {
       console.log(`  SKIP ${f} — its viewBox matches no known print area; add the area rather than guessing`);
       continue;
@@ -119,9 +159,15 @@ const main = async () => {
     await page.locator('#a').screenshot({ path: path.join(DIR, out), omitBackground: true });
     await page.close();
 
+    /* Physical resolution, so a printer reading the file sees the density it
+     * was rendered for rather than assuming 72. Chrome writes no pHYs chunk,
+     * so it is inserted afterwards. */
+    const dpi = areas[key]?.dpi ?? null;
+    if (dpi) setPngDpi(path.join(DIR, out), dpi);
+
     const bytes = fs.statSync(path.join(DIR, out)).size;
-    results.push({ out, w, h, key, bytes });
-    console.log(`  ${out.padEnd(36)} ${w}x${h}  ${key.padEnd(7)} ${(bytes / 1024).toFixed(0)} KB`);
+    results.push({ out, w, h, key, bytes, dpi });
+    console.log(`  ${out.padEnd(38)} ${String(w).padStart(4)}x${String(h).padStart(4)}  ${key.padEnd(8)} ${dpi ? `${dpi}dpi` : '  -   '}  ${(bytes / 1024).toFixed(0)} KB`);
   }
 
   await browser.close();

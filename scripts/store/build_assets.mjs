@@ -32,10 +32,23 @@ fs.mkdirSync(OUT, { recursive: true });
 
 /* Print areas, in the proportions Printful uses. The DTG apparel area is
  * roughly 12x16in; embroidery and mug wraps are their own shapes. */
+/* VERIFIED against the live Printful catalog on 2026-09-07, not assumed.
+ * The previous mug and cap figures were guesses and both were wrong.
+ *
+ *   apparel  1800x2400 @150  Bella+Canvas 3001 (71), placement "front"
+ *   hoodie   2100x2100 @150  Gildan 18500 (146), placement "front" — SQUARE,
+ *                            which is why the hoodie cannot share the tee's
+ *                            portrait file
+ *   mug      2700x1050 @300  White Glossy Mug (19), placement "default"
+ *   cap      UNVERIFIED      the blank is not resolved; see BASE_PRODUCTS.
+ *                            The dad-hat family reports 1650x600 @300, but
+ *                            until one product is chosen this stays a guess
+ *                            and no cap art is regenerated against it. */
 const AREA = {
-  apparel: { w: 1800, h: 2400 },   // 12x16in at 150dpi
-  cap: { w: 1200, h: 600 },        // embroidery, front panel
-  mug: { w: 2475, h: 1155 },       // 11oz wrap
+  apparel: { w: 1800, h: 2400, dpi: 150 },
+  hoodie: { w: 2100, h: 2100, dpi: 150 },
+  mug: { w: 2700, h: 1050, dpi: 300 },
+  cap: { w: 1200, h: 600, dpi: 300 },  // UNVERIFIED, and matches no live area
 };
 
 /* One ink colour per file. Gold for dark garments, ink for light ones, so a
@@ -101,6 +114,32 @@ function wordmarkPrint(color) {
     mark(w / 2, cy, 300, color, 30),
     `  <text x="${w / 2}" y="${cy + 560}" font-family="${SERIF}" font-size="210" fill="${color}" text-anchor="middle">PropBetEdge</text>`,
     `  <text x="${w / 2}" y="${cy + 690}" font-family="${MONO}" font-size="62" letter-spacing="18" fill="${color}" opacity="0.8" text-anchor="middle">SPORTS INTELLIGENCE</text>`,
+  ].join('\n');
+  return svg(w, h, body);
+}
+
+/* The hoodie front is square, and a portrait lockup letterboxed into a square
+ * would sit small with dead space either side. So the same elements are
+ * composed for the area rather than fitted to it: identical proportions
+ * between mark, wordmark and strapline, scaled to the square and centred as
+ * one block. Nothing is stretched and nothing is cropped.
+ *
+ * Kept separate from wordmarkPrint on purpose — the tee's composition is
+ * verified against its live area and must not shift because the hoodie
+ * needed a different shape. */
+function wordmarkSquarePrint(color, area) {
+  const { w, h } = area;
+  const s = Math.min(w, h) / 1800;
+  const r = 300 * s;
+  /* Block runs from the top of the mark to the strapline's descender; centre
+   * that, rather than centring the mark and letting the type hang low. */
+  const top = -r;
+  const bottom = 715 * s;
+  const y0 = h / 2 - (top + bottom) / 2;
+  const body = [
+    mark(w / 2, y0, r, color, 30 * s),
+    `  <text x="${w / 2}" y="${(y0 + 560 * s).toFixed(0)}" font-family="${SERIF}" font-size="${(210 * s).toFixed(0)}" fill="${color}" text-anchor="middle">PropBetEdge</text>`,
+    `  <text x="${w / 2}" y="${(y0 + 690 * s).toFixed(0)}" font-family="${MONO}" font-size="${(62 * s).toFixed(0)}" letter-spacing="${(18 * s).toFixed(0)}" fill="${color}" opacity="0.8" text-anchor="middle">SPORTS INTELLIGENCE</text>`,
   ].join('\n');
   return svg(w, h, body);
 }
@@ -186,7 +225,9 @@ export const ASSETS = [
   { file: 'my-model-said-no-ink.svg', area: 'apparel', svg: () => sloganPrint('My Model Said No.', INK), use: 'light garments' },
   { file: 'fight-dna-over-takes-gold.svg', area: 'apparel', svg: () => sloganPrint('Fight DNA > Fight Takes.', GOLD), use: 'dark garments' },
   { file: 'fight-dna-over-takes-ink.svg', area: 'apparel', svg: () => sloganPrint('Fight DNA > Fight Takes.', INK), use: 'light garments' },
-  { file: 'cap-mark-gold.svg', area: 'cap', svg: () => capPrint(GOLD), use: 'embroidery, dark caps' },
+  { file: 'propbetedge-wordmark-gold-hoodie.svg', area: 'hoodie', svg: () => wordmarkSquarePrint(GOLD, AREA.hoodie), use: 'hoodie front, dark' },
+  { file: 'propbetedge-wordmark-ink-hoodie.svg', area: 'hoodie', svg: () => wordmarkSquarePrint(INK, AREA.hoodie), use: 'hoodie front, light' },
+  { file: 'cap-mark-gold.svg', area: 'cap', svg: () => capPrint(GOLD), use: 'embroidery, dark caps — AREA UNVERIFIED' },
   { file: 'mug-wordmark-ink.svg', area: 'mug', svg: () => mugPrint(null, INK), use: 'white mug' },
   { file: 'mug-spreadsheet-ink.svg', area: 'mug', svg: () => mugPrint('I Have A Spreadsheet For This.', INK), use: 'white mug' },
 ];
@@ -204,8 +245,9 @@ const main = () => {
   console.log('Vector and transparent. Printful fetches print files by URL, so these must be deployed first.');
   console.log('');
   console.log('NEXT STEP, and it is required: Printful accepts PNG and JPG, not SVG.');
-  console.log('Rasterise each file to PNG over its print area (apparel 1800x2400 at 150 DPI,');
-  console.log('cap 1200x600, mug 2475x1155) on transparency, into public/store/print/.');
+  console.log('Rasterise each file to PNG over its print area (apparel 1800x2400 @150,');
+  console.log('hoodie 2100x2100 @150, mug 2700x1050 @300) on transparency. The cap area is');
+  console.log('still unverified because the blank is unresolved, so its file is not production art.');
   console.log('SVG is the right source of truth and the wrong thing to hand a printer.');
 };
 
