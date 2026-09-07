@@ -48,7 +48,10 @@ export default async function handler(req, res) {
 
   let product;
   try {
-    const cat = await fetchSharedCatalog({ site: 'news' });
+    /* A picture does not depend on whether anything is for sale, so this one
+     * caller tolerates a degraded provisioning read. Nothing that touches
+     * money does. */
+    const cat = await fetchSharedCatalog({ site: 'news', allowDegraded: true });
     product = cat.byslug.get(slug);
   } catch (e) {
     const reason = e instanceof CatalogUnavailable ? e.reason : 'unexpected error';

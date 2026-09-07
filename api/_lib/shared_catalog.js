@@ -98,8 +98,8 @@ async function hmacHex(secret, payload) {
  * caller cannot accidentally treat "we could not ask" as "nothing is for
  * sale but the shop is fine".
  */
-export async function fetchSharedCatalog({ site = 'news', force = false } = {}) {
-  if (!force && cache.value && Date.now() - cache.at < TTL_MS) return cache.value;
+export async function fetchSharedCatalog({ site = 'news', force = false, allowDegraded = false } = {}) {
+  if (!force && !allowDegraded && cache.value && Date.now() - cache.at < TTL_MS) return cache.value;
 
   const secret = process.env.CATALOG_SHARED_SECRET;
   if (!secret) throw new CatalogUnavailable('CATALOG_SHARED_SECRET is not configured on this deployment');
@@ -140,17 +140,25 @@ export async function fetchSharedCatalog({ site = 'news', force = false } = {}) 
   /* The upstream tells us whether it could read provisioning state at all.
    * "Nothing is available" and "we could not find out what is available" are
    * different answers and the second one must not masquerade as the first. */
-  if (data.provisioning_source && data.provisioning_source !== 'ok') {
+  const degraded = Boolean(data.provisioning_source) && data.provisioning_source !== 'ok';
+  /* allowDegraded exists for exactly one caller: the image proxy. A product
+   * preview does not depend on provisioning state, so refusing to serve a
+   * picture because availability could not be read is a worse answer than
+   * showing the picture beside "not for sale". Everything that touches money
+   * leaves this false and still fails closed. */
+  if (degraded && !allowDegraded) {
     throw new CatalogUnavailable(`shared catalog could not read provisioning state (${data.provisioning_source})`);
   }
 
   const value = {
     catalog_version: data.catalog_version ?? null,
     generated_at: data.generated_at ?? null,
+    degraded,
     products: data.products,
     byslug: new Map(data.products.map((p) => [p.slug, p])),
   };
-  cache = { at: Date.now(), value };
+  /* A degraded read is never cached as if it were a good one. */
+  if (!degraded) cache = { at: Date.now(), value };
   return value;
 }
 
