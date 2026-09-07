@@ -42,6 +42,7 @@ export function loadShared() {
         reason: null,
         byslug: new Map(data.products.map((p) => [p.slug, p])),
         catalogVersion: data.catalog_version ?? null,
+        provisioning: data.provisioning ?? 'ok',
       };
     } catch (e) {
       return { state: 'unavailable', reason: `catalog endpoint unreachable (${e.name})`, byslug: new Map(), catalogVersion: null };

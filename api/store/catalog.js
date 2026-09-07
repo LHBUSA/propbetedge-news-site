@@ -43,12 +43,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    const cat = await fetchSharedCatalog({ site: 'news' });
+    /* Degraded is tolerated HERE and nowhere that takes money.
+     *
+     * A page needs to show the same products as the other storefront — same
+     * names, same prices, same options, same images, resolved from the same
+     * records. Whether any of them can be bought is a separate fact, and when
+     * provisioning state cannot be read the answer to that is simply "no".
+     * Refusing to render the shop at all conflated the two and left this site
+     * showing "not listed in the shared catalog" for products that are very
+     * much listed. Checkout still refuses outright. */
+    const cat = await fetchSharedCatalog({ site: 'news', allowDegraded: true });
     return json(res, 200, {
       catalog_version: cat.catalog_version,
       generated_at: cat.generated_at,
       source: 'shared',
-      purchasing: cat.products.some((p) => p.purchasable) ? 'open' : 'disabled',
+      /* Only true availability opens purchasing, and a degraded read can never
+       * produce it: every product projects unavailable upstream in that case. */
+      provisioning: cat.degraded ? 'unreadable' : 'ok',
+      purchasing: !cat.degraded && cat.products.some((p) => p.purchasable) ? 'open' : 'disabled',
       count: cat.products.length,
       /* Passed through unchanged. The upstream already projects storefront
        * fields only; re-shaping here would create a second place where a
