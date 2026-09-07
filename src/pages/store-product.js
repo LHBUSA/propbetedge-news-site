@@ -10,7 +10,8 @@
  */
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
-import { bySlug, formatPrice, isPurchasable, providerConfigured } from '../store/catalog.js';
+import { bySlug, formatPrice } from '../store/catalog.js';
+import { canBuy, loadShared, merge } from '../store/shared.js';
 import { add } from '../store/cart.js';
 import { track } from '../store/analytics.js';
 import { productArt } from '../store/mockups.js';
@@ -21,10 +22,16 @@ import { renderNotFound } from './404.js';
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 export async function renderStoreProduct(root, setMeta, slug) {
-  const p = bySlug(slug);
-  if (!p) return renderNotFound(root, setMeta);
-  const open = providerConfigured();
-  const art = productArt(p);
+  const local = bySlug(slug);
+  if (!local) return renderNotFound(root, setMeta);
+
+  /* Price, options and availability are re-resolved from the authoritative
+   * records at render time. The build-time file supplies copy only; it cannot
+   * know what has been provisioned since it shipped. */
+  const cat = await loadShared();
+  const p = merge(local, cat.byslug.get(slug));
+  const open = p.purchasable;
+  const art = productArt(local);
 
   if (setMeta) {
     setMeta({
@@ -101,7 +108,7 @@ export async function renderStoreProduct(root, setMeta, slug) {
             </div>
 
             <button type="button" class="st-add" data-add ${open ? '' : 'disabled'}>
-              ${open ? 'Add to cart' : 'Checkout opens soon'}
+              ${open ? 'Add to cart' : esc(p.unavailable_reason || (cat.state === 'ok' ? 'Not on sale yet' : 'Availability unavailable'))}
             </button>
             <p class="st-add-msg" data-msg role="status" aria-live="polite"></p>
 
@@ -155,7 +162,7 @@ function wire(root, p, open) {
       msg.textContent = 'Choose a size first.';
       return;
     }
-    if (!isPurchasable(p, size, color)) {
+    if (!canBuy(p, size, color)) {
       msg.textContent = 'That size and colour is not available yet.';
       return;
     }

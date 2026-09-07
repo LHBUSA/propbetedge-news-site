@@ -18,6 +18,15 @@
  * timestamp, the method and the path, so it is worthless against a different
  * endpoint and expires on its own. The secret never leaves the server.
  *
+ * The UFC preview sits behind Vercel Deployment Protection, so a
+ * server-to-server call from this preview needs an authorised bypass. That is
+ * CATALOG_BYPASS_TOKEN, sent as a request header from the server and nowhere
+ * else: never in a URL, never in anything a browser receives, never in an
+ * image src. It gets past the platform's door; it does not replace the
+ * signature, which is what actually authenticates the request. Both are
+ * required, and removing the bypass would only make the call fail at the edge
+ * rather than make it safe.
+ *
  * Everything here fails CLOSED. Unreachable catalog, malformed response,
  * missing secret, a product the shared catalog does not list — every one of
  * those ends with purchasing disabled and an honest reason, never with a
@@ -49,6 +58,25 @@ export function catalogConfigured() {
 
 function origin() {
   return String(process.env.CATALOG_ORIGIN || DEFAULT_ORIGIN).replace(/\/$/, '');
+}
+
+/**
+ * Add the deployment-protection bypass, if one is configured.
+ *
+ * Header only. Vercel also accepts the bypass as a query parameter, which is
+ * convenient and wrong for us: a URL ends up in logs, in referrers and in
+ * anything that caches, and this value would then be a standing key to every
+ * protected preview in the project.
+ */
+export function bypassHeaders(headers = {}) {
+  const token = process.env.CATALOG_BYPASS_TOKEN;
+  if (token) headers['x-vercel-protection-bypass'] = token;
+  return headers;
+}
+
+/** The configured upstream origin, for callers that proxy a sub-resource. */
+export function catalogOrigin() {
+  return origin();
 }
 
 async function hmacHex(secret, payload) {
@@ -83,11 +111,11 @@ export async function fetchSharedCatalog({ site = 'news', force = false } = {}) 
   let res;
   try {
     res = await fetch(`${origin()}${pathWithQuery}`, {
-      headers: {
+      headers: bypassHeaders({
         'x-pbe-timestamp': ts,
         'x-pbe-signature': `sha256=${signature}`,
         accept: 'application/json',
-      },
+      }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch (e) {

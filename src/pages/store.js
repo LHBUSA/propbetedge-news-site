@@ -12,7 +12,8 @@
  */
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
-import { COLLECTIONS, featured, formatPrice, inCollection, providerConfigured } from '../store/catalog.js';
+import { COLLECTIONS, featured, formatPrice, inCollection } from '../store/catalog.js';
+import { loadShared, merge } from '../store/shared.js';
 import { count as cartCount } from '../store/cart.js';
 import { track } from '../store/analytics.js';
 import { designPreview } from '../store/mockups.js';
@@ -34,7 +35,9 @@ function card(p) {
 export async function renderStore(root, setMeta, params = {}) {
   const active = params.collection && COLLECTIONS.some((c) => c.slug === params.collection) ? params.collection : 'all';
   const products = inCollection(active);
-  const open = providerConfigured();
+  /* Availability is the shared catalog's answer, not this build's. */
+  const cat = await loadShared();
+  const open = [...cat.byslug.values()].some((x) => x.purchasable === true);
 
   if (setMeta) {
     setMeta({
@@ -64,7 +67,9 @@ export async function renderStore(root, setMeta, params = {}) {
           <p class="st-eyebrow">PropBetEdge Store</p>
           <h1>Wear the edge.</h1>
           <p class="st-lede">Built for people who read the number before the narrative. Ten pieces, made to order, no casino gift shop.</p>
-          ${open ? '' : `<p class="st-notice"><b>Checkout opens soon.</b> The collection is finished; fulfilment is being connected. Nothing can be ordered yet, and nothing is being charged.</p>`}
+          ${open ? '' : `<p class="st-notice"><b>Checkout opens soon.</b> ${cat.state === 'ok'
+            ? 'The collection is finished; fulfilment is being connected. Nothing can be ordered yet, and nothing is being charged.'
+            : 'Availability could not be confirmed with the shared catalog just now, so nothing can be ordered. Nothing is being charged.'}</p>`}
         </div>
       </section>
 
