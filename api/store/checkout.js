@@ -15,7 +15,8 @@
  * Taking money for a shirt no one can print is the one failure this store
  * must not have.
  */
-import { bySlug, isPurchasable, providerConfigured, variantKey } from '../../src/store/catalog.js';
+import { variantKey } from '../../src/store/catalog.js';
+import { CatalogUnavailable, catalogConfigured, fetchSharedCatalog, optionAvailable } from '../_lib/shared_catalog.js';
 
 const MAX_LINES = 20;
 const MAX_QTY = 20;
@@ -32,11 +33,29 @@ export default async function handler(req, res) {
   const secret = process.env.STRIPE_SECRET_KEY;
   if (!secret) return json(res, 503, { error: 'stripe_not_configured', message: 'Checkout is not enabled yet.' });
 
-  /* Refuse before charging, not after. */
-  if (!providerConfigured()) {
+  /* Refuse before charging, not after.
+   *
+   * Availability is not this repository's to decide. UFC owns the catalog and
+   * the provisioning state, so every line is resolved against those records,
+   * and a checkout that cannot reach them is refused rather than guessed at.
+   * The local catalog still supplies copy; it no longer decides what may be
+   * sold. */
+  if (!catalogConfigured()) {
     return json(res, 503, {
-      error: 'PROVIDER_NOT_CONFIGURED',
-      message: 'The collection is not purchasable yet. Fulfilment is not connected.',
+      error: 'CATALOG_NOT_CONFIGURED',
+      message: 'The collection is not purchasable yet. This deployment cannot reach the shared catalog.',
+    });
+  }
+
+  let shared;
+  try {
+    shared = await fetchSharedCatalog({ site: 'news' });
+  } catch (e) {
+    const reason = e instanceof CatalogUnavailable ? e.reason : 'unexpected error';
+    console.error(`[checkout] shared catalog unavailable: ${reason}`);
+    return json(res, 503, {
+      error: 'CATALOG_UNAVAILABLE',
+      message: 'Purchasing is temporarily disabled: the shared catalog could not be reached.',
     });
   }
 
@@ -57,30 +76,39 @@ export default async function handler(req, res) {
     if ('price' in l || 'unit_amount' in l || 'amount' in l || 'lineTotal' in l) {
       return json(res, 400, { error: 'price_not_accepted', message: 'Prices are resolved server-side.' });
     }
-    const product = bySlug(String(l.slug || ''));
-    if (!product) return json(res, 400, { error: 'unknown_sku', slug: l.slug });
+    const slug = String(l.slug || '');
+    /* The authoritative record. A slug this site knows locally but the shared
+     * catalog does not list is a stale local file, not a product. */
+    const product = shared.byslug.get(slug);
+    if (!product) return json(res, 400, { error: 'unknown_sku', slug });
 
     const size = String(l.size || '');
     const color = String(l.color || '');
-    if (!product.sizes.includes(size)) return json(res, 400, { error: 'unknown_size', slug: product.slug, size });
-    if (!product.colors.includes(color)) return json(res, 400, { error: 'unknown_color', slug: product.slug, color });
+    if (!product.sizes.includes(size)) return json(res, 400, { error: 'unknown_size', slug, size });
+    if (!product.colors.includes(color)) return json(res, 400, { error: 'unknown_color', slug, color });
 
     const qty = Math.floor(Number(l.qty));
-    if (!Number.isFinite(qty) || qty < 1 || qty > MAX_QTY) return json(res, 400, { error: 'invalid_quantity', slug: product.slug });
+    if (!Number.isFinite(qty) || qty < 1 || qty > MAX_QTY) return json(res, 400, { error: 'invalid_quantity', slug });
 
-    if (!isPurchasable(product, size, color)) {
-      return json(res, 409, { error: 'variant_not_available', slug: product.slug, variant: variantKey(size, color) });
+    if (!optionAvailable(product, size, color)) {
+      return json(res, 409, {
+        error: 'variant_not_available',
+        slug,
+        variant: variantKey(size, color),
+        reason: product.unavailable_reason || 'not confirmed with the printer',
+      });
     }
 
     resolved.push({
-      slug: product.slug,
+      slug,
       name: product.name,
       size,
       color,
       qty,
-      unit_amount: product.retail_price,           // from the catalog, never the request
-      currency: product.currency,
-      providerVariantId: product.provider_variant_ids[variantKey(size, color)],
+      /* Price comes from the shared record, never from the request and never
+       * from this repository's copy of the catalog. */
+      unit_amount: product.price_cents,
+      currency: 'usd',
     });
   }
 
@@ -118,7 +146,7 @@ export default async function handler(req, res) {
     return json(res, 400, { error: 'cart_too_large', message: 'Please order fewer distinct items at once.' });
   }
   form.set('metadata[cart]', encoded);
-  form.set('metadata[catalog_version]', String(body.catalogVersion || ''));
+  form.set('metadata[catalog_version]', String(shared.catalog_version || ''));
 
   try {
     const r = await fetch('https://api.stripe.com/v1/checkout/sessions', {
