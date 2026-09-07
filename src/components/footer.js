@@ -50,6 +50,12 @@ export function renderFooter() {
           </div>
 
           <div class="footer-col">
+            <h4>🛒 Store</h4>
+            <a href="/store">PropBetEdge Store</a>
+            <a href="/store/policies">Shipping &amp; returns</a>
+          </div>
+
+          <div class="footer-col">
             <h4>💬 Community</h4>
             <a href="${PROPBET_LINKS.discord}" target="_blank" rel="noopener">
               <span class="footer-icon">𝕯</span> Discord

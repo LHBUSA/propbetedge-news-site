@@ -24,6 +24,8 @@
  */
 
 import { api } from '../api.js';
+import { designPreview } from '../store/mockups.js';
+import { featured } from '../store/catalog.js';
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { renderArticleCard, renderSidebarStory, escapeHtml, escapeAttr, formatRelative } from '../components/article-card.js';
@@ -63,6 +65,18 @@ export async function renderHome(root) {
 
         <!-- Per-sport rails -->
         <div id="sport-rails"></div>
+
+        <!-- Merch. Placed below the news product on purpose: it must never
+             outrank the journalism it sits under. -->
+        <section class="st-home" aria-label="PropBetEdge Store">
+          <div class="st-home-body">
+            <p class="st-eyebrow">PropBetEdge gear</p>
+            <h2>Not betting merch. The uniform for people who question the price.</h2>
+            <p>Logo tees, a heavyweight hoodie, an embroidered hat and a few things worth saying out loud. Made to order, shipped direct.</p>
+            <p style="margin-top:16px"><a class="btn gold" href="/store">Shop the collection →</a></p>
+          </div>
+          <div class="st-home-art">${storeTeaser()}</div>
+        </section>
       </div>
     </main>
     ${renderFooter()}
@@ -224,4 +238,10 @@ function cardSkeleton(n) {
     `;
   }
   return out;
+}
+
+/* Three featured pieces as vector design previews. No product photography,
+ * because these are made to order and no physical stock exists to photograph. */
+function storeTeaser() {
+  return featured().slice(0, 3).map((p) => designPreview(p)).join('');
 }

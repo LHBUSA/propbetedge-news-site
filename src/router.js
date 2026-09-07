@@ -24,6 +24,11 @@ import { renderArticle } from './pages/article.js';
 import { renderAuthor } from './pages/author.js';
 import { renderEditorialStandards } from './pages/editorial-standards.js';
 import { renderNotFound } from './pages/404.js';
+// PropBetEdge Store
+import { renderStore } from './pages/store.js';
+import { renderStoreProduct } from './pages/store-product.js';
+import { renderStoreCart, renderStoreThanks } from './pages/store-cart.js';
+import { renderStorePolicies } from './pages/store-policies.js';
 import { renderGamesHub } from './pages/games-hub.js';
 import { renderGameDetail } from './pages/game-detail.js';
 import { renderLeadersPage } from './pages/leaders.js';
@@ -90,6 +95,20 @@ function clearAndRoute() {
     });
     return renderHome(root);
   }
+
+  /* ---- PropBetEdge Store ------------------------------------------------
+   * The fixed sub-routes are matched before /store/:slug so a product can
+   * never shadow the cart. setMeta is passed through to each page because
+   * these set their own canonical and description. */
+  if (path === '/store') {
+    const c = new URLSearchParams(window.location.search).get('c');
+    return renderStore(root, setMeta, { collection: c });
+  }
+  if (path === '/store/cart') return renderStoreCart(root, setMeta);
+  if (path === '/store/thanks') return renderStoreThanks(root, setMeta);
+  if (path === '/store/policies') return renderStorePolicies(root, setMeta);
+  const storeProduct = path.match(/^\/store\/([a-z0-9-]+)$/);
+  if (storeProduct) return renderStoreProduct(root, setMeta, storeProduct[1]);
 
   if (path === '/news') {
     setMeta({
