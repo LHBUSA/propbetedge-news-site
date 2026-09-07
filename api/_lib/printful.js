@@ -43,8 +43,18 @@ async function call(path, { method = 'GET', body } = {}) {
   if (!token) throw new ProviderNotConfigured();
 
   const headers = { authorization: `Bearer ${token}`, 'content-type': 'application/json' };
-  /* Store id is only required on accounts with more than one store. Sending
-   * it when we have it avoids an ambiguous-store error later. */
+  /* Printful has two kinds of private token and they differ in exactly one
+   * way that matters here.
+   *
+   * A STORE-level token is already scoped to the store it was created for.
+   * X-PF-Store-Id is not required, and sending one is at best redundant.
+   *
+   * An ACCOUNT-level token is not scoped, so it needs X-PF-Store-Id to say
+   * which store a call is about.
+   *
+   * The header is therefore sent only when PRINTFUL_STORE_ID is explicitly
+   * configured, and PRINTFUL_STORE_ID is optional. Requiring it would refuse
+   * a perfectly valid store-level token for no reason. */
   if (process.env.PRINTFUL_STORE_ID) headers['x-pf-store-id'] = String(process.env.PRINTFUL_STORE_ID);
 
   const res = await fetch(`${API}${path}`, {
@@ -56,6 +66,46 @@ async function call(path, { method = 'GET', body } = {}) {
   const text = await res.text();
   if (!res.ok) throw new ProviderError(res.status, text);
   try { return JSON.parse(text); } catch { throw new ProviderError(res.status, `unparseable response: ${text.slice(0, 200)}`); }
+}
+
+/**
+ * Auth canary. GET /stores is the cheapest call that proves three things at
+ * once: the token is valid, it reaches the API, and which store it actually
+ * controls. It creates nothing and costs nothing.
+ *
+ * A store-level token returns exactly the store it is scoped to, which is the
+ * fact worth confirming before any order is created: a token pointed at the
+ * wrong store would otherwise be discovered by a shirt arriving from it.
+ */
+export async function getStores() {
+  const r = await call('/stores');
+  const list = Array.isArray(r?.result) ? r.result : r?.result ? [r.result] : [];
+  return list.map((s) => ({
+    id: s.id,
+    name: s.name,
+    type: s.type ?? null,
+    website: s.website ?? null,
+    currency: s.currency ?? null,
+  }));
+}
+
+/**
+ * Which store this token will act on, and whether that is unambiguous.
+ *
+ * Scoped means the token resolves to a single store on its own, so no
+ * X-PF-Store-Id is needed. Ambiguous means the token sees several stores and
+ * PRINTFUL_STORE_ID must say which, otherwise Printful will either guess or
+ * refuse and neither is acceptable for an order.
+ */
+export async function resolveStoreContext() {
+  const stores = await getStores();
+  const configured = process.env.PRINTFUL_STORE_ID ? String(process.env.PRINTFUL_STORE_ID) : null;
+  if (configured) {
+    const hit = stores.find((s) => String(s.id) === configured) || null;
+    return { mode: 'account_token_with_store_id', stores, selected: hit, ambiguous: false, ok: Boolean(hit) };
+  }
+  if (stores.length === 1) return { mode: 'store_token', stores, selected: stores[0], ambiguous: false, ok: true };
+  return { mode: 'account_token_missing_store_id', stores, selected: null, ambiguous: stores.length > 1, ok: false };
 }
 
 /**
@@ -128,6 +178,8 @@ export function normalizeStatus(s) {
 export const provider = {
   name: 'printful',
   isConfigured,
+  getStores,
+  resolveStoreContext,
   createFulfillmentOrder,
   getShippingRates,
   getOrderStatus,

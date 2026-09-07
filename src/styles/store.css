@@ -150,3 +150,15 @@
   .st-cart-price { grid-area: price; justify-self: end; align-self: center; }
   .st-home-art { display: none; }
 }
+
+/* Note on masthead tap targets, deliberately NOT changed here.
+ *
+ * At 480px and below the site forces .nav-link to 5px padding with
+ * !important, under a comment saying it is to fit the nav on small screens.
+ * That puts every item at about 26px tall, below the usual 44px guidance,
+ * and the store adds a ninth item to a bar that already wraps at 320px.
+ *
+ * Overriding it would mean escalating !important against a deliberate
+ * decision and risking the wrapping it was written to avoid. Raising the
+ * whole mobile nav is a site-wide design change worth making on its own
+ * terms, not smuggled in behind a store link. Flagged rather than forced. */

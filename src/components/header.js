@@ -16,6 +16,9 @@ export function renderHeader() {
   });
   const isLive    = path === '/games'   || path.startsWith('/games/');
   const isLeaders = path === '/leaders' || path.startsWith('/leaders/');
+  /* Active on the index and on every product page, so a reader deep in the
+   * collection still sees where they are. */
+  const isStore = path === '/store' || path.startsWith('/store/');
   return `
     <div class="topbar">
       <div class="container topbar-inner">
@@ -46,6 +49,7 @@ export function renderHeader() {
           <a href="/news/nhl" class="nav-link ${path.startsWith('/news/nhl') ? 'active' : ''}">NHL</a>
           <a href="/games" class="nav-link live-link ${isLive ? 'active' : ''}">Live Games</a>
           <a href="/leaders" class="nav-link ${isLeaders ? 'active' : ''}">Leaders</a>
+          <a href="/store" class="nav-link ${isStore ? 'active' : ''}">Store</a>
           <a href="https://mlb.propbetedge.ai" class="nav-link cta">Picks →</a>
         </div>
       </div>

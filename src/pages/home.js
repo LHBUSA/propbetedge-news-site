@@ -71,7 +71,7 @@ export async function renderHome(root) {
         <section class="st-home" aria-label="PropBetEdge Store">
           <div class="st-home-body">
             <p class="st-eyebrow">PropBetEdge gear</p>
-            <h2>Not betting merch. The uniform for people who question the price.</h2>
+            <h2>Built for people who read the number before the narrative.</h2>
             <p>Logo tees, a heavyweight hoodie, an embroidered hat and a few things worth saying out loud. Made to order, shipped direct.</p>
             <p style="margin-top:16px"><a class="btn gold" href="/store">Shop the collection →</a></p>
           </div>
@@ -243,5 +243,5 @@ function cardSkeleton(n) {
 /* Three featured pieces as vector design previews. No product photography,
  * because these are made to order and no physical stock exists to photograph. */
 function storeTeaser() {
-  return featured().slice(0, 3).map((p) => designPreview(p)).join('');
+  return featured().slice(0, 4).map((p) => designPreview(p)).join('');
 }
