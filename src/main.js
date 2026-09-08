@@ -10,6 +10,8 @@ import './styles/pbe-background-assets.css';
 import './styles/pbe-intelligence-graph.css';
 import './styles/pbe-impact-personalization.css';
 import './styles/pbe-search-reading.css';
+import './styles/pbe-header-network-switcher.css';
+import './styles/pbe-search-network-upgrade.css';
 import './styles/pbe-board-author.css';
 import { initBackgroundSelector } from './background-selector.js';
 import { initNflLaunchPriority } from './nfl-launch-priority.js';
