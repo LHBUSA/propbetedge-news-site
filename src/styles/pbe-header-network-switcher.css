@@ -1,0 +1,289 @@
+/*
+ * PropBetEdge live intelligence network switcher
+ * Keeps search on the left rail and turns the single sport CTA into a
+ * three-product MLB / NFL / UFC switcher without disturbing the center mark.
+ */
+
+.masthead-search {
+  border: 1px solid rgba(233,199,90,.18) !important;
+  border-radius: 8px;
+  background: rgba(212,175,55,.035) !important;
+  color: var(--paper-2) !important;
+  gap: 7px !important;
+}
+
+.masthead-search:hover,
+.masthead-search:focus-visible {
+  border-color: rgba(233,199,90,.48) !important;
+  background: rgba(212,175,55,.085) !important;
+  color: #fffaf0 !important;
+  outline: none;
+}
+
+.masthead-search-icon {
+  color: var(--gold-bright);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.masthead-search kbd {
+  min-width: 20px !important;
+  height: 20px !important;
+  border-color: rgba(233,199,90,.24) !important;
+  background: rgba(255,255,255,.035) !important;
+  color: #aaa392 !important;
+}
+
+.masthead-nav-divider {
+  width: 1px;
+  height: 22px;
+  flex: 0 0 1px;
+  margin: 0 3px;
+  background: linear-gradient(180deg, transparent, rgba(233,199,90,.28), transparent);
+}
+
+.masthead-search-mobile {
+  display: none !important;
+}
+
+.pbe-intel-switcher {
+  position: relative;
+  z-index: 90;
+  flex: 0 0 auto;
+}
+
+.pbe-intel-switcher > summary {
+  list-style: none;
+}
+
+.pbe-intel-switcher > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pbe-intel-summary {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border: 1px solid rgba(255,235,158,.42);
+  background: linear-gradient(180deg, #e3bf45 0%, #cda62f 100%);
+  color: #100e0b;
+  box-shadow: 0 7px 22px rgba(212,175,55,.22);
+  cursor: pointer;
+  user-select: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .09em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.pbe-intel-summary:hover,
+.pbe-intel-summary:focus-visible,
+.pbe-intel-switcher[open] .pbe-intel-summary {
+  background: var(--gold-bright);
+  box-shadow: 0 9px 30px rgba(212,175,55,.34);
+  outline: none;
+}
+
+.pbe-intel-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #100e0b;
+  box-shadow: 0 0 0 3px rgba(16,14,11,.08);
+}
+
+.pbe-intel-chevron {
+  font-size: 14px;
+  transition: transform .16s ease;
+}
+
+.pbe-intel-switcher[open] .pbe-intel-chevron {
+  transform: rotate(180deg);
+}
+
+.pbe-intel-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(390px, calc(100vw - 28px));
+  overflow: hidden;
+  border: 1px solid rgba(233,199,90,.26);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(212,175,55,.12), transparent 36%),
+    rgba(13,12,10,.992);
+  box-shadow: 0 24px 70px rgba(0,0,0,.55);
+}
+
+.pbe-intel-menu-head {
+  display: grid;
+  gap: 5px;
+  padding: 14px 15px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.065);
+}
+
+.pbe-intel-menu-head span {
+  color: var(--gold-bright);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .15em;
+}
+
+.pbe-intel-menu-head strong {
+  color: #f7f2e8;
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.pbe-intel-option {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.055);
+  color: #f7f2e8;
+  text-decoration: none;
+  transition: background .14s ease, border-color .14s ease;
+}
+
+.pbe-intel-option:last-child {
+  border-bottom: 0;
+}
+
+.pbe-intel-option:hover,
+.pbe-intel-option:focus-visible,
+.pbe-intel-option.is-active {
+  background: rgba(212,175,55,.075);
+  outline: none;
+}
+
+.pbe-intel-option.is-active {
+  box-shadow: inset 2px 0 0 var(--gold-bright);
+}
+
+.pbe-intel-option-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(233,199,90,.18);
+  border-radius: 10px;
+  background: rgba(255,255,255,.025);
+  font-size: 20px;
+}
+
+.pbe-intel-option-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.pbe-intel-option-copy strong {
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+.pbe-intel-option-copy small {
+  color: #aaa392;
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+.pbe-intel-option-copy em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(233,199,90,.72);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  font-style: normal;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+
+.pbe-intel-option-live {
+  color: var(--gold-bright);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .09em;
+  white-space: nowrap;
+}
+
+@media (max-width: 1320px) and (min-width: 881px) {
+  .masthead-search-desktop .pbe-search-label,
+  .masthead-search-desktop kbd {
+    display: none !important;
+  }
+
+  .masthead-search-desktop {
+    width: 34px;
+    min-width: 34px;
+    padding-left: 7px !important;
+    padding-right: 7px !important;
+  }
+
+  .masthead-nav-divider {
+    margin-inline: 1px;
+  }
+
+  .pbe-intel-summary {
+    padding-inline: 11px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 1040px) and (min-width: 881px) {
+  .pbe-intel-summary > span:nth-child(2) {
+    max-width: 82px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 880px) {
+  .masthead-search-desktop,
+  .masthead-nav-divider {
+    display: none !important;
+  }
+
+  .masthead-search-mobile {
+    display: inline-flex !important;
+    min-height: 38px !important;
+    padding: 8px 11px !important;
+  }
+
+  .pbe-intel-summary {
+    min-height: 38px;
+    padding: 8px 11px;
+    font-size: 9px;
+  }
+
+  .pbe-intel-menu {
+    right: 50%;
+    transform: translateX(50%);
+  }
+}
+
+@media (max-width: 520px) {
+  .pbe-intel-option {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .pbe-intel-option-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .pbe-intel-option-live {
+    display: none;
+  }
+}
