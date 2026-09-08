@@ -33,6 +33,7 @@ export function renderFooter() {
           <div class="footer-col">
             <h4>⚙️ Build With It</h4>
             <a href="${PROPBET_LINKS.propsports}" target="_blank" rel="noopener">PropSports API</a>
+            <a href="https://ufc.proptechusa.ai" target="_blank" rel="noopener">UFC Data API <span class="footer-badge">Live</span></a>
             <a href="${PROPBET_LINKS.api_news}" target="_blank" rel="noopener">Sports News API</a>
             <span class="footer-link-note">The data and intelligence infrastructure behind the PropBetEdge network.</span>
           </div>
