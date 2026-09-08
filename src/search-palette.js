@@ -14,6 +14,42 @@ let indexPromise = null;
 let teamCacheAt = 0;
 let lastFocused = null;
 
+const LIVE_PRODUCTS = Object.freeze([
+  Object.freeze({
+    type: 'product',
+    sport: 'mlb',
+    eyebrow: '⚾ MLB · LIVE INTELLIGENCE',
+    title: 'MLB Intelligence',
+    subtitle: 'Live game context, player research, props, model analysis and picks',
+    href: 'https://mlb.propbetedge.ai',
+    domain: 'mlb.propbetedge.ai',
+    external: true,
+    keywords: ['mlb', 'baseball', 'live intelligence', 'model', 'props', 'picks', 'player research', 'market'],
+  }),
+  Object.freeze({
+    type: 'product',
+    sport: 'nfl',
+    eyebrow: '🏈 NFL · LIVE INTELLIGENCE',
+    title: 'NFL Intelligence',
+    subtitle: 'Market Board, Model Lab, line simulation, matchup and live game intelligence',
+    href: 'https://nfl.propbetedge.ai',
+    domain: 'nfl.propbetedge.ai',
+    external: true,
+    keywords: ['nfl', 'football', 'live intelligence', 'market board', 'model lab', 'simulation', 'props', 'matchups'],
+  }),
+  Object.freeze({
+    type: 'product',
+    sport: 'ufc',
+    eyebrow: '🥊 UFC · LIVE INTELLIGENCE',
+    title: 'UFC Intelligence',
+    subtitle: 'Fight DNA, matchup research, rankings, cards and fight-week intelligence',
+    href: 'https://ufc.propbetedge.ai',
+    domain: 'ufc.propbetedge.ai',
+    external: true,
+    keywords: ['ufc', 'mma', 'fight', 'fighter', 'fight dna', 'rankings', 'cards', 'live intelligence', 'matchup'],
+  }),
+]);
+
 export function initSearchPalette() {
   if (installed || typeof document === 'undefined') return;
   installed = true;
@@ -81,20 +117,32 @@ function ensurePalette() {
     <div class="pbe-search-backdrop" data-pbe-search-close></div>
     <section class="pbe-search-dialog" role="dialog" aria-modal="true" aria-label="Search PropBetEdge">
       <div class="pbe-search-topline">
-        <div class="pbe-search-brand"><span>⚡</span><strong>PBE SEARCH</strong></div>
+        <div class="pbe-search-brand">
+          <span>⚡</span>
+          <span class="pbe-search-brand-copy"><strong>PBE NETWORK SEARCH</strong><small>News · teams · live intelligence</small></span>
+        </div>
         <button type="button" class="pbe-search-close" data-pbe-search-close aria-label="Close search">ESC</button>
       </div>
+      ${renderNetworkShortcuts()}
       <label class="pbe-search-input-wrap">
         <span class="pbe-search-icon">⌕</span>
-        <input type="search" autocomplete="off" spellcheck="false" placeholder="Search teams, stories, leagues, games…" aria-label="Search PropBetEdge" />
+        <input type="search" autocomplete="off" spellcheck="false" placeholder="Search Mahomes, UFC, injuries, standings, teams, headlines…" aria-label="Search PropBetEdge" />
         <kbd>↵</kbd>
       </label>
+      <div class="pbe-search-prompts" aria-label="Suggested searches">
+        <span>Try</span>
+        <button type="button" data-search-query="NFL">NFL</button>
+        <button type="button" data-search-query="UFC">UFC</button>
+        <button type="button" data-search-query="injuries">Injuries</button>
+        <button type="button" data-search-query="standings">Standings</button>
+      </div>
       <div class="pbe-search-status" aria-live="polite"></div>
       <div class="pbe-search-results" role="listbox"></div>
       <div class="pbe-search-footer">
         <span><kbd>↑</kbd><kbd>↓</kbd> move</span>
         <span><kbd>↵</kbd> open</span>
         <span><kbd>esc</kbd> close</span>
+        <span class="pbe-search-footer-network">PropBetEdge intelligence network</span>
       </div>
     </section>
   `;
@@ -108,6 +156,16 @@ function ensurePalette() {
       closeSearch();
       return;
     }
+
+    const prompt = event.target?.closest?.('[data-search-query]');
+    if (prompt) {
+      event.preventDefault();
+      input.value = prompt.dataset.searchQuery || '';
+      input.focus({ preventScroll: true });
+      renderResults();
+      return;
+    }
+
     const row = event.target?.closest?.('[data-search-index]');
     if (row) {
       selectedIndex = Number(row.dataset.searchIndex) || 0;
@@ -115,6 +173,23 @@ function ensurePalette() {
     }
   });
   input.addEventListener('input', renderResults);
+}
+
+function renderNetworkShortcuts() {
+  return `
+    <nav class="pbe-search-network" aria-label="Live PropBetEdge intelligence products">
+      <span class="pbe-search-network-label"><i></i> LIVE INTELLIGENCE</span>
+      <div class="pbe-search-network-links">
+        ${LIVE_PRODUCTS.map((product) => `
+          <a href="${product.href}" target="_blank" rel="noopener" class="pbe-search-network-link ${product.sport}">
+            <span>${iconFor('product', product.sport)}</span>
+            <strong>${product.sport.toUpperCase()}</strong>
+            <small>Open ↗</small>
+          </a>
+        `).join('')}
+      </div>
+    </nav>
+  `;
 }
 
 async function openSearch() {
@@ -132,7 +207,7 @@ async function openSearch() {
   try {
     await buildIndex();
     if (!overlay.classList.contains('is-open')) return;
-    status.textContent = `${records.length} live destinations indexed`;
+    status.textContent = `${records.length} live destinations indexed across the PBE network`;
     renderResults();
   } catch {
     status.textContent = 'Live search index partially unavailable — core destinations still work.';
@@ -231,11 +306,13 @@ function articleRecord(article) {
 
 function buildStaticRecords() {
   const core = [
+    ...LIVE_PRODUCTS,
     { type: 'home', eyebrow: 'PROPBETEDGE', title: 'PropBetEdge Home', subtitle: 'Your sports news and intelligence front page', href: '/', keywords: ['home', 'front page', 'my edge', 'propbetedge'] },
     { type: 'tool', eyebrow: 'PBE TOOL', title: 'PBEcast Live Games', subtitle: 'Live scores and game centers across every league', href: '/games', keywords: ['scores', 'live games', 'game center', 'pbecast'] },
     { type: 'tool', eyebrow: 'PBE TOOL', title: 'Stat Leaders', subtitle: 'League leaders, advanced stats and player intelligence', href: '/leaders', keywords: ['leaders', 'stats', 'players'] },
     { type: 'tool', eyebrow: 'PBE TOOL', title: 'Today’s Edges', subtitle: 'Current +EV intelligence and model edges', href: '/odds', keywords: ['odds', 'edges', 'ev', 'props', 'model'] },
     { type: 'news', eyebrow: 'NEWSROOM', title: 'All News', subtitle: 'The complete PropBetEdge sports newsroom', href: '/news', keywords: ['news', 'stories', 'latest'] },
+    { type: 'news', sport: 'ufc', eyebrow: 'UFC DESK', title: 'UFC News', subtitle: 'Fight-week coverage connected to UFC Intelligence', href: 'https://ufc.propbetedge.ai/news', external: true, keywords: ['ufc', 'mma', 'fight', 'news', 'fighters'] },
   ];
 
   const leagues = Object.values(SPORT_CONFIG).flatMap((config) => [
@@ -246,8 +323,12 @@ function buildStaticRecords() {
   return [...core, ...leagues];
 }
 
+function quickRecords() {
+  return buildStaticRecords().filter((record) => record.type !== 'product').slice(0, 8);
+}
+
 function renderQuickLinks() {
-  const quick = buildStaticRecords().slice(0, 8);
+  const quick = quickRecords();
   selectedIndex = 0;
   list.innerHTML = `
     <div class="pbe-search-section-label">Jump anywhere</div>
@@ -266,10 +347,10 @@ function renderResults() {
 
   const ranked = rankedResults(query);
   selectedIndex = 0;
-  status.textContent = ranked.length ? `${ranked.length} best matches` : 'No exact match in the current PBE index';
+  status.textContent = ranked.length ? `${ranked.length} best matches across news, teams and intelligence` : 'No exact match in the current PBE index';
   list.innerHTML = ranked.length
     ? ranked.map((record, index) => renderRecord(record, index)).join('')
-    : `<div class="pbe-search-empty"><strong>No match yet.</strong><span>Try a team, player name, league, headline, “standings”, “leaders”, or “edges”.</span></div>`;
+    : `<div class="pbe-search-empty"><strong>No match yet.</strong><span>Try a player, team, league, headline, “UFC”, “injuries”, “standings”, “leaders”, or “edges”.</span></div>`;
   paintSelection();
 }
 
@@ -288,6 +369,7 @@ function scoreRecord(record, query) {
   const eyebrow = normalize(record.eyebrow);
   const keywords = normalize((record.keywords || []).join(' '));
   const subtitle = normalize(record.subtitle);
+  const domain = normalize(record.domain);
   let score = 0;
 
   if (title === query) score += 160;
@@ -296,29 +378,33 @@ function scoreRecord(record, query) {
   if (keywords.includes(query)) score += 48;
   if (eyebrow.includes(query)) score += 28;
   if (subtitle.includes(query)) score += 16;
+  if (domain.includes(query)) score += 32;
 
   for (const term of terms) {
     if (title.startsWith(term)) score += 25;
     else if (title.includes(term)) score += 16;
     if (keywords.includes(term)) score += 12;
     if (subtitle.includes(term)) score += 4;
+    if (domain.includes(term)) score += 8;
   }
 
+  if (record.type === 'product') score += 14;
   if (record.type === 'team') score += 6;
   return score;
 }
 
 function renderRecord(record, index) {
   const icon = iconFor(record.type, record.sport);
+  const openLabel = record.type === 'product' ? '<b>LIVE</b> ↗' : '↗';
   return `
-    <button type="button" class="pbe-search-row" role="option" aria-selected="${index === selectedIndex ? 'true' : 'false'}" data-search-index="${index}">
+    <button type="button" class="pbe-search-row${record.type === 'product' ? ' is-product' : ''}" role="option" aria-selected="${index === selectedIndex ? 'true' : 'false'}" data-search-index="${index}">
       <span class="pbe-search-row-icon">${record.image ? `<img src="${escapeAttr(record.image)}" alt="" loading="lazy" onerror="this.remove()" />` : icon}</span>
       <span class="pbe-search-row-copy">
         <span class="pbe-search-row-eyebrow">${escapeHtml(record.eyebrow || record.type)}</span>
         <strong>${escapeHtml(record.title)}</strong>
-        <small>${escapeHtml(shorten(record.subtitle || '', 115))}</small>
+        <small>${escapeHtml(shorten(record.subtitle || '', 115))}${record.domain ? ` · ${escapeHtml(record.domain)}` : ''}</small>
       </span>
-      <span class="pbe-search-row-open">↗</span>
+      <span class="pbe-search-row-open">${openLabel}</span>
     </button>
   `;
 }
@@ -344,7 +430,7 @@ function activateSelected() {
   const row = rows[selectedIndex];
   if (!row) return;
   const query = normalize(input?.value || '');
-  const resultSet = query ? rankedResults(query) : buildStaticRecords().slice(0, 8);
+  const resultSet = query ? rankedResults(query) : quickRecords();
   const record = resultSet[selectedIndex];
   if (!record) return;
 
@@ -383,6 +469,7 @@ function recentFirst(a, b) {
 }
 
 function iconFor(type, sport) {
+  if (sport === 'ufc') return '🥊';
   if (sport && SPORT_CONFIG[sport]) return SPORT_CONFIG[sport].emoji;
   if (type === 'home') return '⌂';
   if (type === 'story' || type === 'news') return '✦';
