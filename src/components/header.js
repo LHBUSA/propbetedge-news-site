@@ -60,7 +60,7 @@ export function renderHeader() {
     <header class="masthead">
       <div class="container masthead-inner">
         <div class="masthead-left masthead-leagues" aria-label="League coverage and search">
-          <button type="button" class="nav-link pbe-search-trigger masthead-search masthead-search-desktop" data-pbe-search-open aria-label="Search PropBetEdge" aria-keyshortcuts="Control+K Meta+K /">
+          <button type="button" class="nav-link pbe-search-trigger masthead-search" data-pbe-search-open aria-label="Search PropBetEdge" aria-keyshortcuts="Control+K Meta+K /">
             <span class="masthead-search-icon" aria-hidden="true">⌕</span><span class="pbe-search-label">Search</span><kbd>/</kbd>
           </button>
           <span class="masthead-nav-divider" aria-hidden="true"></span>
@@ -88,9 +88,6 @@ export function renderHeader() {
             <span class="edges-bolt">⚡</span><span class="edges-label">Edges</span><span class="edges-count" id="edges-count" aria-live="polite"></span>
           </a>
           ${renderIntelligenceSwitcher(sport)}
-          <button type="button" class="nav-link pbe-search-trigger masthead-search masthead-search-mobile" data-pbe-search-open aria-label="Search PropBetEdge" aria-keyshortcuts="Control+K Meta+K /">
-            <span class="masthead-search-icon" aria-hidden="true">⌕</span><span class="pbe-search-label">Search</span>
-          </button>
         </div>
       </div>
     </header>
@@ -98,20 +95,25 @@ export function renderHeader() {
 }
 
 function renderIntelligenceSwitcher(activeSport) {
+  const selectedProduct = INTELLIGENCE_PRODUCTS.find(product => product.key === activeSport)
+    || INTELLIGENCE_PRODUCTS.find(product => product.key === 'nfl')
+    || INTELLIGENCE_PRODUCTS[0];
+
   return `
     <details class="pbe-intel-switcher">
-      <summary class="pbe-intel-summary">
+      <summary class="pbe-intel-summary" aria-label="Switch live PropBetEdge intelligence product">
         <span class="pbe-intel-live-dot" aria-hidden="true"></span>
-        <span>Live Intelligence</span>
+        <span class="pbe-intel-summary-sport" aria-hidden="true">${selectedProduct.emoji}</span>
+        <span>${selectedProduct.label}</span>
         <span class="pbe-intel-chevron" aria-hidden="true">⌄</span>
       </summary>
       <div class="pbe-intel-menu" role="menu" aria-label="Choose a live PropBetEdge intelligence product">
         <div class="pbe-intel-menu-head">
           <span>PROP BET EDGE NETWORK</span>
-          <strong>Choose your live intelligence layer</strong>
+          <strong>Switch live intelligence product</strong>
         </div>
         ${INTELLIGENCE_PRODUCTS.map(product => `
-          <a class="pbe-intel-option${activeSport === product.key ? ' is-active' : ''}" href="${product.href}" target="_blank" rel="noopener" role="menuitem">
+          <a class="pbe-intel-option${selectedProduct.key === product.key ? ' is-active' : ''}" href="${product.href}" target="_blank" rel="noopener" role="menuitem">
             <span class="pbe-intel-option-icon" aria-hidden="true">${product.emoji}</span>
             <span class="pbe-intel-option-copy">
               <strong>${product.label}</strong>
