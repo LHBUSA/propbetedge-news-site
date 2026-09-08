@@ -1,7 +1,7 @@
 /*
  * PropBetEdge live intelligence network switcher
- * Keeps search on the left rail and turns the single sport CTA into a
- * three-product MLB / NFL / UFC switcher without disturbing the center mark.
+ * One search entry, a protected center logo zone, and an explicit sport-aware
+ * MLB / NFL / UFC intelligence switcher.
  */
 
 .masthead-search {
@@ -42,8 +42,31 @@
   background: linear-gradient(180deg, transparent, rgba(233,199,90,.28), transparent);
 }
 
-.masthead-search-mobile {
-  display: none !important;
+/* Protect the centered brand. The right tool rail must never visually lean
+   into the mark, even when the intelligence control grows. */
+@media (min-width: 881px) {
+  .masthead-inner {
+    grid-template-columns: minmax(0, 1fr) 252px minmax(0, 1fr) !important;
+    column-gap: 24px !important;
+  }
+
+  .masthead-logo {
+    width: 252px !important;
+    min-width: 252px !important;
+  }
+
+  .masthead-right {
+    padding-left: 30px !important;
+    gap: 10px !important;
+  }
+
+  .masthead-right .live-link {
+    margin-left: 4px !important;
+  }
+
+  .masthead-left {
+    padding-right: 18px !important;
+  }
 }
 
 .pbe-intel-switcher {
@@ -65,8 +88,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 15px;
+  gap: 7px;
+  padding: 10px 14px;
   border: 1px solid rgba(255,235,158,.42);
   background: linear-gradient(180deg, #e3bf45 0%, #cda62f 100%);
   color: #100e0b;
@@ -74,9 +97,9 @@
   cursor: pointer;
   user-select: none;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 950;
-  letter-spacing: .09em;
+  letter-spacing: .075em;
   line-height: 1;
   text-transform: uppercase;
   white-space: nowrap;
@@ -97,6 +120,11 @@
   border-radius: 50%;
   background: #100e0b;
   box-shadow: 0 0 0 3px rgba(16,14,11,.08);
+}
+
+.pbe-intel-summary-sport {
+  font-size: 12px;
+  line-height: 1;
 }
 
 .pbe-intel-chevron {
@@ -219,12 +247,22 @@
 }
 
 @media (max-width: 1320px) and (min-width: 881px) {
-  .masthead-search-desktop .pbe-search-label,
-  .masthead-search-desktop kbd {
+  .masthead-inner {
+    grid-template-columns: minmax(0, 1fr) 226px minmax(0, 1fr) !important;
+    column-gap: 16px !important;
+  }
+
+  .masthead-logo {
+    width: 226px !important;
+    min-width: 226px !important;
+  }
+
+  .masthead-search .pbe-search-label,
+  .masthead-search kbd {
     display: none !important;
   }
 
-  .masthead-search-desktop {
+  .masthead-search {
     width: 34px;
     min-width: 34px;
     padding-left: 7px !important;
@@ -235,36 +273,58 @@
     margin-inline: 1px;
   }
 
+  .masthead-right {
+    padding-left: 18px !important;
+    gap: 5px !important;
+  }
+
   .pbe-intel-summary {
-    padding-inline: 11px;
-    font-size: 9px;
+    padding-inline: 10px;
+    font-size: 8px;
   }
 }
 
 @media (max-width: 1040px) and (min-width: 881px) {
-  .pbe-intel-summary > span:nth-child(2) {
-    max-width: 82px;
+  .pbe-intel-summary > span:nth-child(3) {
+    max-width: 96px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 }
 
 @media (max-width: 880px) {
-  .masthead-search-desktop,
+  /* Keep a single search trigger on mobile. The left rail remains in the DOM,
+     but only Search is shown; league links stay hidden to avoid a second nav row. */
+  .masthead-left {
+    display: flex !important;
+    justify-content: center !important;
+    order: 2;
+    padding: 0 !important;
+  }
+
+  .masthead-left > a,
   .masthead-nav-divider {
     display: none !important;
   }
 
-  .masthead-search-mobile {
+  .masthead-logo {
+    order: 1;
+  }
+
+  .masthead-right {
+    order: 3;
+  }
+
+  .masthead-search {
     display: inline-flex !important;
     min-height: 38px !important;
-    padding: 8px 11px !important;
+    padding: 8px 12px !important;
   }
 
   .pbe-intel-summary {
     min-height: 38px;
-    padding: 8px 11px;
-    font-size: 9px;
+    padding: 8px 10px;
+    font-size: 8px;
   }
 
   .pbe-intel-menu {
@@ -274,6 +334,11 @@
 }
 
 @media (max-width: 520px) {
+  .pbe-intel-summary-sport,
+  .pbe-intel-live-dot {
+    display: none;
+  }
+
   .pbe-intel-option {
     grid-template-columns: 38px minmax(0, 1fr);
   }
