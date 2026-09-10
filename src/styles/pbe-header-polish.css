@@ -180,6 +180,141 @@
   box-shadow: 0 0 10px rgba(212,175,55,.16);
 }
 
+/* UFC Fight Week rail. It is data-driven by the UFC API and hidden until the
+   next card resolves, so a source outage never leaves stale hard-coded copy. */
+.pbe-fight-week[hidden] {
+  display: none !important;
+}
+
+.pbe-fight-week {
+  position: relative;
+  display: block;
+  width: 100%;
+  color: #f7f2e7;
+  background:
+    linear-gradient(90deg, rgba(177,24,37,.18), transparent 24%, transparent 76%, rgba(212,175,55,.08)),
+    linear-gradient(180deg, #12100e 0%, #0c0b0a 100%);
+  border-bottom: 1px solid rgba(212,175,55,.28);
+  overflow: hidden;
+  isolation: isolate;
+  transition: background .18s ease, border-color .18s ease;
+}
+
+.pbe-fight-week::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: #cf2438;
+  box-shadow: 0 0 18px rgba(207,36,56,.38);
+}
+
+.pbe-fight-week::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .18;
+  background: repeating-linear-gradient(125deg, transparent 0 36px, rgba(255,255,255,.025) 36px 37px);
+}
+
+.pbe-fight-week:hover {
+  color: #fffaf0;
+  background:
+    linear-gradient(90deg, rgba(177,24,37,.25), transparent 26%, transparent 72%, rgba(212,175,55,.13)),
+    linear-gradient(180deg, #17130f 0%, #0d0c0a 100%);
+  border-bottom-color: rgba(233,199,90,.5);
+}
+
+.pbe-fight-week-inner {
+  width: 100%;
+  max-width: 1460px;
+  min-height: 48px;
+  margin: 0 auto;
+  padding: 8px 28px;
+  display: grid;
+  grid-template-columns: auto minmax(160px, .8fr) minmax(260px, 1.15fr) auto auto;
+  gap: 18px;
+  align-items: center;
+}
+
+.pbe-fight-week-kicker,
+.pbe-fight-week-date,
+.pbe-fight-week-cta {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .11em;
+  white-space: nowrap;
+}
+
+.pbe-fight-week-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: #f06a76;
+}
+
+.pbe-fight-week-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e63946;
+  box-shadow: 0 0 0 4px rgba(230,57,70,.09), 0 0 12px rgba(230,57,70,.5);
+}
+
+.pbe-fight-week-event {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #bdb5a7;
+}
+
+.pbe-fight-week-matchup {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  color: #fffaf0;
+}
+
+.pbe-fight-week-date {
+  font-size: 9px;
+  color: #c9c1b4;
+}
+
+.pbe-fight-week-cta {
+  justify-self: end;
+  padding: 7px 10px;
+  font-size: 9px;
+  color: var(--gold-bright);
+  border: 1px solid rgba(233,199,90,.45);
+  background: rgba(212,175,55,.05);
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pbe-fight-week:hover .pbe-fight-week-cta {
+  color: #100e0b;
+  background: var(--gold-bright);
+  border-color: var(--gold-bright);
+}
+
+.pbe-fight-week.is-fight-week .pbe-fight-week-kicker {
+  color: #ff7e89;
+}
+
 @media (max-width: 1120px) and (min-width: 881px) {
   .masthead-inner {
     column-gap: 16px !important;
@@ -200,6 +335,17 @@
     margin-left: 6px !important;
     padding-left: 12px !important;
     padding-right: 12px !important;
+  }
+
+  .pbe-fight-week-inner {
+    padding-left: 22px;
+    padding-right: 22px;
+    grid-template-columns: auto minmax(140px,.7fr) minmax(220px,1fr) auto;
+    gap: 13px;
+  }
+
+  .pbe-fight-week-date {
+    display: none;
   }
 }
 
@@ -230,6 +376,27 @@
   .masthead-mark {
     height: 45px !important;
   }
+
+  .pbe-fight-week-inner {
+    min-height: 52px;
+    padding: 8px 22px;
+    grid-template-columns: auto minmax(0,1fr) auto;
+    grid-template-areas:
+      'kicker matchup cta'
+      'event event cta';
+    column-gap: 12px;
+    row-gap: 2px;
+  }
+
+  .pbe-fight-week-kicker { grid-area: kicker; }
+  .pbe-fight-week-event { grid-area: event; }
+  .pbe-fight-week-matchup { grid-area: matchup; }
+  .pbe-fight-week-cta { grid-area: cta; }
+  .pbe-fight-week-date { display: none; }
+
+  .pbe-fight-week-matchup {
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -248,5 +415,44 @@
 
   .masthead .nav-link.cta {
     color: #100e0b !important;
+  }
+
+  .pbe-fight-week-inner {
+    min-height: 56px;
+    padding-left: 20px;
+    padding-right: 14px;
+    grid-template-columns: minmax(0,1fr) auto;
+    grid-template-areas:
+      'kicker cta'
+      'matchup cta';
+    gap: 2px 10px;
+  }
+
+  .pbe-fight-week-event {
+    display: none;
+  }
+
+  .pbe-fight-week-kicker {
+    font-size: 9px;
+  }
+
+  .pbe-fight-week-matchup {
+    font-size: 11px;
+  }
+
+  .pbe-fight-week-cta {
+    padding: 6px 8px;
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 390px) {
+  .pbe-fight-week-inner {
+    padding-left: 16px;
+  }
+
+  .pbe-fight-week-cta {
+    padding-left: 6px;
+    padding-right: 6px;
   }
 }
