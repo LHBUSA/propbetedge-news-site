@@ -6,7 +6,12 @@ import { ad_header_banner, PROPBET_LINKS } from '../ads-config.js';
 import { renderScoreStripShell, mountScoreStrip } from './score-strip.js';
 
 const EV_FINDER_URL = 'https://propbetedge-ev-finder.sales-fd3.workers.dev/edges-today';
+const UFC_API_BASE = 'https://ufc-api.propbetedge.ai/v1/ufc';
+const FIGHT_WEEK_CACHE_MS = 5 * 60 * 1000;
 let _edgeCountFetched = false;
+let _fightWeekPromise = null;
+let _fightWeekCache = null;
+let _fightWeekCachedAt = 0;
 
 const INTELLIGENCE_PRODUCTS = Object.freeze([
   {
@@ -46,6 +51,9 @@ export function renderHeader() {
     queueMicrotask(() => {
       if (document.getElementById('pbe-score-strip')) {
         mountScoreStrip().catch(err => console.warn('[header] score strip mount failed:', err));
+      }
+      if (document.getElementById('pbe-ufc-fight-week')) {
+        mountUfcFightWeek().catch(err => console.warn('[header] UFC fight-week mount failed:', err));
       }
       if (!_edgeCountFetched) {
         _edgeCountFetched = true;
@@ -91,6 +99,21 @@ export function renderHeader() {
         </div>
       </div>
     </header>
+    ${renderUfcFightWeekShell()}
+  `;
+}
+
+function renderUfcFightWeekShell() {
+  return `
+    <a id="pbe-ufc-fight-week" class="pbe-fight-week" href="${PROPBET_LINKS.picks_ufc}" target="_blank" rel="noopener" hidden aria-label="Open UFC Fight Week on PropBetEdge">
+      <div class="pbe-fight-week-inner">
+        <span class="pbe-fight-week-kicker"><span class="pbe-fight-week-dot" aria-hidden="true"></span><span id="pbe-ufc-fight-week-kicker">UFC FIGHT WEEK</span></span>
+        <span class="pbe-fight-week-event" id="pbe-ufc-fight-week-event"></span>
+        <span class="pbe-fight-week-matchup" id="pbe-ufc-fight-week-matchup"></span>
+        <span class="pbe-fight-week-date" id="pbe-ufc-fight-week-date"></span>
+        <span class="pbe-fight-week-cta" id="pbe-ufc-fight-week-cta">OPEN FIGHT WEEK ↗</span>
+      </div>
+    </a>
   `;
 }
 
@@ -155,4 +178,164 @@ async function fetchEdgeCount() {
   } catch {
     // Silent fail — count badge just won't appear
   }
+}
+
+async function mountUfcFightWeek() {
+  const rail = document.getElementById('pbe-ufc-fight-week');
+  if (!rail) return;
+
+  const data = await getUfcFightWeek();
+  if (!data?.event) return;
+
+  const { event, mainEvent, daysOut } = data;
+  const isFightWeek = daysOut >= 0 && daysOut <= 6;
+  const kicker = document.getElementById('pbe-ufc-fight-week-kicker');
+  const eventEl = document.getElementById('pbe-ufc-fight-week-event');
+  const matchupEl = document.getElementById('pbe-ufc-fight-week-matchup');
+  const dateEl = document.getElementById('pbe-ufc-fight-week-date');
+  const ctaEl = document.getElementById('pbe-ufc-fight-week-cta');
+
+  if (kicker) kicker.textContent = isFightWeek ? 'UFC FIGHT WEEK' : 'NEXT UFC CARD';
+  if (eventEl) eventEl.textContent = event.name || 'UFC';
+  if (matchupEl) {
+    const a = mainEvent?.fighter_a?.name;
+    const b = mainEvent?.fighter_b?.name;
+    matchupEl.textContent = a && b ? `${a} vs ${b}` : 'Fight intelligence · card research · Fight DNA';
+  }
+  if (dateEl) dateEl.textContent = fightWeekDateLabel(event.event_date, daysOut);
+  if (ctaEl) ctaEl.textContent = isFightWeek ? 'OPEN FIGHT WEEK ↗' : 'EXPLORE UFC ↗';
+
+  const destination = eventDestination(event);
+  rail.href = destination;
+  rail.setAttribute('aria-label', `${isFightWeek ? 'Open UFC Fight Week' : 'Explore the next UFC card'}: ${event.name || 'UFC'}`);
+  rail.classList.toggle('is-fight-week', isFightWeek);
+  rail.hidden = false;
+}
+
+async function getUfcFightWeek() {
+  const now = Date.now();
+  if (_fightWeekCache && now - _fightWeekCachedAt < FIGHT_WEEK_CACHE_MS) return _fightWeekCache;
+  if (_fightWeekPromise) return _fightWeekPromise;
+
+  _fightWeekPromise = fetchUfcFightWeek()
+    .then(data => {
+      if (data) {
+        _fightWeekCache = data;
+        _fightWeekCachedAt = Date.now();
+      }
+      return data;
+    })
+    .finally(() => {
+      _fightWeekPromise = null;
+    });
+
+  return _fightWeekPromise;
+}
+
+async function fetchUfcFightWeek() {
+  const easternToday = easternDateKey(new Date());
+  const urls = [
+    `${UFC_API_BASE}/events?date=${encodeURIComponent(easternToday)}&limit=20`,
+    `${UFC_API_BASE}/events?status=upcoming&limit=20`,
+  ];
+
+  const responses = await Promise.all(urls.map(url => fetchJson(url)));
+  const rows = responses.flatMap(body => Array.isArray(body?.data) ? body.data : []);
+  if (!rows.length) return null;
+
+  const unique = new Map();
+  for (const event of rows) {
+    if (!event?.id || unique.has(event.id)) continue;
+    unique.set(event.id, event);
+  }
+
+  const events = [...unique.values()]
+    .filter(event => event.event_date && event.event_date >= easternToday)
+    .filter(event => String(event.card_status || '').toLowerCase() !== 'complete')
+    .filter(event => !/contender series|road to ufc/i.test(String(event.name || '')))
+    .sort((a, b) => String(a.event_date).localeCompare(String(b.event_date)));
+
+  const event = events[0];
+  if (!event) return null;
+
+  let mainEvent = null;
+  try {
+    const card = await fetchJson(`${UFC_API_BASE}/events/${encodeURIComponent(event.id)}/card`);
+    const bouts = Array.isArray(card?.data?.bouts) ? card.data.bouts : [];
+    mainEvent = bouts.find(bout => String(bout?.status || '').toLowerCase() !== 'cancelled') || null;
+  } catch {
+    // Event-level rail still renders if the card endpoint is temporarily unavailable.
+  }
+
+  return {
+    event,
+    mainEvent,
+    daysOut: dateDiffDays(easternToday, event.event_date),
+  };
+}
+
+async function fetchJson(url) {
+  try {
+    const response = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+function easternDateKey(date) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const byType = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${byType.year}-${byType.month}-${byType.day}`;
+}
+
+function dateDiffDays(fromDate, toDate) {
+  const parse = value => {
+    const [year, month, day] = String(value || '').split('-').map(Number);
+    return Date.UTC(year, month - 1, day);
+  };
+  const a = parse(fromDate);
+  const b = parse(toDate);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return 99;
+  return Math.round((b - a) / 86400000);
+}
+
+function fightWeekDateLabel(date, daysOut) {
+  if (!date) return 'DATE TBA';
+  const formatted = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(`${date}T12:00:00Z`)).toUpperCase();
+  if (daysOut === 0) return `${formatted} · TONIGHT`;
+  if (daysOut === 1) return `${formatted} · TOMORROW`;
+  if (daysOut > 1 && daysOut <= 6) return `${formatted} · ${daysOut} DAYS`;
+  return formatted;
+}
+
+function eventDestination(event) {
+  const name = slugifyEvent(String(event?.name || 'ufc'));
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(event?.event_date || '')) ? event.event_date : 'tbd';
+  const url = new URL(`/events/${name}-${date}`, PROPBET_LINKS.picks_ufc);
+  url.searchParams.set('utm_source', 'propbetedge');
+  url.searchParams.set('utm_medium', 'fight_week_rail');
+  url.searchParams.set('utm_campaign', 'ufc_fight_week');
+  return url.toString();
+}
+
+function slugifyEvent(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/['’.]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
