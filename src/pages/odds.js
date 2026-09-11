@@ -13,6 +13,7 @@
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { escapeHtml } from '../components/article-card.js';
+import { PROPBETEDGE_DISCORD_URL } from '../ads-config.js';
 import {
   organizationSchema, websiteSchema, breadcrumbSchema, injectSchemas,
 } from '../schema.js';
@@ -110,7 +111,7 @@ function renderError() {
     <div class="empty" style="margin-top:32px">
       <h3>Edge data temporarily unavailable</h3>
       <p>The model refreshes every 15 minutes. Try again in a moment, or check
-        <a href="https://discord.gg/e9S6pFq9" style="color:var(--gold)">Discord</a>
+        <a href="${PROPBETEDGE_DISCORD_URL}" style="color:var(--gold)">Discord</a>
         for the live feed.
       </p>
     </div>
@@ -140,7 +141,7 @@ function renderBoard(data) {
         <h3>No +EV edges right now</h3>
         <p>The model only flags markets where it sees a real advantage. Check back closer to first pitch — lines move fast.</p>
         <p style="margin-top:16px">
-          <a href="https://discord.gg/e9S6pFq9" style="color:var(--gold);text-decoration:none">
+          <a href="${PROPBETEDGE_DISCORD_URL}" style="color:var(--gold);text-decoration:none">
             Join Discord for instant alerts when edges land →
           </a>
         </p>
