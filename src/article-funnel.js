@@ -1,7 +1,7 @@
 /* PropBetEdge article funnel alignment
  * Keeps every article conversion surface matched to the sport being read.
  * This is intentionally a late DOM authority so legacy article/right-rail
- * renderers cannot send NFL/NBA/NHL readers into the MLB product by accident.
+ * renderers cannot send readers into the wrong product by accident.
  */
 
 const ARTICLE_RE = /^\/news\/(mlb|nfl|nba|nhl)\/[^/]+\/?$/i;
@@ -16,7 +16,7 @@ const CAMPAIGNS = {
     secondaryCta: 'Ask The Algo',
   },
   nfl: {
-    eyebrow: '🏈 PROPBETEDGE NFL',
+    eyebrow: '🏈 PROPBETEDGE NFL · LIVE',
     title: 'Take this story into NFL Intelligence.',
     sub: 'Continue into Model Lab, Market Watch, line simulation, SGP research and the deeper football intelligence layer.',
     href: 'https://nfl.propbetedge.ai/#picks',
@@ -25,18 +25,18 @@ const CAMPAIGNS = {
     secondaryCta: 'See Live Prop Board',
   },
   nba: {
-    eyebrow: '🏀 PROPBETEDGE NBA · COMING SOON',
-    title: 'Basketball is next on the intelligence network.',
-    sub: 'Keep following NBA coverage here while the full player-research, live-context and prop-intelligence product comes online.',
-    href: '/news/nba',
-    cta: 'Follow NBA Coverage →',
+    eyebrow: '🏀 PROPBETEDGE NBA · LIVE',
+    title: 'Take this story into NBA Intelligence.',
+    sub: 'The basketball platform is live now. Explore player research, game context and the product as it continues to sharpen into the season.',
+    href: 'https://nba.propbetedge.ai',
+    cta: 'Open NBA Intelligence →',
   },
   nhl: {
-    eyebrow: '🏒 PROPBETEDGE NHL · COMING SOON',
-    title: 'Hockey is next on the intelligence network.',
-    sub: 'Keep following NHL coverage here while the full live-data, player-research and prop-intelligence product comes online.',
-    href: '/news/nhl',
-    cta: 'Follow NHL Coverage →',
+    eyebrow: '🏒 PROPBETEDGE NHL · LIVE',
+    title: 'Take this story into NHL Intelligence.',
+    sub: 'The hockey platform is live now. Explore Ice Board, PBE Cast, player research and the product as it improves through preseason.',
+    href: 'https://nhl.propbetedge.ai',
+    cta: 'Open NHL Intelligence →',
   },
 };
 
