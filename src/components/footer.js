@@ -1,110 +1,106 @@
 /**
  * src/components/footer.js
- * Premium network footer for PropBetEdge.ai.
- *
- * The publication is the network hub. Keep sports products first, then news,
- * developer infrastructure, trust, and community. Every product linked here
- * is publicly accessible; NBA and NHL are intentionally presented as LIVE so
- * readers can use them through preseason while they continue to mature.
+ * Editorial footer aligned to the existing PropBetEdge publication design.
+ * Keep this deliberately site-native: same typography, spacing, columns,
+ * badges and logo treatment as the rest of propbetedge.ai.
  */
 
-import { PROPBET_LINKS } from '../ads-config.js';
-
-const SPORTS = [
-  { id: 'mlb', label: 'MLB', icon: '⚾', href: PROPBET_LINKS.picks_mlb, copy: 'Baseball intelligence' },
-  { id: 'nfl', label: 'NFL', icon: '🏈', href: PROPBET_LINKS.picks_nfl, copy: 'Football intelligence' },
-  { id: 'nba', label: 'NBA', icon: '🏀', href: PROPBET_LINKS.picks_nba, copy: 'Basketball intelligence' },
-  { id: 'wnba', label: 'WNBA', icon: '🏀', href: 'https://wnba.propbetedge.ai', copy: 'Women’s basketball intelligence' },
-  { id: 'nhl', label: 'NHL', icon: '🏒', href: PROPBET_LINKS.picks_nhl, copy: 'Hockey intelligence' },
-  { id: 'ufc', label: 'UFC', icon: '🥊', href: PROPBET_LINKS.picks_ufc, copy: 'Fight intelligence' },
-];
-
-function sportCard(sport) {
-  return `
-    <a class="pbe-footer-sport pbe-footer-sport--${sport.id}" href="${sport.href}" target="_blank" rel="noopener" aria-label="Open PropBetEdge ${sport.label}">
-      <span class="pbe-footer-sport__icon" aria-hidden="true">${sport.icon}</span>
-      <span class="pbe-footer-sport__body">
-        <span class="pbe-footer-sport__top"><b>${sport.label}</b><span class="pbe-footer-live"><i></i> LIVE</span></span>
-        <span class="pbe-footer-sport__copy">${sport.copy}</span>
-      </span>
-      <span class="pbe-footer-sport__arrow" aria-hidden="true">↗</span>
-    </a>`;
-}
+import { ad_footer_banner, PROPBET_LINKS } from '../ads-config.js';
 
 export function renderFooter() {
   const year = new Date().getFullYear();
-
   return `
-    <footer class="footer pbe-network-footer">
-      <div class="container pbe-network-footer__inner">
-        <section class="pbe-footer-hero" aria-labelledby="pbe-footer-title">
-          <div class="pbe-footer-hero__copy">
-            <span class="pbe-footer-kicker"><i></i> THE PROPBETEDGE NETWORK</span>
-            <h2 id="pbe-footer-title">One sports intelligence network.<br><em>Six live platforms.</em></h2>
-            <p>Start with the story, move into the sport, and go as deep as you want. News, live context, research tools and the data infrastructure underneath it all.</p>
-          </div>
-          <div class="pbe-footer-hero__actions">
-            <a class="pbe-footer-primary" href="/games">Live Scores <span>→</span></a>
-            <a class="pbe-footer-secondary" href="/news">Latest News <span>→</span></a>
-          </div>
-        </section>
+    ${ad_footer_banner()}
 
-        <section class="pbe-footer-sports" aria-label="Live PropBetEdge sports platforms">
-          ${SPORTS.map(sportCard).join('')}
-        </section>
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
 
-        <div class="pbe-footer-rule"></div>
-
-        <section class="pbe-footer-main">
-          <div class="pbe-footer-brand">
-            <a class="pbe-footer-wordmark" href="/" aria-label="PropBetEdge home">
-              <span class="pbe-footer-mark" aria-hidden="true">P</span>
-              <span>PropBet<b>Edge</b></span>
-            </a>
-            <p>Sports news and betting-impact intelligence connected to purpose-built research platforms for every major sport we cover.</p>
-            <div class="pbe-footer-infra">
-              <span>DATA LAYER</span>
-              <a href="${PROPBET_LINKS.propsports}" target="_blank" rel="noopener">Powered by PropSports API ↗</a>
-            </div>
+          <div class="footer-col">
+            <h4>⚡ Sports Intelligence</h4>
+            <a href="${PROPBET_LINKS.picks_mlb}" target="_blank" rel="noopener">MLB Intelligence <span class="footer-badge">Live</span></a>
+            <a href="${PROPBET_LINKS.picks_nfl}" target="_blank" rel="noopener">NFL Intelligence <span class="footer-badge">Live</span></a>
+            <a href="${PROPBET_LINKS.picks_nba}" target="_blank" rel="noopener">NBA Intelligence <span class="footer-badge">Live</span></a>
+            <a href="https://wnba.propbetedge.ai" target="_blank" rel="noopener">WNBA Intelligence <span class="footer-badge">Live</span></a>
+            <a href="${PROPBET_LINKS.picks_nhl}" target="_blank" rel="noopener">NHL Intelligence <span class="footer-badge">Live</span></a>
+            <a href="${PROPBET_LINKS.picks_ufc}" target="_blank" rel="noopener">UFC Intelligence <span class="footer-badge">Live</span></a>
           </div>
 
-          <nav class="pbe-footer-column" aria-label="Explore PropBetEdge">
-            <span class="pbe-footer-column__label">EXPLORE</span>
+          <div class="footer-col">
+            <h4>🧠 Research & Learn</h4>
+            <a href="${PROPBET_LINKS.algo}" target="_blank" rel="noopener">Ask The Algo</a>
+            <a href="${PROPBET_LINKS.hr_targets}" target="_blank" rel="noopener">HR Targets</a>
+            <a href="${PROPBET_LINKS.k_props}" target="_blank" rel="noopener">K Props</a>
+            <a href="${PROPBET_LINKS.learn}" target="_blank" rel="noopener">Learn PropBetEdge <span class="footer-badge-soft">New</span></a>
+          </div>
+
+          <div class="footer-col">
+            <h4>⚙️ Build With It</h4>
+            <a href="${PROPBET_LINKS.propsports}" target="_blank" rel="noopener">PropSports API</a>
+            <a href="https://ufc.proptechusa.ai" target="_blank" rel="noopener">UFC Data API <span class="footer-badge">Live</span></a>
+            <a href="${PROPBET_LINKS.api_news}" target="_blank" rel="noopener">Sports News API</a>
+            <span class="footer-link-note">The data and intelligence infrastructure behind the PropBetEdge network.</span>
+          </div>
+
+          <div class="footer-col">
+            <h4>📰 News</h4>
             <a href="/news">All News</a>
-            <a href="/games">Live Games</a>
-            <a href="/leaders">Stat Leaders</a>
-            <a href="/odds">Odds & Markets</a>
             <a href="/news/mlb">MLB News</a>
             <a href="/news/nfl">NFL News</a>
             <a href="/news/nba">NBA News</a>
             <a href="/news/nhl">NHL News</a>
-          </nav>
-
-          <nav class="pbe-footer-column" aria-label="Build and learn">
-            <span class="pbe-footer-column__label">BUILD & LEARN</span>
-            <a href="${PROPBET_LINKS.learn}" target="_blank" rel="noopener">Learn PropBetEdge ↗</a>
-            <a href="${PROPBET_LINKS.propsports}" target="_blank" rel="noopener">PropSports API ↗</a>
-            <a href="${PROPBET_LINKS.api_news}" target="_blank" rel="noopener">Sports News API ↗</a>
-            <a href="https://ufc.proptechusa.ai" target="_blank" rel="noopener">UFC Data API ↗</a>
-          </nav>
-
-          <nav class="pbe-footer-column" aria-label="Trust and community">
-            <span class="pbe-footer-column__label">TRUST & COMMUNITY</span>
-            <a href="/editorial-standards">Editorial Standards</a>
-            <a href="/authors/propbetedge-editorial-team">Editorial Team</a>
-            <a href="${PROPBET_LINKS.discord}" target="_blank" rel="noopener">Discord Community ↗</a>
-            <a href="${PROPBET_LINKS.twitter}" target="_blank" rel="noopener">X / Twitter ↗</a>
-            <a href="${PROPBET_LINKS.linkedin}" target="_blank" rel="noopener">LinkedIn ↗</a>
-            <a href="/news/rss.xml" target="_blank" rel="noopener">RSS Feed ↗</a>
-          </nav>
-        </section>
-
-        <div class="pbe-footer-bottom">
-          <div class="pbe-footer-legal">
-            <b>Research tooling, not a guarantee.</b>
-            <span>Entertainment purposes only · 21+ · Please gamble responsibly · Gambling Problem? Call 1-800-GAMBLER.</span>
+            <a href="/news/rss.xml" target="_blank" rel="noopener">RSS Feed</a>
           </div>
-          <div class="pbe-footer-copyright">© ${year} PropBetEdge</div>
+
+          <div class="footer-col">
+            <h4>✍️ Editorial</h4>
+            <a href="/authors/justin-erickson">Justin Erickson</a>
+            <a href="/authors/propbetedge-editorial-team">PropBetEdge Editorial Team</a>
+            <a href="/authors/ty-whitney">Ty Whitney</a>
+            <a href="/authors/erik-schwartz">Erik Schwartz</a>
+            <a href="/editorial-standards">Editorial Standards</a>
+          </div>
+
+          <div class="footer-col">
+            <h4>💬 Community</h4>
+            <a href="${PROPBET_LINKS.discord}" target="_blank" rel="noopener">
+              <span class="footer-icon">𝕯</span> Discord
+              <span class="footer-badge-discord">Live</span>
+            </a>
+            <a href="${PROPBET_LINKS.twitter}" target="_blank" rel="noopener">
+              <span class="footer-icon">𝕏</span> X / Twitter
+            </a>
+            <a href="${PROPBET_LINKS.linkedin}" target="_blank" rel="noopener">
+              <span class="footer-icon">in</span> LinkedIn
+            </a>
+          </div>
+
+        </div>
+
+        <div class="footer-social-bar">
+          <span class="footer-social-label">Follow PropBetEdge</span>
+          <a href="${PROPBET_LINKS.discord}" class="footer-social-link" target="_blank" rel="noopener" aria-label="Discord">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+          </a>
+          <a href="${PROPBET_LINKS.twitter}" class="footer-social-link" target="_blank" rel="noopener" aria-label="X / Twitter">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          <a href="${PROPBET_LINKS.linkedin}" class="footer-social-link" target="_blank" rel="noopener" aria-label="LinkedIn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.063 2.063 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+          </a>
+        </div>
+
+        <div class="footer-bottom">
+          <a href="/" aria-label="PropBetEdge home">
+            <img
+              src="/logo/pbe-full-200.png"
+              srcset="/logo/pbe-full-200.png 1x, /logo/pbe-full-400.png 2x"
+              alt="PropBetEdge"
+              class="footer-logo"
+              width="358" height="200"
+            />
+          </a>
+          <span class="footer-legal">© ${year} PropBetEdge · Entertainment purposes only · Bet responsibly · 21+ · Gambling Problem? Call 1-800-GAMBLER</span>
         </div>
       </div>
     </footer>
