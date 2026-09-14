@@ -1,6 +1,8 @@
 /**
  * src/components/score-strip.js
- * ESPN-elite score strip — v3.6
+ * ESPN-elite score strip — v3.7
+ *
+ * v3.7: halve marquee speed at every breakpoint for easier score reading.
  *
  * v3.6 — MOBILE FIXES:
  *
@@ -219,9 +221,9 @@ function injectStyles() {
       height: 100%;
     }
 
-    /* === MOBILE SCROLL SPEED — 18s (was 30s) === */
+    /* Slower score ticker: half the previous speed at each breakpoint. */
     .pss-rail.pss-marquee-on {
-      animation: pss-marquee 18s linear infinite;
+      animation: pss-marquee 36s linear infinite;
       width: max-content;
     }
     .pss-rail-wrap:hover .pss-rail.pss-marquee-on,
@@ -496,14 +498,14 @@ function injectStyles() {
       .pss-tile-bottom { font-size: 9.5px; }
       .pss-team-logo, .pss-team-logo-placeholder { width: 22px; height: 22px; }
       .pss-filter-btn { padding: 4px 9px; font-size: 10px; letter-spacing: 0.06em; }
-      .pss-rail.pss-marquee-on { animation-duration: 45s; }
+      .pss-rail.pss-marquee-on { animation-duration: 90s; }
     }
 
     /* ── 1024px+ ──────────────────────────────────────────────────── */
     @media (min-width: 1024px) {
       #pbe-score-strip { height: 76px; }
       .pss-tile { width: 310px; min-width: 310px; max-width: 310px; }
-      .pss-rail.pss-marquee-on { animation-duration: 60s; }
+      .pss-rail.pss-marquee-on { animation-duration: 120s; }
     }
 
     @media (prefers-reduced-motion: reduce) {
