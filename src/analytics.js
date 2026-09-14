@@ -82,6 +82,16 @@ function handleClick(event) {
     });
   }
 
+  const placed = anchor.closest('[data-pbe-placement]');
+  if (placed) {
+    gtagEvent('network_cta_click', {
+      placement: placed.dataset.pbePlacement || '',
+      link_url: href,
+      link_text: cleanText(anchor.textContent),
+      destination: destinationFor(href),
+    });
+  }
+
   if (anchor.matches('.nav-link.cta')) {
     gtagEvent('network_cta_click', {
       placement: 'header',
@@ -128,6 +138,7 @@ function destinationFor(href) {
     if (host === 'nfl.propbetedge.ai') return 'nfl';
     if (host === 'nba.propbetedge.ai') return 'nba';
     if (host === 'nhl.propbetedge.ai') return 'nhl';
+    if (host === 'ufc.propbetedge.ai') return 'ufc';
     if (host === 'propsports.proptechusa.ai') return 'propsports';
     if (host.includes('rapidapi.com')) return 'sports_news_api';
     return host;

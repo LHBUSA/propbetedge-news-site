@@ -167,9 +167,15 @@ function inferredSport(ctx = {}) {
   return normalizeSport(match?.[1]);
 }
 
+// Hosts whose pages must never carry marketing UTMs: they are indexable and
+// the UTM variants were showing up in Search Console as separate URLs. House-ad
+// clicks to them are still attributed by the house_ad_click event.
+const NO_UTM_HOSTS = new Set(['ufc.propbetedge.ai']);
+
 function withUtm(href, slot, brandKey, sport = null) {
   try {
     const url = new URL(href, typeof window !== 'undefined' ? window.location.origin : 'https://propbetedge.ai');
+    if (NO_UTM_HOSTS.has(url.hostname)) return url.toString();
     url.searchParams.set('utm_source', 'propbetedge');
     url.searchParams.set('utm_medium', 'house_ad');
     url.searchParams.set('utm_campaign', sport ? `${sport}_news_funnel` : 'sports_network_funnel');

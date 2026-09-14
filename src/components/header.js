@@ -105,7 +105,7 @@ export function renderHeader() {
 
 function renderUfcFightWeekShell() {
   return `
-    <a id="pbe-ufc-fight-week" class="pbe-fight-week" href="${PROPBET_LINKS.picks_ufc}" target="_blank" rel="noopener" hidden aria-label="Open UFC Fight Week on PropBetEdge">
+    <a id="pbe-ufc-fight-week" class="pbe-fight-week" href="${PROPBET_LINKS.picks_ufc}" target="_blank" rel="noopener" data-pbe-placement="fight_week_rail" hidden aria-label="Open UFC Fight Week on PropBetEdge">
       <div class="pbe-fight-week-inner">
         <span class="pbe-fight-week-kicker"><span class="pbe-fight-week-dot" aria-hidden="true"></span><span id="pbe-ufc-fight-week-kicker">UFC FIGHT WEEK</span></span>
         <span class="pbe-fight-week-event" id="pbe-ufc-fight-week-event"></span>
@@ -320,14 +320,13 @@ function fightWeekDateLabel(date, daysOut) {
   return formatted;
 }
 
+// A clean, canonical UFC event URL. Marketing UTMs on a first-party link were
+// being indexed by Google as duplicate ufc.propbetedge.ai URLs; attribution for
+// this rail is the data-pbe-placement click event in src/analytics.js.
 function eventDestination(event) {
   const name = slugifyEvent(String(event?.name || 'ufc'));
   const date = /^\d{4}-\d{2}-\d{2}$/.test(String(event?.event_date || '')) ? event.event_date : 'tbd';
-  const url = new URL(`/events/${name}-${date}`, PROPBET_LINKS.picks_ufc);
-  url.searchParams.set('utm_source', 'propbetedge');
-  url.searchParams.set('utm_medium', 'fight_week_rail');
-  url.searchParams.set('utm_campaign', 'ufc_fight_week');
-  return url.toString();
+  return new URL(`/events/${name}-${date}`, PROPBET_LINKS.picks_ufc).toString();
 }
 
 function slugifyEvent(value) {
