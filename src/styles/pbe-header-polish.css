@@ -290,6 +290,93 @@
   color: #fffaf0;
 }
 
+/* Matchup with fighter faces: [face] A vs B [face]. Chips are fixed-size so
+   the rail height and the names never move while photos load. Names shrink
+   (ellipsis) before the faces or the "vs" do. */
+.pbe-fight-week-matchup.has-faces {
+  --pbe-fw-face: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.pbe-fw-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pbe-fw-vs {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(233,199,90,.72);
+}
+
+.pbe-fw-face {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--pbe-fw-face);
+  height: var(--pbe-fw-face);
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(180deg, #2a241d 0%, #1b1713 100%);
+  box-shadow: 0 1px 2px rgba(0,0,0,.35);
+}
+
+.pbe-fw-face::before {
+  content: attr(data-initials);
+  font-family: var(--font-mono);
+  font-size: calc(var(--pbe-fw-face) * .34);
+  font-weight: 800;
+  letter-spacing: .04em;
+  line-height: 1;
+  color: #bdb5a7;
+}
+
+.pbe-fw-face.has-photo::before {
+  visibility: hidden;
+}
+
+/* The ring sits above the photo so its edge stays crisp. */
+.pbe-fw-face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(212,175,55,.5);
+  pointer-events: none;
+}
+
+/* Thumbs are 4:5 portraits with no focal point; a light zoom biased up and
+   slightly left fills the chip with the face on most of them. */
+.pbe-fw-face img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 18%;
+  transform: scale(1.15);
+  transform-origin: 42% 18%;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+
+.pbe-fw-face.is-loaded img {
+  opacity: 1;
+}
+
 .pbe-fight-week-date {
   font-size: 9px;
   color: #c9c1b4;
@@ -397,6 +484,17 @@
   .pbe-fight-week-matchup {
     font-size: 12px;
   }
+
+  .pbe-fight-week-matchup.has-faces {
+    --pbe-fw-face: 22px;
+    gap: 7px;
+  }
+
+  /* Keep the stacked rail at its original height: the chip may overhang the
+     text line by a couple of pixels instead of growing the row. */
+  .pbe-fw-face {
+    margin-block: -2px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -440,6 +538,16 @@
     font-size: 11px;
   }
 
+  .pbe-fight-week-matchup.has-faces {
+    --pbe-fw-face: 20px;
+    gap: 6px;
+  }
+
+  .pbe-fw-vs {
+    font-size: 8px;
+    letter-spacing: .1em;
+  }
+
   .pbe-fight-week-cta {
     padding: 6px 8px;
     font-size: 8px;
@@ -451,8 +559,39 @@
     padding-left: 16px;
   }
 
+  .pbe-fight-week-matchup.has-faces {
+    --pbe-fw-face: 18px;
+    gap: 5px;
+  }
+
   .pbe-fight-week-cta {
     padding-left: 6px;
     padding-right: 6px;
+  }
+}
+
+/* Narrow phones: the faces cost ~19px, so reclaim spacing (never name size)
+   before a typical headliner pair starts to truncate. */
+@media (max-width: 389px) {
+  .pbe-fight-week-inner {
+    padding-right: 12px;
+    column-gap: 8px;
+  }
+
+  .pbe-fight-week-matchup.has-faces {
+    gap: 4px;
+  }
+
+  .pbe-fight-week-cta {
+    padding-left: 5px;
+    padding-right: 5px;
+    letter-spacing: .06em;
+  }
+}
+
+@media (max-width: 374px) {
+  .pbe-fight-week-matchup.has-faces {
+    --pbe-fw-face: 16px;
+    gap: 3px;
   }
 }

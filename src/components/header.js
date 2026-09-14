@@ -197,11 +197,7 @@ async function mountUfcFightWeek() {
 
   if (kicker) kicker.textContent = isFightWeek ? 'UFC FIGHT WEEK' : 'NEXT UFC CARD';
   if (eventEl) eventEl.textContent = event.name || 'UFC';
-  if (matchupEl) {
-    const a = mainEvent?.fighter_a?.name;
-    const b = mainEvent?.fighter_b?.name;
-    matchupEl.textContent = a && b ? `${a} vs ${b}` : 'Fight intelligence · card research · Fight DNA';
-  }
+  if (matchupEl) renderFightWeekMatchup(matchupEl, mainEvent);
   if (dateEl) dateEl.textContent = fightWeekDateLabel(event.event_date, daysOut);
   if (ctaEl) ctaEl.textContent = isFightWeek ? 'OPEN FIGHT WEEK ↗' : 'EXPLORE UFC ↗';
 
@@ -210,6 +206,68 @@ async function mountUfcFightWeek() {
   rail.setAttribute('aria-label', `${isFightWeek ? 'Open UFC Fight Week' : 'Explore the next UFC card'}: ${event.name || 'UFC'}`);
   rail.classList.toggle('is-fight-week', isFightWeek);
   rail.hidden = false;
+}
+
+// "[face] Joshua Van vs Alexandre Pantoja [face]". Faces are fixed-size chips so
+// nothing moves while photos load; a missing or broken photo shows initials.
+// The spaces between spans keep textContent reading "A vs B".
+function renderFightWeekMatchup(el, bout) {
+  const a = bout?.fighter_a;
+  const b = bout?.fighter_b;
+  el.replaceChildren();
+  el.classList.toggle('has-faces', Boolean(a?.name && b?.name));
+  if (!a?.name || !b?.name) {
+    el.textContent = 'Fight intelligence · card research · Fight DNA';
+    return;
+  }
+  el.append(
+    fighterFace(a), ' ',
+    fighterName(a.name), ' ',
+    Object.assign(document.createElement('span'), { className: 'pbe-fw-vs', textContent: 'vs' }), ' ',
+    fighterName(b.name), ' ',
+    fighterFace(b),
+  );
+}
+
+function fighterName(name) {
+  return Object.assign(document.createElement('span'), { className: 'pbe-fw-name', textContent: name });
+}
+
+function fighterFace(fighter) {
+  // The name sits right beside the chip, so the chip is decorative.
+  const chip = document.createElement('span');
+  chip.className = 'pbe-fw-face';
+  chip.setAttribute('aria-hidden', 'true');
+  // Initials render from CSS so they never enter the matchup's text content.
+  chip.dataset.initials = fighterInitials(fighter.name);
+
+  const src = fighter.primary_image?.thumb_url;
+  if (/^https:\/\//.test(String(src || ''))) {
+    const img = Object.assign(document.createElement('img'), { alt: '', width: 28, height: 28, decoding: 'async' });
+    const { author, license } = fighter.primary_image;
+    if (author && license) img.title = `${fighter.name} · Photo: ${author} / ${license}`;
+    img.addEventListener('load', () => chip.classList.add('is-loaded'), { once: true });
+    img.addEventListener('error', () => {
+      img.remove();
+      chip.classList.remove('has-photo', 'is-loaded');
+    }, { once: true });
+    img.src = src;
+    chip.classList.add('has-photo');
+    chip.append(img);
+    if (img.complete && img.naturalWidth) chip.classList.add('is-loaded');
+  }
+  return chip;
+}
+
+function fighterInitials(name) {
+  const words = String(name || '')
+    .split(/\s+/)
+    .map(word => word.replace(/[^\p{L}]/gu, ''))
+    .filter(word => word && !/^(jr|sr|ii|iii|iv)$/i.test(word));
+  if (!words.length) return '';
+  const first = words[0][0];
+  const last = words.length > 1 ? words[words.length - 1][0] : '';
+  return `${first}${last}`.toUpperCase();
 }
 
 async function getUfcFightWeek() {
