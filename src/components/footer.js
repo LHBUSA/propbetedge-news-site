@@ -90,6 +90,25 @@ export function renderFooter() {
           </a>
         </div>
 
+        <style>
+          .footer-mother{display:flex;flex-direction:column;gap:10px;align-items:flex-start;padding:22px 0 4px;border-top:1px solid rgba(255,255,255,.08);margin-top:8px}
+          .footer-mother-network{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+          .footer-mother-badge{display:inline-block;border-radius:11px;line-height:0;transition:transform .2s ease,box-shadow .2s ease;outline:none}
+          .footer-mother-badge:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(59,130,246,.18)}
+          .footer-mother-badge:focus-visible{box-shadow:0 0 0 2px #93c5fd}
+          .footer-mother-badge img{display:block;width:236px;height:auto;max-width:100%;border:0}
+          .footer-mother-cta{font-size:11px;color:rgba(255,255,255,.45);max-width:236px}
+          .footer-mother-cta a{color:rgba(255,255,255,.75);font-weight:600;text-decoration:none}
+          .footer-mother-cta a:hover{color:#fff}
+        </style>
+        <div class="footer-mother">
+          <span class="footer-mother-network">Part of the PropTechUSA.ai network</span>
+          <a class="footer-mother-badge" href="https://mother.proptechusa.ai/verify/xgH9unhpY6TDvTtmG8CsUWrq0O6M10TS" target="_blank" rel="noopener noreferrer" aria-label="Verify PropTechUSA.ai Mother AI protection status (opens in a new tab)">
+            <img src="https://api.mother.proptechusa.ai/badge/xgH9unhpY6TDvTtmG8CsUWrq0O6M10TS.svg" alt="Mother AI Protected — live verification for PropTechUSA.ai" width="236" height="48" loading="lazy" decoding="async" />
+          </a>
+          <span class="footer-mother-cta">Want this protection on your AI stack? <a href="https://mother.proptechusa.ai/#badge" target="_blank" rel="noopener noreferrer">Get Mother AI Protected &rarr;</a></span>
+        </div>
+
         <div class="footer-bottom">
           <a href="/" aria-label="PropBetEdge home">
             <img
