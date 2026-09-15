@@ -107,11 +107,15 @@ function renderUfcFightWeekShell() {
   return `
     <a id="pbe-ufc-fight-week" class="pbe-fight-week" href="${PROPBET_LINKS.picks_ufc}" target="_blank" rel="noopener" data-pbe-placement="fight_week_rail" hidden aria-label="Open UFC Fight Week on PropBetEdge">
       <div class="pbe-fight-week-inner">
-        <span class="pbe-fight-week-kicker"><span class="pbe-fight-week-dot" aria-hidden="true"></span><span id="pbe-ufc-fight-week-kicker">UFC FIGHT WEEK</span></span>
-        <span class="pbe-fight-week-event" id="pbe-ufc-fight-week-event"></span>
+        <span class="pbe-fight-week-zone is-left">
+          <span class="pbe-fight-week-kicker"><span class="pbe-fight-week-dot" aria-hidden="true"></span><span id="pbe-ufc-fight-week-kicker">UFC FIGHT WEEK</span></span>
+          <span class="pbe-fight-week-event" id="pbe-ufc-fight-week-event"></span>
+        </span>
         <span class="pbe-fight-week-matchup" id="pbe-ufc-fight-week-matchup"></span>
-        <span class="pbe-fight-week-date" id="pbe-ufc-fight-week-date"></span>
-        <span class="pbe-fight-week-cta" id="pbe-ufc-fight-week-cta">OPEN FIGHT WEEK ↗</span>
+        <span class="pbe-fight-week-zone is-right">
+          <span class="pbe-fight-week-date" id="pbe-ufc-fight-week-date"></span>
+          <span class="pbe-fight-week-cta" id="pbe-ufc-fight-week-cta">OPEN FIGHT WEEK ↗</span>
+        </span>
       </div>
     </a>
   `;
@@ -241,11 +245,15 @@ function fighterFace(fighter) {
   // Initials render from CSS so they never enter the matchup's text content.
   chip.dataset.initials = fighterInitials(fighter.name);
 
-  const src = fighter.primary_image?.thumb_url;
+  // display_image is the portrait ufc.propbetedge.ai shows (identity-verified);
+  // primary_image is the older stored-catalog field, kept as a fallback.
+  const image = fighter.display_image?.thumb_url ? fighter.display_image : fighter.primary_image;
+  const src = image?.thumb_url;
   if (/^https:\/\//.test(String(src || ''))) {
     const img = Object.assign(document.createElement('img'), { alt: '', width: 28, height: 28, decoding: 'async' });
-    const { author, license } = fighter.primary_image;
-    if (author && license) img.title = `${fighter.name} · Photo: ${author} / ${license}`;
+    img.style.objectPosition = faceObjectPosition(image);
+    const credit = image.attribution_text || (image.author && image.license ? `${image.author} / ${image.license}` : '');
+    if (credit) img.title = `${fighter.name} · Photo: ${credit}`;
     img.addEventListener('load', () => chip.classList.add('is-loaded'), { once: true });
     img.addEventListener('error', () => {
       img.remove();
@@ -257,6 +265,16 @@ function fighterFace(fighter) {
     if (img.complete && img.naturalWidth) chip.classList.add('is-loaded');
   }
   return chip;
+}
+
+// Same crop rules as ufc.propbetedge.ai's variant system: the image's detected
+// focal point when it has one, else the avatar slot default. ESPN headshots are
+// landscape head-and-shoulders PNGs, so they centre.
+function faceObjectPosition(image) {
+  const x = Number(image?.focal?.x);
+  const y = Number(image?.focal?.y);
+  if (image?.focal && Number.isFinite(x) && Number.isFinite(y)) return `${Math.round(x * 1000) / 10}% ${Math.round(y * 1000) / 10}%`;
+  return image?.display_only ? '50% 50%' : '50% 24%';
 }
 
 function fighterInitials(name) {

@@ -234,9 +234,41 @@
   margin: 0 auto;
   padding: 8px 28px;
   display: grid;
-  grid-template-columns: auto minmax(160px, .8fr) minmax(260px, 1.15fr) auto auto;
+  --pbe-fw-side-min: 140px;
+  grid-template-columns: minmax(var(--pbe-fw-side-min), 1fr) auto minmax(var(--pbe-fw-side-min), 1fr);
   gap: 18px;
   align-items: center;
+}
+
+/* Three zones. The two metadata zones are equal 1fr tracks, so the auto
+   matchup track between them is centred on the rail whatever either side
+   holds; long metadata truncates or drops inside its own zone instead of
+   pushing the matchup. Each zone is a size container so secondary metadata
+   (event name, date) drops before it could collide. */
+.pbe-fight-week-zone {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  container-type: inline-size;
+}
+
+.pbe-fight-week-zone.is-left {
+  container-name: pbe-fw-left;
+  justify-content: flex-start;
+}
+
+.pbe-fight-week-zone.is-right {
+  container-name: pbe-fw-right;
+  justify-content: flex-end;
+}
+
+@container pbe-fw-left (max-width: 240px) {
+  .pbe-fight-week-event { display: none; }
+}
+
+@container pbe-fw-right (max-width: 300px) {
+  .pbe-fight-week-date { display: none; }
 }
 
 .pbe-fight-week-kicker,
@@ -280,6 +312,7 @@
 
 .pbe-fight-week-matchup {
   min-width: 0;
+  max-width: 620px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -358,17 +391,14 @@
   pointer-events: none;
 }
 
-/* Thumbs are 4:5 portraits with no focal point; a light zoom biased up and
-   slightly left fills the chip with the face on most of them. */
+/* object-position is set per image from its focal point (see header.js). */
 .pbe-fw-face img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 18%;
-  transform: scale(1.15);
-  transform-origin: 42% 18%;
+  object-position: 50% 24%;
   opacity: 0;
   transition: opacity .2s ease;
 }
@@ -427,12 +457,11 @@
   .pbe-fight-week-inner {
     padding-left: 22px;
     padding-right: 22px;
-    grid-template-columns: auto minmax(140px,.7fr) minmax(220px,1fr) auto;
     gap: 13px;
   }
 
-  .pbe-fight-week-date {
-    display: none;
+  .pbe-fight-week-zone {
+    gap: 13px;
   }
 }
 
@@ -465,21 +494,14 @@
   }
 
   .pbe-fight-week-inner {
-    min-height: 52px;
-    padding: 8px 22px;
-    grid-template-columns: auto minmax(0,1fr) auto;
-    grid-template-areas:
-      'kicker matchup cta'
-      'event event cta';
-    column-gap: 12px;
-    row-gap: 2px;
+    padding-left: 22px;
+    padding-right: 22px;
+    gap: 12px;
   }
 
-  .pbe-fight-week-kicker { grid-area: kicker; }
-  .pbe-fight-week-event { grid-area: event; }
-  .pbe-fight-week-matchup { grid-area: matchup; }
-  .pbe-fight-week-cta { grid-area: cta; }
-  .pbe-fight-week-date { display: none; }
+  .pbe-fight-week-zone {
+    gap: 12px;
+  }
 
   .pbe-fight-week-matchup {
     font-size: 12px;
@@ -489,11 +511,26 @@
     --pbe-fw-face: 22px;
     gap: 7px;
   }
+}
 
-  /* Keep the stacked rail at its original height: the chip may overhang the
-     text line by a couple of pixels instead of growing the row. */
-  .pbe-fw-face {
-    margin-block: -2px;
+/* Just above the phone layout the side floors squeeze the matchup; tighten the
+   CTA's tracking (never the names) so a typical headliner pair still fits. */
+@media (max-width: 680px) and (min-width: 601px) {
+  .pbe-fight-week-inner {
+    --pbe-fw-side-min: 120px;
+    padding-left: 18px;
+    padding-right: 18px;
+    gap: 10px;
+  }
+
+  .pbe-fight-week-zone {
+    gap: 10px;
+  }
+
+  .pbe-fight-week-cta {
+    padding-left: 7px;
+    padding-right: 7px;
+    letter-spacing: .07em;
   }
 }
 
@@ -517,17 +554,30 @@
 
   .pbe-fight-week-inner {
     min-height: 56px;
-    padding-left: 20px;
-    padding-right: 14px;
+    padding: 6px 18px;
     grid-template-columns: minmax(0,1fr) auto;
     grid-template-areas:
       'kicker cta'
-      'matchup cta';
+      'matchup matchup';
     gap: 2px 10px;
   }
 
-  .pbe-fight-week-event {
-    display: none;
+  .pbe-fight-week-zone { display: contents; }
+  .pbe-fight-week-kicker { grid-area: kicker; }
+  .pbe-fight-week-cta { grid-area: cta; }
+  .pbe-fight-week-event,
+  .pbe-fight-week-date { display: none; }
+
+  .pbe-fight-week-matchup {
+    grid-area: matchup;
+    justify-self: center;
+    max-width: 100%;
+  }
+
+  /* The chip may overhang the text line by a couple of pixels rather than
+     grow the row. */
+  .pbe-fw-face {
+    margin-block: -2px;
   }
 
   .pbe-fight-week-kicker {
@@ -549,7 +599,7 @@
   }
 
   .pbe-fight-week-cta {
-    padding: 6px 8px;
+    padding: 4px 8px;
     font-size: 8px;
   }
 }
@@ -557,41 +607,12 @@
 @media (max-width: 390px) {
   .pbe-fight-week-inner {
     padding-left: 16px;
+    padding-right: 16px;
   }
 
   .pbe-fight-week-matchup.has-faces {
     --pbe-fw-face: 18px;
     gap: 5px;
   }
-
-  .pbe-fight-week-cta {
-    padding-left: 6px;
-    padding-right: 6px;
-  }
 }
 
-/* Narrow phones: the faces cost ~19px, so reclaim spacing (never name size)
-   before a typical headliner pair starts to truncate. */
-@media (max-width: 389px) {
-  .pbe-fight-week-inner {
-    padding-right: 12px;
-    column-gap: 8px;
-  }
-
-  .pbe-fight-week-matchup.has-faces {
-    gap: 4px;
-  }
-
-  .pbe-fight-week-cta {
-    padding-left: 5px;
-    padding-right: 5px;
-    letter-spacing: .06em;
-  }
-}
-
-@media (max-width: 374px) {
-  .pbe-fight-week-matchup.has-faces {
-    --pbe-fw-face: 16px;
-    gap: 3px;
-  }
-}
