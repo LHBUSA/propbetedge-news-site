@@ -18,12 +18,12 @@ export function renderFooter() {
 
           <div class="footer-col">
             <h4>⚡ Sports Intelligence</h4>
-            <a href="${PROPBET_LINKS.picks_mlb}" target="_blank" rel="noopener">MLB Intelligence <span class="footer-badge">Live</span></a>
-            <a href="${PROPBET_LINKS.picks_nfl}" target="_blank" rel="noopener">NFL Intelligence <span class="footer-badge">Live</span></a>
-            <a href="${PROPBET_LINKS.picks_nba}" target="_blank" rel="noopener">NBA Intelligence <span class="footer-badge">Live</span></a>
-            <a href="https://wnba.propbetedge.ai" target="_blank" rel="noopener">WNBA Intelligence <span class="footer-badge">Live</span></a>
-            <a href="${PROPBET_LINKS.picks_nhl}" target="_blank" rel="noopener">NHL Intelligence <span class="footer-badge">Live</span></a>
-            <a href="${PROPBET_LINKS.picks_ufc}" target="_blank" rel="noopener">UFC Intelligence <span class="footer-badge">Live</span></a>
+            <a href="${PROPBET_LINKS.picks_mlb}" target="_blank" rel="noopener">MLB Intelligence <span class="footer-badge">Pro</span></a>
+            <a href="${PROPBET_LINKS.picks_nfl}" target="_blank" rel="noopener">NFL Intelligence <span class="footer-badge">Pro</span></a>
+            <a href="${PROPBET_LINKS.picks_nba}" target="_blank" rel="noopener">NBA Intelligence <span class="footer-badge">Pro</span></a>
+            <a href="https://wnba.propbetedge.ai" target="_blank" rel="noopener">WNBA Intelligence <span class="footer-badge">Pro</span></a>
+            <a href="${PROPBET_LINKS.picks_nhl}" target="_blank" rel="noopener">NHL Intelligence <span class="footer-badge">Pro</span></a>
+            <a href="${PROPBET_LINKS.picks_ufc}" target="_blank" rel="noopener">UFC Intelligence <span class="footer-badge">Pro</span></a>
           </div>
 
           <div class="footer-col">
