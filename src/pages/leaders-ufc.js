@@ -89,13 +89,13 @@ function renderActive() {
 
   body.innerHTML = `
     <div class="leaders-banner">
-      🏆 ${stamp ? `Snapshot ${escapeHtml(stamp)} · ` : ''}${escapeHtml(_payload.source || 'UFC official rankings')} · divisional champions only
+      🏆 ${stamp ? `Snapshot ${escapeHtml(stamp)} · ` : ''}${escapeHtml(_payload.source || 'UFC official rankings')} · current divisional title state
     </div>
     ${renderGroup('Men’s Divisions', men)}
     ${renderGroup('Women’s Divisions', women)}
     <div class="ufc-champions-source">
-      Championship status is sourced from the dated UFC rankings snapshot.
-      <a href="${escapeAttr(_payload.sourceUrl || 'https://www.ufc.com/rankings')}" target="_blank" rel="noopener">Official source →</a>
+      Championship status starts with the dated UFC rankings snapshot and applies verified title-state corrections when newer sourced events supersede that snapshot.
+      <a href="${escapeAttr(_payload.sourceUrl || 'https://www.ufc.com/rankings')}" target="_blank" rel="noopener">Official rankings →</a>
     </div>
   `;
 }
@@ -106,7 +106,7 @@ function renderGroup(title, divisions) {
     <section class="ufc-champions-group">
       <div class="ufc-champions-group-head">
         <h2>${escapeHtml(title)}</h2>
-        <span>${divisions.length} champions</span>
+        <span>${divisions.length} divisions</span>
       </div>
       <div class="leaders-grid ufc-champions-grid">
         ${divisions.map(renderChampionCard).join('')}
@@ -116,8 +116,37 @@ function renderGroup(title, divisions) {
 }
 
 function renderChampionCard(row) {
+  const vacant = row.status === 'vacant' || !row.champion;
   const champ = row.champion || {};
-  const href = champ.href || 'https://ufc.propbetedge.ai/rankings';
+  const href = vacant
+    ? (row.href || 'https://ufc.propbetedge.ai/rankings')
+    : (champ.href || 'https://ufc.propbetedge.ai/rankings');
+  const correction = row.correction || null;
+
+  if (vacant) {
+    const note = correction?.former_champion
+      ? `${correction.former_champion} vacated ${formatDate(correction.effective_date) || correction.effective_date || 'the title'}`
+      : 'No current undisputed champion';
+    return `
+      <section class="leader-card ufc-champion-card ufc-champion-vacant">
+        <div class="leader-card-head">
+          <span class="leader-card-stat" style="color:var(--gold)">${escapeHtml(row.division || 'Division')}</span>
+          <span class="leader-card-meta">VACANT</span>
+        </div>
+        <a href="${escapeAttr(href)}" class="ufc-champion-link" target="_blank" rel="noopener">
+          <div class="ufc-champion-media ufc-vacant-media">
+            <span class="ufc-vacant-mark" aria-hidden="true">—</span>
+          </div>
+          <div class="ufc-champion-copy">
+            <strong>Vacant</strong>
+            <span>${escapeHtml(row.division || '')} · undisputed title</span>
+            <small>${escapeHtml(note)} · open rankings →</small>
+          </div>
+        </a>
+      </section>
+    `;
+  }
+
   return `
     <section class="leader-card ufc-champion-card">
       <div class="leader-card-head">
