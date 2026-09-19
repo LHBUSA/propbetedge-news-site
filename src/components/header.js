@@ -8,6 +8,8 @@ import { renderScoreStripShell, mountScoreStrip } from './score-strip.js';
 const EV_FINDER_URL = 'https://propbetedge-ev-finder.sales-fd3.workers.dev/edges-today';
 const NFL_SAMPLE_URL = 'https://nfl.propbetedge.ai/api/pbe-picks?view=free-sample';
 const UFC_SAMPLE_URL = 'https://ufc.propbetedge.ai/api/ufc/free-sample';
+const WNBA_SAMPLE_URL = 'https://wnba-api.propbetedge.ai/v1/pbe/free-sample';
+const NHL_SAMPLE_URL = 'https://nhl-api.propbetedge.ai/nhl/picks/free-sample';
 const UFC_API_BASE = 'https://ufc-api.propbetedge.ai/v1/ufc';
 const FIGHT_WEEK_CACHE_MS = 5 * 60 * 1000;
 let _edgeCountFetched = false;
@@ -39,6 +41,22 @@ const INTELLIGENCE_PRODUCTS = Object.freeze([
     href: PROPBET_LINKS.picks_ufc,
     domain: 'ufc.propbetedge.ai',
     blurb: 'Fight DNA, matchup research, rankings and fight-week intelligence',
+  },
+  {
+    key: 'wnba',
+    emoji: '🏀',
+    label: 'WNBA Intelligence',
+    href: PROPBET_LINKS.picks_wnba,
+    domain: 'wnba.propbetedge.ai',
+    blurb: 'Live games, PBE Picks, player load and WNBA intelligence',
+  },
+  {
+    key: 'nhl',
+    emoji: '🏒',
+    label: 'NHL Intelligence',
+    href: PROPBET_LINKS.picks_nhl,
+    domain: 'nhl.propbetedge.ai',
+    blurb: 'Ice Board, PBE Picks, player research and hockey intelligence',
   },
 ]);
 
@@ -173,15 +191,21 @@ async function fetchEdgeCount() {
       fetch(EV_FINDER_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
       fetch(NFL_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
       fetch(UFC_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
+      fetch(WNBA_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
+      fetch(NHL_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
     ]);
     const body = (index) => results[index].status === 'fulfilled' ? results[index].value : null;
     const mlb = body(0);
     const nfl = body(1);
     const ufc = body(2);
+    const wnba = body(3)?.data || body(3);
+    const nhl = body(4);
     const count =
       Math.min(2, Array.isArray(mlb?.edges) ? mlb.edges.length : 0)
       + Math.min(2, Array.isArray(nfl?.picks) ? nfl.picks.length : 0)
-      + (ufc?.pick ? 1 : 0);
+      + (ufc?.pick ? 1 : 0)
+      + Math.min(2, Array.isArray(wnba?.picks) ? wnba.picks.length : 0)
+      + Math.min(2, Array.isArray(nhl?.picks) ? nhl.picks.length : 0);
 
     const el = document.getElementById('edges-count');
     if (!el) return;
