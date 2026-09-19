@@ -13,7 +13,7 @@
     { "source": "/sitemaps/archive-:chunk.xml", "destination": "/api/sitemap?type=article-chunk&chunk=:chunk" },
     { "source": "/sitemaps/articles.xml", "destination": "/api/sitemap?type=articles" },
     { "source": "/sitemaps/articles-:month.xml", "destination": "/api/sitemap?type=articles&month=:month" },
-    { "source": "/robots.txt", "destination": "https://propbet-news-sitemap.sales-fd3.workers.dev/robots.txt" },
+    { "source": "/robots.txt", "destination": "/api/robots" },
     { "source": "/news/:path*", "destination": "/index.html" },
     { "source": "/authors/:path*", "destination": "/index.html" },
     { "source": "/author/:path*", "destination": "/index.html" },
