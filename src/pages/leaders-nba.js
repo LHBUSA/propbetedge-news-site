@@ -13,6 +13,7 @@ import {
   renderLeaderLiveStatus,
   markLeaderUpdated,
   startLeaderAutoRefresh,
+  renderPropSportsLink,
 } from './leaders-shared.js';
 
 let _activeType = 'basic';
@@ -40,13 +41,13 @@ const ADVANCED_CATS = [
 export async function renderNbaLeadersPage(root) {
   const targetSeason = currentNbaSeason();
   root.innerHTML = leadersPageShell('nba', 'NBA',
-    `${formatNbaSeason(targetSeason)} leaderboards are pre-wired and will activate automatically when the regular-season feed opens.`,
+    `${formatNbaSeason(targetSeason)} leaderboards are pre-wired through ${renderPropSportsLink()} and will activate automatically when the regular-season feed opens.`,
     `
       <div class="leaders-subtabs">
         <button class="leaders-subtab ${_activeType === 'basic' ? 'active' : ''}" data-type="basic">Leaders</button>
         <button class="leaders-subtab ${_activeType === 'advanced' ? 'active' : ''}" data-type="advanced">Shooting + Advanced</button>
       </div>
-      ${renderLeaderLiveStatus('ESPN', 60)}
+      ${renderLeaderLiveStatus('PropSports.PropTechUSA.ai', 60)}
       <div id="leaders-body">${renderLeaderLoading()}</div>
     `,
     'AUTO-READY',
@@ -64,12 +65,12 @@ export async function renderNbaLeadersPage(root) {
 
   await loadData({ force: true });
   renderActive();
-  markLeaderUpdated('ESPN');
+  markLeaderUpdated('PropSports.PropTechUSA.ai');
 
   startLeaderAutoRefresh('nba', async () => {
     await loadData({ force: true });
     renderActive();
-    markLeaderUpdated('ESPN');
+    markLeaderUpdated('PropSports.PropTechUSA.ai');
   }, 60000);
 }
 
@@ -134,8 +135,8 @@ function renderActive() {
   body.innerHTML = `
     <div class="leaders-banner">
       🏀 ${fallback
-        ? `Showing ${formatNbaSeason(_usingSeason)} · ${formatNbaSeason(target)} activates automatically when ESPN publishes it`
-        : `${formatNbaSeason(_usingSeason)} regular season · live leaderboard feed`}
+        ? `Showing ${formatNbaSeason(_usingSeason)} · ${formatNbaSeason(target)} activates automatically when ${renderPropSportsLink()} publishes the new-season board`
+        : `${formatNbaSeason(_usingSeason)} regular season · ${renderPropSportsLink()} live leaderboard feed`}
     </div>
     <div class="leaders-grid">
       ${cats.map((cat) => renderCard(cat, findCategory(cat.key))).join('')}
