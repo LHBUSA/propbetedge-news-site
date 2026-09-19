@@ -3472,6 +3472,17 @@ img { max-width: 100%; height: auto; }
   position:absolute;right:5px;bottom:4px;font-size:20px;
   filter:drop-shadow(0 2px 3px rgba(0,0,0,.25));
 }
+.ufc-champion-vacant { border-style:dashed;border-color:rgba(20,17,13,.18); }
+.ufc-champion-vacant .leader-card-head { background:rgba(20,17,13,.055); }
+.ufc-vacant-media {
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,rgba(20,17,13,.04),rgba(212,175,55,.08));
+  border-style:dashed;
+}
+.ufc-vacant-mark {
+  font-family:'JetBrains Mono',monospace;font-size:34px;font-weight:800;
+  color:rgba(20,17,13,.32);line-height:1;
+}
 .ufc-champion-copy { min-width:0;display:flex;flex-direction:column;gap:4px; }
 .ufc-champion-copy strong {
   font-family:'Playfair Display',serif;font-size:21px;line-height:1.05;color:var(--ink);
