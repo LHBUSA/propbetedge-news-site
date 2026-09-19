@@ -442,68 +442,58 @@ async function renderNflDetail(target, gameId) {
 
 // ─── NHL Detail ──────────────────────────────────────────────────────────
 async function renderNhlDetail(target, gameId) {
-  const game = await sports.nhlGame(gameId).catch(() => null);
-  if (!game?.homeTeam || !game?.awayTeam) {
+  const summary = await sports.nhlSummary(gameId).catch(() => null);
+  if (!summary?.header) {
     target.innerHTML = `<div class="games-empty"><h3>Game not found</h3></div>`;
     return;
   }
 
-  const nhlName = (team) => {
-    const place = team?.placeName?.default || '';
-    const common = team?.commonName?.default || team?.name?.default || '';
-    return [place, common].filter(Boolean).join(' ').trim() || team?.abbrev || 'Team';
-  };
+  const { home = {}, away = {}, status = {}, venue = '' } = summary.header;
+  const isLive = status.state === 'in';
 
-  const home = {
-    name: nhlName(game.homeTeam),
-    abbr: game.homeTeam?.abbrev || '',
-    logo: game.homeTeam?.logo || '',
-    score: game.homeTeam?.score ?? '',
-    winner: game.gameState === 'OFF' && Number(game.homeTeam?.score || 0) > Number(game.awayTeam?.score || 0),
-  };
-  const away = {
-    name: nhlName(game.awayTeam),
-    abbr: game.awayTeam?.abbrev || '',
-    logo: game.awayTeam?.logo || '',
-    score: game.awayTeam?.score ?? '',
-    winner: game.gameState === 'OFF' && Number(game.awayTeam?.score || 0) > Number(game.homeTeam?.score || 0),
-  };
-
-  const period = game?.periodDescriptor?.number
-    ? `P${game.periodDescriptor.number}`
-    : '';
-  const clock = game?.clock?.timeRemaining || '';
-  const detail = [game.gameState, period, clock].filter(Boolean).join(' · ');
   const heroHtml = renderEspnGameHero({
-    home,
-    away,
-    status: { detail, state: game.gameState === 'LIVE' || game.gameState === 'CRIT' ? 'in' : (game.gameState === 'OFF' ? 'post' : 'pre') },
+    home, away, status,
     sportLabel: 'NHL',
     sportIcon: '🏒',
-    venue: game?.venue?.default || '',
+    venue,
   });
 
-  const scoringPeriods = Array.isArray(game?.summary?.scoring) ? game.summary.scoring : [];
-  const goals = scoringPeriods.flatMap((periodRow) =>
-    (periodRow?.goals || []).map((goal) => ({
-      period: periodRow?.periodDescriptor?.number || periodRow?.period || '',
-      time: goal?.timeInPeriod || '',
-      team: goal?.teamAbbrev?.default || goal?.teamAbbrev || '',
-      player: [goal?.firstName?.default, goal?.lastName?.default].filter(Boolean).join(' ') || goal?.name?.default || 'Goal',
-      strength: goal?.strength || '',
-      awayScore: goal?.awayScore,
-      homeScore: goal?.homeScore,
-    }))
-  );
+  const teamStats = summary.boxscore?.teams || [];
+  const statsHtml = teamStats.length ? `
+    <section class="game-section">
+      <h2 class="game-section-title">Team Stats</h2>
+      <div class="nba-boxscore-wrap">
+        ${teamStats.map((entry) => {
+          const team = entry.team || {};
+          const stats = (entry.statistics || []).filter((stat) => stat?.displayValue != null).slice(0, 12);
+          return `
+            <div class="nba-box-team">
+              <div class="nba-box-team-head">
+                ${team.logo ? `<img src="${escapeAttr(team.logo)}" alt="${escapeAttr(team.abbreviation || '')}" class="nba-box-team-logo" />` : ''}
+                <div class="nba-box-team-name">${escapeHtml(team.displayName || team.name || team.abbreviation || 'Team')}</div>
+              </div>
+              <div class="pbe-game-stat-list">
+                ${stats.map((stat) => `<div class="pbe-game-stat-row"><span>${escapeHtml(stat.label || stat.name || '')}</span><strong>${escapeHtml(String(stat.displayValue ?? stat.value ?? '—'))}</strong></div>`).join('')}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </section>
+  ` : '';
 
-  const scoringHtml = goals.length ? `
+  const sourcePlays = (summary.scoringPlays || []).length
+    ? summary.scoringPlays
+    : (summary.plays || []).filter((play) => play?.scoringPlay);
+  const plays = sourcePlays.slice(-18).reverse();
+  const scoringHtml = plays.length ? `
     <section class="game-section">
       <h2 class="game-section-title">Scoring</h2>
       <ul class="plays-list">
-        ${goals.slice().reverse().slice(0, 18).map((goal) => `
+        ${plays.map((p) => `
           <li class="play-item scoring">
-            <span class="play-inning">P${escapeHtml(String(goal.period))} ${escapeHtml(goal.time)}</span>
-            <span class="play-desc"><strong>${escapeHtml(goal.team)}</strong> · ${escapeHtml(goal.player)}${goal.strength ? ` · ${escapeHtml(goal.strength)}` : ''}${goal.awayScore != null && goal.homeScore != null ? ` · ${goal.awayScore}-${goal.homeScore}` : ''}</span>
+            <span class="play-inning">P${p.period?.number || p.period || ''} ${escapeHtml(p.clock?.displayValue || '')}</span>
+            <span class="play-desc">${escapeHtml(p.text || p.shortText || '')}</span>
           </li>
         `).join('')}
       </ul>
@@ -512,13 +502,12 @@ async function renderNhlDetail(target, gameId) {
 
   target.innerHTML = `
     ${heroHtml}
+    ${statsHtml}
     ${scoringHtml}
     ${propBetEdgeAngle('nhl')}
   `;
 
-  if (game.gameState === 'LIVE' || game.gameState === 'CRIT') {
-    setTimeout(() => renderNhlDetail(target, gameId), 30000);
-  }
+  if (isLive) setTimeout(() => renderNhlDetail(target, gameId), 30000);
 }
 
 function renderEspnGameHero({ home, away, status, sportLabel, sportIcon, venue }) {
