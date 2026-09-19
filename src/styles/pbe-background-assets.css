@@ -10,8 +10,8 @@
 body[data-pbe-scene='wrigley'] {
   --pbe-scene-image: url('https://images.unsplash.com/photo-1666366330282-b11566b272cf?w=2200&q=72&auto=format&fit=crop');
   --pbe-scene-position: center 48%;
-  --pbe-scene-opacity: .24;
-  --pbe-scene-filter: grayscale(8%) sepia(4%) saturate(88%) brightness(.76) contrast(1.11);
+  --pbe-scene-opacity: .35;
+  --pbe-scene-filter: grayscale(6%) sepia(3%) saturate(94%) brightness(.90) contrast(1.07);
   --pbe-scene-orb-one: rgba(212,175,55,.13);
   --pbe-scene-orb-two: rgba(193,39,61,.04);
 }
@@ -19,8 +19,8 @@ body[data-pbe-scene='wrigley'] {
 body[data-pbe-scene='mlb'] {
   --pbe-scene-image: url('/backgrounds/pbe/wrigley-lights.webp');
   --pbe-scene-position: center 52%;
-  --pbe-scene-opacity: .28;
-  --pbe-scene-filter: grayscale(16%) sepia(5%) saturate(82%) brightness(.70) contrast(1.16);
+  --pbe-scene-opacity: .34;
+  --pbe-scene-filter: grayscale(12%) sepia(4%) saturate(90%) brightness(.88) contrast(1.10);
   --pbe-scene-orb-one: rgba(212,175,55,.15);
   --pbe-scene-orb-two: rgba(193,39,61,.04);
 }
@@ -28,8 +28,8 @@ body[data-pbe-scene='mlb'] {
 body[data-pbe-scene='mlb-summer'] {
   --pbe-scene-image: url('/backgrounds/pbe/summer-classic.webp');
   --pbe-scene-position: center 50%;
-  --pbe-scene-opacity: .285;
-  --pbe-scene-filter: sepia(10%) saturate(90%) brightness(.72) contrast(1.08);
+  --pbe-scene-opacity: .34;
+  --pbe-scene-filter: sepia(8%) saturate(98%) brightness(.90) contrast(1.05);
   --pbe-scene-orb-one: rgba(233,199,90,.16);
   --pbe-scene-orb-two: rgba(193,39,61,.035);
 }
@@ -37,8 +37,8 @@ body[data-pbe-scene='mlb-summer'] {
 body[data-pbe-scene='mlb-ballpark'] {
   --pbe-scene-image: url('https://images.unsplash.com/photo-1778050203444-90920c7a5652?auto=format&fit=crop&w=2200&q=74');
   --pbe-scene-position: center 48%;
-  --pbe-scene-opacity: .235;
-  --pbe-scene-filter: grayscale(28%) saturate(70%) brightness(.68) contrast(1.14);
+  --pbe-scene-opacity: .30;
+  --pbe-scene-filter: grayscale(22%) saturate(80%) brightness(.86) contrast(1.09);
   --pbe-scene-orb-one: rgba(212,175,55,.12);
   --pbe-scene-orb-two: rgba(193,39,61,.035);
 }
@@ -47,7 +47,7 @@ body[data-pbe-scene='nfl'] {
   --pbe-scene-image: url('/backgrounds/pbe/stadium-night.webp');
   --pbe-scene-position: center 48%;
   --pbe-scene-opacity: .285;
-  --pbe-scene-filter: grayscale(20%) sepia(7%) saturate(78%) brightness(.68) contrast(1.17);
+  --pbe-scene-filter: grayscale(16%) sepia(5%) saturate(86%) brightness(.86) contrast(1.10);
   --pbe-scene-orb-one: rgba(233,199,90,.16);
   --pbe-scene-orb-two: rgba(193,39,61,.035);
 }
@@ -56,7 +56,7 @@ body[data-pbe-scene='nfl-gridiron'] {
   --pbe-scene-image: url('/backgrounds/pbe/gridiron-gold.webp');
   --pbe-scene-position: center 60%;
   --pbe-scene-opacity: .30;
-  --pbe-scene-filter: grayscale(28%) sepia(12%) saturate(78%) brightness(.68) contrast(1.18);
+  --pbe-scene-filter: grayscale(22%) sepia(9%) saturate(86%) brightness(.86) contrast(1.10);
   --pbe-scene-orb-one: rgba(233,199,90,.17);
   --pbe-scene-orb-two: rgba(154,134,94,.055);
 }
@@ -71,30 +71,30 @@ body[data-pbe-scene='nba-hardwood'] {
 
 body[data-pbe-scene='nba'] {
   --pbe-scene-position: center 48%;
-  --pbe-scene-filter: grayscale(20%) sepia(8%) saturate(82%) brightness(.69) contrast(1.14);
+  --pbe-scene-filter: grayscale(16%) sepia(6%) saturate(90%) brightness(.87) contrast(1.08);
 }
 
 body[data-pbe-scene='nba-hardwood'] {
   --pbe-scene-position: center 62%;
-  --pbe-scene-filter: grayscale(30%) sepia(15%) saturate(88%) brightness(.72) contrast(1.12);
+  --pbe-scene-filter: grayscale(24%) sepia(11%) saturate(94%) brightness(.89) contrast(1.08);
 }
 
 body[data-pbe-scene='nhl'],
 body[data-pbe-scene='nhl-blueline'] {
   --pbe-scene-image: url('/backgrounds/pbe/ice-house.webp');
-  --pbe-scene-opacity: .27;
+  --pbe-scene-opacity: .33;
   --pbe-scene-orb-one: rgba(233,199,90,.075);
   --pbe-scene-orb-two: rgba(214,224,230,.075);
 }
 
 body[data-pbe-scene='nhl'] {
   --pbe-scene-position: center 48%;
-  --pbe-scene-filter: grayscale(26%) saturate(68%) brightness(.74) contrast(1.13);
+  --pbe-scene-filter: grayscale(20%) saturate(78%) brightness(.90) contrast(1.08);
 }
 
 body[data-pbe-scene='nhl-blueline'] {
   --pbe-scene-position: center 58%;
-  --pbe-scene-filter: grayscale(48%) saturate(62%) brightness(.78) contrast(1.12);
+  --pbe-scene-filter: grayscale(38%) saturate(72%) brightness(.92) contrast(1.08);
 }
 
 /* --- Selector card image authority ---
