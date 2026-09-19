@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     ? requestedSeason
     : now.getUTCFullYear();
 
-  res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=30, stale-while-revalidate=60');
   res.setHeader('X-Content-Type-Options', 'nosniff');
 
   try {
@@ -77,7 +77,7 @@ export default async function handler(req, res) {
               athlete: {
                 id: row.athlete_id || null,
                 displayName: row.name || null,
-                headshot: row.photo || null,
+                headshot: resolveWnbaPhoto(row.photo),
                 position: null,
                 jersey: null,
                 age: null,
@@ -121,6 +121,16 @@ export default async function handler(req, res) {
     res.setHeader('Retry-After', '60');
     return res.status(503).json({ error: 'WNBA leader source temporarily unavailable.' });
   }
+}
+
+function resolveWnbaPhoto(photo) {
+  if (!photo) return null;
+  if (typeof photo === 'string') {
+    return photo.startsWith('/') ? `https://wnba.propbetedge.ai${photo}` : photo;
+  }
+  const path = photo.square || photo.portrait || null;
+  if (!path) return null;
+  return String(path).startsWith('/') ? `https://wnba.propbetedge.ai${path}` : String(path);
 }
 
 function normalizeAthlete(athlete) {
