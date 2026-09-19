@@ -14,7 +14,7 @@
  *   Batting: AVG, HR, RBI, OPS, SB, R, H, 2B, BABIP*, ISO*, K%*, BB%*
  *   Pitching: ERA, K, W, WHIP, SV, K/9
  *   Premium teases: wOBA, xFIP, wRC+ (CORS-blocked sources)
- *   (* = computed client-side from MLB Stats API hitting stats endpoint)
+ *   (* = computed client-side from PropSports.PropTechUSA.ai hitting stats endpoint)
  */
 
 import {
@@ -417,7 +417,7 @@ const PREMIUM_CATS = [
 
 // ─── Mount ──────────────────────────────────────────────────────────────
 export async function renderMlbLeadersPage(root) {
-  const dek = 'Batting, pitching, and advanced sabermetrics — sourced from MLB Stats API. Tap any player for detail.';
+  const dek = 'Batting, pitching, and advanced sabermetrics — sourced from PropSports.PropTechUSA.ai. Tap any player for detail.';
   root.innerHTML = leadersPageShell('mlb', 'MLB', dek, `
     ${getEnhancedStyles()}
     <div class="leaders-subtabs">
@@ -425,7 +425,7 @@ export async function renderMlbLeadersPage(root) {
       <button class="leaders-subtab ${_activeType === 'pitching' ? 'active' : ''}" data-type="pitching">Pitching</button>
       <button class="leaders-subtab ${_activeType === 'advanced' ? 'active' : ''}" data-type="advanced">Advanced</button>
     </div>
-    ${renderLeaderLiveStatus('MLB Stats API', 60)}
+    ${renderLeaderLiveStatus('PropSports.PropTechUSA.ai', 60)}
     <div id="leaders-body">${renderLeaderLoading()}</div>
   `, 'UPDATED LIVE');
 
@@ -438,10 +438,10 @@ export async function renderMlbLeadersPage(root) {
   });
 
   await loadActive();
-  markLeaderUpdated('MLB Stats API');
+  markLeaderUpdated('PropSports.PropTechUSA.ai');
   startLeaderAutoRefresh('mlb', async () => {
     await loadActive({ silent: true });
-    markLeaderUpdated('MLB Stats API');
+    markLeaderUpdated('PropSports.PropTechUSA.ai');
   }, 60000);
 }
 
@@ -583,8 +583,8 @@ async function loadAdvanced(body) {
   })).then((arr) => arr.filter(Boolean));
 
   const banner = useYear !== season
-    ? `<div class="leaders-banner">⚡ Showing ${useYear} season · advanced stats computed from MLB Stats API · qualified hitters only.</div>`
-    : `<div class="leaders-banner">⚡ Advanced stats computed from MLB Stats API · top 30 by OPS qualifying.</div>`;
+    ? `<div class="leaders-banner">⚡ Showing ${useYear} season · advanced stats computed from PropSports.PropTechUSA.ai · qualified hitters only.</div>`
+    : `<div class="leaders-banner">⚡ Advanced stats computed from PropSports.PropTechUSA.ai · top 30 by OPS qualifying.</div>`;
 
   body.innerHTML = `
     ${banner}
