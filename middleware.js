@@ -15,7 +15,7 @@
  */
 
 import { next } from '@vercel/edge';
-import { assessArticleIntegrity } from './news-integrity.js';
+import { assessArticleIntegrity, applyArticlePublicationPolicy } from './news-integrity.js';
 
 export const config = {
   matcher: [
@@ -143,7 +143,10 @@ async function resolveMeta(pathname) {
       }
       if (res.ok) {
         const data = await res.json();
-        const article = data.article;
+        const article = applyArticlePublicationPolicy(data.article);
+        if (!article && data.article) {
+          return notFoundMeta(pathname, 'Article unavailable');
+        }
         if (article) {
           const integrity = assessArticleIntegrity(article);
           if (!integrity.ok) {
