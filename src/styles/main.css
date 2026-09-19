@@ -6323,7 +6323,7 @@ a.leaders-sport-tab.active,
 .free-board-page {
   position: relative;
   background:
-    linear-gradient(180deg, rgba(9, 8, 7, 0.72) 0%, rgba(9, 8, 7, 0.9) 38%, rgba(9, 8, 7, 0.96) 100%);
+    linear-gradient(180deg, rgba(9, 8, 7, 0.50) 0%, rgba(9, 8, 7, 0.72) 38%, rgba(9, 8, 7, 0.84) 100%);
 }
 
 .free-board-hero {
