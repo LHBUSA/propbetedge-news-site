@@ -31,7 +31,8 @@ export default async function handler(req, res) {
     return res.status(200).json(media);
   } catch (error) {
     console.warn('[sports-media] lookup failed:', error?.message || error);
-    return res.status(404).json({ error: 'No image found.' });
+    res.setHeader('Retry-After', '300');
+    return res.status(503).json({ error: 'Sports media source temporarily unavailable.' });
   }
 }
 
