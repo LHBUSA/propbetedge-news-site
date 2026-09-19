@@ -4198,6 +4198,34 @@ a.leaders-sport-tab {
   line-height: 1.6;
   color: rgba(20, 17, 13, 0.65);
 }
+
+.nfl-offseason-primary-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  margin: 0 auto 28px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid rgba(20, 17, 13, 0.9);
+  box-shadow: 0 10px 26px rgba(20, 17, 13, 0.12);
+  transition: transform .16s ease, background .16s ease, color .16s ease, border-color .16s ease;
+}
+.nfl-offseason-primary-cta:hover {
+  transform: translateY(-1px);
+  background: var(--gold);
+  color: var(--ink);
+  border-color: var(--gold);
+}
 .nfl-offseason-nav {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -4219,6 +4247,22 @@ a.leaders-sport-tab {
   border-color: var(--gold);
   background: rgba(212, 175, 55, 0.05);
   transform: translateY(-1px);
+}
+
+.nfl-offseason-link-primary {
+  border-color: rgba(212, 175, 55, 0.34);
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.09), rgba(20, 17, 13, 0.025));
+}
+.nfl-offseason-link-cta {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(20, 17, 13, 0.08);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #7f6207;
 }
 .nfl-offseason-link-icon { font-size: 28px; margin-bottom: 8px; }
 .nfl-offseason-link-title {
