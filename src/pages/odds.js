@@ -325,15 +325,15 @@ function normalizeUfc(data) {
     title: pick.pick_name || 'UFC pick',
     selection: pick.opponent_name ? `vs ${pick.opponent_name}` : pick.matchup || 'Fight pick',
     context: [pick.event_name, formatDate(pick.event_date)].filter(Boolean).join(' · '),
-    odds: americanOdds(pick.best_odds ?? pick.consensus_odds),
+    odds: ufcAmericanOdds(pick.best_odds ?? pick.consensus_odds),
     oddsLabel: pick.best_book || (pick.best_odds != null ? 'Best available' : 'Consensus'),
     model: probabilityPct(pick.model_probability),
     market: probabilityPct(pick.market_probability),
     edge: pointEdge(pick.edge_pts),
     detail: pick.is_top_upset
       ? [
-          pick.opponent_name ? `Market favors ${pick.opponent_name}${pick.opponent_consensus_odds != null ? ` ${americanOdds(pick.opponent_consensus_odds)}` : ''}` : null,
-          `PBE backs ${pick.pick_name} ${americanOdds(pick.consensus_odds)}`,
+          pick.opponent_name ? `Market favors ${pick.opponent_name}${pick.opponent_consensus_odds != null ? ` ${ufcAmericanOdds(pick.opponent_consensus_odds)}` : ''}` : null,
+          `PBE backs ${pick.pick_name} ${ufcAmericanOdds(pick.consensus_odds)}`,
           pick.lifecycle,
         ].filter(Boolean).join(' · ')
       : [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.observed_at ? `Market ${formatRelativeStamp(pick.observed_at)}` : null].filter(Boolean).join(' · '),
@@ -897,6 +897,14 @@ function americanOdds(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return raw || '—';
   return n > 0 ? `+${Math.round(n)}` : String(Math.round(n));
+}
+
+function ufcAmericanOdds(value) {
+  const label = americanOdds(value);
+  const n = Number(value);
+  if (!Number.isFinite(n)) return label;
+  const role = Math.abs(n) === 100 || n === 0 ? 'EVEN' : n < 0 ? 'FAV' : 'DOG';
+  return `${label} · ${role}`;
 }
 
 function cleanPct(value) {
