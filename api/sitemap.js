@@ -224,43 +224,39 @@ async function fetchMlbSeasonGames() {
 
 async function fetchEspnSeasonGames(sport) {
   const config = SPORTS[sport];
-  const { start, end } = seasonRange(sport);
-  const dates = `${compactDate(start)}-${compactDate(end)}`;
-  const response = await fetch(
-    `https://site.api.espn.com/apis/site/v2/sports/${config.category}/${config.league}/scoreboard?dates=${dates}&limit=2000`,
-    { headers: { accept: 'application/json' } }
-  );
-  if (!response.ok) throw new Error(`${sport}_games_${response.status}`);
-  const data = await response.json();
-  const events = Array.isArray(data?.events) ? data.events : [];
+  const teams = await fetchTeams(config);
+  const events = [];
+  const seen = new Set();
 
-  // ESPN occasionally ignores a date range for a league and returns only the
-  // current slate. The sitemap remains valid in that case; linked team/game
-  // pages continue to supply crawl discovery while the next refresh retries.
-  return events;
-}
+  // ESPN's team schedule route is much more reliable than large date-range
+  // scoreboard queries and normally returns the team's current full season.
+  // Crawl every club, dedupe by event id, and we get a league-wide event graph.
+  for (let start = 0; start < teams.length; start += 8) {
+    const batch = teams.slice(start, start + 8);
+    const results = await Promise.all(batch.map(async (team) => {
+      const id = team?.id;
+      if (!id) return [];
+      const response = await fetch(
+        `https://site.api.espn.com/apis/site/v2/sports/${config.category}/${config.league}/teams/${encodeURIComponent(id)}/schedule`,
+        { headers: { accept: 'application/json' } }
+      );
+      if (!response.ok) return [];
+      const data = await response.json();
+      return Array.isArray(data?.events) ? data.events : [];
+    }));
 
-function seasonRange(sport) {
-  const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = now.getUTCMonth() + 1;
-  const seasonYear = month >= 7 ? year : year - 1;
-
-  if (sport === 'nfl') {
-    return {
-      start: new Date(Date.UTC(seasonYear, 7, 1)),
-      end: new Date(Date.UTC(seasonYear + 1, 1, 28)),
-    };
+    for (const rows of results) {
+      for (const event of rows) {
+        const id = String(event?.id || '');
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        events.push(event);
+      }
+    }
   }
 
-  return {
-    start: new Date(Date.UTC(seasonYear, 8, 1)),
-    end: new Date(Date.UTC(seasonYear + 1, 6, 15)),
-  };
-}
-
-function compactDate(value) {
-  return value.toISOString().slice(0, 10).replace(/-/g, '');
+  if (!events.length) throw new Error(`${sport}_games_empty`);
+  return events;
 }
 
 async function newsSitemap() {
