@@ -80,6 +80,7 @@ function staticSitemap() {
     ['/authors/justin-erickson', 'weekly', '0.60'],
     ['/authors/propbetedge-editorial-team', 'weekly', '0.60'],
     ['/authors/ty-whitney', 'weekly', '0.60'],
+    ['/authors/erik-schwartz', 'weekly', '0.60'],
   ];
   return urlset(urls.map(([path, freq, priority]) =>
     `<url><loc>${esc(SITE + path)}</loc><lastmod>${today}</lastmod><changefreq>${freq}</changefreq><priority>${priority}</priority></url>`
