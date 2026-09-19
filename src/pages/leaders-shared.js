@@ -272,12 +272,24 @@ export function computeNhlP60(stat) {
 let _leadersRefreshTimer = null;
 let _leadersTickerTimer = null;
 
+const PROPSPORTS_URL = 'https://propsports.proptechusa.ai/';
+
+export function renderPropSportsLink(label = 'PropSports.PropTechUSA.ai', className = 'leaders-source-link') {
+  return `<a href="${PROPSPORTS_URL}" class="${escapeAttr(className)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
+}
+
+function renderLeaderSourceLabel(sourceLabel) {
+  return /^PropSports\.PropTechUSA\.ai/i.test(String(sourceLabel || ''))
+    ? renderPropSportsLink(sourceLabel)
+    : escapeHtml(sourceLabel);
+}
+
 export function renderLeaderLiveStatus(sourceLabel = 'Live source', intervalSeconds = 60) {
   return `
     <div class="leaders-live-refresh" aria-live="polite">
       <span class="leaders-live-pill"><span class="leaders-live-pulse"></span>LIVE</span>
       <span id="leaders-live-status" data-updated-at="">Waiting for first refresh</span>
-      <span class="leaders-live-cadence">Auto-refresh ${intervalSeconds}s · ${escapeHtml(sourceLabel)}</span>
+      <span class="leaders-live-cadence">Auto-refresh ${intervalSeconds}s · ${renderLeaderSourceLabel(sourceLabel)}</span>
     </div>
   `;
 }
@@ -335,10 +347,15 @@ export function stopLeaderAutoRefresh() {
 
 function updateLeaderStatusText(el, updatedAt) {
   const age = Math.max(0, Math.floor((Date.now() - updatedAt) / 1000));
-  const source = el.dataset.sourceLabel ? ` · ${el.dataset.sourceLabel}` : '';
-  if (age < 2) el.textContent = `Updated just now${source}`;
-  else if (age < 60) el.textContent = `Updated ${age}s ago${source}`;
-  else el.textContent = `Updated ${Math.floor(age / 60)}m ago${source}`;
+  const ageText = age < 2
+    ? 'Updated just now'
+    : age < 60
+      ? `Updated ${age}s ago`
+      : `Updated ${Math.floor(age / 60)}m ago`;
+  const source = el.dataset.sourceLabel || '';
+  el.innerHTML = source
+    ? `${escapeHtml(ageText)} · ${renderLeaderSourceLabel(source)}`
+    : escapeHtml(ageText);
 }
 
 // ─── Loading state ──────────────────────────────────────────────────────
