@@ -30,6 +30,8 @@ import { renderMlbLeadersPage } from './pages/leaders-mlb.js';
 import { renderNhlLeadersPage } from './pages/leaders-nhl.js';
 import { renderNbaLeadersPage } from './pages/leaders-nba.js';
 import { renderNflLeadersPage } from './pages/leaders-nfl.js';
+import { renderWnbaLeadersPage } from './pages/leaders-wnba.js';
+import { renderUfcChampionsPage } from './pages/leaders-ufc.js';
 import { renderMlbPlayerPage } from './pages/player-mlb.js';
 import { renderNhlPlayerPage } from './pages/player-nhl.js';
 import { renderNbaPlayerPage } from './pages/player-nba.js';
@@ -143,19 +145,23 @@ function clearAndRoute() {
     return renderLeadersPage(root);
   }
 
-  const leadersMatch = path.match(/^\/leaders\/(mlb|nhl|nba|nfl)$/);
+  const leadersMatch = path.match(/^\/leaders\/(mlb|wnba|nfl|nhl|nba|ufc)$/);
   if (leadersMatch) {
     const sport = leadersMatch[1].toLowerCase();
     const sportLabel = sport.toUpperCase();
     setMeta({
-      title: `${sportLabel} Stat Leaders — PropBetEdge`,
-      description: `${sportLabel} leaders — basic + advanced stats, prop-bet impact analysis.`,
+      title: sport === 'ufc' ? 'UFC Champions — PropBetEdge' : `${sportLabel} Stat Leaders — PropBetEdge`,
+      description: sport === 'ufc'
+        ? 'Current UFC divisional champions from the verified official rankings snapshot.'
+        : `${sportLabel} leaders — live player rankings and connected PropBetEdge intelligence.`,
       canonical: `https://propbetedge.ai/leaders/${sport}`,
     });
     if (sport === 'mlb') return renderMlbLeadersPage(root);
+    if (sport === 'wnba') return renderWnbaLeadersPage(root);
+    if (sport === 'nfl') return renderNflLeadersPage(root);
     if (sport === 'nhl') return renderNhlLeadersPage(root);
     if (sport === 'nba') return renderNbaLeadersPage(root);
-    if (sport === 'nfl') return renderNflLeadersPage(root);
+    if (sport === 'ufc') return renderUfcChampionsPage(root);
   }
 
   const gameMatch = path.match(/^\/games\/([a-z]+)\/([\w-]+)$/);
