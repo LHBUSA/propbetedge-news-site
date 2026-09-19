@@ -6955,3 +6955,93 @@ a.leaders-sport-tab.active,
     margin-top: 6px;
   }
 }
+
+
+/* v3.23 — MLB HR spotlight + tighter UFC portrait crop */
+.free-edge-card.is-hr-spotlight {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(260px, .82fr) minmax(0, 1.18fr);
+  min-height: 310px;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(245,166,35,.12), transparent 34%),
+    linear-gradient(145deg, rgba(30,25,18,.98), rgba(14,12,10,.98));
+  border-color: rgba(245,166,35,.24);
+}
+
+.free-edge-card.is-hr-spotlight .free-edge-media {
+  min-height: 310px;
+  border-right: 1px solid rgba(255,255,255,.08);
+  border-bottom: 0;
+}
+
+.free-edge-card.is-hr-spotlight .free-edge-media-images,
+.free-edge-card.is-hr-spotlight .free-edge-media.is-portrait .free-edge-media-images {
+  height: 100%;
+  min-height: 310px;
+}
+
+.free-edge-card.is-hr-spotlight .free-edge-media.is-portrait img {
+  object-position: center 22%;
+}
+
+.free-edge-card.is-hr-spotlight .free-edge-eyebrow {
+  color: #f7c46f;
+}
+
+.free-edge-card.is-hr-spotlight .free-edge-selection {
+  color: #ffd36f;
+}
+
+.free-edge-card.is-hr-spotlight .free-edge-odds strong {
+  font-size: 17px;
+  letter-spacing: .06em;
+  color: var(--paper-dim);
+}
+
+.free-edge-card.is-hr-spotlight .free-edge-metrics strong {
+  color: var(--paper);
+}
+
+.free-edge-card.is-hr-spotlight .free-edge-metrics div:first-child strong {
+  color: var(--gold-bright);
+}
+
+/* Fighter portraits need a lower focal point than baseball headshots. */
+.free-edge-card[data-sport="ufc"] .free-edge-media.is-portrait .free-edge-media-images {
+  height: 238px;
+}
+
+.free-edge-card[data-sport="ufc"] .free-edge-media.is-portrait img {
+  object-position: center 36%;
+  transform: scale(1.06);
+  transform-origin: center center;
+}
+
+@media (max-width: 640px) {
+  .free-edge-card.is-hr-spotlight {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .free-edge-card.is-hr-spotlight .free-edge-media {
+    min-height: 210px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+
+  .free-edge-card.is-hr-spotlight .free-edge-media-images,
+  .free-edge-card.is-hr-spotlight .free-edge-media.is-portrait .free-edge-media-images {
+    height: 210px;
+    min-height: 210px;
+  }
+
+  .free-edge-card[data-sport="ufc"] .free-edge-media.is-portrait .free-edge-media-images {
+    height: 210px;
+  }
+
+  .free-edge-card[data-sport="ufc"] .free-edge-media.is-portrait img {
+    object-position: center 38%;
+    transform: scale(1.08);
+  }
+}
