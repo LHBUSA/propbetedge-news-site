@@ -63,34 +63,35 @@ async function sitemapIndex() {
 }
 
 function staticSitemap() {
-  const today = dateOnly(new Date());
+  // Do not invent lastmod dates for evergreen pages. Search engines can crawl
+  // these URLs without a timestamp; lastmod is reserved for dates we actually know.
   const urls = [
-    ['/', 'hourly', '1.0'],
-    ['/news', 'hourly', '0.95'],
-    ['/news/mlb', 'hourly', '0.90'],
-    ['/news/nfl', 'hourly', '0.90'],
-    ['/news/nba', 'hourly', '0.90'],
-    ['/news/nhl', 'hourly', '0.90'],
-    ['/leaders', 'daily', '0.75'],
-    ['/leaders/mlb', 'daily', '0.75'],
-    ['/leaders/nfl', 'daily', '0.75'],
-    ['/leaders/nba', 'daily', '0.75'],
-    ['/leaders/nhl', 'daily', '0.75'],
-    ['/standings/mlb', 'daily', '0.75'],
-    ['/standings/nfl', 'daily', '0.75'],
-    ['/standings/nba', 'daily', '0.75'],
-    ['/standings/nhl', 'daily', '0.75'],
-    ['/games', 'daily', '0.70'],
-    ['/about', 'monthly', '0.70'],
-    ['/editorial-standards', 'monthly', '0.55'],
-    ['/authors', 'weekly', '0.65'],
-    ['/authors/justin-erickson', 'weekly', '0.60'],
-    ['/authors/propbetedge-editorial-team', 'weekly', '0.60'],
-    ['/authors/ty-whitney', 'weekly', '0.60'],
-    ['/authors/erik-schwartz', 'weekly', '0.60'],
+    '/',
+    '/news',
+    '/news/mlb',
+    '/news/nfl',
+    '/news/nba',
+    '/news/nhl',
+    '/leaders',
+    '/leaders/mlb',
+    '/leaders/nfl',
+    '/leaders/nba',
+    '/leaders/nhl',
+    '/standings/mlb',
+    '/standings/nfl',
+    '/standings/nba',
+    '/standings/nhl',
+    '/games',
+    '/about',
+    '/editorial-standards',
+    '/authors',
+    '/authors/justin-erickson',
+    '/authors/propbetedge-editorial-team',
+    '/authors/ty-whitney',
+    '/authors/erik-schwartz',
   ];
-  return urlset(urls.map(([path, freq, priority]) =>
-    `<url><loc>${esc(SITE + path)}</loc><lastmod>${today}</lastmod><changefreq>${freq}</changefreq><priority>${priority}</priority></url>`
+  return urlset(urls.map((path) =>
+    `<url><loc>${esc(SITE + path)}</loc></url>`
   ).join('\n'));
 }
 
@@ -207,8 +208,10 @@ async function gameSitemap(sport) {
     seen.add(id);
 
     const start = game?.date || game?.gameDate || null;
-    const lastmod = start ? dateOnly(start) : today;
-    return `<url><loc>${esc(`${SITE}/games/${sport}/${id}`)}</loc><lastmod>${esc(lastmod || today)}</lastmod><changefreq>daily</changefreq><priority>0.66</priority></url>`;
+    const startDay = start ? dateOnly(start) : '';
+    // A future kickoff/puck-drop/tip is not a future page modification.
+    const lastmod = startDay && startDay <= today ? startDay : today;
+    return `<url><loc>${esc(`${SITE}/games/${sport}/${id}`)}</loc><lastmod>${esc(lastmod)}</lastmod></url>`;
   }).filter(Boolean).join('\n');
 
   return urlset(body);
