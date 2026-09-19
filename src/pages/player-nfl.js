@@ -14,7 +14,7 @@ export async function renderNflPlayerPage(root, playerId, setMeta) {
   root.innerHTML = playerPageShell(renderPlayerLoading());
 
   try {
-    const data = await fetch(`https://site.api.espn.com/apis/common/v3/sports/football/nfl/athletes/${playerId}`)
+    const data = await fetch(`https://site.web.api.espn.com/apis/common/v3/sports/football/nfl/athletes/${playerId}`)
       .then((r) => r.ok ? r.json() : null).catch(() => null);
 
     const ath = data?.athlete;
