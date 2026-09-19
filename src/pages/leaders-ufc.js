@@ -47,7 +47,6 @@ async function loadData({ force = false } = {}) {
   if (_loading) return _loading;
 
   _loading = fetch(`/api/ufc-champions`, {
-    cache: 'no-store',
     credentials: 'omit',
   })
     .then((r) => {
