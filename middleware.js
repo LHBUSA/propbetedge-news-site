@@ -274,6 +274,20 @@ async function resolveMeta(pathname) {
     };
   }
 
+  // Editorial masthead — a real parent entity for every contributor profile.
+  if (pathname === '/authors') {
+    const canonical = `${SITE}/authors`;
+    return {
+      canonical,
+      title: 'Editorial Team — PropBetEdge',
+      description: 'Meet the PropBetEdge editorial team, research analysts and transparent AI-assisted editorial operation behind our sports coverage.',
+      image: `${SITE}/logo/pbe-full-600.png`,
+      robots: DEFAULT_ROBOTS,
+      jsonLd: buildAuthorsSchema(canonical),
+      ssrHtml: buildServerAuthorsHtml(),
+    };
+  }
+
   // Author pages — only registered current authors are indexable.
   const authorMatch = pathname.match(/^\/authors?\/([a-z0-9-]+)$/);
   if (authorMatch) {
@@ -911,6 +925,55 @@ function formatServerDateTime(value) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return '';
   return date.toISOString().replace('T', ' ').replace(/\.000Z$/, ' UTC');
+}
+
+function buildAuthorsSchema(canonical) {
+  const items = Object.entries(AUTHOR_META).map(([slug, author], index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    item: {
+      '@type': slug === 'propbetedge-editorial-team' ? 'Organization' : 'Person',
+      '@id': `${SITE}/authors/${slug}#author`,
+      name: author.name,
+      jobTitle: author.role,
+      url: `${SITE}/authors/${slug}`,
+      worksFor: { '@id': `${SITE}/#organization` },
+    },
+  }));
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': `${canonical}#page`,
+    url: canonical,
+    name: 'PropBetEdge Editorial Team',
+    description: 'PropBetEdge masthead and editorial contributor profiles.',
+    isPartOf: { '@id': `${SITE}/#website` },
+    publisher: { '@id': `${SITE}/#organization` },
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: items,
+    },
+  };
+}
+
+function buildServerAuthorsHtml() {
+  const rows = Object.entries(AUTHOR_META).map(([slug, author]) => `
+    <li>
+      <h2><a href="/authors/${escapeAttr(slug)}">${escapeHtml(author.name)}</a></h2>
+      <p>${escapeHtml(author.role)}</p>
+    </li>
+  `).join('');
+
+  return `<main class="pbe-ssr-authors" data-server-rendered="1">
+    <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; Editorial Team</nav>
+    <article>
+      <h1>PropBetEdge Editorial Team</h1>
+      <p>Meet the people and editorial operation behind PropBetEdge sports journalism and intelligence.</p>
+      <ul>${rows}</ul>
+      <p><a href="/editorial-standards">Read our Editorial Standards</a></p>
+    </article>
+  </main>`;
 }
 
 function buildPlayerSchema(name, sport, canonical, image) {
