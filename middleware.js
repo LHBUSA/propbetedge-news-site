@@ -6,9 +6,12 @@
  * and <meta name="robots"> in the HTML response so first-pass crawlers
  * (Googlebot pre-render) see the correct per-page metadata.
  *
- * v2 changes:
- *   ✅ Pagination canonicals — pages 2+ canonical to page 1, robots noindex
- *   ✅ Same for /news/page/N and /news/:sport/page/N
+ * SEO v3:
+ *   - Article metadata + NewsArticle schema are emitted in the first HTML response
+ *   - Missing article slugs return real HTTP 404 + noindex
+ *   - Pagination uses self-canonicals so archive pages remain crawlable
+ *   - Player/team routes receive server-visible entity metadata
+ *   - All indexable pages allow large image previews
  */
 
 import { next } from '@vercel/edge';
@@ -23,6 +26,13 @@ const SITE = 'https://propbetedge.ai';
 const NEWS_API = 'https://propbet-news-api.sales-fd3.workers.dev';
 
 const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', nhl: 'NHL' };
+const SPORT_API = {
+  mlb: { category: 'baseball', league: 'mlb' },
+  nfl: { category: 'football', league: 'nfl' },
+  nba: { category: 'basketball', league: 'nba' },
+  nhl: { category: 'hockey', league: 'nhl' },
+};
+const DEFAULT_ROBOTS = 'index, follow, max-image-preview:large';
 const AUTHOR_META = {
   'justin-erickson': { name: 'Justin Erickson', role: 'Founder & CTO' },
   'erik-schwartz': { name: 'Erik Schwartz', role: 'Senior Editorial Contributor' },
@@ -78,16 +88,16 @@ async function resolveMeta(pathname) {
     };
   }
 
-  // 🆕 News index — paginated (page 2+) → canonical to page 1, noindex
+  // News index pagination: every page is a distinct crawl path into older stories.
   const newsPagedMatch = pathname.match(/^\/news\/page\/(\d+)$/);
   if (newsPagedMatch) {
     const page = parseInt(newsPagedMatch[1], 10);
     return {
-      canonical: `${SITE}/news`,
+      canonical: `${SITE}/news/page/${page}`,
       title: `Latest Sports News (Page ${page}) — PropBetEdge`,
-      description: 'Breaking sports news with AI prop-bet impact analysis across MLB, NFL, NBA, and NHL.',
+      description: `Page ${page} of PropBetEdge sports news and analysis across MLB, NFL, NBA, and NHL.`,
       image: `${SITE}/logo/pbe-full-600.png`,
-      robots: 'noindex, follow',
+      robots: DEFAULT_ROBOTS,
     };
   }
 
@@ -104,45 +114,53 @@ async function resolveMeta(pathname) {
     };
   }
 
-  // 🆕 Sport pages — paginated (page 2+) → canonical to page 1, noindex
+  // Sport pagination: self-canonical and indexable so older articles stay linked.
   const sportPagedMatch = pathname.match(/^\/news\/(mlb|nfl|nba|nhl)\/page\/(\d+)$/);
   if (sportPagedMatch) {
     const sport = sportPagedMatch[1];
     const page = parseInt(sportPagedMatch[2], 10);
     const label = SPORT_LABELS[sport];
     return {
-      canonical: `${SITE}/news/${sport}`,
+      canonical: `${SITE}/news/${sport}/page/${page}`,
       title: `${label} News (Page ${page}) — PropBetEdge`,
-      description: `Latest ${label} news with AI prop-bet impact analysis.`,
+      description: `Page ${page} of ${label} news, player updates, game context and PropBetEdge analysis.`,
       image: `${SITE}/logo/pbe-full-600.png`,
-      robots: 'noindex, follow',
+      robots: DEFAULT_ROBOTS,
     };
   }
 
-  // Individual articles — fetch from API to get real title/description/image
+  // Individual articles — fetch from the internal news API so crawlers receive
+  // the real story metadata and NewsArticle JSON-LD before client JavaScript runs.
   const articleMatch = pathname.match(/^\/news\/(mlb|nfl|nba|nhl)\/([^\/]+)$/);
   if (articleMatch) {
     const sport = articleMatch[1];
     const slug = articleMatch[2];
     try {
-      const res = await fetch(`${NEWS_API}/news/article/${slug}`, {
-        cf: { cacheTtl: 300 },
-      });
+      const res = await fetchInternalNews(`/news/article/${encodeURIComponent(slug)}`, pathname);
+      if (res.status === 404) {
+        return notFoundMeta(pathname, 'Article not found');
+      }
       if (res.ok) {
         const data = await res.json();
         const article = data.article;
         if (article) {
+          const canonical = `${SITE}/news/${sport}/${slug}`;
           return {
-            canonical: `${SITE}/news/${sport}/${slug}`,
+            canonical,
             title: `${article.title} — PropBetEdge`,
             description: article.take?.summary || article.summary || `Latest ${SPORT_LABELS[sport]} news.`,
             image: article.image_url || `${SITE}/logo/pbe-full-600.png`,
             type: 'article',
+            robots: DEFAULT_ROBOTS,
+            publishedTime: article.published_at || null,
+            modifiedTime: article.updated_at || article.published_at || null,
+            section: SPORT_LABELS[sport],
+            jsonLd: buildArticleSchema(article, sport, canonical),
           };
         }
       }
     } catch (e) {
-      // fall through
+      console.warn('[seo middleware] article metadata fetch failed', e);
     }
     return {
       canonical: `${SITE}/news/${sport}/${slug}`,
@@ -150,6 +168,53 @@ async function resolveMeta(pathname) {
       description: `Latest ${SPORT_LABELS[sport]} news with AI prop-bet impact analysis.`,
       image: `${SITE}/logo/pbe-full-600.png`,
       type: 'article',
+      robots: DEFAULT_ROBOTS,
+    };
+  }
+
+  // Team entity hubs.
+  const teamMatch = pathname.match(/^\/team\/(mlb|nfl|nba|nhl)\/([^\/]+)$/);
+  if (teamMatch) {
+    const sport = teamMatch[1];
+    const slug = teamMatch[2];
+    const entity = await resolveTeamMeta(sport, slug).catch(() => null);
+    const name = entity?.name || titleFromSlug(slug);
+    return {
+      canonical: `${SITE}/team/${sport}/${slug}`,
+      title: `${name} — ${SPORT_LABELS[sport]} Team Intelligence | PropBetEdge`,
+      description: `${name} team hub with schedule, roster, standings context and connected PropBetEdge coverage.`,
+      image: entity?.image || `${SITE}/logo/pbe-full-600.png`,
+      robots: DEFAULT_ROBOTS,
+    };
+  }
+
+  // Player entity hubs. Resolve the actual name server-side when the league API
+  // supports the numeric player id used by the route.
+  const playerMatch = pathname.match(/^\/player\/(mlb|nfl|nba|nhl)\/([^\/]+)$/);
+  if (playerMatch) {
+    const sport = playerMatch[1];
+    const id = playerMatch[2];
+    const entity = await resolvePlayerMeta(sport, id).catch(() => null);
+    if (entity?.notFound) return notFoundMeta(pathname, 'Player not found');
+    const name = entity?.name || `${SPORT_LABELS[sport]} Player`;
+    return {
+      canonical: `${SITE}/player/${sport}/${id}`,
+      title: `${name} — ${SPORT_LABELS[sport]} Player Intelligence | PropBetEdge`,
+      description: `${name} player profile with current stats, recent form, game logs and connected PropBetEdge coverage.`,
+      image: entity?.image || `${SITE}/logo/pbe-full-600.png`,
+      robots: DEFAULT_ROBOTS,
+    };
+  }
+
+  const standingsMatch = pathname.match(/^\/standings\/(mlb|nfl|nba|nhl)$/);
+  if (standingsMatch) {
+    const sport = standingsMatch[1];
+    return {
+      canonical: `${SITE}/standings/${sport}`,
+      title: `${SPORT_LABELS[sport]} Standings — PropBetEdge`,
+      description: `Current ${SPORT_LABELS[sport]} standings with team intelligence and connected news coverage.`,
+      image: `${SITE}/logo/pbe-full-600.png`,
+      robots: DEFAULT_ROBOTS,
     };
   }
 
@@ -234,6 +299,20 @@ function injectMeta(html, meta) {
     `<meta name="description" content="${escapeAttr(meta.description)}" />`
   );
 
+  // Robots. Every indexable page explicitly opts into large image previews.
+  const robots = meta.robots || DEFAULT_ROBOTS;
+  if (/<meta\s+name="robots"[^>]*>/i.test(html)) {
+    html = html.replace(
+      /<meta\s+name="robots"[^>]*>/i,
+      `<meta name="robots" content="${escapeAttr(robots)}" />`
+    );
+  } else {
+    html = html.replace(
+      /<\/head>/i,
+      `  <meta name="robots" content="${escapeAttr(robots)}" />\n</head>`
+    );
+  }
+
   // Replace OpenGraph tags
   html = html.replace(
     /<meta\s+property="og:url"[^>]*>/i,
@@ -272,19 +351,21 @@ function injectMeta(html, meta) {
     `<meta name="twitter:image" content="${escapeAttr(meta.image)}" />`
   );
 
-  // 🆕 Inject robots meta if specified (e.g. for paginated pages)
-  if (meta.robots) {
-    if (/<meta\s+name="robots"[^>]*>/i.test(html)) {
-      html = html.replace(
-        /<meta\s+name="robots"[^>]*>/i,
-        `<meta name="robots" content="${escapeAttr(meta.robots)}" />`
-      );
-    } else {
-      html = html.replace(
-        /<\/head>/i,
-        `  <meta name="robots" content="${escapeAttr(meta.robots)}" />\n</head>`
-      );
-    }
+  if (meta.publishedTime) {
+    html = upsertPropertyMeta(html, 'article:published_time', meta.publishedTime);
+  }
+  if (meta.modifiedTime) {
+    html = upsertPropertyMeta(html, 'article:modified_time', meta.modifiedTime);
+  }
+  if (meta.section) {
+    html = upsertPropertyMeta(html, 'article:section', meta.section);
+  }
+  if (meta.jsonLd) {
+    const serialized = JSON.stringify(meta.jsonLd).replace(/<\/script/gi, '<\\/script');
+    html = html.replace(
+      /<\/head>/i,
+      `  <script type="application/ld+json" id="pbe-server-newsarticle">${serialized}</script>\n</head>`
+    );
   }
 
   return html;
@@ -305,4 +386,179 @@ function escapeHtml(s) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+
+function fetchInternalNews(path, requestPath = '/news') {
+  return fetch(`${NEWS_API}${path}`, {
+    headers: {
+      Accept: 'application/json',
+      Origin: SITE,
+      Referer: `${SITE}${requestPath}`,
+    },
+  });
+}
+
+function notFoundMeta(pathname, label) {
+  return {
+    canonical: `${SITE}${pathname}`,
+    title: `${label} — PropBetEdge`,
+    description: 'The requested PropBetEdge page is not available.',
+    image: `${SITE}/logo/pbe-full-600.png`,
+    robots: 'noindex, follow',
+    status: 404,
+  };
+}
+
+function buildArticleSchema(article, sport, canonical) {
+  const authorName = article.author || 'PropBetEdge Editorial Team';
+  const authorSlug = String(authorName)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-');
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    '@id': `${canonical}#article`,
+    url: canonical,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
+    headline: article.title,
+    description: article.summary || article.take?.summary || article.title,
+    datePublished: article.published_at || undefined,
+    dateModified: article.updated_at || article.published_at || undefined,
+    articleSection: SPORT_LABELS[sport],
+    inLanguage: 'en-US',
+    isAccessibleForFree: true,
+    author: {
+      '@type': authorName === 'PropBetEdge Editorial Team' ? 'Organization' : 'Person',
+      name: authorName,
+      url: `${SITE}/authors/${authorSlug}`,
+    },
+    publisher: {
+      '@type': 'NewsMediaOrganization',
+      '@id': `${SITE}/#organization`,
+      name: 'PropBetEdge',
+      url: SITE,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE}/logo/pbe-full-400.png`,
+      },
+    },
+  };
+
+  if (article.image_url) {
+    schema.image = {
+      '@type': 'ImageObject',
+      url: article.image_url,
+      contentUrl: article.image_url,
+      caption: article.title,
+    };
+  }
+
+  const keywords = [
+    SPORT_LABELS[sport],
+    article.category,
+    ...(article.take?.teams || []),
+    ...(article.take?.players || []),
+    ...(article.take?.prop_types || []),
+  ].filter(Boolean);
+  if (keywords.length) schema.keywords = [...new Set(keywords)].join(', ');
+
+  return schema;
+}
+
+async function resolveTeamMeta(sport, slug) {
+  const api = SPORT_API[sport];
+  if (!api) return null;
+  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${api.category}/${api.league}/teams?limit=100`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  const teams = data?.sports?.[0]?.leagues?.[0]?.teams?.map((entry) => entry?.team || entry).filter(Boolean) || [];
+  const target = slugify(slug);
+  const team = teams.find((candidate) => {
+    const names = [
+      candidate.displayName,
+      candidate.shortDisplayName,
+      candidate.name,
+      candidate.abbreviation,
+    ].filter(Boolean).map(slugify);
+    return names.includes(target);
+  });
+  if (!team) return null;
+  return {
+    name: team.displayName || team.shortDisplayName || titleFromSlug(slug),
+    image: team.logos?.[0]?.href || null,
+  };
+}
+
+async function resolvePlayerMeta(sport, id) {
+  if (!/^\d+$/.test(String(id))) return null;
+
+  if (sport === 'mlb') {
+    const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${encodeURIComponent(id)}`);
+    if (res.status === 404) return { notFound: true };
+    if (!res.ok) return null;
+    const person = (await res.json())?.people?.[0];
+    if (!person) return { notFound: true };
+    return {
+      name: person.fullName,
+      image: `https://img.mlbstatic.com/mlb-photos/image/upload/w_600,q_90/v1/people/${id}/headshot/67/current`,
+    };
+  }
+
+  if (sport === 'nhl') {
+    const res = await fetch(`https://api-web.nhle.com/v1/player/${encodeURIComponent(id)}/landing`);
+    if (res.status === 404) return { notFound: true };
+    if (!res.ok) return null;
+    const player = await res.json();
+    const name = `${player?.firstName?.default || ''} ${player?.lastName?.default || ''}`.trim();
+    if (!name) return { notFound: true };
+    return { name, image: player.headshot || null };
+  }
+
+  const api = SPORT_API[sport];
+  const res = await fetch(`https://site.api.espn.com/apis/common/v3/sports/${api.category}/${api.league}/athletes/${encodeURIComponent(id)}`);
+  if (res.status === 404) return { notFound: true };
+  if (!res.ok) return null;
+  const athlete = (await res.json())?.athlete;
+  if (!athlete) return { notFound: true };
+  return {
+    name: athlete.displayName || athlete.fullName || `${SPORT_LABELS[sport]} Player`,
+    image: athlete.headshot?.href || null,
+  };
+}
+
+function upsertPropertyMeta(html, property, content) {
+  const escaped = escapeAttr(content);
+  const re = new RegExp(`<meta\\s+property=["']${escapeRegex(property)}["'][^>]*>`, 'i');
+  if (re.test(html)) {
+    return html.replace(re, `<meta property="${property}" content="${escaped}" />`);
+  }
+  return html.replace(
+    /<\/head>/i,
+    `  <meta property="${property}" content="${escaped}" />\n</head>`
+  );
+}
+
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function slugify(value) {
+  return String(value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function titleFromSlug(value) {
+  return String(value || '')
+    .split('-')
+    .filter(Boolean)
+    .map((part) => part.length <= 3 && /^[a-z]+$/i.test(part) ? part.toUpperCase() : part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }
