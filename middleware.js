@@ -298,6 +298,20 @@ async function resolveMeta(pathname) {
     };
   }
 
+  // Publisher identity / ownership / contact.
+  if (pathname === '/about') {
+    const canonical = `${SITE}/about`;
+    return {
+      canonical,
+      title: 'About PropBetEdge — Sports News & Intelligence',
+      description: 'About PropBetEdge: ownership, editorial operation, sports-intelligence network, standards, and contact information.',
+      image: `${SITE}/logo/pbe-full-600.png`,
+      robots: DEFAULT_ROBOTS,
+      jsonLd: buildAboutSchema(canonical),
+      ssrHtml: buildServerAboutHtml(),
+    };
+  }
+
   // Editorial standards
   if (pathname === '/editorial-standards') {
     return {
@@ -980,6 +994,49 @@ function formatServerDateTime(value) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return '';
   return date.toISOString().replace('T', ' ').replace(/\.000Z$/, ' UTC');
+}
+
+function buildAboutSchema(canonical) {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'AboutPage',
+        '@id': `${canonical}#page`,
+        url: canonical,
+        name: 'About PropBetEdge',
+        description: 'Ownership, editorial operation, sports-intelligence network, standards, and contact information for PropBetEdge.',
+        mainEntity: { '@id': `${SITE}/#organization` },
+        isPartOf: { '@id': `${SITE}/#website` },
+        inLanguage: 'en-US',
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'PropBetEdge', item: `${SITE}/` },
+          { '@type': 'ListItem', position: 2, name: 'About PropBetEdge', item: canonical },
+        ],
+      },
+    ],
+  };
+}
+
+function buildServerAboutHtml() {
+  return `<main class="pbe-ssr-about" data-server-rendered="1">
+    <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; About</nav>
+    <article>
+      <p>Publisher</p>
+      <h1>About PropBetEdge</h1>
+      <p><strong>PropBetEdge is owned, built, and operated by PropTechUSA.ai.</strong> Its newsroom, sports-intelligence products, APIs, models, automation, and technical infrastructure operate within the broader PropTechUSA.ai organization.</p>
+      <h2>Editorial operation</h2>
+      <p>PropBetEdge uses a hybrid human-and-AI editorial workflow with public standards covering source verification, AI assistance, human review, corrections, feedback, ethics, and coverage inclusivity.</p>
+      <p><a href="/authors">Editorial Team</a> · <a href="/editorial-standards">Editorial Standards</a></p>
+      <h2>Contact</h2>
+      <p>Editorial: <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a><br>
+      Business: <a href="mailto:hello@proptechusa.ai">hello@proptechusa.ai</a><br>
+      Press: <a href="mailto:press@proptechusa.ai">press@proptechusa.ai</a></p>
+    </article>
+  </main>`;
 }
 
 function buildAuthorSchema(slug, author, canonical) {
