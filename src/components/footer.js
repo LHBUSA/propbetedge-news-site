@@ -54,6 +54,7 @@ export function renderFooter() {
 
           <div class="footer-col">
             <h4>✍️ Editorial</h4>
+            <a href="/authors"><strong>Editorial Team</strong></a>
             <a href="/authors/justin-erickson">Justin Erickson</a>
             <a href="/authors/propbetedge-editorial-team">PropBetEdge Editorial Team</a>
             <a href="/authors/ty-whitney">Ty Whitney</a>
