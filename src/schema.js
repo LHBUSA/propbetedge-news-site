@@ -8,7 +8,7 @@
  *
  * Coverage:
  *   - Organization (publisher) — referenced from every other schema via @id
- *   - WebSite (with SearchAction for sitelinks)
+ *   - WebSite + connected PropBetEdge sport properties
  *   - WebPage / CollectionPage
  *   - NewsArticle (rich, multi-author capable, ImageObject)
  *   - ProfilePage wrapping Person (Google's 2024 recommended pattern)
@@ -22,12 +22,10 @@
 const SITE = {
   url: 'https://propbetedge.ai',
   name: 'PropBetEdge',
-  legalName: 'PropBetEdge by PropTechUSA.ai',
   parentOrg: 'PropTechUSA.ai',
   description: 'AI-native sports newsroom and sports-intelligence network covering MLB, NFL, NBA, WNBA, NHL, UFC, and expanding sports data products.',
   logo: 'https://propbetedge.ai/logo/pbe-full-400.png',
   logoSquare: 'https://propbetedge.ai/favicon-192.png',
-  foundingDate: '2026-02-01',
   twitter: 'https://x.com/MLBHRALERTSPBE',
   linkedin: 'https://www.linkedin.com/company/propbetedge-ai/',
   reddit: 'https://www.reddit.com/r/PropBetEdge/',
@@ -47,11 +45,9 @@ export function organizationSchema() {
     '@type': 'NewsMediaOrganization',
     '@id': ORG_ID,
     name: SITE.name,
-    legalName: SITE.legalName,
     alternateName: 'PropBetEdge.ai',
     url: SITE.url,
     description: SITE.description,
-    foundingDate: SITE.foundingDate,
     parentOrganization: {
       '@type': 'Organization',
       name: SITE.parentOrg,
@@ -71,12 +67,6 @@ export function organizationSchema() {
       SITE.twitter,
       SITE.linkedin,
       SITE.reddit,
-      'https://mlb.propbetedge.ai',
-      'https://nfl.propbetedge.ai',
-      'https://nba.propbetedge.ai',
-      'https://wnba.propbetedge.ai',
-      'https://nhl.propbetedge.ai',
-      'https://ufc.propbetedge.ai',
     ].filter(Boolean),
     diversityPolicy: `${SITE.url}/editorial-standards`,
     ethicsPolicy: `${SITE.url}/editorial-standards`,
@@ -87,7 +77,7 @@ export function organizationSchema() {
 }
 
 // ════════════════════════════════════════════════════════════════════════
-// WEBSITE (with SearchAction → enables Google sitelinks search box)
+// WEBSITE + first-class sport properties
 // ════════════════════════════════════════════════════════════════════════
 export function websiteSchema() {
   return {
@@ -98,14 +88,19 @@ export function websiteSchema() {
     name: SITE.name,
     description: SITE.description,
     publisher: { '@id': ORG_ID },
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: {
-        '@type': 'EntryPoint',
-        urlTemplate: `${SITE.url}/news?q={search_term_string}`,
-      },
-      'query-input': 'required name=search_term_string',
-    },
+    hasPart: [
+      ['MLB', 'https://mlb.propbetedge.ai/'],
+      ['NFL', 'https://nfl.propbetedge.ai/'],
+      ['NBA', 'https://nba.propbetedge.ai/'],
+      ['WNBA', 'https://wnba.propbetedge.ai/'],
+      ['NHL', 'https://nhl.propbetedge.ai/'],
+      ['UFC', 'https://ufc.propbetedge.ai/'],
+    ].map(([sport, url]) => ({
+      '@type': 'WebSite',
+      name: `PropBetEdge ${sport}`,
+      url,
+      publisher: { '@id': ORG_ID },
+    })),
     inLanguage: 'en-US',
   };
 }
