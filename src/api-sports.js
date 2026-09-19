@@ -66,6 +66,38 @@ async function nbaScheduleRaw(date) {
   return { games };
 }
 
+async function wnbaScheduleRaw(date) {
+  const d = date || todayESPN();
+  const data = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates=${d}`)
+    .catch(() => ({ events: [] }));
+  const games = (data.events || []).map((e) => {
+    const comp = e.competitions?.[0] || {};
+    const home = comp.competitors?.find((c) => c.homeAway === 'home') || {};
+    const away = comp.competitors?.find((c) => c.homeAway === 'away') || {};
+    return {
+      id: e.id,
+      name: e.name,
+      date: e.date,
+      status: e.status?.type?.description,
+      statusState: e.status?.type?.state,
+      statusDetail: e.status?.type?.shortDetail,
+      period: e.status?.period,
+      clock: e.status?.displayClock,
+      home: home.team?.displayName,
+      homeAbbr: home.team?.abbreviation,
+      homeLogo: espnTeamLogo(home.team),
+      homeRecord: recordSummary(home),
+      away: away.team?.displayName,
+      awayAbbr: away.team?.abbreviation,
+      awayLogo: espnTeamLogo(away.team),
+      awayRecord: recordSummary(away),
+      homeScore: home.score,
+      awayScore: away.score,
+    };
+  });
+  return { games };
+}
+
 async function nbaSummaryRaw(gameId) {
   const summary = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${gameId}`);
   const comp = summary?.header?.competitions?.[0] || {};
@@ -172,6 +204,7 @@ async function nflScheduleRaw() {
 export const sports = {
   mlbSchedule: (date) => mlbScheduleRaw(date),
   nbaSchedule: (date) => nbaScheduleRaw(date),
+  wnbaSchedule: (date) => wnbaScheduleRaw(date),
   nhlSchedule: (date) => nhlScheduleRaw(date),
   nflSchedule: () => nflScheduleRaw(),
 
@@ -189,19 +222,21 @@ export const sports = {
     const results = await Promise.allSettled([
       this.mlbSchedule(),
       this.nbaSchedule(),
+      this.wnbaSchedule(),
       this.nhlSchedule(),
       this.nflSchedule(),
     ]);
     results.forEach((r, i) => {
       if (r.status === 'rejected') {
-        console.warn(`[sports-api] ${['mlb', 'nba', 'nhl', 'nfl'][i]} fetch failed:`, r.reason?.message || r.reason);
+        console.warn(`[sports-api] ${['mlb', 'nba', 'wnba', 'nhl', 'nfl'][i]} fetch failed:`, r.reason?.message || r.reason);
       }
     });
     return {
       mlb: results[0].status === 'fulfilled' ? results[0].value : { games: [] },
       nba: results[1].status === 'fulfilled' ? results[1].value : { games: [] },
-      nhl: results[2].status === 'fulfilled' ? results[2].value : { games: [] },
-      nfl: results[3].status === 'fulfilled' ? results[3].value : { games: [] },
+      wnba: results[2].status === 'fulfilled' ? results[2].value : { games: [] },
+      nhl: results[3].status === 'fulfilled' ? results[3].value : { games: [] },
+      nfl: results[4].status === 'fulfilled' ? results[4].value : { games: [] },
     };
   },
 };
