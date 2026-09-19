@@ -179,12 +179,14 @@ async function resolveMeta(pathname) {
     const slug = teamMatch[2];
     const entity = await resolveTeamMeta(sport, slug).catch(() => null);
     const name = entity?.name || titleFromSlug(slug);
+    const canonical = `${SITE}/team/${sport}/${slug}`;
     return {
-      canonical: `${SITE}/team/${sport}/${slug}`,
+      canonical,
       title: `${name} — ${SPORT_LABELS[sport]} Team Intelligence | PropBetEdge`,
       description: `${name} team hub with schedule, roster, standings context and connected PropBetEdge coverage.`,
       image: entity?.image || `${SITE}/logo/pbe-full-600.png`,
       robots: DEFAULT_ROBOTS,
+      jsonLd: buildTeamSchema(name, sport, canonical, entity?.image || null),
     };
   }
 
@@ -197,12 +199,14 @@ async function resolveMeta(pathname) {
     const entity = await resolvePlayerMeta(sport, id).catch(() => null);
     if (entity?.notFound) return notFoundMeta(pathname, 'Player not found');
     const name = entity?.name || `${SPORT_LABELS[sport]} Player`;
+    const canonical = `${SITE}/player/${sport}/${id}`;
     return {
-      canonical: `${SITE}/player/${sport}/${id}`,
+      canonical,
       title: `${name} — ${SPORT_LABELS[sport]} Player Intelligence | PropBetEdge`,
       description: `${name} player profile with current stats, recent form, game logs and connected PropBetEdge coverage.`,
       image: entity?.image || `${SITE}/logo/pbe-full-600.png`,
       robots: DEFAULT_ROBOTS,
+      jsonLd: buildPlayerSchema(name, sport, canonical, entity?.image || null),
     };
   }
 
@@ -364,7 +368,7 @@ function injectMeta(html, meta) {
     const serialized = JSON.stringify(meta.jsonLd).replace(/<\/script/gi, '<\\/script');
     html = html.replace(
       /<\/head>/i,
-      `  <script type="application/ld+json" id="pbe-server-newsarticle">${serialized}</script>\n</head>`
+      `  <script type="application/ld+json" id="pbe-server-primary-schema">${serialized}</script>\n</head>`
     );
   }
 
@@ -519,7 +523,7 @@ async function resolvePlayerMeta(sport, id) {
   }
 
   const api = SPORT_API[sport];
-  const res = await fetch(`https://site.api.espn.com/apis/common/v3/sports/${api.category}/${api.league}/athletes/${encodeURIComponent(id)}`);
+  const res = await fetch(`https://site.web.api.espn.com/apis/common/v3/sports/${api.category}/${api.league}/athletes/${encodeURIComponent(id)}`);
   if (res.status === 404) return { notFound: true };
   if (!res.ok) return null;
   const athlete = (await res.json())?.athlete;
@@ -559,6 +563,43 @@ function titleFromSlug(value) {
   return String(value || '')
     .split('-')
     .filter(Boolean)
-    .map((part) => part.length <= 3 && /^[a-z]+$/i.test(part) ? part.toUpperCase() : part.charAt(0).toUpperCase() + part.slice(1))
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+}
+
+function buildPlayerSchema(name, sport, canonical, image) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    '@id': `${canonical}#profile`,
+    url: canonical,
+    name: `${name} — ${SPORT_LABELS[sport]} Player Intelligence`,
+    mainEntity: {
+      '@type': 'Person',
+      '@id': `${canonical}#person`,
+      name,
+      url: canonical,
+      image: image || undefined,
+      knowsAbout: [SPORT_LABELS[sport], 'sports statistics', 'player performance'],
+    },
+    isPartOf: { '@id': `${SITE}/#website` },
+    publisher: { '@id': `${SITE}/#organization` },
+    inLanguage: 'en-US',
+  };
+}
+
+function buildTeamSchema(name, sport, canonical, image) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SportsTeam',
+    '@id': `${canonical}#team`,
+    name,
+    sport: SPORT_LABELS[sport],
+    url: canonical,
+    image: image || undefined,
+    memberOf: {
+      '@type': 'SportsOrganization',
+      name: SPORT_LABELS[sport],
+    },
+  };
 }
