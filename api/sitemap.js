@@ -82,6 +82,7 @@ function staticSitemap() {
     ['/standings/nhl', 'daily', '0.75'],
     ['/games', 'daily', '0.70'],
     ['/editorial-standards', 'monthly', '0.55'],
+    ['/authors', 'weekly', '0.65'],
     ['/authors/justin-erickson', 'weekly', '0.60'],
     ['/authors/propbetedge-editorial-team', 'weekly', '0.60'],
     ['/authors/ty-whitney', 'weekly', '0.60'],
