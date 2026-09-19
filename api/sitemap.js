@@ -294,10 +294,11 @@ async function newsSitemap() {
         <news:title>${esc(article.title)}</news:title>
         ${keywords ? `<news:keywords>${esc(keywords)}</news:keywords>` : ''}
       </news:news>
+      ${article.image_url ? `<image:image><image:loc>${esc(article.image_url)}</image:loc><image:title>${esc(article.title)}</image:title></image:image>` : ''}
     </url>`;
   }).filter(Boolean).join('\n');
 
-  return xml(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">${body}</urlset>`);
+  return xml(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">${body}</urlset>`);
 }
 
 async function articleChunkSitemap(chunkRaw) {
