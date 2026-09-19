@@ -21,7 +21,7 @@ const CATEGORIES = [
   { key: 'blocksPerGame',       label: 'BPG',  color: '#FF8C42' },
   { key: 'fieldGoalPercentage', label: 'FG%',  color: '#9A7BFF' },
   { key: '3PointPct',           label: '3P%',  color: '#51C4D3' },
-  { key: 'PER',                 label: 'PER',   color: '#E96BA8' },
+  { key: 'FreeThrowPct',        label: 'FT%',  color: '#E96BA8' },
 ];
 
 let _payload = null;
@@ -34,7 +34,7 @@ export async function renderWnbaLeadersPage(root) {
     'WNBA',
     `${season} regular-season leaders, including PropBetEdge’s proprietary WinBA Score alongside traditional WNBA production metrics.`,
     `
-      ${renderLeaderLiveStatus('ESPN + PropBetEdge', 60)}
+      ${renderLeaderLiveStatus('ESPN leader feed', 60)}
       <div id="leaders-body">${renderLeaderLoading()}</div>
     `,
     'UPDATED LIVE',
@@ -42,12 +42,12 @@ export async function renderWnbaLeadersPage(root) {
 
   await loadData({ force: true });
   renderActive();
-  markLeaderUpdated('ESPN + PBE');
+  markLeaderUpdated('ESPN leader feed');
 
   startLeaderAutoRefresh('wnba', async () => {
     await loadData({ force: true });
     renderActive();
-    markLeaderUpdated('ESPN + PBE');
+    markLeaderUpdated('ESPN leader feed');
   }, 60000);
 }
 
@@ -108,7 +108,7 @@ function renderActive() {
           <span><b>20%</b> winning-output share</span>
           <span><b>10%</b> court share</span>
         </div>
-        <small>Higher means a stronger production + role + winning profile. WinBA is not a win probability and not a causal “wins added” metric. Qualified leaderboard: 10 games or 250 minutes.</small>
+        <small>Higher means a stronger production + role + winning profile. WinBA is not a win probability and not a causal “wins added” metric. Qualified leaderboard: 10 games or 250 minutes. WinBA rebuilds when newly completed regular-season games enter the PropBetEdge final-game archive. Current snapshot: ${formatSnapshotTime(winba.generatedAt)} · ${winba.gamesUsed ?? 0} archived finals.</small>
       </section>
     ` : ''}
     <div class="leaders-grid">
@@ -162,6 +162,17 @@ function formatValue(key, value) {
   const n = Number(value);
   if (!Number.isFinite(n)) return value ?? '—';
   if (key === 'winbaScore') return n.toFixed(1);
+  if (key === '3PointPct') return `${(n * 100).toFixed(1)}%`;
   if (key.includes('Percentage') || key.includes('Pct')) return `${n.toFixed(1)}%`;
   return Number.isInteger(n) ? n.toLocaleString('en-US') : n.toFixed(1);
+}
+
+function formatSnapshotTime(value) {
+  const ts = Date.parse(value || '');
+  if (!Number.isFinite(ts)) return 'not yet generated';
+  const ageS = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (ageS < 60) return 'just now';
+  if (ageS < 3600) return `${Math.floor(ageS / 60)}m ago`;
+  if (ageS < 86400) return `${Math.floor(ageS / 3600)}h ago`;
+  return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
