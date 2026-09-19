@@ -9,8 +9,8 @@
 body[data-pbe-scene='network'] {
   --pbe-scene-image: url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=2200&q=74');
   --pbe-scene-position: center 48%;
-  --pbe-scene-opacity: .145;
-  --pbe-scene-filter: grayscale(72%) saturate(32%) brightness(.56) contrast(1.16);
+  --pbe-scene-opacity: .26;
+  --pbe-scene-filter: grayscale(50%) saturate(52%) brightness(.84) contrast(1.09);
   --pbe-scene-orb-one: rgba(212,175,55,.12);
   --pbe-scene-orb-two: rgba(193,39,61,.035);
 }
