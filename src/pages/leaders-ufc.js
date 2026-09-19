@@ -46,7 +46,7 @@ async function loadData({ force = false } = {}) {
   if (_payload && !force) return _payload;
   if (_loading) return _loading;
 
-  _loading = fetch(`/api/ufc-champions?t=${Date.now()}`, {
+  _loading = fetch(`/api/ufc-champions`, {
     cache: 'no-store',
     credentials: 'omit',
   })
