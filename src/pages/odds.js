@@ -472,29 +472,47 @@ function renderSportState(sport, title, copy) {
   `;
 }
 
+function renderCardMedia(card) {
+  const images = (card.media?.images || []).filter(Boolean).slice(0, 2);
+  if (!images.length) {
+    return `<div class="free-edge-media is-fallback" aria-hidden="true"><span>${SPORTS[card.sport]?.emoji || '⚡'}</span><b>${escapeHtml(String(card.title || '').slice(0, 3).toUpperCase())}</b></div>`;
+  }
+  return `
+    <div class="free-edge-media ${card.media?.kind === 'portrait' ? 'is-portrait' : 'is-team'}">
+      <div class="free-edge-media-images ${images.length > 1 ? 'is-pair' : ''}">
+        ${images.map((url) => `<img src="${escapeHtml(proxyImage(url))}" alt="${escapeHtml(card.media?.alt || card.title || '')}" loading="lazy" decoding="async" onerror="this.style.display='none'">`).join('')}
+      </div>
+      ${card.media?.credit ? `<small>${escapeHtml(card.media.credit)}</small>` : ''}
+    </div>
+  `;
+}
+
 function renderFreeCard(card) {
   return `
-    <article class="free-edge-card" data-sport="${escapeHtml(card.sport)}">
-      <div class="free-edge-topline">
-        <span class="free-edge-eyebrow">${escapeHtml(card.eyebrow)}</span>
-        <span class="free-edge-odds">
-          <small>${escapeHtml(card.oddsLabel || 'Odds')}</small>
-          <strong>${escapeHtml(card.odds || '—')}</strong>
-        </span>
-      </div>
-      <div class="free-edge-main">
-        <h3>${escapeHtml(card.title)}</h3>
-        <div class="free-edge-selection">${escapeHtml(card.selection || '')}</div>
-        ${card.context ? `<div class="free-edge-context">${escapeHtml(card.context)}</div>` : ''}
-      </div>
-      <div class="free-edge-metrics">
-        <div><span>Model</span><strong>${escapeHtml(card.model || '—')}</strong></div>
-        <div><span>Market</span><strong>${escapeHtml(card.market || '—')}</strong></div>
-        <div class="is-edge"><span>Edge</span><strong>${escapeHtml(card.edge || '—')}</strong></div>
-      </div>
-      <div class="free-edge-foot">
-        <span>${escapeHtml(card.detail || 'Live model sample')}</span>
-        <a href="${card.href}" target="_blank" rel="noopener">Full intelligence →</a>
+    <article class="free-edge-card has-media" data-sport="${escapeHtml(card.sport)}">
+      ${renderCardMedia(card)}
+      <div class="free-edge-card-body">
+        <div class="free-edge-topline">
+          <span class="free-edge-eyebrow">${escapeHtml(card.eyebrow)}</span>
+          <span class="free-edge-odds">
+            <small>${escapeHtml(card.oddsLabel || 'Odds')}</small>
+            <strong>${escapeHtml(card.odds || '—')}</strong>
+          </span>
+        </div>
+        <div class="free-edge-main">
+          <h3>${escapeHtml(card.title)}</h3>
+          <div class="free-edge-selection">${escapeHtml(card.selection || '')}</div>
+          ${card.context ? `<div class="free-edge-context">${escapeHtml(card.context)}</div>` : ''}
+        </div>
+        <div class="free-edge-metrics">
+          <div><span>Model</span><strong>${escapeHtml(card.model || '—')}</strong></div>
+          <div><span>Market</span><strong>${escapeHtml(card.market || '—')}</strong></div>
+          <div class="is-edge"><span>Edge</span><strong>${escapeHtml(card.edge || '—')}</strong></div>
+        </div>
+        <div class="free-edge-foot">
+          <span>${escapeHtml(card.detail || 'Current model sample')}</span>
+          <a href="${card.href}" target="_blank" rel="noopener">Full intelligence →</a>
+        </div>
       </div>
     </article>
   `;
@@ -510,21 +528,21 @@ function renderHowItWorks() {
           <div class="explainer-step-num">1</div>
           <div class="explainer-step-body">
             <h3>Sport-specific model output</h3>
-            <p>MLB, NFL and UFC are not forced through one universal algorithm. Each product publishes from its own data, model and eligibility contract.</p>
+            <p>MLB, NFL, UFC, WNBA and NHL are not forced through one universal algorithm. Each product publishes from its own data, model and eligibility contract.</p>
           </div>
         </div>
         <div class="explainer-step">
           <div class="explainer-step-num">2</div>
           <div class="explainer-step-body">
-            <h3>Market context stays attached</h3>
-            <p>When a public sample includes odds, model probability or market probability, those values come from the model's current or locked market snapshot.</p>
+            <h3>Each league keeps its natural cadence</h3>
+            <p>Baseball and basketball can move day to day, football is slate-driven, UFC follows event week, and hockey is lock-aware. The board updates from each sport's own source instead of forcing one global schedule.</p>
           </div>
         </div>
         <div class="explainer-step">
           <div class="explainer-step-num">3</div>
           <div class="explainer-step-body">
             <h3>The free board stays deliberately small</h3>
-            <p>This page is the front door. Full sport products carry the deeper card, research tools, model context and performance records.</p>
+            <p>This page is the front door. Full sport products carry the deeper card, research tools, model context, live experiences and performance records.</p>
           </div>
         </div>
       </div>
@@ -544,6 +562,9 @@ function renderNetworkCta() {
         <a href="${SPORTS.mlb.href}" target="_blank" rel="noopener"><span>⚾</span> MLB Intelligence</a>
         <a href="${SPORTS.nfl.href}" target="_blank" rel="noopener"><span>🏈</span> NFL Intelligence</a>
         <a href="${SPORTS.ufc.href}" target="_blank" rel="noopener"><span>🥊</span> UFC Intelligence</a>
+        <a href="${SPORTS.wnba.href}" target="_blank" rel="noopener"><span>🏀</span> WNBA Intelligence</a>
+        <a href="${SPORTS.nhl.href}" target="_blank" rel="noopener"><span>🏒</span> NHL Intelligence</a>
+        <a href="${SPORTS.nba.href}" target="_blank" rel="noopener"><span>🏀</span> NBA · next month</a>
       </div>
       <div class="free-board-responsible">21+ where applicable · Odds can change · Model output is not a guarantee · Bet responsibly</div>
     </section>
@@ -556,7 +577,7 @@ function injectEdgeSchema(payload) {
   if (existing) existing.remove();
   if (!cards.length) return;
 
-  const sportName = { mlb: 'Baseball', nfl: 'American Football', ufc: 'Mixed Martial Arts' };
+  const sportName = { mlb: 'Baseball', nfl: 'American Football', ufc: 'Mixed Martial Arts', wnba: 'Basketball', nhl: 'Ice Hockey' };
   const items = cards.map((card, index) => ({
     '@type': 'ListItem',
     position: index + 1,
@@ -575,7 +596,7 @@ function injectEdgeSchema(payload) {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: 'PropBetEdge Free Picks & Model Edges',
-    description: 'A live public sample of MLB, NFL and UFC model output from PropBetEdge.',
+    description: 'A live public sample of MLB, NFL, UFC, WNBA and NHL model output from PropBetEdge.',
     numberOfItems: items.length,
     itemListElement: items,
   });
