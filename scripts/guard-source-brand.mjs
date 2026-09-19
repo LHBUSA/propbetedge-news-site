@@ -53,6 +53,20 @@ for (const file of walk(ROOT)) {
   }
 }
 
+const publicLeaderApiDir = path.join(ROOT, 'api');
+if (fs.existsSync(publicLeaderApiDir)) {
+  for (const entry of fs.readdirSync(publicLeaderApiDir, { withFileTypes: true })) {
+    if (!entry.isFile() || !/-leaders\.js$/i.test(entry.name)) continue;
+    const full = path.join(publicLeaderApiDir, entry.name);
+    const lines = stripComments(fs.readFileSync(full, 'utf8')).split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      if (/\bsource\s*:\s*['"](?:ESPN|The Odds API|NHL API|MLB Stats API)['"]/i.test(lines[i])) {
+        violations.push(`api/${entry.name}:${i + 1}: public leader API exposes upstream source branding`);
+      }
+    }
+  }
+}
+
 if (violations.length) {
   console.error('\nUpstream API brand leak detected in consumer-facing source.');
   console.error('Public UI should promote PropSports.PropTechUSA.ai / PropBetEdge, not implementation providers.');
