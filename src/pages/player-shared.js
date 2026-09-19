@@ -69,7 +69,7 @@ export function renderPlayerHero(opts) {
         <div class="player-hero-content">
           <div class="player-hero-kicker">
             <span class="sport-pill">${sportBadge(sport)}</span>
-            ${team ? `<a href="/team/${sport}/${opts.teamId || ''}" class="player-hero-team">${escapeHtml(team)}</a>` : ''}
+            ${team ? `<a href="/team/${sport}/${slugifyEntityName(team)}" class="player-hero-team">${escapeHtml(team)}</a>` : ''}
           </div>
           <h1 class="player-hero-name">${escapeHtml(name)}</h1>
           <div class="player-hero-meta">
@@ -312,6 +312,15 @@ export function darken(hex, amt = 0.3) {
   const b = parseInt(h.slice(4, 6), 16);
   const f = 1 - amt;
   return `#${Math.round(r * f).toString(16).padStart(2, '0')}${Math.round(g * f).toString(16).padStart(2, '0')}${Math.round(b * f).toString(16).padStart(2, '0')}`;
+}
+
+function slugifyEntityName(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 export function sportBadge(sport) {
