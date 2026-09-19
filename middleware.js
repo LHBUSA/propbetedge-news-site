@@ -59,12 +59,16 @@ export default async function middleware(request) {
   let html = await response.text();
   html = injectMeta(html, meta);
 
+  const headers = {
+    ...Object.fromEntries(response.headers.entries()),
+    'content-type': 'text/html; charset=utf-8',
+  };
+  if (meta.robots?.includes('noindex')) headers['x-robots-tag'] = 'noindex, follow';
+  if (meta.status === 503) headers['retry-after'] = '300';
+
   return new Response(html, {
     status: meta.status || response.status,
-    headers: {
-      ...Object.fromEntries(response.headers.entries()),
-      'content-type': 'text/html; charset=utf-8',
-    },
+    headers,
   });
 }
 
@@ -171,15 +175,9 @@ async function resolveMeta(pathname) {
       }
     } catch (e) {
       console.warn('[seo middleware] article metadata fetch failed', e);
+      return serviceUnavailableMeta(pathname, 'Article temporarily unavailable');
     }
-    return {
-      canonical: `${SITE}/news/${sport}/${slug}`,
-      title: `${SPORT_LABELS[sport]} News — PropBetEdge`,
-      description: `Latest ${SPORT_LABELS[sport]} news with AI prop-bet impact analysis.`,
-      image: `${SITE}/logo/pbe-full-600.png`,
-      type: 'article',
-      robots: DEFAULT_ROBOTS,
-    };
+    return serviceUnavailableMeta(pathname, 'Article temporarily unavailable');
   }
 
   // Team entity hubs.
@@ -187,9 +185,10 @@ async function resolveMeta(pathname) {
   if (teamMatch) {
     const sport = teamMatch[1];
     const slug = teamMatch[2];
-    const entity = await resolveTeamMeta(sport, slug).catch(() => null);
+    const entity = await resolveTeamMeta(sport, slug).catch(() => ({ unavailable: true }));
     if (entity?.notFound) return notFoundMeta(pathname, 'Team not found');
-    const name = entity?.name || titleFromSlug(slug);
+    if (!entity || entity?.unavailable) return serviceUnavailableMeta(pathname, 'Team data temporarily unavailable');
+    const name = entity.name || titleFromSlug(slug);
     const canonical = `${SITE}/team/${sport}/${slug}`;
     return {
       canonical,
@@ -215,9 +214,10 @@ async function resolveMeta(pathname) {
   if (playerMatch) {
     const sport = playerMatch[1];
     const id = playerMatch[2];
-    const entity = await resolvePlayerMeta(sport, id).catch(() => null);
+    const entity = await resolvePlayerMeta(sport, id).catch(() => ({ unavailable: true }));
     if (entity?.notFound) return notFoundMeta(pathname, 'Player not found');
-    const name = entity?.name || `${SPORT_LABELS[sport]} Player`;
+    if (!entity || entity?.unavailable) return serviceUnavailableMeta(pathname, 'Player data temporarily unavailable');
+    const name = entity.name || `${SPORT_LABELS[sport]} Player`;
     const canonical = `${SITE}/player/${sport}/${id}`;
     return {
       canonical,
@@ -448,6 +448,17 @@ function notFoundMeta(pathname, label) {
   };
 }
 
+function serviceUnavailableMeta(pathname, label) {
+  return {
+    canonical: `${SITE}${pathname}`,
+    title: `${label} — PropBetEdge`,
+    description: 'This PropBetEdge page is temporarily unavailable while its source data is refreshed.',
+    image: `${SITE}/logo/pbe-full-600.png`,
+    robots: 'noindex, follow',
+    status: 503,
+  };
+}
+
 function buildArticleSchema(article, sport, canonical) {
   const authorName = article.author || 'PropBetEdge Editorial Team';
   const authorSlug = String(authorName)
@@ -511,7 +522,8 @@ async function resolveTeamMeta(sport, slug) {
   const api = SPORT_API[sport];
   if (!api) return { notFound: true };
   const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${api.category}/${api.league}/teams?limit=100`);
-  if (!res.ok) return null;
+  if (res.status === 404) return { notFound: true };
+  if (!res.ok) return { unavailable: true };
   const data = await res.json();
   const teams = data?.sports?.[0]?.leagues?.[0]?.teams?.map((entry) => entry?.team || entry).filter(Boolean) || [];
   const target = slugify(slug);
@@ -537,7 +549,7 @@ async function resolvePlayerMeta(sport, id) {
   if (sport === 'mlb') {
     const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${encodeURIComponent(id)}`);
     if (res.status === 404) return { notFound: true };
-    if (!res.ok) return null;
+    if (!res.ok) return { unavailable: true };
     const person = (await res.json())?.people?.[0];
     if (!person) return { notFound: true };
     return {
@@ -549,7 +561,7 @@ async function resolvePlayerMeta(sport, id) {
   if (sport === 'nhl') {
     const res = await fetch(`https://api-web.nhle.com/v1/player/${encodeURIComponent(id)}/landing`);
     if (res.status === 404) return { notFound: true };
-    if (!res.ok) return null;
+    if (!res.ok) return { unavailable: true };
     const player = await res.json();
     const name = `${player?.firstName?.default || ''} ${player?.lastName?.default || ''}`.trim();
     if (!name) return { notFound: true };
@@ -559,7 +571,7 @@ async function resolvePlayerMeta(sport, id) {
   const api = SPORT_API[sport];
   const res = await fetch(`https://site.web.api.espn.com/apis/common/v3/sports/${api.category}/${api.league}/athletes/${encodeURIComponent(id)}`);
   if (res.status === 404) return { notFound: true };
-  if (!res.ok) return null;
+  if (!res.ok) return { unavailable: true };
   const athlete = (await res.json())?.athlete;
   if (!athlete) return { notFound: true };
   return {
