@@ -1,4 +1,4 @@
-import { filterIntegritySafeArticles } from '../news-integrity.js';
+import { filterPublicArticles } from '../news-integrity.js';
 
 const SITE = 'https://propbetedge.ai';
 const NEWS_API = 'https://propbet-news-api.sales-fd3.workers.dev';
@@ -191,7 +191,7 @@ async function newsSitemap() {
     return Number.isFinite(ts) && ts < cutoff;
   }, 10);
 
-  const fresh = filterIntegritySafeArticles(articles)
+  const fresh = filterPublicArticles(articles)
     .filter((article) => {
       const ts = new Date(article.published_at).getTime();
       return Number.isFinite(ts) && ts >= cutoff;
@@ -230,7 +230,7 @@ async function articleChunkSitemap(chunkRaw) {
     requests.push(fetchNewsPage(page).catch(() => ({ articles: [], hasMore: false })));
   }
   const pages = await Promise.all(requests);
-  const articles = filterIntegritySafeArticles(
+  const articles = filterPublicArticles(
     dedupeArticles(pages.flatMap((data) => data?.articles || []))
   );
 
@@ -246,7 +246,7 @@ async function articleChunkSitemap(chunkRaw) {
 
 async function articleSitemap(monthRaw) {
   const month = normalizeMonth(monthRaw);
-  const articles = filterIntegritySafeArticles(await fetchArticleArchive(month));
+  const articles = filterPublicArticles(await fetchArticleArchive(month));
   const body = articles.map((article) => {
     const sport = normalizeSport(article.sport);
     if (!sport || !article.slug) return '';
@@ -279,7 +279,7 @@ async function fetchArticleArchive(month) {
 
     if (passedMonth || data.hasMore === false || page >= Number(data.totalPages || MAX_PAGES)) break;
   }
-  return filterIntegritySafeArticles(dedupeArticles(out));
+  return filterPublicArticles(dedupeArticles(out));
 }
 
 async function fetchAllArticles() {
@@ -293,7 +293,7 @@ async function fetchAllArticles() {
     const batch = await Promise.all(pages);
     for (const data of batch) all.push(...(data.articles || []));
   }
-  return filterIntegritySafeArticles(dedupeArticles(all));
+  return filterPublicArticles(dedupeArticles(all));
 }
 
 async function fetchArticlesUntil(stop, maxPages) {
@@ -305,7 +305,7 @@ async function fetchArticlesUntil(stop, maxPages) {
     out.push(...articles);
     if (articles.some(stop) || data.hasMore === false) break;
   }
-  return filterIntegritySafeArticles(dedupeArticles(out));
+  return filterPublicArticles(dedupeArticles(out));
 }
 
 async function fetchNewsPage(page) {
