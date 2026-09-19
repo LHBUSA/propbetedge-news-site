@@ -99,7 +99,6 @@
         "@type": "NewsMediaOrganization",
         "@id": "https://propbetedge.ai/#organization",
         "name": "PropBetEdge",
-        "legalName": "PropBetEdge by PropTechUSA.ai",
         "url": "https://propbetedge.ai/",
         "description": "AI-native sports newsroom and sports-intelligence network covering MLB, NFL, NBA, WNBA, NHL, UFC, and expanding sports data products.",
         "logo": {
@@ -116,13 +115,7 @@
         "sameAs": [
           "https://www.linkedin.com/company/propbetedge-ai/",
           "https://x.com/MLBHRALERTSPBE",
-          "https://www.reddit.com/r/PropBetEdge/",
-          "https://mlb.propbetedge.ai/",
-          "https://nfl.propbetedge.ai/",
-          "https://nba.propbetedge.ai/",
-          "https://wnba.propbetedge.ai/",
-          "https://nhl.propbetedge.ai/",
-          "https://ufc.propbetedge.ai/"
+          "https://www.reddit.com/r/PropBetEdge/"
         ],
         "publishingPrinciples": "https://propbetedge.ai/editorial-standards",
         "correctionsPolicy": "https://propbetedge.ai/editorial-standards",
@@ -134,6 +127,14 @@
         "url": "https://propbetedge.ai/",
         "name": "PropBetEdge",
         "publisher": { "@id": "https://propbetedge.ai/#organization" },
+        "hasPart": [
+          { "@type": "WebSite", "name": "PropBetEdge MLB", "url": "https://mlb.propbetedge.ai/", "publisher": { "@id": "https://propbetedge.ai/#organization" } },
+          { "@type": "WebSite", "name": "PropBetEdge NFL", "url": "https://nfl.propbetedge.ai/", "publisher": { "@id": "https://propbetedge.ai/#organization" } },
+          { "@type": "WebSite", "name": "PropBetEdge NBA", "url": "https://nba.propbetedge.ai/", "publisher": { "@id": "https://propbetedge.ai/#organization" } },
+          { "@type": "WebSite", "name": "PropBetEdge WNBA", "url": "https://wnba.propbetedge.ai/", "publisher": { "@id": "https://propbetedge.ai/#organization" } },
+          { "@type": "WebSite", "name": "PropBetEdge NHL", "url": "https://nhl.propbetedge.ai/", "publisher": { "@id": "https://propbetedge.ai/#organization" } },
+          { "@type": "WebSite", "name": "PropBetEdge UFC", "url": "https://ufc.propbetedge.ai/", "publisher": { "@id": "https://propbetedge.ai/#organization" } }
+        ],
         "inLanguage": "en-US"
       }
     ]
