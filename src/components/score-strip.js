@@ -29,10 +29,10 @@ const RECENT_FINAL_WINDOW_MS = 6 * 60 * 60 * 1000;
 
 const SPORT_TARGETS = {
   mlb: { label: 'Picks live',  live: true,  base: null },
-  nfl: { label: 'Free access', live: false, base: 'https://nfl.propbetedge.ai' },
-  nba: { label: 'Free access', live: false, base: 'https://nba.propbetedge.ai' },
+  nfl: { label: 'Open platform', live: false, base: 'https://nfl.propbetedge.ai' },
+  nba: { label: 'Open platform', live: false, base: 'https://nba.propbetedge.ai' },
   wnba: { label: 'Live platform', live: true, base: 'https://wnba.propbetedge.ai' },
-  nhl: { label: 'Free access', live: false, base: 'https://nhl.propbetedge.ai' },
+  nhl: { label: 'Open platform', live: false, base: 'https://nhl.propbetedge.ai' },
 };
 
 const SPORT_ACCENTS = {
@@ -540,7 +540,7 @@ function tileHref(g) {
 function tileTitle(g) {
   const target = SPORT_TARGETS[g.sport];
   if (target?.live) return 'View game · see tonight\'s picks';
-  return 'Coming soon · Free access while in beta';
+  return 'Open PropBetEdge platform';
 }
 
 function shortName(fullName) {
@@ -599,7 +599,7 @@ function tileHTML(g) {
   const accent = SPORT_ACCENTS[g.sport] || '#94a3b8';
   const target = SPORT_TARGETS[g.sport] || {};
   const sportTag = SPORT_BADGE[g.sport] || '';
-  const ctaText = target.live ? 'Picks live' : 'Free access';
+  const ctaText = target.label || (target.live ? 'Picks live' : 'Open platform');
   const ctaCls = target.live ? '' : 'soon';
 
   const topLine = renderTopLine(g);
@@ -709,7 +709,7 @@ function updateTileInPlace(tileEl, g) {
   });
 
   const target = SPORT_TARGETS[g.sport] || {};
-  const ctaText = target.live ? 'Picks live' : 'Free access';
+  const ctaText = target.label || (target.live ? 'Picks live' : 'Open platform');
   const ctaCls = target.live ? '' : 'soon';
   const bottomEl = tileEl.querySelector('.pss-tile-bottom');
   if (bottomEl) bottomEl.innerHTML = renderBottomLine(g, ctaText, ctaCls);
