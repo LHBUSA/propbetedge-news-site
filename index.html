@@ -91,6 +91,63 @@
   <link rel="canonical" href="https://propbetedge.ai/" />
   <link rel="alternate" type="application/rss+xml" title="PropBetEdge News" href="/news/rss.xml" />
 
+  <script type="application/ld+json" id="pbe-global-schema">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "NewsMediaOrganization",
+        "@id": "https://propbetedge.ai/#organization",
+        "name": "PropBetEdge",
+        "legalName": "PropBetEdge by PropTechUSA.ai",
+        "url": "https://propbetedge.ai/",
+        "description": "AI-native sports newsroom and sports-intelligence network covering MLB, NFL, NBA, WNBA, NHL, UFC, and expanding sports data products.",
+        "logo": {
+          "@type": "ImageObject",
+          "@id": "https://propbetedge.ai/#logo",
+          "url": "https://propbetedge.ai/logo/pbe-full-400.png",
+          "contentUrl": "https://propbetedge.ai/logo/pbe-full-400.png"
+        },
+        "parentOrganization": {
+          "@type": "Organization",
+          "name": "PropTechUSA.ai",
+          "url": "https://proptechusa.ai/"
+        },
+        "sameAs": [
+          "https://www.linkedin.com/company/propbetedge-ai/",
+          "https://x.com/MLBHRALERTSPBE",
+          "https://www.reddit.com/r/PropBetEdge/",
+          "https://mlb.propbetedge.ai/",
+          "https://nfl.propbetedge.ai/",
+          "https://nba.propbetedge.ai/",
+          "https://wnba.propbetedge.ai/",
+          "https://nhl.propbetedge.ai/",
+          "https://ufc.propbetedge.ai/"
+        ],
+        "publishingPrinciples": "https://propbetedge.ai/editorial-standards",
+        "correctionsPolicy": "https://propbetedge.ai/editorial-standards",
+        "ethicsPolicy": "https://propbetedge.ai/editorial-standards"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://propbetedge.ai/#website",
+        "url": "https://propbetedge.ai/",
+        "name": "PropBetEdge",
+        "publisher": { "@id": "https://propbetedge.ai/#organization" },
+        "inLanguage": "en-US",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://propbetedge.ai/news?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  }
+  </script>
+
   <!-- Favicons (PBE chrome mark) -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
