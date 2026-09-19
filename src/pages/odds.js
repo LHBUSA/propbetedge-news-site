@@ -20,14 +20,14 @@ import {
   organizationSchema, websiteSchema, breadcrumbSchema, injectSchemas,
 } from '../schema.js';
 
-const MLB_EDGES_URL = 'https://propbetedge-ev-finder.sales-fd3.workers.dev/edges-today';
+const MLB_EDGES_URL = '/api/mlb-edge-sample';
 const MLB_HR_SAMPLE_URL = '/api/mlb-hr-sample';
 const MLB_ODDS_CACHE_URL = 'https://propbetedge-odds-cache.sales-fd3.workers.dev';
 const NFL_SAMPLE_URL = 'https://nfl.propbetedge.ai/api/pbe-picks?view=free-sample';
 const UFC_SAMPLE_URL = 'https://ufc.propbetedge.ai/api/ufc/free-sample';
 const WNBA_SAMPLE_URL = 'https://wnba-api.propbetedge.ai/v1/pbe/free-sample';
 const NHL_SAMPLE_URL = 'https://nhl-api.propbetedge.ai/nhl/picks/free-sample';
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 4 * 60 * 60 * 1000;
 let _refreshTimer = null;
 
 const SPORTS = Object.freeze({
@@ -36,8 +36,8 @@ const SPORTS = Object.freeze({
     emoji: '⚾',
     href: PROPBET_LINKS.picks_mlb,
     cta: 'Open MLB Intelligence',
-    deck: 'Live player-prop edges plus a featured home run model target.',
-    cadence: 'Game-day · refreshed throughout the slate',
+    deck: 'A deliberately limited player-prop sample plus a featured home run model target.',
+    cadence: 'Public sample · refreshed up to 6× daily',
   },
   nfl: {
     label: 'NFL',
