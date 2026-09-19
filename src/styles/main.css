@@ -3502,6 +3502,82 @@ img { max-width: 100%; height: auto; }
   .ufc-champion-copy strong{font-size:18px}
 }
 
+/* ── WNBA WinBA leaders ───────────────────────────────────────────── */
+.winba-leaders-explainer {
+  margin: 0 0 18px;
+  padding: 18px 20px;
+  border: 1px solid rgba(212,175,55,.30);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(212,175,55,.10), transparent 42%),
+    var(--paper);
+  color: var(--ink);
+  display: grid;
+  grid-template-columns: minmax(0,1.35fr) minmax(260px,.9fr);
+  gap: 14px 24px;
+  align-items: start;
+}
+.winba-leaders-kicker {
+  display:block;
+  margin-bottom:4px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+  color:#7f6207;
+}
+.winba-leaders-explainer h2 {
+  margin:0 0 5px;
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:24px;line-height:1.05;color:var(--ink);
+}
+.winba-leaders-explainer p {
+  margin:0;
+  font-size:13px;line-height:1.55;color:rgba(20,17,13,.68);
+}
+.winba-leaders-formula {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+.winba-leaders-formula span {
+  padding:8px 9px;
+  border-radius:7px;
+  background:rgba(20,17,13,.045);
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;line-height:1.35;color:rgba(20,17,13,.62);
+}
+.winba-leaders-formula b { color:#7f6207;font-size:12px; }
+.winba-leaders-explainer > small {
+  grid-column:1/-1;
+  padding-top:10px;
+  border-top:1px solid rgba(20,17,13,.08);
+  font-size:10px;line-height:1.5;color:rgba(20,17,13,.52);
+}
+.leader-card-winba {
+  border-color:rgba(212,175,55,.35);
+  box-shadow:0 8px 24px rgba(212,175,55,.08);
+}
+.leader-card-winba .leader-card-head {
+  background:linear-gradient(90deg,rgba(212,175,55,.10),rgba(20,17,13,.025));
+}
+.winba-card-foot {
+  padding:9px 14px 11px;
+  border-top:1px solid rgba(20,17,13,.06);
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;font-weight:700;letter-spacing:.04em;
+  color:rgba(20,17,13,.48);
+  text-transform:uppercase;
+}
+@media(max-width:720px){
+  .winba-leaders-explainer{grid-template-columns:1fr;padding:16px}
+  .winba-leaders-explainer > small{grid-column:auto}
+}
+
+/* Justin Gaethje's source portrait is taller than the square champions slot.
+   Bias the crop toward the top so the full head stays visible. */
+.ufc-champion-media img[alt="Justin Gaethje"] {
+  object-position:50% 12%;
+}
+
 /* ── Sub-tabs (Batting/Pitching, Skaters/Goalies) ─────────────────── */
 .leaders-subtabs {
   display: flex;
