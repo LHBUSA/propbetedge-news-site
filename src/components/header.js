@@ -77,6 +77,7 @@ export function renderHeader() {
           <a href="/news/nfl" class="nav-link ${sportPathActive(path, 'nfl') ? 'active' : ''}">NFL</a>
           <a href="${PROPBET_LINKS.news_ufc}" class="nav-link" target="_blank" rel="noopener">UFC</a>
           <a href="/news/nba" class="nav-link ${sportPathActive(path, 'nba') ? 'active' : ''}">NBA</a>
+          <a href="https://wnba.propbetedge.ai" class="nav-link" target="_blank" rel="noopener">WNBA</a>
           <a href="/news/nhl" class="nav-link ${sportPathActive(path, 'nhl') ? 'active' : ''}">NHL</a>
         </div>
         <div class="masthead-logo" aria-label="PropBetEdge">
