@@ -31,6 +31,7 @@ const SPORT_TARGETS = {
   mlb: { label: 'Picks live',  live: true,  base: null },
   nfl: { label: 'Free access', live: false, base: 'https://nfl.propbetedge.ai' },
   nba: { label: 'Free access', live: false, base: 'https://nba.propbetedge.ai' },
+  wnba: { label: 'Live platform', live: true, base: 'https://wnba.propbetedge.ai' },
   nhl: { label: 'Free access', live: false, base: 'https://nhl.propbetedge.ai' },
 };
 
@@ -38,6 +39,7 @@ const SPORT_ACCENTS = {
   mlb: '#ef4444',
   nfl: '#a78bfa',
   nba: '#fb923c',
+  wnba: '#e9b949',
   nhl: '#22d3ee',
 };
 
@@ -45,10 +47,11 @@ const SPORT_BADGE = {
   mlb: 'MLB',
   nfl: 'NFL',
   nba: 'NBA',
+  wnba: 'WNBA',
   nhl: 'NHL',
 };
 
-const SPORT_ORDER = ['mlb', 'nba', 'nhl', 'nfl'];
+const SPORT_ORDER = ['mlb', 'nba', 'wnba', 'nhl', 'nfl'];
 
 const HIDDEN_SPORTS = new Set();
 
@@ -530,6 +533,7 @@ function tileHref(g) {
   const target = SPORT_TARGETS[g.sport];
   if (!target) return '#';
   if (g.sport === 'mlb' && g.gameId) return `/games/mlb/${g.gameId}`;
+  if (g.sport === 'wnba' && g.gameId) return `${target.base}/cast/${g.gameId}`;
   return target.base || '#';
 }
 
@@ -842,7 +846,7 @@ export function renderScoreStripShell() {
   const triggerLabel = _activeFilter === 'all' ? 'All' : _activeFilter.toUpperCase();
 
   return `
-    <div id="pbe-score-strip" role="region" aria-label="Live scores across MLB, NBA, NHL, NFL">
+    <div id="pbe-score-strip" role="region" aria-label="Live scores across MLB, NBA, WNBA, NHL, NFL">
       <div class="pss-filter">
         <button class="pss-filter-trigger" type="button" aria-haspopup="true" aria-expanded="false">${triggerLabel}</button>
         <div class="pss-filter-dropdown" role="menu">${filterButtons}</div>
