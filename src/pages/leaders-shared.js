@@ -32,9 +32,11 @@ export function renderLeadersHero(sportLabel, dek, kickerSuffix = '') {
 export function renderSportTabStrip(activeSport) {
   const tabs = [
     { sport: 'mlb', label: '⚾ MLB' },
+    { sport: 'wnba', label: '🏀 WNBA' },
+    { sport: 'nfl', label: '🏈 NFL' },
     { sport: 'nhl', label: '🏒 NHL' },
     { sport: 'nba', label: '🏀 NBA' },
-    { sport: 'nfl', label: '🏈 NFL' },
+    { sport: 'ufc', label: '🥊 UFC' },
   ];
   return `
     <div class="leaders-sport-tabs">
@@ -67,13 +69,16 @@ export function leadersPageShell(sportSlug, sportLabel, dek, bodyHtml, kickerSuf
 export function renderEdgeStrip(sportSlug = 'nfl') {
   const config = getSportConfig(sportSlug) || getSportConfig('nfl');
   const productExternal = /^https?:\/\//i.test(config.productUrl || '');
+  const contextUrl = config.standingsUrl || `/standings/${sportSlug}`;
+  const contextExternal = /^https?:\/\//i.test(contextUrl);
+  const isUfc = sportSlug === 'ufc';
   return `
     <section class="games-edge-strip">
       <div class="games-edge-grid">
         <div class="games-edge-cell">
           <div class="games-edge-icon">🎯</div>
           <div class="games-edge-title">${config.label} Intelligence</div>
-          <div class="games-edge-dek">Take the stat board into the deeper PropBetEdge model and research experience for this league.</div>
+          <div class="games-edge-dek">${isUfc ? 'Take the championship board into the full PropBetEdge UFC rankings, fighters and fight intelligence experience.' : 'Take the stat board into the deeper PropBetEdge model and research experience for this league.'}</div>
           <a href="${escapeAttr(config.productUrl)}" class="games-edge-cta"${productExternal ? ' target="_blank" rel="noopener"' : ''}>${escapeHtml(config.primaryCta)} →</a>
         </div>
         <div class="games-edge-cell">
@@ -83,10 +88,10 @@ export function renderEdgeStrip(sportSlug = 'nfl') {
           <a href="https://propsports.proptechusa.ai" class="games-edge-cta" target="_blank" rel="noopener">API docs →</a>
         </div>
         <div class="games-edge-cell">
-          <div class="games-edge-icon">🏟️</div>
-          <div class="games-edge-title">${config.label} Team Hubs</div>
-          <div class="games-edge-dek">Move from league leaders into standings, team identity, schedules, rosters and connected coverage.</div>
-          <a href="/standings/${escapeAttr(sportSlug)}" class="games-edge-cta">Explore ${config.label} teams →</a>
+          <div class="games-edge-icon">${isUfc ? '🏆' : '🏟️'}</div>
+          <div class="games-edge-title">${escapeHtml(config.standingsLabel || `${config.label} Standings`)}</div>
+          <div class="games-edge-dek">${isUfc ? 'Open the full UFC championship and contender rankings snapshot.' : 'Move from leaders into standings, teams, schedules, rosters and connected coverage.'}</div>
+          <a href="${escapeAttr(contextUrl)}" class="games-edge-cta"${contextExternal ? ' target="_blank" rel="noopener"' : ''}>${isUfc ? 'Open UFC rankings' : `Explore ${config.label} standings`} →</a>
         </div>
       </div>
     </section>
@@ -95,7 +100,7 @@ export function renderEdgeStrip(sportSlug = 'nfl') {
 
 // ─── Advanced-stat promotion, always matched to the current league ─────
 export function renderPremiumStatCard(label, color, statName, dek) {
-  const sport = String(window.location.pathname || '').match(/^\/leaders\/(mlb|nfl|nba|nhl)(?:\/|$)/i)?.[1]?.toLowerCase() || 'mlb';
+  const sport = String(window.location.pathname || '').match(/^\/leaders\/(mlb|nfl|nba|nhl|wnba|ufc)(?:\/|$)/i)?.[1]?.toLowerCase() || 'mlb';
   const config = getSportConfig(sport) || getSportConfig('mlb');
   const productExternal = /^https?:\/\//i.test(config.productUrl || '');
   return `
@@ -259,6 +264,79 @@ export function computeNhlP60(stat) {
   const toi = +stat.timeOnIcePerGame || +stat.toi || 0;
   if (toi <= 0) return null;
   return (pts / toi) * 60;
+}
+
+// ─── Live refresh state ─────────────────────────────────────────────────
+let _leadersRefreshTimer = null;
+let _leadersTickerTimer = null;
+
+export function renderLeaderLiveStatus(sourceLabel = 'Live source', intervalSeconds = 60) {
+  return `
+    <div class="leaders-live-refresh" aria-live="polite">
+      <span class="leaders-live-pill"><span class="leaders-live-pulse"></span>LIVE</span>
+      <span id="leaders-live-status" data-updated-at="">Waiting for first refresh</span>
+      <span class="leaders-live-cadence">Auto-refresh ${intervalSeconds}s · ${escapeHtml(sourceLabel)}</span>
+    </div>
+  `;
+}
+
+export function markLeaderUpdated(sourceLabel = '') {
+  const el = document.getElementById('leaders-live-status');
+  if (!el) return;
+  const now = Date.now();
+  el.dataset.updatedAt = String(now);
+  el.dataset.sourceLabel = sourceLabel || '';
+  updateLeaderStatusText(el, now);
+}
+
+export function startLeaderAutoRefresh(sportSlug, refresh, intervalMs = 60000) {
+  stopLeaderAutoRefresh();
+  if (typeof window === 'undefined') return () => {};
+
+  const route = `/leaders/${sportSlug}`;
+  const stopIfGone = () => {
+    if (window.location.pathname.replace(/\/+$/, '') !== route) {
+      stopLeaderAutoRefresh();
+      return true;
+    }
+    return false;
+  };
+
+  _leadersRefreshTimer = window.setInterval(async () => {
+    if (stopIfGone() || document.hidden) return;
+    try {
+      await refresh();
+    } catch (error) {
+      console.warn(`[leaders/${sportSlug}] auto-refresh failed`, error);
+    }
+  }, intervalMs);
+
+  _leadersTickerTimer = window.setInterval(() => {
+    if (stopIfGone()) return;
+    const el = document.getElementById('leaders-live-status');
+    if (!el) return;
+    const updatedAt = Number(el.dataset.updatedAt || 0);
+    if (updatedAt) updateLeaderStatusText(el, updatedAt);
+  }, 1000);
+
+  return stopLeaderAutoRefresh;
+}
+
+export function stopLeaderAutoRefresh() {
+  if (typeof window !== 'undefined') {
+    if (_leadersRefreshTimer) window.clearInterval(_leadersRefreshTimer);
+    if (_leadersTickerTimer) window.clearInterval(_leadersTickerTimer);
+  }
+  _leadersRefreshTimer = null;
+  _leadersTickerTimer = null;
+}
+
+function updateLeaderStatusText(el, updatedAt) {
+  const age = Math.max(0, Math.floor((Date.now() - updatedAt) / 1000));
+  const source = el.dataset.sourceLabel ? ` · ${el.dataset.sourceLabel}` : '';
+  if (age < 2) el.textContent = `Updated just now${source}`;
+  else if (age < 60) el.textContent = `Updated ${age}s ago${source}`;
+  else el.textContent = `Updated ${Math.floor(age / 60)}m ago${source}`;
 }
 
 // ─── Loading state ──────────────────────────────────────────────────────
