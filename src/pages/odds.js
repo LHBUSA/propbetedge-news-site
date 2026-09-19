@@ -552,17 +552,20 @@ function renderSportState(sport, title, copy) {
   `;
 }
 
-function renderCardMedia(card) {
-  const images = (card.media?.images || []).filter(Boolean).slice(0, 2);
-  if (!images.length) {
-    return `<div class="free-edge-media is-fallback" aria-hidden="true"><span>${SPORTS[card.sport]?.emoji || '⚡'}</span><b>${escapeHtml(String(card.title || '').slice(0, 3).toUpperCase())}</b></div>`;
-  }
+function renderCardAvatar(card) {
+  const image = (card.media?.images || []).filter(Boolean)[0] || null;
+  const isPortrait = card.media?.kind === 'portrait';
+  const fallback = isPortrait
+    ? String(card.title || '?').split(/\s+/).filter(Boolean).map((part) => part[0]).slice(0, 2).join('').toUpperCase()
+    : (SPORTS[card.sport]?.emoji || '⚡');
+
   return `
-    <div class="free-edge-media ${card.media?.kind === 'portrait' ? 'is-portrait' : 'is-team'}">
-      <div class="free-edge-media-images ${images.length > 1 ? 'is-pair' : ''}">
-        ${images.map((url) => `<img src="${escapeHtml(proxyImage(url))}" alt="${escapeHtml(card.media?.alt || card.title || '')}" loading="lazy" decoding="async" onerror="this.style.display='none'">`).join('')}
+    <div class="free-edge-avatar-wrap">
+      <div class="free-edge-avatar ${isPortrait ? 'is-headshot' : 'is-team-logo'}" aria-label="${escapeHtml(card.media?.alt || card.title || '')}">
+        <span class="free-edge-avatar-fallback" aria-hidden="true">${escapeHtml(fallback || '⚡')}</span>
+        ${image ? `<img src="${escapeHtml(proxyImage(image))}" alt="${escapeHtml(card.media?.alt || card.title || '')}" loading="lazy" decoding="async" onerror="this.style.display='none'">` : ''}
       </div>
-      ${card.media?.credit ? `<small>${escapeHtml(card.media.credit)}</small>` : ''}
+      ${card.media?.credit ? `<small class="free-edge-avatar-credit">${escapeHtml(card.media.credit)}</small>` : ''}
     </div>
   `;
 }
@@ -579,19 +582,21 @@ function renderFreeCard(card) {
 
   return `
     <article class="free-edge-card has-media${variantClass}" data-sport="${escapeHtml(card.sport)}">
-      ${renderCardMedia(card)}
       <div class="free-edge-card-body">
-        <div class="free-edge-topline">
-          <span class="free-edge-eyebrow">${escapeHtml(card.eyebrow)}</span>
+        <div class="free-edge-compact-head">
+          ${renderCardAvatar(card)}
+          <div class="free-edge-identity">
+            <span class="free-edge-eyebrow">${escapeHtml(card.eyebrow)}</span>
+            <div class="free-edge-main">
+              <h3>${escapeHtml(card.title)}</h3>
+              <div class="free-edge-selection">${escapeHtml(card.selection || '')}</div>
+              ${card.context ? `<div class="free-edge-context">${escapeHtml(card.context)}</div>` : ''}
+            </div>
+          </div>
           <span class="free-edge-odds">
             <small>${escapeHtml(card.oddsLabel || 'Odds')}</small>
             <strong>${escapeHtml(card.odds || '—')}</strong>
           </span>
-        </div>
-        <div class="free-edge-main">
-          <h3>${escapeHtml(card.title)}</h3>
-          <div class="free-edge-selection">${escapeHtml(card.selection || '')}</div>
-          ${card.context ? `<div class="free-edge-context">${escapeHtml(card.context)}</div>` : ''}
         </div>
         <div class="free-edge-metrics">
           ${metrics.slice(0, 3).map((metric) => `
