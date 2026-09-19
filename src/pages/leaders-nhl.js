@@ -19,6 +19,7 @@ import {
   fmtAvg,
   fmtPct,
   fmtDec,
+  renderPropSportsLink,
 } from './leaders-shared.js';
 
 let _activeType = 'skater';
@@ -48,14 +49,14 @@ export async function renderNhlLeadersPage(root) {
   root.innerHTML = leadersPageShell(
     'nhl',
     'NHL',
-    `${formatNhlSeason(target)} skater and goalie leaderboards are pre-wired and will activate automatically when regular-season stats post.`,
+    `${formatNhlSeason(target)} skater and goalie leaderboards are powered by ${renderPropSportsLink()} and will activate automatically when regular-season stats post.`,
     `
       <div class="leaders-subtabs">
         <button class="leaders-subtab ${_activeType === 'skater' ? 'active' : ''}" data-type="skater">Skaters</button>
         <button class="leaders-subtab ${_activeType === 'goalie' ? 'active' : ''}" data-type="goalie">Goalies</button>
         <button class="leaders-subtab ${_activeType === 'advanced' ? 'active' : ''}" data-type="advanced">Advanced</button>
       </div>
-      ${renderLeaderLiveStatus('NHL API', 60)}
+      ${renderLeaderLiveStatus('PropSports.PropTechUSA.ai', 60)}
       <div id="leaders-body">${renderLeaderLoading()}</div>
     `,
     'AUTO-READY',
@@ -72,11 +73,11 @@ export async function renderNhlLeadersPage(root) {
   });
 
   await loadActive();
-  markLeaderUpdated('NHL API');
+  markLeaderUpdated('PropSports.PropTechUSA.ai');
 
   startLeaderAutoRefresh('nhl', async () => {
     await loadActive({ silent: true });
-    markLeaderUpdated('NHL API');
+    markLeaderUpdated('PropSports.PropTechUSA.ai');
   }, 60000);
 }
 
@@ -185,7 +186,7 @@ async function loadAdvanced(body) {
 
   body.innerHTML = `
     ${seasonBanner(target, using)}
-    <div class="leaders-banner">⚡ Advanced stats computed from NHL API leader pools.</div>
+    <div class="leaders-banner">⚡ Advanced stats computed through ${renderPropSportsLink()} leader pools.</div>
     <div class="leaders-grid">
       ${renderComputedCard('SH%', '#FF6B6B', shPct, (v) => fmtPct(v, 1))}
       ${renderComputedCard('P/60', 'var(--gold)', p60, (v) => fmtDec(v, 2))}
@@ -295,9 +296,9 @@ function waitingState(label) {
 
 function seasonBanner(target, using) {
   if (target === using) {
-    return `<div class="leaders-banner">🏒 ${formatNhlSeason(using)} regular season · live NHL API feed</div>`;
+    return `<div class="leaders-banner">🏒 ${formatNhlSeason(using)} regular season · ${renderPropSportsLink()} live feed</div>`;
   }
-  return `<div class="leaders-banner">🏒 Showing ${formatNhlSeason(using)} · ${formatNhlSeason(target)} activates automatically when NHL posts regular-season leaders</div>`;
+  return `<div class="leaders-banner">🏒 Showing ${formatNhlSeason(using)} · ${formatNhlSeason(target)} activates automatically through ${renderPropSportsLink()} when the new-season board is available</div>`;
 }
 
 function currentNhlSeasonString() {
