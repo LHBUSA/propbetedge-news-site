@@ -582,7 +582,7 @@ function renderCardAvatar(card) {
 }
 
 function renderFreeCard(card) {
-  const variantClass = card.variant === 'hr-spotlight' ? ' is-hr-spotlight' : '';
+  const variantClass = card.variant === 'hr-spotlight' ? ' is-hr-spotlight' : card.variant === 'ufc-top-upset' ? ' is-ufc-top-upset' : '';
   const metrics = Array.isArray(card.metrics) && card.metrics.length
     ? card.metrics
     : [
