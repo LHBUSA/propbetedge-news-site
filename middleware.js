@@ -322,13 +322,26 @@ async function resolveMeta(pathname) {
     };
   }
 
-  // Leaders
-  if (pathname === '/leaders' || pathname.match(/^\/leaders\/(mlb|nfl|nba|nhl)$/)) {
+  // Leaders + UFC champions
+  const leadersMatch = pathname.match(/^\/leaders\/(mlb|wnba|nfl|nhl|nba|ufc)$/);
+  if (pathname === '/leaders' || leadersMatch) {
+    const sport = leadersMatch?.[1] || null;
+    const labels = { mlb: 'MLB', wnba: 'WNBA', nfl: 'NFL', nhl: 'NHL', nba: 'NBA', ufc: 'UFC' };
+    const isUfc = sport === 'ufc';
     return {
       canonical: `${SITE}${pathname}`,
-      title: 'Stat Leaders — PropBetEdge',
-      description: 'Top performers across MLB, NFL, NBA, and NHL.',
+      title: isUfc
+        ? 'UFC Champions — PropBetEdge'
+        : sport
+          ? `${labels[sport]} Stat Leaders — PropBetEdge`
+          : 'Stat Leaders & UFC Champions — PropBetEdge',
+      description: isUfc
+        ? 'Current UFC divisional champions from the verified official rankings snapshot.'
+        : sport
+          ? `Live ${labels[sport]} player leaderboards with automatic in-page refresh and connected PropBetEdge intelligence.`
+          : 'Live leaderboards across MLB, WNBA, NFL, NHL and NBA, plus current UFC divisional champions.',
       image: `${SITE}/logo/pbe-full-600.png`,
+      robots: DEFAULT_ROBOTS,
     };
   }
 
