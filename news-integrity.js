@@ -49,6 +49,25 @@ export function assessArticleIntegrity(article, peers = []) {
   return { ok: true, reason: null };
 }
 
+export function applyArticlePublicationPolicy(article) {
+  if (!article || typeof article !== 'object') return null;
+  const author = String(article.author || '').trim().toLowerCase();
+
+  // Match the site's existing public contributor policy.
+  if (author === 'donneal green') return null;
+  if (author === 'eric esters') {
+    return { ...article, author: 'PropBetEdge Editorial Team', _author_reattributed: true };
+  }
+  return article;
+}
+
+export function filterPublicArticles(items) {
+  const publicRows = (Array.isArray(items) ? items : [])
+    .map(applyArticlePublicationPolicy)
+    .filter(Boolean);
+  return filterIntegritySafeArticles(publicRows);
+}
+
 export function filterIntegritySafeArticles(items) {
   const list = Array.isArray(items) ? items : [];
   return list.filter((article) => assessArticleIntegrity(article, list).ok);
