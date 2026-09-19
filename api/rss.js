@@ -10,6 +10,7 @@ export default async function handler(req, res) {
 
   res.setHeader('Content-Type', 'application/rss+xml; charset=utf-8');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Robots-Tag', 'noindex, follow');
   res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900');
 
   try {
