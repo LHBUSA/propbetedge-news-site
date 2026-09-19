@@ -27,9 +27,9 @@ export const SPORT_CONFIG = Object.freeze({
     name: 'National Basketball Association',
     emoji: '🏀',
     espnPath: 'basketball/nba',
-    productUrl: '/news/nba',
-    picksUrl: '/news/nba',
-    primaryCta: 'Follow NBA Coverage',
+    productUrl: 'https://nba.propbetedge.ai',
+    picksUrl: 'https://nba.propbetedge.ai',
+    primaryCta: 'Open NBA Intelligence',
     standingsLabel: 'NBA Standings',
   }),
   nhl: Object.freeze({
