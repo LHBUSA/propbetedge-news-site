@@ -15,6 +15,7 @@
  */
 
 import { next } from '@vercel/edge';
+import { assessArticleIntegrity } from './news-integrity.js';
 
 export const config = {
   matcher: [
@@ -144,6 +145,11 @@ async function resolveMeta(pathname) {
         const data = await res.json();
         const article = data.article;
         if (article) {
+          const integrity = assessArticleIntegrity(article);
+          if (!integrity.ok) {
+            console.warn('[seo middleware] withheld corrupt article', slug, integrity.reason);
+            return notFoundMeta(pathname, 'Article unavailable');
+          }
           const canonical = `${SITE}/news/${sport}/${slug}`;
           return {
             canonical,
