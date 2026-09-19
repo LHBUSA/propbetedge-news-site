@@ -13,6 +13,7 @@ import {
   renderLeaderLiveStatus,
   markLeaderUpdated,
   startLeaderAutoRefresh,
+  renderPropSportsLink,
 } from './leaders-shared.js';
 
 let _activeType = 'offense'; // offense | defense
@@ -40,14 +41,14 @@ let _loadingPromise = null;
 
 export async function renderNflLeadersPage(root) {
   const season = currentNflSeason();
-  const dek = `${season} regular-season player leaderboards — live passing, rushing, receiving and defensive rankings sourced from ESPN.`;
+  const dek = `${season} regular-season player leaderboards — live passing, rushing, receiving and defensive rankings powered by ${renderPropSportsLink()}.`;
 
   root.innerHTML = leadersPageShell('nfl', 'NFL', dek, `
     <div class="leaders-subtabs" aria-label="NFL leaderboard categories">
       <button class="leaders-subtab ${_activeType === 'offense' ? 'active' : ''}" data-type="offense">Offense</button>
       <button class="leaders-subtab ${_activeType === 'defense' ? 'active' : ''}" data-type="defense">Defense</button>
     </div>
-    ${renderLeaderLiveStatus('ESPN', 60)}
+    ${renderLeaderLiveStatus('PropSports.PropTechUSA.ai', 60)}
     <div id="leaders-body">${renderLeaderLoading()}</div>
   `, 'UPDATED LIVE');
 
@@ -63,11 +64,11 @@ export async function renderNflLeadersPage(root) {
 
   await loadData({ force: true });
   renderActive();
-  markLeaderUpdated('ESPN');
+  markLeaderUpdated('PropSports.PropTechUSA.ai');
   startLeaderAutoRefresh('nfl', async () => {
     await loadData({ force: true });
     renderActive();
-    markLeaderUpdated('ESPN');
+    markLeaderUpdated('PropSports.PropTechUSA.ai');
   }, 60000);
 }
 
@@ -113,12 +114,11 @@ function renderActive() {
   }
 
   const cats = _activeType === 'defense' ? DEFENSE_CATS : OFFENSE_CATS;
-  const source = _payload.source || 'ESPN';
   const season = _payload.season || currentNflSeason();
 
   body.innerHTML = `
     <div class="leaders-banner">
-      🏈 ${season} regular season · ${source} league leaders · Top 10 in each category
+      🏈 ${season} regular season · ${renderPropSportsLink()} league leaders · Top 10 in each category
     </div>
     <div class="leaders-grid">
       ${cats.map((cat) => renderNflCard(cat, findCategory(cat.key))).join('')}
