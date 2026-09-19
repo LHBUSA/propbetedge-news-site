@@ -3433,6 +3433,8 @@ img { max-width: 100%; height: auto; }
   animation: leadersLivePulse 1.8s infinite;
 }
 .leaders-live-cadence { margin-left: auto; }
+.leaders-source-link { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+.leaders-source-link:hover { opacity: .78; }
 @keyframes leadersLivePulse {
   0% { box-shadow: 0 0 0 0 rgba(225,61,61,.5); }
   70% { box-shadow: 0 0 0 7px rgba(225,61,61,0); }
