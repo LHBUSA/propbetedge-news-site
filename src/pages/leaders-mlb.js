@@ -22,6 +22,7 @@ import {
   renderEmptyStatCard, renderPremiumStatCard, renderLeaderLoading,
   computeBABIP, computeISO, computeKPct, computeBBPct,
   fmtAvg, fmtPct, fmtDec, fmtInt,
+  renderLeaderLiveStatus, markLeaderUpdated, startLeaderAutoRefresh,
 } from './leaders-shared.js';
 
 let _activeType = 'batting'; // batting | pitching | advanced
@@ -424,6 +425,7 @@ export async function renderMlbLeadersPage(root) {
       <button class="leaders-subtab ${_activeType === 'pitching' ? 'active' : ''}" data-type="pitching">Pitching</button>
       <button class="leaders-subtab ${_activeType === 'advanced' ? 'active' : ''}" data-type="advanced">Advanced</button>
     </div>
+    ${renderLeaderLiveStatus('MLB Stats API', 60)}
     <div id="leaders-body">${renderLeaderLoading()}</div>
   `, 'UPDATED LIVE');
 
@@ -435,13 +437,18 @@ export async function renderMlbLeadersPage(root) {
     });
   });
 
-  loadActive();
+  await loadActive();
+  markLeaderUpdated('MLB Stats API');
+  startLeaderAutoRefresh('mlb', async () => {
+    await loadActive({ silent: true });
+    markLeaderUpdated('MLB Stats API');
+  }, 60000);
 }
 
-async function loadActive() {
+async function loadActive({ silent = false } = {}) {
   const body = document.getElementById('leaders-body');
   if (!body) return;
-  body.innerHTML = renderLeaderLoading();
+  if (!silent) body.innerHTML = renderLeaderLoading();
 
   if (_activeType === 'batting') return loadBatting(body);
   if (_activeType === 'pitching') return loadPitching(body);
@@ -452,7 +459,7 @@ async function loadActive() {
 async function loadBatting(body) {
   const season = currentMlbSeason();
   const tryYear = (year) => Promise.all(BATTING_CATS.map((cat) =>
-    fetch(`https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${cat.key}&statGroup=hitting&season=${year}&limit=10`)
+    fetch(`https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${cat.key}&statGroup=hitting&season=${year}&limit=10&_=${Date.now()}`, { cache: 'no-store' })
       .then((r) => r.ok ? r.json() : null)
       .catch(() => null)
   ));
@@ -497,7 +504,7 @@ async function loadBatting(body) {
 async function loadPitching(body) {
   const season = currentMlbSeason();
   const tryYear = (year) => Promise.all(PITCHING_CATS.map((cat) =>
-    fetch(`https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${cat.key}&statGroup=pitching&season=${year}&limit=10`)
+    fetch(`https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${cat.key}&statGroup=pitching&season=${year}&limit=10&_=${Date.now()}`, { cache: 'no-store' })
       .then((r) => r.ok ? r.json() : null)
       .catch(() => null)
   ));
@@ -542,7 +549,8 @@ async function loadPitching(body) {
 async function loadAdvanced(body) {
   const season = currentMlbSeason();
   const tryYear = (year) => fetch(
-    `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=onBasePlusSlugging&statGroup=hitting&season=${year}&limit=50`
+    `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=onBasePlusSlugging&statGroup=hitting&season=${year}&limit=50&_=${Date.now()}`,
+    { cache: 'no-store' }
   ).then((r) => r.ok ? r.json() : null).catch(() => null);
 
   let data = await tryYear(season);
@@ -560,7 +568,7 @@ async function loadAdvanced(body) {
 
   const ids = pool.slice(0, 30).map((l) => l.person?.id).filter(Boolean);
   const players = await Promise.all(ids.map(async (id) => {
-    const r = await fetch(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=season&group=hitting&season=${useYear}&sportId=1`)
+    const r = await fetch(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=season&group=hitting&season=${useYear}&sportId=1&_=${Date.now()}`, { cache: 'no-store' })
       .then((r) => r.ok ? r.json() : null).catch(() => null);
     const stat = r?.stats?.[0]?.splits?.[0]?.stat;
     if (!stat) return null;
