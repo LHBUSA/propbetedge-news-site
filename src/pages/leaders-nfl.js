@@ -76,7 +76,7 @@ async function loadData({ force = false } = {}) {
   if (_loadingPromise) return _loadingPromise;
 
   const season = currentNflSeason();
-  _loadingPromise = fetch(`/api/nfl-leaders?season=${season}&seasontype=2&t=${Date.now()}`, {
+  _loadingPromise = fetch(`/api/nfl-leaders?season=${season}&seasontype=2`, {
     credentials: 'omit',
     cache: 'no-store',
   })
