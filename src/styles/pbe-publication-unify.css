@@ -562,6 +562,26 @@
   backdrop-filter: blur(8px);
 }
 
+.pbe-game-stat-list {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid rgba(255,245,220,.08);
+}
+.pbe-game-stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 9px 2px;
+  border-bottom: 1px solid rgba(255,245,220,.07);
+  color: var(--paper-faint);
+  font-size: 12px;
+}
+.pbe-game-stat-row strong {
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ═══ RESPONSIVE TOP-STACK COMPRESSION ═══ */
 @media (max-width: 880px) {
   .masthead-inner {
