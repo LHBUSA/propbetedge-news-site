@@ -2,7 +2,7 @@ import { api } from './api.js';
 import { sports } from './api-sports.js';
 import { getSportConfig } from './sport-config.js';
 
-const EV_URL = 'https://propbetedge-ev-finder.sales-fd3.workers.dev/edges-today';
+const EV_URL = '/api/mlb-edge-sample';
 const REFRESH_MS = 3 * 60 * 1000;
 let timer = null;
 let refreshHandle = null;
