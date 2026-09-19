@@ -23,7 +23,7 @@ export default async function handler(req, res) {
         sport: 'nba',
         season,
         seasonType: 2,
-        source: 'ESPN',
+        source: 'PropSports.PropTechUSA.ai',
         generatedAt: new Date().toISOString(),
         availability: 'pending',
         categories: [],
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
       sport: 'nba',
       season,
       seasonType: 2,
-      source: 'ESPN',
+      source: 'PropSports.PropTechUSA.ai',
       generatedAt: new Date().toISOString(),
       categories: categories.map((category) => ({
         name: category?.name || '',
