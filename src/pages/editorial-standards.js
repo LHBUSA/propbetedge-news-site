@@ -33,18 +33,18 @@ export async function renderEditorialStandards(root, setMeta) {
       { name: 'Home', url: '/' },
       { name: 'Editorial Standards' },
     ]),
-    // WebPage schema specifically for this policy doc
+    // Policy document: keep this distinct from the publisher's actual About page.
     {
       '@context': 'https://schema.org',
-      '@type': 'AboutPage',
-      '@id': 'https://propbetedge.ai/editorial-standards#aboutpage',
+      '@type': 'WebPage',
+      '@id': 'https://propbetedge.ai/editorial-standards#webpage',
       url: 'https://propbetedge.ai/editorial-standards',
       name: 'Editorial Standards',
       description: 'How PropBetEdge produces, reviews, corrects, and stands behind every article we publish.',
       inLanguage: 'en-US',
       isPartOf: { '@id': 'https://propbetedge.ai/#website' },
       datePublished: '2026-04-29',
-      dateModified: new Date().toISOString().slice(0, 10),
+      dateModified: '2026-09-02',
     },
   ], 'jsonld-editorial');
 
