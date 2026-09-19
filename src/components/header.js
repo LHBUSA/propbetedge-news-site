@@ -5,7 +5,7 @@
 import { ad_header_banner, PROPBET_LINKS } from '../ads-config.js';
 import { renderScoreStripShell, mountScoreStrip } from './score-strip.js';
 
-const EV_FINDER_URL = 'https://propbetedge-ev-finder.sales-fd3.workers.dev/edges-today';
+const EV_FINDER_URL = '/api/mlb-edge-sample';
 const MLB_HR_SAMPLE_URL = '/api/mlb-hr-sample';
 const NFL_SAMPLE_URL = 'https://nfl.propbetedge.ai/api/pbe-picks?view=free-sample';
 const UFC_SAMPLE_URL = 'https://ufc.propbetedge.ai/api/ufc/free-sample';
