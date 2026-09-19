@@ -7,9 +7,26 @@ export function normalizeAll(data) {
   return [
     ...normalizeMLB(data?.mlb?.games || []),
     ...normalizeNBA(data?.nba?.games || []),
+    ...normalizeWNBA(data?.wnba?.games || []),
     ...normalizeNHL(data?.nhl?.games || []),
     ...normalizeNFL(data?.nfl?.games || []),
   ]
+}
+
+export function normalizeWNBA(games) {
+  return games.map((g) => {
+    const stateRaw = String(g.statusState || '').toLowerCase()
+    const state = stateRaw === 'in' ? 'live' : stateRaw === 'post' ? 'final' : 'pre'
+    return {
+      sport: 'wnba', sportLabel: '🏀 WNBA', gameId: g.id, state,
+      statusText: state === 'live' ? `Q${g.period || ''} ${g.clock || ''}`.trim()
+                : state === 'final' ? 'Final' : g.statusDetail || formatTime(g.date),
+      home: { name: g.home, abbr: g.homeAbbr, logo: g.homeLogo, score: g.homeScore ?? '', record: g.homeRecord || '' },
+      away: { name: g.away, abbr: g.awayAbbr, logo: g.awayLogo, score: g.awayScore ?? '', record: g.awayRecord || '' },
+      detailUrl: `https://wnba.propbetedge.ai/cast/${g.id}`,
+      gameDate: g.date,
+    }
+  })
 }
 
 export function normalizeMLB(games) {
