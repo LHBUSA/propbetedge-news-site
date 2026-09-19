@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     : now.getUTCFullYear();
   const seasonType = Number(req.query?.seasontype || 2) === 3 ? 3 : 2;
 
-  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900');
+  res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
   res.setHeader('X-Content-Type-Options', 'nosniff');
 
   try {
