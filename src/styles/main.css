@@ -3443,6 +3443,54 @@ img { max-width: 100%; height: auto; }
   .leaders-live-cadence { margin-left: 0; width: 100%; }
 }
 
+.ufc-champions-group { margin: 0 0 28px; }
+.ufc-champions-group-head {
+  display:flex;align-items:end;justify-content:space-between;gap:16px;
+  margin:0 0 12px;padding:0 2px;
+}
+.ufc-champions-group-head h2 {
+  margin:0;font-family:'Playfair Display',serif;font-size:26px;color:var(--ink);
+}
+.ufc-champions-group-head span {
+  font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:rgba(20,17,13,.5);
+}
+.ufc-champion-card { border-color:rgba(212,175,55,.22); }
+.ufc-champion-link {
+  display:flex;align-items:center;gap:18px;padding:18px;
+  color:inherit;text-decoration:none;
+  background:linear-gradient(135deg,rgba(212,175,55,.06),rgba(255,255,255,.2));
+}
+.ufc-champion-link:hover { background:rgba(212,175,55,.09); }
+.ufc-champion-media {
+  width:86px;height:86px;position:relative;flex:0 0 86px;
+  border-radius:18px;overflow:hidden;background:rgba(20,17,13,.06);
+  border:1px solid rgba(20,17,13,.08);
+}
+.ufc-champion-media img { width:100%;height:100%;object-fit:cover;display:block; }
+.ufc-champion-belt {
+  position:absolute;right:5px;bottom:4px;font-size:20px;
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.25));
+}
+.ufc-champion-copy { min-width:0;display:flex;flex-direction:column;gap:4px; }
+.ufc-champion-copy strong {
+  font-family:'Playfair Display',serif;font-size:21px;line-height:1.05;color:var(--ink);
+}
+.ufc-champion-copy span { font-size:12px;color:rgba(20,17,13,.55); }
+.ufc-champion-copy small {
+  margin-top:7px;font-family:'JetBrains Mono',monospace;font-size:9px;
+  font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#7f6207;
+}
+.ufc-champions-source {
+  margin:-6px 0 28px;padding:12px 14px;border-radius:9px;
+  background:rgba(20,17,13,.035);font-size:11px;line-height:1.5;color:rgba(20,17,13,.58);
+}
+.ufc-champions-source a { color:#7f6207;font-weight:700; }
+@media(max-width:560px){
+  .ufc-champion-media{width:70px;height:70px;flex-basis:70px}
+  .ufc-champion-copy strong{font-size:18px}
+}
+
 /* ── Sub-tabs (Batting/Pitching, Skaters/Goalies) ─────────────────── */
 .leaders-subtabs {
   display: flex;
