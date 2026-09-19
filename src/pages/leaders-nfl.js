@@ -21,11 +21,16 @@ export async function renderNflLeadersPage(root) {
         with the same player-level research and prop-market context used across the NFL intelligence product.
       </p>
 
+      <a href="https://nfl.propbetedge.ai/" class="nfl-offseason-primary-cta">
+        Open NFL PropBetEdge <span aria-hidden="true">→</span>
+      </a>
+
       <div class="nfl-offseason-nav">
-        <a href="https://nfl.propbetedge.ai" class="nfl-offseason-link" target="_blank" rel="noopener">
+        <a href="https://nfl.propbetedge.ai/" class="nfl-offseason-link nfl-offseason-link-primary">
           <div class="nfl-offseason-link-icon">⚡</div>
           <div class="nfl-offseason-link-title">NFL Intelligence</div>
           <div class="nfl-offseason-link-dek">Model Lab, Market Watch, line simulation, SGP research and deeper football intelligence</div>
+          <div class="nfl-offseason-link-cta">Open NFL PropBetEdge →</div>
         </a>
         <a href="/news/nfl" class="nfl-offseason-link">
           <div class="nfl-offseason-link-icon">📰</div>
