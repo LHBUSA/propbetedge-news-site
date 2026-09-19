@@ -10,6 +10,7 @@ import {
   renderLeaderLiveStatus,
   markLeaderUpdated,
   startLeaderAutoRefresh,
+  renderPropSportsLink,
 } from './leaders-shared.js';
 
 const CATEGORIES = [
@@ -32,9 +33,9 @@ export async function renderWnbaLeadersPage(root) {
   root.innerHTML = leadersPageShell(
     'wnba',
     'WNBA',
-    `${season} regular-season leaders, including PropBetEdge’s proprietary WinBA Score alongside traditional WNBA production metrics.`,
+    `${season} regular-season leaders powered by ${renderPropSportsLink()}, including PropBetEdge’s proprietary WinBA Score alongside traditional WNBA production metrics.`,
     `
-      ${renderLeaderLiveStatus('ESPN leader feed', 60)}
+      ${renderLeaderLiveStatus('PropSports.PropTechUSA.ai', 60)}
       <div id="leaders-body">${renderLeaderLoading()}</div>
     `,
     'UPDATED LIVE',
@@ -42,12 +43,12 @@ export async function renderWnbaLeadersPage(root) {
 
   await loadData({ force: true });
   renderActive();
-  markLeaderUpdated('ESPN leader feed');
+  markLeaderUpdated('PropSports.PropTechUSA.ai');
 
   startLeaderAutoRefresh('wnba', async () => {
     await loadData({ force: true });
     renderActive();
-    markLeaderUpdated('ESPN leader feed');
+    markLeaderUpdated('PropSports.PropTechUSA.ai');
   }, 60000);
 }
 
@@ -94,7 +95,7 @@ function renderActive() {
 
   const winba = _payload.winba || null;
   body.innerHTML = `
-    <div class="leaders-banner">🏀 ${_payload.season} regular season · ${_payload.source || 'ESPN'} · Top 10 in each category</div>
+    <div class="leaders-banner">🏀 ${_payload.season} regular season · ${renderPropSportsLink()} · Top 10 in each category</div>
     ${winba ? `
       <section class="winba-leaders-explainer" aria-label="About the PropBetEdge WinBA Score">
         <div>
