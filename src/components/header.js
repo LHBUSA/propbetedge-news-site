@@ -189,8 +189,8 @@ function inferSport(path) {
 async function fetchEdgeCount() {
   try {
     const results = await Promise.allSettled([
-      fetch(EV_FINDER_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
-      fetch(MLB_HR_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
+      fetch(EV_FINDER_URL, { credentials: 'omit' }).then(r => r.ok ? r.json() : null),
+      fetch(MLB_HR_SAMPLE_URL, { credentials: 'omit' }).then(r => r.ok ? r.json() : null),
       fetch(NFL_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
       fetch(UFC_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
       fetch(WNBA_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
