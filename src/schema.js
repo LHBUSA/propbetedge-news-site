@@ -48,6 +48,24 @@ export function organizationSchema() {
     alternateName: 'PropBetEdge.ai',
     url: SITE.url,
     description: SITE.description,
+    mainEntityOfPage: `${SITE.url}/about`,
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        contactType: 'editorial',
+        email: 'editorial@proptechusa.ai',
+      },
+      {
+        '@type': 'ContactPoint',
+        contactType: 'business inquiries',
+        email: 'hello@proptechusa.ai',
+      },
+      {
+        '@type': 'ContactPoint',
+        contactType: 'press',
+        email: 'press@proptechusa.ai',
+      },
+    ],
     parentOrganization: {
       '@type': 'Organization',
       name: SITE.parentOrg,
