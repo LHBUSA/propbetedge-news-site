@@ -10,8 +10,8 @@
 :root {
   --pbe-scene-image: url('https://images.unsplash.com/photo-1778050203444-90920c7a5652?auto=format&fit=crop&w=2200&q=74');
   --pbe-scene-position: center 46%;
-  --pbe-scene-opacity: .21;
-  --pbe-scene-filter: grayscale(20%) saturate(72%) brightness(.78) contrast(1.08);
+  --pbe-scene-opacity: .29;
+  --pbe-scene-filter: grayscale(16%) saturate(82%) brightness(.92) contrast(1.05);
   --pbe-scene-orb-one: rgba(212,175,55,.09);
   --pbe-scene-orb-two: rgba(193,39,61,.055);
 }
@@ -19,8 +19,8 @@
 body[data-pbe-scene='mlb'] {
   --pbe-scene-image: url('https://images.unsplash.com/photo-1778050203444-90920c7a5652?auto=format&fit=crop&w=2200&q=74');
   --pbe-scene-position: center 48%;
-  --pbe-scene-opacity: .23;
-  --pbe-scene-filter: grayscale(18%) saturate(76%) brightness(.77) contrast(1.08);
+  --pbe-scene-opacity: .31;
+  --pbe-scene-filter: grayscale(14%) saturate(86%) brightness(.92) contrast(1.05);
   --pbe-scene-orb-one: rgba(212,175,55,.10);
   --pbe-scene-orb-two: rgba(193,39,61,.055);
 }
@@ -28,8 +28,8 @@ body[data-pbe-scene='mlb'] {
 body[data-pbe-scene='nfl'] {
   --pbe-scene-image: url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=2200&q=74');
   --pbe-scene-position: center 44%;
-  --pbe-scene-opacity: .22;
-  --pbe-scene-filter: grayscale(34%) saturate(58%) brightness(.68) contrast(1.12);
+  --pbe-scene-opacity: .30;
+  --pbe-scene-filter: grayscale(28%) saturate(70%) brightness(.86) contrast(1.08);
   --pbe-scene-orb-one: rgba(212,175,55,.085);
   --pbe-scene-orb-two: rgba(154,134,94,.05);
 }
@@ -37,8 +37,8 @@ body[data-pbe-scene='nfl'] {
 body[data-pbe-scene='nba'] {
   --pbe-scene-image: url('https://images.unsplash.com/photo-1771882856158-c8e083134ee3?auto=format&fit=crop&w=2200&q=74');
   --pbe-scene-position: center 43%;
-  --pbe-scene-opacity: .215;
-  --pbe-scene-filter: grayscale(40%) sepia(8%) saturate(70%) brightness(.69) contrast(1.10);
+  --pbe-scene-opacity: .295;
+  --pbe-scene-filter: grayscale(32%) sepia(6%) saturate(78%) brightness(.87) contrast(1.07);
   --pbe-scene-orb-one: rgba(212,175,55,.105);
   --pbe-scene-orb-two: rgba(193,39,61,.045);
 }
@@ -46,8 +46,8 @@ body[data-pbe-scene='nba'] {
 body[data-pbe-scene='nhl'] {
   --pbe-scene-image: url('https://images.unsplash.com/photo-1614239039918-3653d97bf483?auto=format&fit=crop&w=2200&q=74');
   --pbe-scene-position: center 47%;
-  --pbe-scene-opacity: .215;
-  --pbe-scene-filter: grayscale(42%) saturate(52%) brightness(.70) contrast(1.12);
+  --pbe-scene-opacity: .295;
+  --pbe-scene-filter: grayscale(34%) saturate(66%) brightness(.88) contrast(1.08);
   --pbe-scene-orb-one: rgba(212,175,55,.08);
   --pbe-scene-orb-two: rgba(214,224,230,.035);
 }
@@ -66,11 +66,11 @@ body::after {
   background-image:
     radial-gradient(ellipse 62% 42% at 14% 4%, var(--pbe-scene-orb-one), transparent 52%),
     radial-gradient(ellipse 52% 38% at 88% 12%, var(--pbe-scene-orb-two), transparent 58%),
-    linear-gradient(180deg, rgba(20,17,13,.05) 0%, rgba(20,17,13,.16) 58%, rgba(20,17,13,.32) 100%) !important;
+    linear-gradient(180deg, rgba(20,17,13,.025) 0%, rgba(20,17,13,.10) 58%, rgba(20,17,13,.22) 100%) !important;
 }
 
 body.pbe-scene-transition::before {
-  opacity: .08 !important;
+  opacity: .14 !important;
 }
 
 /* Compact masthead control. It reads like publication chrome, not a settings
