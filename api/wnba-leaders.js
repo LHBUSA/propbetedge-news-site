@@ -1,4 +1,5 @@
 const ESPN_WNBA_LEADERS = 'https://site.api.espn.com/apis/site/v3/sports/basketball/wnba/leaders';
+const PBE_WNBA_API = 'https://wnba-api.propbetedge.ai';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -16,32 +17,104 @@ export default async function handler(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
 
   try {
-    const response = await fetch(`${ESPN_WNBA_LEADERS}?season=${season}&seasontype=2`, {
-      headers: { accept: 'application/json' },
-    });
-    if (!response.ok) throw new Error(`espn_wnba_leaders_${response.status}`);
+    const [espnResponse, winbaResponse, teamsResponse] = await Promise.all([
+      fetch(`${ESPN_WNBA_LEADERS}?season=${season}&seasontype=2`, {
+        headers: { accept: 'application/json' },
+      }),
+      fetch(`${PBE_WNBA_API}/v1/stats/winba`, {
+        headers: { accept: 'application/json' },
+      }).catch(() => null),
+      fetch(`${PBE_WNBA_API}/v1/teams`, {
+        headers: { accept: 'application/json' },
+      }).catch(() => null),
+    ]);
 
-    const raw = await response.json();
+    if (!espnResponse.ok) throw new Error(`espn_wnba_leaders_${espnResponse.status}`);
+
+    const raw = await espnResponse.json();
     const root = raw?.leaders || raw;
     const categories = Array.isArray(root?.categories) ? root.categories : [];
+
+    const normalized = categories.map((category) => ({
+      name: category?.name || '',
+      displayName: category?.displayName || '',
+      abbreviation: category?.abbreviation || '',
+      leaders: (Array.isArray(category?.leaders) ? category.leaders : []).map((leader) => ({
+        displayValue: leader?.displayValue ?? null,
+        value: leader?.value ?? null,
+        athlete: normalizeAthlete(leader?.athlete),
+        team: normalizeTeam(leader?.team || leader?.athlete?.team),
+      })),
+    }));
+
+    let winba = null;
+    if (winbaResponse?.ok) {
+      const payload = await winbaResponse.json().catch(() => null);
+      const snapshot = payload?.ok ? payload.data : null;
+      const snapshotSeason = Number(snapshot?.season);
+      if (snapshot?.status === 'AVAILABLE' && Array.isArray(snapshot?.rows) && snapshotSeason === season) {
+        let teams = [];
+        if (teamsResponse?.ok) {
+          const tp = await teamsResponse.json().catch(() => null);
+          teams = Array.isArray(tp?.data?.teams) ? tp.data.teams : [];
+        }
+        const teamById = new Map(teams.map((team) => [String(team.team_id), team]));
+        const qualified = snapshot.rows
+          .filter((row) => row?.qualified && Number.isFinite(Number(row?.score)))
+          .sort((a, b) => Number(a.rank ?? Infinity) - Number(b.rank ?? Infinity) || Number(b.score) - Number(a.score))
+          .slice(0, 10);
+
+        normalized.unshift({
+          name: 'winbaScore',
+          displayName: 'PropBetEdge WinBA Score',
+          abbreviation: 'WINBA',
+          source: 'PropBetEdge',
+          leaders: qualified.map((row) => {
+            const team = teamById.get(String(row.team_id)) || null;
+            return {
+              displayValue: row.score,
+              value: row.score,
+              athlete: {
+                id: row.athlete_id || null,
+                displayName: row.name || null,
+                headshot: row.photo || null,
+                position: null,
+                jersey: null,
+                age: null,
+              },
+              team: team ? {
+                id: team.team_id || null,
+                abbreviation: team.abbr || null,
+                displayName: team.name || team.short_name || null,
+                logo: null,
+              } : null,
+              sample: row.sample || null,
+              components: row.components || null,
+              rank: row.rank || null,
+            };
+          }),
+        });
+
+        winba = {
+          version: snapshot.version || null,
+          generatedAt: snapshot.generated_at || null,
+          gamesUsed: snapshot.games_used ?? null,
+          qualifiedCount: snapshot.qualified_count ?? qualified.length,
+          provisionalCount: snapshot.provisional_count ?? null,
+          formula: snapshot.formula || null,
+          source: snapshot.source || 'PropBetEdge final-game archive derived from ESPN box scores',
+        };
+      }
+    }
 
     return res.status(200).json({
       sport: 'wnba',
       season,
       seasonType: 2,
-      source: 'ESPN',
+      source: winba ? 'ESPN + PropBetEdge WinBA' : 'ESPN',
       generatedAt: new Date().toISOString(),
-      categories: categories.map((category) => ({
-        name: category?.name || '',
-        displayName: category?.displayName || '',
-        abbreviation: category?.abbreviation || '',
-        leaders: (Array.isArray(category?.leaders) ? category.leaders : []).map((leader) => ({
-          displayValue: leader?.displayValue ?? null,
-          value: leader?.value ?? null,
-          athlete: normalizeAthlete(leader?.athlete),
-          team: normalizeTeam(leader?.team || leader?.athlete?.team),
-        })),
-      })),
+      winba,
+      categories: normalized,
     });
   } catch (error) {
     console.error('[wnba-leaders]', error?.message || error);
