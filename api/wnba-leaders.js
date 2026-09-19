@@ -102,7 +102,7 @@ export default async function handler(req, res) {
           qualifiedCount: snapshot.qualified_count ?? qualified.length,
           provisionalCount: snapshot.provisional_count ?? null,
           formula: snapshot.formula || null,
-          source: snapshot.source || 'PropBetEdge final-game archive derived from ESPN box scores',
+          source: 'PropSports.PropTechUSA.ai + PropBetEdge final-game archive',
         };
       }
     }
@@ -111,7 +111,7 @@ export default async function handler(req, res) {
       sport: 'wnba',
       season,
       seasonType: 2,
-      source: winba ? 'ESPN + PropBetEdge WinBA' : 'ESPN',
+      source: winba ? 'PropSports.PropTechUSA.ai + PropBetEdge WinBA' : 'PropSports.PropTechUSA.ai',
       generatedAt: new Date().toISOString(),
       winba,
       categories: normalized,
