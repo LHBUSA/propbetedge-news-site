@@ -22,7 +22,7 @@ import {
   renderEmptyStatCard, renderPremiumStatCard, renderLeaderLoading,
   computeBABIP, computeISO, computeKPct, computeBBPct,
   fmtAvg, fmtPct, fmtDec, fmtInt,
-  renderLeaderLiveStatus, markLeaderUpdated, startLeaderAutoRefresh,
+  renderLeaderLiveStatus, markLeaderUpdated, startLeaderAutoRefresh, renderPropSportsLink,
 } from './leaders-shared.js';
 
 let _activeType = 'batting'; // batting | pitching | advanced
@@ -417,7 +417,7 @@ const PREMIUM_CATS = [
 
 // ─── Mount ──────────────────────────────────────────────────────────────
 export async function renderMlbLeadersPage(root) {
-  const dek = 'Batting, pitching, and advanced sabermetrics — sourced from PropSports.PropTechUSA.ai. Tap any player for detail.';
+  const dek = `Batting, pitching, and advanced sabermetrics — powered by ${renderPropSportsLink()}. Tap any player for detail.`;
   root.innerHTML = leadersPageShell('mlb', 'MLB', dek, `
     ${getEnhancedStyles()}
     <div class="leaders-subtabs">
@@ -583,8 +583,8 @@ async function loadAdvanced(body) {
   })).then((arr) => arr.filter(Boolean));
 
   const banner = useYear !== season
-    ? `<div class="leaders-banner">⚡ Showing ${useYear} season · advanced stats computed from PropSports.PropTechUSA.ai · qualified hitters only.</div>`
-    : `<div class="leaders-banner">⚡ Advanced stats computed from PropSports.PropTechUSA.ai · top 30 by OPS qualifying.</div>`;
+    ? `<div class="leaders-banner">⚡ Showing ${useYear} season · advanced stats computed through ${renderPropSportsLink()} · qualified hitters only.</div>`
+    : `<div class="leaders-banner">⚡ Advanced stats computed through ${renderPropSportsLink()} · top 30 by OPS qualifying.</div>`;
 
   body.innerHTML = `
     ${banner}
