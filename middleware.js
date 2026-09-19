@@ -237,6 +237,31 @@ async function resolveMeta(pathname) {
     };
   }
 
+  // Permanent game/event pages: server-resolved metadata, SportsEvent schema,
+  // and crawlable matchup content for every supported league.
+  const gameMatch = pathname.match(/^\/games\/(mlb|nfl|nba|nhl)\/(\d+)$/);
+  if (gameMatch) {
+    const sport = gameMatch[1];
+    const gameId = gameMatch[2];
+    const game = await resolveGameMeta(sport, gameId).catch(() => ({ unavailable: true }));
+    if (game?.notFound) return notFoundMeta(pathname, 'Game not found');
+    if (!game || game?.unavailable) return serviceUnavailableMeta(pathname, 'Game data temporarily unavailable');
+
+    const canonical = `${SITE}/games/${sport}/${gameId}`;
+    const title = `${game.away.name} at ${game.home.name} — ${SPORT_LABELS[sport]} Game Center | PropBetEdge`;
+    const description = buildGameDescription(game, sport);
+
+    return {
+      canonical,
+      title,
+      description,
+      image: game.image || `${SITE}/logo/pbe-full-600.png`,
+      robots: DEFAULT_ROBOTS,
+      jsonLd: buildGameSchema(game, sport, canonical),
+      ssrHtml: buildServerGameHtml(game, sport, canonical),
+    };
+  }
+
   const standingsMatch = pathname.match(/^\/standings\/(mlb|nfl|nba|nhl)$/);
   if (standingsMatch) {
     const sport = standingsMatch[1];
@@ -698,6 +723,194 @@ function formatServerDate(value) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return '';
   return date.toISOString().slice(0, 10);
+}
+
+async function resolveGameMeta(sport, gameId) {
+  if (!/^\d{1,12}$/.test(String(gameId))) return { notFound: true };
+
+  if (sport === 'mlb') {
+    const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?gamePks=${encodeURIComponent(gameId)}&hydrate=team,venue,linescore,probablePitcher`);
+    if (res.status === 404 || res.status === 400) return { notFound: true };
+    if (!res.ok) return { unavailable: true };
+    const data = await res.json();
+    const game = (data?.dates || []).flatMap((row) => row?.games || [])[0];
+    if (!game) return { notFound: true };
+
+    const away = game?.teams?.away || {};
+    const home = game?.teams?.home || {};
+    return {
+      id: String(game.gamePk || gameId),
+      startDate: game.gameDate || null,
+      status: game?.status?.abstractGameState || game?.status?.detailedState || '',
+      statusDetail: game?.status?.detailedState || '',
+      venue: game?.venue?.name || '',
+      away: {
+        id: away?.team?.id || null,
+        name: away?.team?.name || 'Away Team',
+        abbreviation: away?.team?.abbreviation || '',
+        score: away?.score ?? null,
+        winner: away?.isWinner === true,
+        image: away?.team?.id ? `https://www.mlbstatic.com/team-logos/${away.team.id}.svg` : null,
+      },
+      home: {
+        id: home?.team?.id || null,
+        name: home?.team?.name || 'Home Team',
+        abbreviation: home?.team?.abbreviation || '',
+        score: home?.score ?? null,
+        winner: home?.isWinner === true,
+        image: home?.team?.id ? `https://www.mlbstatic.com/team-logos/${home.team.id}.svg` : null,
+      },
+      image: home?.team?.id ? `https://www.mlbstatic.com/team-logos/${home.team.id}.svg` : null,
+    };
+  }
+
+  if (sport === 'nhl') {
+    const res = await fetch(`https://api-web.nhle.com/v1/gamecenter/${encodeURIComponent(gameId)}/landing`);
+    if (res.status === 404 || res.status === 400) return { notFound: true };
+    if (!res.ok) return { unavailable: true };
+    const game = await res.json();
+    if (!game?.homeTeam || !game?.awayTeam) return { notFound: true };
+
+    const nhlTeam = (team, fallback) => ({
+      id: team?.id || null,
+      name: [
+        team?.placeName?.default,
+        team?.commonName?.default,
+      ].filter(Boolean).join(' ') || team?.name?.default || fallback,
+      abbreviation: team?.abbrev || '',
+      score: team?.score ?? null,
+      winner: false,
+      image: team?.logo || null,
+    });
+
+    return {
+      id: String(game.id || gameId),
+      startDate: game.startTimeUTC || null,
+      status: game.gameState || '',
+      statusDetail: game.gameScheduleState || game.gameState || '',
+      venue: game?.venue?.default || '',
+      away: nhlTeam(game.awayTeam, 'Away Team'),
+      home: nhlTeam(game.homeTeam, 'Home Team'),
+      image: game?.homeTeam?.logo || game?.awayTeam?.logo || null,
+    };
+  }
+
+  const api = SPORT_API[sport];
+  if (!api) return { notFound: true };
+  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${api.category}/${api.league}/summary?event=${encodeURIComponent(gameId)}`);
+  if (res.status === 404 || res.status === 400) return { notFound: true };
+  if (!res.ok) return { unavailable: true };
+  const data = await res.json();
+  const competition = data?.header?.competitions?.[0];
+  if (!competition) return { notFound: true };
+  const competitors = competition.competitors || [];
+  const homeRaw = competitors.find((row) => row?.homeAway === 'home') || competitors[0];
+  const awayRaw = competitors.find((row) => row?.homeAway === 'away') || competitors[1];
+  if (!homeRaw?.team || !awayRaw?.team) return { notFound: true };
+
+  const espnTeam = (row, fallback) => ({
+    id: row?.team?.id || row?.id || null,
+    name: row?.team?.displayName || row?.team?.shortDisplayName || row?.team?.name || fallback,
+    abbreviation: row?.team?.abbreviation || '',
+    score: row?.score ?? null,
+    winner: row?.winner === true,
+    image: row?.team?.logos?.[0]?.href || row?.team?.logo || null,
+  });
+
+  return {
+    id: String(data?.header?.id || gameId),
+    startDate: competition?.date || data?.header?.competitions?.[0]?.date || null,
+    status: competition?.status?.type?.state || competition?.status?.type?.description || '',
+    statusDetail: competition?.status?.type?.shortDetail || competition?.status?.type?.detail || '',
+    venue: competition?.venue?.fullName || competition?.venue?.name || '',
+    away: espnTeam(awayRaw, 'Away Team'),
+    home: espnTeam(homeRaw, 'Home Team'),
+    image: homeRaw?.team?.logos?.[0]?.href || awayRaw?.team?.logos?.[0]?.href || null,
+  };
+}
+
+function buildGameDescription(game, sport) {
+  const scoreKnown = game.away.score != null && game.home.score != null
+    && String(game.away.score) !== '' && String(game.home.score) !== '';
+  const score = scoreKnown ? ` Score: ${game.away.name} ${game.away.score}, ${game.home.name} ${game.home.score}.` : '';
+  const status = game.statusDetail || game.status;
+  return `${game.away.name} at ${game.home.name} ${SPORT_LABELS[sport]} game center with matchup, score, status and connected PropBetEdge intelligence.${score}${status ? ` Status: ${status}.` : ''}`;
+}
+
+function buildGameSchema(game, sport, canonical) {
+  const status = String(game.status || '').toLowerCase();
+  let eventStatus = 'https://schema.org/EventScheduled';
+  if (status.includes('post') || status.includes('final') || status.includes('off')) {
+    eventStatus = 'https://schema.org/EventCompleted';
+  } else if (status.includes('cancel')) {
+    eventStatus = 'https://schema.org/EventCancelled';
+  } else if (status.includes('postpone')) {
+    eventStatus = 'https://schema.org/EventPostponed';
+  }
+
+  const teamNode = (team) => ({
+    '@type': 'SportsTeam',
+    name: team.name,
+    url: `${SITE}/team/${sport}/${slugify(team.name)}`,
+    image: team.image || undefined,
+  });
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    '@id': `${canonical}#event`,
+    url: canonical,
+    name: `${game.away.name} at ${game.home.name}`,
+    description: buildGameDescription(game, sport),
+    startDate: game.startDate || undefined,
+    eventStatus,
+    homeTeam: teamNode(game.home),
+    awayTeam: teamNode(game.away),
+    location: game.venue ? { '@type': 'Place', name: game.venue } : undefined,
+    organizer: {
+      '@type': 'SportsOrganization',
+      name: SPORT_LABELS[sport],
+    },
+    isAccessibleForFree: true,
+  };
+}
+
+function buildServerGameHtml(game, sport, canonical) {
+  const scoreKnown = game.away.score != null && game.home.score != null
+    && String(game.away.score) !== '' && String(game.home.score) !== '';
+  const status = game.statusDetail || game.status || '';
+  const when = game.startDate ? formatServerDateTime(game.startDate) : '';
+
+  const team = (side, label) => `<section>
+    ${side.image ? `<img src="${escapeAttr(side.image)}" alt="${escapeAttr(side.name)}" width="160" />` : ''}
+    <p>${label}</p>
+    <h2><a href="/team/${sport}/${slugify(side.name)}">${escapeHtml(side.name)}</a></h2>
+    ${scoreKnown ? `<p>Score: <strong>${escapeHtml(String(side.score))}</strong></p>` : ''}
+  </section>`;
+
+  return `<main class="pbe-ssr-game" data-server-rendered="1">
+    <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; <a href="/games">Games</a> &rsaquo; ${SPORT_LABELS[sport]}</nav>
+    <article>
+      <header>
+        <p>${SPORT_LABELS[sport]} Game Center</p>
+        <h1>${escapeHtml(game.away.name)} at ${escapeHtml(game.home.name)}</h1>
+        ${when ? `<time datetime="${escapeAttr(game.startDate)}">${escapeHtml(when)}</time>` : ''}
+        ${status ? `<p>${escapeHtml(status)}</p>` : ''}
+        ${game.venue ? `<p>${escapeHtml(game.venue)}</p>` : ''}
+      </header>
+      <div>
+        ${team(game.away, 'Away')}
+        ${team(game.home, 'Home')}
+      </div>
+      <p><a href="${escapeAttr(canonical)}">Permanent game page</a> · <a href="/news/${sport}">Latest ${SPORT_LABELS[sport]} news</a></p>
+    </article>
+  </main>`;
+}
+
+function formatServerDateTime(value) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  return date.toISOString().replace('T', ' ').replace(/\.000Z$/, ' UTC');
 }
 
 function buildPlayerSchema(name, sport, canonical, image) {
