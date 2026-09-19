@@ -15,7 +15,7 @@
  */
 
 import { next } from '@vercel/edge';
-import { assessArticleIntegrity, applyArticlePublicationPolicy } from './news-integrity.js';
+import { assessArticleIntegrity, applyArticlePublicationPolicy, filterPublicArticles } from './news-integrity.js';
 
 export const config = {
   matcher: [
@@ -45,6 +45,12 @@ const AUTHOR_META = {
 export default async function middleware(request) {
   const url = new URL(request.url);
   const pathname = url.pathname.replace(/\/+$/, '') || '/';
+
+  // Collapse duplicate page-1 archive URLs before any rendering work.
+  const newsPageOne = pathname === '/news/page/1';
+  const sportPageOne = pathname.match(/^\/news\/(mlb|nfl|nba|nhl)\/page\/1$/);
+  if (newsPageOne) return Response.redirect(`${SITE}/news`, 308);
+  if (sportPageOne) return Response.redirect(`${SITE}/news/${sportPageOne[1]}`, 308);
 
   const meta = await resolveMeta(pathname);
   if (!meta) return next();
@@ -83,40 +89,23 @@ async function resolveMeta(pathname) {
     };
   }
 
-  // News index — page 1
+  // News index — server-visible archive listing.
   if (pathname === '/news') {
-    return {
-      canonical: `${SITE}/news`,
-      title: 'Latest Sports News — PropBetEdge',
-      description: 'Breaking sports news with AI prop-bet impact analysis across MLB, NFL, NBA, and NHL.',
-      image: `${SITE}/logo/pbe-full-600.png`,
-    };
+    return buildNewsListingMeta({ page: 1 });
   }
 
   // News index pagination: every page is a distinct crawl path into older stories.
   const newsPagedMatch = pathname.match(/^\/news\/page\/(\d+)$/);
   if (newsPagedMatch) {
     const page = parseInt(newsPagedMatch[1], 10);
-    return {
-      canonical: `${SITE}/news/page/${page}`,
-      title: `Latest Sports News (Page ${page}) — PropBetEdge`,
-      description: `Page ${page} of PropBetEdge sports news and analysis across MLB, NFL, NBA, and NHL.`,
-      image: `${SITE}/logo/pbe-full-600.png`,
-      robots: DEFAULT_ROBOTS,
-    };
+    if (page < 1) return notFoundMeta(pathname, 'News page not found');
+    return buildNewsListingMeta({ page });
   }
 
-  // Sport pages — page 1
+  // Sport pages — server-visible league archive.
   const sportMatch = pathname.match(/^\/news\/(mlb|nfl|nba|nhl)$/);
   if (sportMatch) {
-    const sport = sportMatch[1];
-    const label = SPORT_LABELS[sport];
-    return {
-      canonical: `${SITE}/news/${sport}`,
-      title: `${label} News — PropBetEdge`,
-      description: `Latest ${label} news with AI prop-bet impact analysis.`,
-      image: `${SITE}/logo/pbe-full-600.png`,
-    };
+    return buildNewsListingMeta({ sport: sportMatch[1], page: 1 });
   }
 
   // Sport pagination: self-canonical and indexable so older articles stay linked.
@@ -124,14 +113,8 @@ async function resolveMeta(pathname) {
   if (sportPagedMatch) {
     const sport = sportPagedMatch[1];
     const page = parseInt(sportPagedMatch[2], 10);
-    const label = SPORT_LABELS[sport];
-    return {
-      canonical: `${SITE}/news/${sport}/page/${page}`,
-      title: `${label} News (Page ${page}) — PropBetEdge`,
-      description: `Page ${page} of ${label} news, player updates, game context and PropBetEdge analysis.`,
-      image: `${SITE}/logo/pbe-full-600.png`,
-      robots: DEFAULT_ROBOTS,
-    };
+    if (page < 1) return notFoundMeta(pathname, 'News page not found');
+    return buildNewsListingMeta({ sport, page });
   }
 
   // Individual articles — fetch from the internal news API so crawlers receive
@@ -469,6 +452,159 @@ function escapeHtml(s) {
     .replace(/>/g, '&gt;');
 }
 
+
+async function buildNewsListingMeta({ sport = null, page = 1 }) {
+  const label = sport ? SPORT_LABELS[sport] : 'Sports';
+  const path = sport
+    ? `/news/by-sport/${encodeURIComponent(sport)}?limit=12&page=${page}`
+    : `/news?limit=12&page=${page}`;
+  const requestPath = sport
+    ? (page === 1 ? `/news/${sport}` : `/news/${sport}/page/${page}`)
+    : (page === 1 ? '/news' : `/news/page/${page}`);
+
+  let data;
+  try {
+    const res = await fetchInternalNews(path, requestPath);
+    if (!res.ok) return serviceUnavailableMeta(requestPath, 'News archive temporarily unavailable');
+    data = await res.json();
+  } catch (error) {
+    console.warn('[seo middleware] news listing fetch failed', requestPath, error);
+    return serviceUnavailableMeta(requestPath, 'News archive temporarily unavailable');
+  }
+
+  const totalPages = Number(data?.totalPages || 0);
+  if (page > 1 && totalPages > 0 && page > totalPages) {
+    return notFoundMeta(requestPath, 'News page not found');
+  }
+
+  const articles = filterPublicArticles(data?.articles || []);
+  if (page > 1 && !articles.length && data?.hasMore === false) {
+    return notFoundMeta(requestPath, 'News page not found');
+  }
+
+  const canonical = `${SITE}${requestPath}`;
+  const title = sport
+    ? (page === 1 ? `${label} News — PropBetEdge` : `${label} News (Page ${page}) — PropBetEdge`)
+    : (page === 1 ? 'Latest Sports News — PropBetEdge' : `Latest Sports News (Page ${page}) — PropBetEdge`);
+  const description = sport
+    ? (page === 1
+      ? `Latest ${label} news, player updates, game context and PropBetEdge sports intelligence.`
+      : `Page ${page} of ${label} news, player updates, game context and PropBetEdge analysis.`)
+    : (page === 1
+      ? 'Latest sports news and PropBetEdge analysis across MLB, NFL, NBA, and NHL.'
+      : `Page ${page} of PropBetEdge sports news and analysis across MLB, NFL, NBA, and NHL.`);
+
+  return {
+    canonical,
+    title,
+    description,
+    image: articles[0]?.image_url || `${SITE}/logo/pbe-full-600.png`,
+    robots: DEFAULT_ROBOTS,
+    jsonLd: buildNewsCollectionSchema({ sport, page, canonical, title, description, articles }),
+    ssrHtml: buildServerNewsListingHtml({ sport, page, articles, totalPages, canonical }),
+  };
+}
+
+function buildNewsCollectionSchema({ sport, page, canonical, title, description, articles }) {
+  const itemList = articles.map((article, index) => {
+    const articleSport = String(article?.sport || sport || '').toLowerCase();
+    if (!SPORT_LABELS[articleSport] || !article?.slug) return null;
+    return {
+      '@type': 'ListItem',
+      position: index + 1,
+      url: `${SITE}/news/${articleSport}/${article.slug}`,
+      name: article.title || 'PropBetEdge News',
+    };
+  }).filter(Boolean);
+
+  const breadcrumbs = [
+    { '@type': 'ListItem', position: 1, name: 'PropBetEdge', item: `${SITE}/` },
+    { '@type': 'ListItem', position: 2, name: 'News', item: `${SITE}/news` },
+  ];
+  if (sport) {
+    breadcrumbs.push({
+      '@type': 'ListItem',
+      position: 3,
+      name: `${SPORT_LABELS[sport]} News`,
+      item: `${SITE}/news/${sport}`,
+    });
+  }
+  if (page > 1) {
+    breadcrumbs.push({
+      '@type': 'ListItem',
+      position: breadcrumbs.length + 1,
+      name: `Page ${page}`,
+      item: canonical,
+    });
+  }
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        '@id': `${canonical}#page`,
+        url: canonical,
+        name: title,
+        description,
+        isPartOf: { '@id': `${SITE}/#website` },
+        publisher: { '@id': `${SITE}/#organization` },
+        mainEntity: {
+          '@type': 'ItemList',
+          itemListOrder: 'https://schema.org/ItemListOrderDescending',
+          numberOfItems: itemList.length,
+          itemListElement: itemList,
+        },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: breadcrumbs,
+      },
+    ],
+  };
+}
+
+function buildServerNewsListingHtml({ sport, page, articles, totalPages, canonical }) {
+  const label = sport ? `${SPORT_LABELS[sport]} News` : 'Latest Sports News';
+  const storyRows = articles.map((article) => {
+    const articleSport = String(article?.sport || sport || '').toLowerCase();
+    if (!SPORT_LABELS[articleSport] || !article?.slug) return '';
+    const href = `/news/${articleSport}/${article.slug}`;
+    const summary = article.summary || article.take?.summary || '';
+    const published = article.published_at ? formatServerDate(article.published_at) : '';
+    return `<li>
+      <article>
+        ${article.image_url ? `<a href="${escapeAttr(href)}"><img src="${escapeAttr(article.image_url)}" alt="" width="480" loading="lazy" /></a>` : ''}
+        <p>${SPORT_LABELS[articleSport]}${published ? ` · ${escapeHtml(published)}` : ''}</p>
+        <h2><a href="${escapeAttr(href)}">${escapeHtml(article.title || 'PropBetEdge News')}</a></h2>
+        ${summary ? `<p>${escapeHtml(summary)}</p>` : ''}
+      </article>
+    </li>`;
+  }).filter(Boolean).join('');
+
+  const prev = page > 1
+    ? (page === 2
+      ? (sport ? `/news/${sport}` : '/news')
+      : (sport ? `/news/${sport}/page/${page - 1}` : `/news/page/${page - 1}`))
+    : null;
+  const next = totalPages > page
+    ? (sport ? `/news/${sport}/page/${page + 1}` : `/news/page/${page + 1}`)
+    : null;
+
+  return `<main class="pbe-ssr-news-index" data-server-rendered="1">
+    <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; ${sport ? `<a href="/news">News</a> &rsaquo; ${SPORT_LABELS[sport]}` : 'News'}</nav>
+    <header>
+      <p>PropBetEdge Newsroom</p>
+      <h1>${escapeHtml(label)}${page > 1 ? ` — Page ${page}` : ''}</h1>
+    </header>
+    <ol>${storyRows}</ol>
+    <nav aria-label="News pagination">
+      ${prev ? `<a rel="prev" href="${escapeAttr(prev)}">← Newer stories</a>` : ''}
+      ${next ? `<a rel="next" href="${escapeAttr(next)}">Older stories →</a>` : ''}
+    </nav>
+    <p><a href="${escapeAttr(canonical)}">Permanent archive page</a></p>
+  </main>`;
+}
 
 function fetchInternalNews(path, requestPath = '/news') {
   return fetch(`${NEWS_API}${path}`, {
