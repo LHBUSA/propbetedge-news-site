@@ -188,6 +188,7 @@ async function resolveMeta(pathname) {
     const sport = teamMatch[1];
     const slug = teamMatch[2];
     const entity = await resolveTeamMeta(sport, slug).catch(() => null);
+    if (entity?.notFound) return notFoundMeta(pathname, 'Team not found');
     const name = entity?.name || titleFromSlug(slug);
     const canonical = `${SITE}/team/${sport}/${slug}`;
     return {
@@ -508,7 +509,7 @@ function buildArticleSchema(article, sport, canonical) {
 
 async function resolveTeamMeta(sport, slug) {
   const api = SPORT_API[sport];
-  if (!api) return null;
+  if (!api) return { notFound: true };
   const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${api.category}/${api.league}/teams?limit=100`);
   if (!res.ok) return null;
   const data = await res.json();
@@ -523,7 +524,7 @@ async function resolveTeamMeta(sport, slug) {
     ].filter(Boolean).map(slugify);
     return names.includes(target);
   });
-  if (!team) return null;
+  if (!team) return { notFound: true };
   return {
     name: team.displayName || team.shortDisplayName || titleFromSlug(slug),
     image: team.logos?.[0]?.href || null,
@@ -531,7 +532,7 @@ async function resolveTeamMeta(sport, slug) {
 }
 
 async function resolvePlayerMeta(sport, id) {
-  if (!/^\d+$/.test(String(id))) return null;
+  if (!/^\d+$/.test(String(id))) return { notFound: true };
 
   if (sport === 'mlb') {
     const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${encodeURIComponent(id)}`);
