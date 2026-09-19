@@ -103,7 +103,7 @@ async function loadData({ force = false } = {}) {
 
 async function fetchSeason(season) {
   try {
-    const response = await fetch(`/api/nba-leaders?season=${season}&t=${Date.now()}`, {
+    const response = await fetch(`/api/nba-leaders?season=${season}`, {
       cache: 'no-store',
       credentials: 'omit',
     });
