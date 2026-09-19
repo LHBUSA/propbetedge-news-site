@@ -3401,6 +3401,48 @@ img { max-width: 100%; height: auto; }
   box-shadow: 0 2px 8px rgba(20, 17, 13, 0.2);
 }
 
+.leaders-live-refresh {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 18px;
+  padding: 10px 14px;
+  border: 1px solid rgba(20,17,13,.08);
+  border-radius: 9px;
+  background: rgba(255,255,255,.72);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .03em;
+  color: rgba(20,17,13,.62);
+}
+.leaders-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 800;
+  color: #a51d1d;
+  letter-spacing: .08em;
+}
+.leaders-live-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e13d3d;
+  box-shadow: 0 0 0 0 rgba(225,61,61,.55);
+  animation: leadersLivePulse 1.8s infinite;
+}
+.leaders-live-cadence { margin-left: auto; }
+@keyframes leadersLivePulse {
+  0% { box-shadow: 0 0 0 0 rgba(225,61,61,.5); }
+  70% { box-shadow: 0 0 0 7px rgba(225,61,61,0); }
+  100% { box-shadow: 0 0 0 0 rgba(225,61,61,0); }
+}
+@media (max-width: 720px) {
+  .leaders-live-refresh { align-items: flex-start; gap: 7px 10px; }
+  .leaders-live-cadence { margin-left: 0; width: 100%; }
+}
+
 /* ── Sub-tabs (Batting/Pitching, Skaters/Goalies) ─────────────────── */
 .leaders-subtabs {
   display: flex;
