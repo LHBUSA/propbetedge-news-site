@@ -55,7 +55,7 @@ async function loadData({ force = false } = {}) {
   if (_loading) return _loading;
 
   const season = new Date().getFullYear();
-  _loading = fetch(`/api/wnba-leaders?season=${season}&t=${Date.now()}`, {
+  _loading = fetch(`/api/wnba-leaders?season=${season}`, {
     cache: 'no-store',
     credentials: 'omit',
   })
