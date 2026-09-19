@@ -10,6 +10,7 @@ export default function handler(req, res) {
     '',
     'User-agent: Googlebot-News',
     'Allow: /news/',
+    'Disallow: /api/',
     '',
     'Sitemap: https://propbetedge.ai/sitemap.xml',
     'Sitemap: https://propbetedge.ai/news-sitemap.xml',
