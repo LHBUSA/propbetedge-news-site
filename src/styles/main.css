@@ -7045,3 +7045,224 @@ a.leaders-sport-tab.active,
     transform: scale(1.08);
   }
 }
+
+
+/* v3.24 — Compact avatar cards: final media authority */
+.free-edge-card.has-media,
+.free-edge-card.is-hr-spotlight {
+  display: flex !important;
+  grid-column: auto !important;
+  grid-template-columns: none !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+.free-edge-card.is-hr-spotlight {
+  background:
+    radial-gradient(circle at 8% 12%, rgba(245,166,35,.08), transparent 30%),
+    linear-gradient(145deg, rgba(30,25,18,.98), rgba(14,12,10,.98));
+}
+
+.free-edge-card-body {
+  gap: 14px !important;
+  padding: 16px 18px !important;
+}
+
+.free-edge-compact-head {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.free-edge-avatar-wrap {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.free-edge-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255,255,255,.07), transparent 68%),
+    rgba(255,255,255,.025);
+  box-shadow: 0 7px 18px rgba(0,0,0,.22);
+}
+
+.free-edge-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.free-edge-avatar.is-headshot img {
+  object-fit: cover;
+  object-position: center 26%;
+}
+
+.free-edge-card[data-sport="ufc"] .free-edge-avatar.is-headshot img {
+  object-position: center 34%;
+  transform: scale(1.04);
+  transform-origin: center center;
+}
+
+.free-edge-avatar.is-team-logo {
+  width: 52px;
+  height: 52px;
+  padding: 8px;
+}
+
+.free-edge-avatar.is-team-logo img {
+  inset: 8px;
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+  object-fit: contain;
+}
+
+.free-edge-avatar-fallback {
+  position: relative;
+  z-index: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  color: rgba(245,241,235,.42);
+}
+
+.free-edge-avatar.is-team-logo .free-edge-avatar-fallback {
+  font-size: 20px;
+}
+
+.free-edge-avatar-credit {
+  max-width: 64px;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 6px;
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--paper-faint);
+}
+
+.free-edge-identity {
+  min-width: 0;
+}
+
+.free-edge-identity .free-edge-eyebrow {
+  display: block;
+  max-width: none;
+  margin-bottom: 4px;
+}
+
+.free-edge-identity .free-edge-main h3 {
+  margin: 0 0 3px;
+  font-size: clamp(19px, 2.1vw, 24px);
+  line-height: 1.04;
+}
+
+.free-edge-identity .free-edge-selection {
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.free-edge-identity .free-edge-context {
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.free-edge-compact-head .free-edge-odds {
+  align-self: start;
+  padding-top: 2px;
+}
+
+.free-edge-compact-head .free-edge-odds strong,
+.free-edge-card.is-hr-spotlight .free-edge-odds strong {
+  font-size: 18px;
+}
+
+.free-edge-metrics {
+  gap: 8px;
+  padding: 11px 0;
+}
+
+.free-edge-metrics strong {
+  font-size: 15px;
+}
+
+.free-edge-foot {
+  gap: 10px;
+}
+
+.free-edge-foot > span,
+.free-edge-foot a {
+  font-size: 8px;
+}
+
+/* Retire all legacy large media surfaces. */
+.free-edge-media,
+.free-edge-media-images,
+.free-edge-card.is-hr-spotlight .free-edge-media,
+.free-edge-card.is-hr-spotlight .free-edge-media-images {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  border: 0 !important;
+}
+
+@media (max-width: 640px) {
+  .free-edge-card-body {
+    padding: 14px !important;
+  }
+
+  .free-edge-compact-head {
+    grid-template-columns: 50px minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .free-edge-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .free-edge-avatar.is-team-logo {
+    width: 46px;
+    height: 46px;
+    padding: 7px;
+  }
+
+  .free-edge-avatar.is-team-logo img {
+    inset: 7px;
+    width: calc(100% - 14px);
+    height: calc(100% - 14px);
+  }
+
+  .free-edge-identity .free-edge-main h3 {
+    font-size: 18px;
+  }
+
+  .free-edge-identity .free-edge-selection {
+    font-size: 10px;
+  }
+
+  .free-edge-compact-head .free-edge-odds strong,
+  .free-edge-card.is-hr-spotlight .free-edge-odds strong {
+    font-size: 15px;
+  }
+
+  .free-edge-metrics strong {
+    font-size: 14px;
+  }
+}
