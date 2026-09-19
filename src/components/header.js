@@ -6,6 +6,8 @@ import { ad_header_banner, PROPBET_LINKS } from '../ads-config.js';
 import { renderScoreStripShell, mountScoreStrip } from './score-strip.js';
 
 const EV_FINDER_URL = 'https://propbetedge-ev-finder.sales-fd3.workers.dev/edges-today';
+const NFL_SAMPLE_URL = 'https://nfl.propbetedge.ai/api/pbe-picks?view=free-sample';
+const UFC_SAMPLE_URL = 'https://ufc.propbetedge.ai/api/ufc/free-sample';
 const UFC_API_BASE = 'https://ufc-api.propbetedge.ai/v1/ufc';
 const FIGHT_WEEK_CACHE_MS = 5 * 60 * 1000;
 let _edgeCountFetched = false;
@@ -167,10 +169,20 @@ function inferSport(path) {
 
 async function fetchEdgeCount() {
   try {
-    const r = await fetch(EV_FINDER_URL, { cache: 'no-store' });
-    if (!r.ok) return;
-    const data = await r.json();
-    const count = data.total_alerts || 0;
+    const results = await Promise.allSettled([
+      fetch(EV_FINDER_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
+      fetch(NFL_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
+      fetch(UFC_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
+    ]);
+    const body = (index) => results[index].status === 'fulfilled' ? results[index].value : null;
+    const mlb = body(0);
+    const nfl = body(1);
+    const ufc = body(2);
+    const count =
+      Math.min(2, Array.isArray(mlb?.edges) ? mlb.edges.length : 0)
+      + Math.min(2, Array.isArray(nfl?.picks) ? nfl.picks.length : 0)
+      + (ufc?.pick ? 1 : 0);
+
     const el = document.getElementById('edges-count');
     if (!el) return;
     if (count > 0) {
@@ -181,7 +193,7 @@ async function fetchEdgeCount() {
       el.classList.remove('has-edges');
     }
   } catch {
-    // Silent fail — count badge just won't appear
+    // Silent fail — the Edges link remains usable without a badge.
   }
 }
 
