@@ -4,7 +4,7 @@
  * v3.13 Drop 1 — NBA player profile via ESPN.
  *
  * APIs (parallel):
- *   https://site.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/{id}     — bio + season stats
+ *   https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/{id}     — bio + season stats
  *   https://site.api.espn.com/apis/site/v2/sports/basketball/nba/athletes/{id}/gamelog — game log
  */
 
@@ -19,7 +19,7 @@ export async function renderNbaPlayerPage(root, playerId, setMeta) {
 
   try {
     const [bioData, logData] = await Promise.all([
-      fetch(`https://site.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/${playerId}`)
+      fetch(`https://site.web.api.espn.com/apis/common/v3/sports/basketball/nba/athletes/${playerId}`)
         .then((r) => r.ok ? r.json() : null).catch(() => null),
       fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/athletes/${playerId}/gamelog`)
         .then((r) => r.ok ? r.json() : null).catch(() => null),
