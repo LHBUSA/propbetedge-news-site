@@ -19,6 +19,7 @@ export default async function handler(req, res) {
     if (type === 'index') return send(res, sitemapIndex());
     if (type === 'static') return send(res, staticSitemap());
     if (type === 'entities') return send(res, await entitySitemap());
+    if (type === 'players') return send(res, await playerSitemap(String(req.query?.sport || '').toLowerCase()));
     if (type === 'news') return send(res, await newsSitemap());
     if (type === 'articles') return send(res, await articleSitemap(req.query?.month));
     return res.status(404).send(xmlError('unknown_sitemap'));
@@ -34,6 +35,10 @@ function sitemapIndex() {
     ${sitemapRef('/sitemaps/news-current.xml', today)}
     ${sitemapRef('/sitemaps/static.xml', today)}
     ${sitemapRef('/sitemaps/entities.xml', today)}
+    ${sitemapRef('/sitemaps/players-mlb.xml', today)}
+    ${sitemapRef('/sitemaps/players-nfl.xml', today)}
+    ${sitemapRef('/sitemaps/players-nba.xml', today)}
+    ${sitemapRef('/sitemaps/players-nhl.xml', today)}
     ${sitemapRef('/sitemaps/articles.xml', today)}
   </sitemapindex>`);
 }
@@ -78,6 +83,91 @@ async function entitySitemap() {
     }
   }
   return urlset(entries.join('\n'));
+}
+
+async function playerSitemap(sport) {
+  if (!SPORTS[sport]) throw new Error('unsupported_player_sport');
+  let players = [];
+
+  if (sport === 'mlb') players = await fetchMlbPlayers();
+  else if (sport === 'nhl') players = await fetchNhlPlayers();
+  else players = await fetchEspnPlayers(sport);
+
+  const seen = new Set();
+  const body = players.map((player) => {
+    const id = String(player?.id || '').trim();
+    const name = String(player?.name || '').trim();
+    if (!/^\d+$/.test(id) || !name || seen.has(id)) return '';
+    seen.add(id);
+    return `<url><loc>${esc(`${SITE}/player/${sport}/${id}`)}</loc><changefreq>daily</changefreq><priority>0.68</priority></url>`;
+  }).filter(Boolean).join('\n');
+
+  return urlset(body);
+}
+
+async function fetchMlbPlayers() {
+  const season = new Date().getUTCFullYear();
+  const response = await fetch(`https://statsapi.mlb.com/api/v1/sports/1/players?season=${season}`);
+  if (!response.ok) throw new Error(`mlb_players_${response.status}`);
+  const data = await response.json();
+  return (data?.people || [])
+    .filter((person) => person?.id && person?.fullName && person?.active !== false)
+    .map((person) => ({ id: person.id, name: person.fullName }));
+}
+
+async function fetchEspnPlayers(sport) {
+  const config = SPORTS[sport];
+  const teams = await fetchTeams(config);
+  const out = [];
+
+  for (let start = 0; start < teams.length; start += 8) {
+    const batch = teams.slice(start, start + 8);
+    const results = await Promise.all(batch.map(async (team) => {
+      const id = team?.id;
+      if (!id) return [];
+      const response = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${config.category}/${config.league}/teams/${encodeURIComponent(id)}/roster`);
+      if (!response.ok) return [];
+      const data = await response.json();
+      const groups = Array.isArray(data?.athletes) ? data.athletes : [];
+      return groups.flatMap((group) => {
+        if (Array.isArray(group?.items)) return group.items;
+        if (Array.isArray(group?.athletes)) return group.athletes;
+        return group?.id ? [group] : [];
+      }).map((athlete) => ({
+        id: athlete?.id,
+        name: athlete?.fullName || athlete?.displayName,
+      }));
+    }));
+    for (const rows of results) out.push(...rows);
+  }
+  return out;
+}
+
+async function fetchNhlPlayers() {
+  const standingsResponse = await fetch('https://api-web.nhle.com/v1/standings/now');
+  if (!standingsResponse.ok) throw new Error(`nhl_standings_${standingsResponse.status}`);
+  const standings = await standingsResponse.json();
+  const abbreviations = [...new Set((standings?.standings || [])
+    .map((row) => row?.teamAbbrev?.default || row?.teamAbbrev)
+    .filter(Boolean))];
+
+  const out = [];
+  for (let start = 0; start < abbreviations.length; start += 8) {
+    const batch = abbreviations.slice(start, start + 8);
+    const results = await Promise.all(batch.map(async (abbr) => {
+      const response = await fetch(`https://api-web.nhle.com/v1/roster/${encodeURIComponent(abbr)}/current`);
+      if (!response.ok) return [];
+      const data = await response.json();
+      return ['forwards', 'defensemen', 'goalies']
+        .flatMap((key) => Array.isArray(data?.[key]) ? data[key] : [])
+        .map((player) => ({
+          id: player?.id,
+          name: `${player?.firstName?.default || ''} ${player?.lastName?.default || ''}`.trim(),
+        }));
+    }));
+    for (const rows of results) out.push(...rows);
+  }
+  return out;
 }
 
 async function newsSitemap() {
