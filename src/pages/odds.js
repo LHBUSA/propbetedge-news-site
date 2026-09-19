@@ -22,6 +22,7 @@ import {
 
 const MLB_EDGES_URL = 'https://propbetedge-ev-finder.sales-fd3.workers.dev/edges-today';
 const MLB_HR_SAMPLE_URL = '/api/mlb-hr-sample';
+const MLB_ODDS_CACHE_URL = 'https://propbetedge-odds-cache.sales-fd3.workers.dev';
 const NFL_SAMPLE_URL = 'https://nfl.propbetedge.ai/api/pbe-picks?view=free-sample';
 const UFC_SAMPLE_URL = 'https://ufc.propbetedge.ai/api/ufc/free-sample';
 const WNBA_SAMPLE_URL = 'https://wnba-api.propbetedge.ai/v1/pbe/free-sample';
@@ -120,8 +121,10 @@ async function loadAndRender() {
     fetchJson(NHL_SAMPLE_URL),
   ]);
 
+  const mlbOdds = await loadMlbOddsSnapshots(mlb, mlbHr);
+
   const payload = {
-    mlb: buildMlbSource(mlb, mlbHr),
+    mlb: buildMlbSource(mlb, mlbHr, mlbOdds),
     nfl: nfl.status === 'fulfilled' ? normalizeNfl(nfl.value) : sourceFailure('nfl', nfl.reason),
     ufc: ufc.status === 'fulfilled' ? normalizeUfc(ufc.value) : sourceFailure('ufc', ufc.reason),
     wnba: wnba.status === 'fulfilled' ? normalizeWnba(wnba.value) : sourceFailure('wnba', wnba.reason),
@@ -147,16 +150,17 @@ function sourceFailure(sport, error) {
   return { sport, cards: [], generatedAt: null, unavailable: true };
 }
 
-function buildMlbSource(edgeResult, hrResult) {
+function buildMlbSource(edgeResult, hrResult, oddsSnapshots = {}) {
   const edgeAvailable = edgeResult.status === 'fulfilled';
   const hrAvailable = hrResult.status === 'fulfilled';
-  const source = normalizeMlb(edgeAvailable ? edgeResult.value : {});
-  const hrCard = hrAvailable ? normalizeMlbHr(hrResult.value) : null;
+  const source = normalizeMlb(edgeAvailable ? edgeResult.value : {}, oddsSnapshots);
+  const hrCard = hrAvailable ? normalizeMlbHr(hrResult.value, oddsSnapshots.batter_home_runs) : null;
 
   if (hrCard) source.cards.push(hrCard);
   source.generatedAt = latestTimestamp([
     edgeAvailable ? edgeResult.value?.generated_at : null,
     hrAvailable ? hrResult.value?.generated_at : null,
+    ...Object.values(oddsSnapshots).map((snapshot) => snapshot?.cachedAt || snapshot?.snapshot?.captured_at || null),
   ]);
   source.unavailable = !edgeAvailable && !hrAvailable;
   source.stateTitle = source.cards.length ? null : 'No MLB sample right now';
@@ -167,7 +171,7 @@ function buildMlbSource(edgeResult, hrResult) {
   return source;
 }
 
-function normalizeMlbHr(data) {
+function normalizeMlbHr(data, oddsSnapshot) {
   const pick = data?.early_bird || data?.featured || null;
   if (!pick?.player_name) return null;
 
@@ -178,6 +182,9 @@ function normalizeMlbHr(data) {
     pick.opponent ? `vs ${pick.opponent}` : null,
     Number.isFinite(Number(pick.batting_order)) ? `Batting #${pick.batting_order}` : null,
   ].filter(Boolean).join(' · ');
+  const live = findBestMlbOffer(oddsSnapshot, 'batter_home_runs', pick.player_name, 0.5, 'Over');
+  const marketProbability = live?.fairProbability ?? live?.impliedProbability ?? null;
+  const snapshotStamp = oddsSnapshot?.cachedAt || oddsSnapshot?.snapshot?.captured_at || null;
 
   return {
     sport: 'mlb',
@@ -186,17 +193,19 @@ function normalizeMlbHr(data) {
     title: pick.player_name,
     selection: 'TO HIT A HOME RUN',
     context,
-    odds: 'PENDING',
-    oddsLabel: 'LIVE ODDS',
+    odds: live ? americanOdds(live.price) : 'PENDING',
+    oddsLabel: live ? (live.bookTitle || live.bookKey || 'LIVE ODDS') : 'LIVE ODDS',
     metrics: [
       { label: 'HR PROB', value: probabilityPct(pick.hr_probability) },
       { label: 'PBE SCORE', value: Number.isFinite(score) ? `${Math.round(score)}/100` : '—' },
-      { label: 'MARKET', value: 'Pending' },
+      { label: 'MARKET', value: live ? probabilityPct(marketProbability) : 'Pending' },
     ],
-    detail: early
-      ? '🐦 Early Bird · model spotlight before live market pricing'
-      : 'Published HR model target · live market pricing pending',
-    timestamp: data?.generated_at || null,
+    detail: live
+      ? `${early ? '🐦 Early Bird' : 'Published HR model target'} · live market matched${snapshotStamp ? ` · ${formatRelativeStamp(snapshotStamp)}` : ''}`
+      : early
+        ? '🐦 Early Bird · model spotlight before live market pricing'
+        : 'Published HR model target · live market pricing pending',
+    timestamp: latestTimestamp([data?.generated_at, snapshotStamp]),
     href: data?.full_product_url || PROPBET_LINKS.hr_targets || SPORTS.mlb.href,
     media: pick.player_image ? {
       kind: 'portrait',
@@ -207,28 +216,55 @@ function normalizeMlbHr(data) {
   };
 }
 
-function normalizeMlb(data) {
-  const cards = (Array.isArray(data?.edges) ? data.edges : []).slice(0, 2).map((edge) => ({
-    sport: 'mlb',
-    eyebrow: edge.tier_label ? `MLB · ${edge.tier_label}` : 'MLB · MODEL EDGE',
-    title: edge.player_name || 'MLB edge',
-    selection: `OVER ${edge.line ?? '—'} ${edge.market_label || 'prop'}`,
-    context: [edge.team, edge.opponent ? `vs ${edge.opponent}` : null].filter(Boolean).join(' · '),
-    odds: americanOdds(edge.book_odds_str ?? bestRawOdds(edge)),
-    oddsLabel: edge.best_book || 'Best available',
-    model: cleanPct(edge.model_prob_pct),
-    market: cleanPct(edge.book_prob_pct),
-    edge: cleanEdge(edge.edge_pct, 'pct-string'),
-    detail: edge.pbe_score ? `PBE Score ${edge.pbe_score}/100` : null,
-    timestamp: data.generated_at || null,
-    href: SPORTS.mlb.href,
-    media: null,
-  }));
+function normalizeMlb(data, oddsSnapshots = {}) {
+  const cards = (Array.isArray(data?.edges) ? data.edges : []).slice(0, 2).map((edge) => {
+    const marketKey = mlbMarketKey(edge);
+    const snapshot = marketKey ? oddsSnapshots[marketKey] : null;
+    const side = String(edge.direction || edge.side || 'Over');
+    const live = marketKey
+      ? findBestMlbOffer(snapshot, marketKey, edge.player_name, edge.line, side)
+      : null;
+    const modelPct = percentNumber(edge.model_prob_pct);
+    const liveMarketPct = live ? percentNumber(live.fairProbability ?? live.impliedProbability) : null;
+    const sourceMarketPct = percentNumber(edge.book_prob_pct);
+    const marketPct = liveMarketPct ?? sourceMarketPct;
+    const sourceLooksSynthetic = isSyntheticMlbMarket(edge);
+    const edgePct = live && modelPct != null && marketPct != null
+      ? modelPct - marketPct
+      : (!sourceLooksSynthetic ? percentNumber(edge.edge_pct) : null);
+    const snapshotStamp = snapshot?.cachedAt || snapshot?.snapshot?.captured_at || null;
+    const fallbackOdds = sourceLooksSynthetic ? null : (edge.book_odds_str ?? bestRawOdds(edge));
+
+    return {
+      sport: 'mlb',
+      eyebrow: edge.tier_label ? `MLB · ${edge.tier_label}` : 'MLB · MODEL EDGE',
+      title: edge.player_name || 'MLB edge',
+      selection: `${side.toUpperCase()} ${edge.line ?? '—'} ${edge.market_label || 'prop'}`,
+      context: [edge.team, edge.opponent ? `vs ${edge.opponent}` : null].filter(Boolean).join(' · '),
+      odds: live ? americanOdds(live.price) : americanOdds(fallbackOdds),
+      oddsLabel: live ? (live.bookTitle || live.bookKey || 'Best available') : (sourceLooksSynthetic ? 'Market unavailable' : (edge.best_book || 'Best available')),
+      model: modelPct == null ? '—' : `${modelPct.toFixed(1)}%`,
+      market: liveMarketPct != null
+        ? `${liveMarketPct.toFixed(1)}%`
+        : (sourceLooksSynthetic ? '—' : cleanPct(edge.book_prob_pct)),
+      edge: edgePct == null ? '—' : `${edgePct > 0 ? '+' : ''}${edgePct.toFixed(1)}%`,
+      detail: [
+        edge.pbe_score ? `PBE Score ${edge.pbe_score}/100` : null,
+        live && snapshotStamp ? `Live market ${formatRelativeStamp(snapshotStamp)}` : null,
+      ].filter(Boolean).join(' · ') || null,
+      timestamp: latestTimestamp([data.generated_at, snapshotStamp]),
+      href: SPORTS.mlb.href,
+      media: null,
+    };
+  });
 
   return {
     sport: 'mlb',
     cards,
-    generatedAt: data?.generated_at || null,
+    generatedAt: latestTimestamp([
+      data?.generated_at || null,
+      ...Object.values(oddsSnapshots).map((snapshot) => snapshot?.cachedAt || snapshot?.snapshot?.captured_at || null),
+    ]),
     unavailable: false,
   };
 }
@@ -709,6 +745,137 @@ function injectEdgeSchema(payload) {
     itemListElement: items,
   });
   document.head.appendChild(tag);
+}
+
+async function loadMlbOddsSnapshots(edgeResult, hrResult) {
+  const markets = new Set();
+
+  if (edgeResult.status === 'fulfilled') {
+    for (const edge of (Array.isArray(edgeResult.value?.edges) ? edgeResult.value.edges : []).slice(0, 2)) {
+      const market = mlbMarketKey(edge);
+      if (market) markets.add(market);
+    }
+  }
+
+  const hrPick = hrResult.status === 'fulfilled'
+    ? (hrResult.value?.early_bird || hrResult.value?.featured || null)
+    : null;
+  if (hrPick?.player_name) markets.add('batter_home_runs');
+
+  if (!markets.size) return {};
+
+  const results = await Promise.all([...markets].map(async (market) => {
+    try {
+      const snapshot = await fetchJson(`${MLB_ODDS_CACHE_URL}?market=${encodeURIComponent(market)}&limit=20`);
+      return [market, snapshot];
+    } catch (error) {
+      console.warn(`[odds] MLB live market unavailable for ${market}:`, error);
+      return [market, null];
+    }
+  }));
+
+  return Object.fromEntries(results.filter(([, snapshot]) => snapshot));
+}
+
+function mlbMarketKey(edge) {
+  const raw = [
+    edge?.market_key,
+    edge?.market,
+    edge?.market_label,
+    edge?.prop_type,
+    edge?.prop,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  if (!raw) return null;
+  if (raw.includes('pitcher_strikeouts') || raw.includes('strikeout') || /\bks?\b/.test(raw)) return 'pitcher_strikeouts';
+  if (raw.includes('batter_home_runs') || raw.includes('home run') || /\bhr\b/.test(raw)) return 'batter_home_runs';
+  if (raw.includes('batter_total_bases') || raw.includes('total base') || /\btb\b/.test(raw)) return 'batter_total_bases';
+  if (raw.includes('batter_rbis') || raw.includes('rbi')) return 'batter_rbis';
+  if (raw.includes('batter_doubles') || raw.includes('double')) return 'batter_doubles';
+  if (raw.includes('batter_hits') || raw.includes('hit')) return 'batter_hits';
+  return null;
+}
+
+function findBestMlbOffer(snapshot, marketKey, playerName, expectedLine, side = 'Over') {
+  const events = Array.isArray(snapshot?.data) ? snapshot.data : [];
+  const target = normalizeMlbPlayerName(playerName);
+  const line = Number(expectedLine);
+  const hasLine = Number.isFinite(line);
+  const wantedSide = String(side || 'Over').toLowerCase();
+  const offers = [];
+
+  for (const event of events) {
+    for (const book of (event.bookmakers || [])) {
+      for (const market of (book.markets || [])) {
+        if (market.key !== marketKey) continue;
+        const playerOutcomes = (market.outcomes || []).filter((outcome) => {
+          if (!sameMlbPlayer(outcome.description, target)) return false;
+          if (!hasLine) return true;
+          const point = Number(outcome.point);
+          return Number.isFinite(point) && Math.abs(point - line) < 0.001;
+        });
+        const selected = playerOutcomes.find((outcome) => String(outcome.name || '').toLowerCase() === wantedSide);
+        if (!selected || !Number.isFinite(Number(selected.price))) continue;
+        const oppositeName = wantedSide === 'over' ? 'under' : wantedSide === 'under' ? 'over' : null;
+        const opposite = oppositeName
+          ? playerOutcomes.find((outcome) => String(outcome.name || '').toLowerCase() === oppositeName)
+          : null;
+        const impliedProbability = americanToProbability(selected.price);
+        const oppositeProbability = opposite ? americanToProbability(opposite.price) : null;
+        const fairProbability = impliedProbability != null && oppositeProbability != null
+          ? impliedProbability / (impliedProbability + oppositeProbability)
+          : impliedProbability;
+
+        offers.push({
+          price: Number(selected.price),
+          point: selected.point,
+          bookKey: book.key,
+          bookTitle: book.title,
+          impliedProbability,
+          fairProbability,
+          eventId: event.id,
+        });
+      }
+    }
+  }
+
+  return offers.sort((a, b) => b.price - a.price)[0] || null;
+}
+
+function normalizeMlbPlayerName(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\b(jr|sr|ii|iii|iv)\b\.?/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+function sameMlbPlayer(value, normalizedTarget) {
+  if (!normalizedTarget) return false;
+  return normalizeMlbPlayerName(value) === normalizedTarget;
+}
+
+function americanToProbability(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n === 0) return null;
+  return n > 0 ? 100 / (n + 100) : (-n) / ((-n) + 100);
+}
+
+function percentNumber(value) {
+  if (value == null || value === '') return null;
+  const n = Number(String(value).replace('%', '').trim());
+  if (!Number.isFinite(n)) return null;
+  return Math.abs(n) <= 1 ? n * 100 : n;
+}
+
+function isSyntheticMlbMarket(edge) {
+  const book = String(edge?.best_book || '').toLowerCase();
+  const odds = Number(String(edge?.book_odds_str ?? bestRawOdds(edge) ?? '').replace('+', '').trim());
+  const marketPct = percentNumber(edge?.book_prob_pct);
+  return /propbetedge|model/.test(book) && odds === 100 && marketPct === 50;
 }
 
 function bestRawOdds(edge) {
