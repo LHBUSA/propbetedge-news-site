@@ -15,7 +15,7 @@
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { escapeHtml } from '../components/article-card.js';
-import { PROPBET_LINKS } from '../ads-config.js';
+import { PROPBET_LINKS, proxyImage } from '../ads-config.js';
 import {
   organizationSchema, websiteSchema, breadcrumbSchema, injectSchemas,
 } from '../schema.js';
@@ -23,7 +23,9 @@ import {
 const MLB_EDGES_URL = 'https://propbetedge-ev-finder.sales-fd3.workers.dev/edges-today';
 const NFL_SAMPLE_URL = 'https://nfl.propbetedge.ai/api/pbe-picks?view=free-sample';
 const UFC_SAMPLE_URL = 'https://ufc.propbetedge.ai/api/ufc/free-sample';
-const REFRESH_INTERVAL_MS = 60 * 1000;
+const WNBA_SAMPLE_URL = 'https://wnba-api.propbetedge.ai/v1/pbe/free-sample';
+const NHL_SAMPLE_URL = 'https://nhl-api.propbetedge.ai/nhl/picks/free-sample';
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 let _refreshTimer = null;
 
 const SPORTS = Object.freeze({
@@ -33,6 +35,7 @@ const SPORTS = Object.freeze({
     href: PROPBET_LINKS.picks_mlb,
     cta: 'Open MLB Intelligence',
     deck: 'Player-prop model edges from the live baseball board.',
+    cadence: 'Game-day · refreshed throughout the slate',
   },
   nfl: {
     label: 'NFL',
@@ -40,13 +43,40 @@ const SPORTS = Object.freeze({
     href: PROPBET_LINKS.picks_nfl,
     cta: 'Open NFL Intelligence',
     deck: 'Game-market decisions from the PBE Picks engine.',
+    cadence: 'Weekly slate · refreshed as markets move',
   },
   ufc: {
     label: 'UFC',
     emoji: '🥊',
     href: PROPBET_LINKS.picks_ufc,
     cta: 'Open UFC Intelligence',
-    deck: 'One current fight-model call with the market snapshot behind it.',
+    deck: 'A current fight-model call with the market snapshot behind it.',
+    cadence: 'Fight week · refreshed as the card and market move',
+  },
+  wnba: {
+    label: 'WNBA',
+    emoji: '🏀',
+    href: PROPBET_LINKS.picks_wnba,
+    cta: 'Open WNBA Intelligence',
+    deck: 'Current game-prediction calls from the WNBA model.',
+    cadence: 'Game-day · refreshed through the active slate',
+  },
+  nhl: {
+    label: 'NHL',
+    emoji: '🏒',
+    href: PROPBET_LINKS.picks_nhl,
+    cta: 'Open NHL Intelligence',
+    deck: 'The hockey model pipeline, wired to publish when its release gate opens.',
+    cadence: 'Daily slate · lock-aware publication',
+  },
+  nba: {
+    label: 'NBA',
+    emoji: '🏀',
+    href: PROPBET_LINKS.picks_nba,
+    cta: 'Open NBA Preview',
+    deck: 'NBA joins the free board with the new season next month.',
+    cadence: 'Coming next month',
+    comingSoon: true,
   },
 });
 
@@ -80,18 +110,23 @@ export async function renderOdds(root) {
 }
 
 async function loadAndRender() {
-  const [mlb, nfl, ufc] = await Promise.allSettled([
+  const [mlb, nfl, ufc, wnba, nhl] = await Promise.allSettled([
     fetchJson(MLB_EDGES_URL),
     fetchJson(NFL_SAMPLE_URL),
     fetchJson(UFC_SAMPLE_URL),
+    fetchJson(WNBA_SAMPLE_URL),
+    fetchJson(NHL_SAMPLE_URL),
   ]);
 
   const payload = {
     mlb: mlb.status === 'fulfilled' ? normalizeMlb(mlb.value) : sourceFailure('mlb', mlb.reason),
     nfl: nfl.status === 'fulfilled' ? normalizeNfl(nfl.value) : sourceFailure('nfl', nfl.reason),
     ufc: ufc.status === 'fulfilled' ? normalizeUfc(ufc.value) : sourceFailure('ufc', ufc.reason),
+    wnba: wnba.status === 'fulfilled' ? normalizeWnba(wnba.value) : sourceFailure('wnba', wnba.reason),
+    nhl: nhl.status === 'fulfilled' ? normalizeNhl(nhl.value) : sourceFailure('nhl', nhl.reason),
   };
 
+  await enrichMlbMedia(payload.mlb);
   renderBoard(payload);
   injectEdgeSchema(payload);
 }
@@ -122,6 +157,7 @@ function normalizeMlb(data) {
     detail: edge.pbe_score ? `PBE Score ${edge.pbe_score}/100` : null,
     timestamp: data.generated_at || null,
     href: SPORTS.mlb.href,
+    media: null,
   }));
 
   return {
@@ -153,6 +189,11 @@ function normalizeNfl(data) {
       detail: [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.lifecycle].filter(Boolean).join(' · '),
       timestamp: data.generated_at || pick.issued_at || null,
       href: SPORTS.nfl.href,
+      media: {
+        kind: 'team',
+        images: [pick.selected_team_logo_url || pick.matchup?.away_logo_url, pick.selected_team_logo_url ? null : pick.matchup?.home_logo_url].filter(Boolean),
+        alt: pick.selected_team ? `${pick.selected_team} team logo` : matchup,
+      },
     };
   });
 
@@ -180,6 +221,12 @@ function normalizeUfc(data) {
     detail: [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.observed_at ? `Market ${formatRelativeStamp(pick.observed_at)}` : null].filter(Boolean).join(' · '),
     timestamp: data.generated_at || pick.observed_at || null,
     href: data.full_product_url || SPORTS.ufc.href,
+    media: {
+      kind: 'portrait',
+      images: [pick.fighter_image?.card_url || pick.fighter_image?.image_url || pick.fighter_image?.thumb_url].filter(Boolean),
+      alt: pick.pick_name ? `${pick.pick_name} fighter portrait` : 'UFC fighter portrait',
+      credit: pick.fighter_image?.attribution_text || null,
+    },
   }] : [];
 
   return {
@@ -187,6 +234,103 @@ function normalizeUfc(data) {
     cards,
     generatedAt: data?.generated_at || null,
     unavailable: false,
+  };
+}
+
+async function enrichMlbMedia(source) {
+  if (!source?.cards?.length) return;
+  await Promise.all(source.cards.map(async (card) => {
+    try {
+      const media = await fetchJson(`/api/mlb-media?name=${encodeURIComponent(card.title)}`);
+      if (media?.image) {
+        card.media = {
+          kind: 'portrait',
+          images: [media.image],
+          alt: `${card.title} player photo`,
+          credit: media.source || null,
+        };
+      }
+    } catch {
+      // No exact identity-safe image is better than the wrong player's face.
+    }
+  }));
+}
+
+function normalizeWnba(data) {
+  const body = data?.data || data || {};
+  const cards = (Array.isArray(body.picks) ? body.picks : []).slice(0, 2).map((pick) => {
+    const home = pick.home?.abbr || pick.home?.name || 'HOME';
+    const away = pick.away?.abbr || pick.away?.name || 'AWAY';
+    const pickName = pick.pick_team?.name || pick.pick_team?.short_name || pick.pick_team?.abbr || 'WNBA pick';
+    const opponent = pick.opponent?.name || pick.opponent?.short_name || pick.opponent?.abbr || null;
+    return {
+      sport: 'wnba',
+      eyebrow: `WNBA · ${pick.phase === 'LOCKED' ? 'LOCKED PBE PICK' : 'PBE MODEL CALL'}`,
+      title: pickName,
+      selection: opponent ? `vs ${opponent}` : `${away} @ ${home}`,
+      context: [`${away} @ ${home}`, formatDateTime(pick.scheduled_tip_utc)].filter(Boolean).join(' · '),
+      odds: americanOdds(pick.odds),
+      oddsLabel: pick.odds != null ? 'Consensus' : 'Market pending',
+      model: probabilityPct(pick.model_probability),
+      market: probabilityPct(pick.market_probability),
+      edge: pointEdge(pick.edge_pts),
+      detail: [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.phase].filter(Boolean).join(' · '),
+      timestamp: body.generated_at || pick.locked_at || null,
+      href: body.full_product_url || SPORTS.wnba.href,
+      media: {
+        kind: 'team',
+        images: [pick.pick_team?.logo].filter(Boolean),
+        alt: pickName,
+      },
+    };
+  });
+
+  return {
+    sport: 'wnba',
+    cards,
+    generatedAt: body.generated_at || null,
+    unavailable: false,
+    stateTitle: body.published === false ? 'Model not published yet' : null,
+    stateCopy: body.published === false ? 'The WNBA model remains fail-closed until its publication contract is live.' : null,
+  };
+}
+
+function normalizeNhl(data) {
+  const cards = (Array.isArray(data?.picks) ? data.picks : []).slice(0, 2).map((pick) => {
+    const away = pick.matchup?.away || 'AWAY';
+    const home = pick.matchup?.home || 'HOME';
+    return {
+      sport: 'nhl',
+      eyebrow: 'NHL · LOCKED PBE PICK',
+      title: pick.pick_team || 'NHL pick',
+      selection: pick.opponent_team ? `vs ${pick.opponent_team}` : `${away} @ ${home}`,
+      context: [`${away} @ ${home}`, formatDateTime(pick.start_utc)].filter(Boolean).join(' · '),
+      odds: americanOdds(pick.odds),
+      oddsLabel: pick.book || (pick.odds != null ? 'Best at lock' : 'Unpriced'),
+      model: probabilityPct(pick.model_probability),
+      market: probabilityPct(pick.market_probability),
+      edge: pointEdge(pick.edge_pts),
+      detail: [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.locked_at ? `Locked ${formatRelativeStamp(pick.locked_at)}` : null].filter(Boolean).join(' · '),
+      timestamp: data.fetched_at || pick.locked_at || null,
+      href: data.full_product_url || SPORTS.nhl.href,
+      media: {
+        kind: 'team',
+        images: [pick.pick_team_logo_url].filter(Boolean),
+        alt: pick.pick_team ? `${pick.pick_team} team logo` : 'NHL team logo',
+      },
+    };
+  });
+
+  const validating = data?.reason === 'no_official_model' || data?.publish_gate?.open === false;
+  return {
+    sport: 'nhl',
+    cards,
+    generatedAt: data?.fetched_at || null,
+    unavailable: false,
+    stateTitle: validating ? 'Model in validation' : null,
+    stateCopy: validating
+      ? 'NHL is fully wired into the free board. Picks stay hidden until the official model release gate opens.'
+      : null,
   };
 }
 
