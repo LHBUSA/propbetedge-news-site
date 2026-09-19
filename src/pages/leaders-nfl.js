@@ -78,7 +78,6 @@ async function loadData({ force = false } = {}) {
   const season = currentNflSeason();
   _loadingPromise = fetch(`/api/nfl-leaders?season=${season}&seasontype=2`, {
     credentials: 'omit',
-    cache: 'no-store',
   })
     .then((response) => {
       if (!response.ok) throw new Error(`NFL leaders ${response.status}`);
