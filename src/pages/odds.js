@@ -126,7 +126,10 @@ async function loadAndRender() {
     nhl: nhl.status === 'fulfilled' ? normalizeNhl(nhl.value) : sourceFailure('nhl', nhl.reason),
   };
 
-  await enrichMlbMedia(payload.mlb);
+  await Promise.all([
+    enrichMlbMedia(payload.mlb),
+    enrichUfcMedia(payload.ufc),
+  ]);
   renderBoard(payload);
   injectEdgeSchema(payload);
 }
@@ -221,12 +224,7 @@ function normalizeUfc(data) {
     detail: [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.observed_at ? `Market ${formatRelativeStamp(pick.observed_at)}` : null].filter(Boolean).join(' · '),
     timestamp: data.generated_at || pick.observed_at || null,
     href: data.full_product_url || SPORTS.ufc.href,
-    media: {
-      kind: 'portrait',
-      images: [pick.fighter_image?.card_url || pick.fighter_image?.image_url || pick.fighter_image?.thumb_url].filter(Boolean),
-      alt: pick.pick_name ? `${pick.pick_name} fighter portrait` : 'UFC fighter portrait',
-      credit: pick.fighter_image?.attribution_text || null,
-    },
+    media: null,
   }] : [];
 
   return {
@@ -252,6 +250,25 @@ async function enrichMlbMedia(source) {
       }
     } catch {
       // No exact identity-safe image is better than the wrong player's face.
+    }
+  }));
+}
+
+async function enrichUfcMedia(source) {
+  if (!source?.cards?.length) return;
+  await Promise.all(source.cards.map(async (card) => {
+    try {
+      const media = await fetchJson(`/api/ufc-media?name=${encodeURIComponent(card.title)}`);
+      if (media?.image_url) {
+        card.media = {
+          kind: 'portrait',
+          images: [media.image_url],
+          alt: `${card.title} fighter portrait`,
+          credit: media.attribution_text || media.license || null,
+        };
+      }
+    } catch {
+      // The fighter card remains useful without a portrait.
     }
   }));
 }
