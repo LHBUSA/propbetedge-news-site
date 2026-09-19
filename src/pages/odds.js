@@ -113,8 +113,8 @@ export async function renderOdds(root) {
 
 async function loadAndRender() {
   const [mlb, mlbHr, nfl, ufc, wnba, nhl] = await Promise.allSettled([
-    fetchJson(MLB_EDGES_URL),
-    fetchJson(MLB_HR_SAMPLE_URL),
+    fetchCachedSampleJson(MLB_EDGES_URL),
+    fetchCachedSampleJson(MLB_HR_SAMPLE_URL),
     fetchJson(NFL_SAMPLE_URL),
     fetchJson(UFC_SAMPLE_URL),
     fetchJson(WNBA_SAMPLE_URL),
@@ -141,6 +141,12 @@ async function loadAndRender() {
 
 async function fetchJson(url) {
   const response = await fetch(url, { cache: 'no-store', credentials: 'omit' });
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  return response.json();
+}
+
+async function fetchCachedSampleJson(url) {
+  const response = await fetch(url, { credentials: 'omit' });
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
   return response.json();
 }
