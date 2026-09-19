@@ -274,7 +274,12 @@ function normalizeUfc(data) {
   const pick = data?.pick;
   const cards = pick ? [{
     sport: 'ufc',
-    eyebrow: `UFC · ${pick.lifecycle === 'LOCKED' ? 'LOCKED PBE PICK' : 'PBE MODEL CALL'}`,
+    variant: pick.is_top_upset ? 'ufc-top-upset' : null,
+    eyebrow: pick.is_top_upset
+      ? 'UFC · PBE ALGO · #1 TOP UPSET PICK'
+      : pick.is_upset_pick
+        ? `UFC · PBE ALGO · #${pick.upset_rank || '—'} UPSET PICK`
+        : `UFC · ${pick.lifecycle === 'LOCKED' ? 'LOCKED PBE PICK' : 'PBE MODEL CALL'}`,
     title: pick.pick_name || 'UFC pick',
     selection: pick.opponent_name ? `vs ${pick.opponent_name}` : pick.matchup || 'Fight pick',
     context: [pick.event_name, formatDate(pick.event_date)].filter(Boolean).join(' · '),
@@ -283,7 +288,13 @@ function normalizeUfc(data) {
     model: probabilityPct(pick.model_probability),
     market: probabilityPct(pick.market_probability),
     edge: pointEdge(pick.edge_pts),
-    detail: [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.observed_at ? `Market ${formatRelativeStamp(pick.observed_at)}` : null].filter(Boolean).join(' · '),
+    detail: pick.is_top_upset
+      ? [
+          pick.opponent_name ? `Market favors ${pick.opponent_name}${pick.opponent_consensus_odds != null ? ` ${americanOdds(pick.opponent_consensus_odds)}` : ''}` : null,
+          `PBE backs ${pick.pick_name} ${americanOdds(pick.consensus_odds)}`,
+          pick.lifecycle,
+        ].filter(Boolean).join(' · ')
+      : [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.observed_at ? `Market ${formatRelativeStamp(pick.observed_at)}` : null].filter(Boolean).join(' · '),
     timestamp: data.generated_at || pick.observed_at || null,
     href: data.full_product_url || SPORTS.ufc.href,
     media: null,
