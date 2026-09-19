@@ -83,33 +83,6 @@ export default async function handler(req, res) {
         Accept: 'application/json',
       },
     });
-    if (!upstream.ok) {
-      return res.status(503).json({
-        contract: 'pbe-mlb-hr-free-sample-v1',
-        sport: 'MLB',
-        generated_at: new Date().toISOString(),
-        game_date: date,
-        count: 0,
-        early_bird: null,
-        featured: null,
-        error: 'hr_source_unavailable',
-      });
-    }
-
-    const rows = Array.isArray(await upstream.json()) ? await Promise.resolve(await upstream.clone?.().json?.()) : [];
-  } catch {
-    // Fall through to the second fetch below. This branch exists only to keep
-    // malformed upstream bodies from leaking implementation detail.
-  }
-
-  try {
-    const upstream = await fetch(query, {
-      headers: {
-        apikey: SUPABASE_ANON,
-        Authorization: `Bearer ${SUPABASE_ANON}`,
-        Accept: 'application/json',
-      },
-    });
     if (!upstream.ok) throw new Error('upstream_unavailable');
     const rows = await upstream.json();
     const active = rank((Array.isArray(rows) ? rows : []).filter((row) => row?.player_name));
