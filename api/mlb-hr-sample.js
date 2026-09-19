@@ -55,7 +55,7 @@ function rank(rows) {
 
 export default async function handler(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=900');
+  res.setHeader('Cache-Control', 'public, s-maxage=14400, stale-while-revalidate=3600');
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'method_not_allowed' });
