@@ -7,7 +7,8 @@ const SPORTS = {
   nhl: { label: 'NHL', category: 'hockey', league: 'nhl' },
 };
 const PAGE_SIZE = 50;
-const MAX_PAGES = 200;
+const ARCHIVE_CHUNK_PAGES = 20; // 1,000 article URLs per child sitemap
+const MAX_PAGES = 1000;
 
 export default async function handler(req, res) {
   const type = String(req.query?.type || 'index').toLowerCase();
@@ -16,11 +17,12 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', type === 'news' ? 'public, s-maxage=300, stale-while-revalidate=900' : 'public, s-maxage=3600, stale-while-revalidate=86400');
 
   try {
-    if (type === 'index') return send(res, sitemapIndex());
+    if (type === 'index') return send(res, await sitemapIndex());
     if (type === 'static') return send(res, staticSitemap());
     if (type === 'entities') return send(res, await entitySitemap());
     if (type === 'players') return send(res, await playerSitemap(String(req.query?.sport || '').toLowerCase()));
     if (type === 'news') return send(res, await newsSitemap());
+    if (type === 'article-chunk') return send(res, await articleChunkSitemap(req.query?.chunk));
     if (type === 'articles') return send(res, await articleSitemap(req.query?.month));
     return res.status(404).send(xmlError('unknown_sitemap'));
   } catch (error) {
@@ -29,8 +31,18 @@ export default async function handler(req, res) {
   }
 }
 
-function sitemapIndex() {
+async function sitemapIndex() {
   const today = dateOnly(new Date());
+  const first = await fetchNewsPage(1).catch(() => ({ total: 0, totalPages: 0 }));
+  const totalPages = Math.max(
+    Number(first?.totalPages || 0),
+    first?.total ? Math.ceil(Number(first.total) / PAGE_SIZE) : 0,
+  );
+  const archiveChunks = Math.max(1, Math.ceil(totalPages / ARCHIVE_CHUNK_PAGES));
+  const archiveRefs = Array.from({ length: archiveChunks }, (_, index) =>
+    sitemapRef(`/sitemaps/archive-${index + 1}.xml`, today)
+  ).join('\n');
+
   return xml(`<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     ${sitemapRef('/sitemaps/news-current.xml', today)}
     ${sitemapRef('/sitemaps/static.xml', today)}
@@ -39,7 +51,7 @@ function sitemapIndex() {
     ${sitemapRef('/sitemaps/players-nfl.xml', today)}
     ${sitemapRef('/sitemaps/players-nba.xml', today)}
     ${sitemapRef('/sitemaps/players-nhl.xml', today)}
-    ${sitemapRef('/sitemaps/articles.xml', today)}
+    ${archiveRefs}
   </sitemapindex>`);
 }
 
@@ -205,6 +217,27 @@ async function newsSitemap() {
   }).filter(Boolean).join('\n');
 
   return xml(`<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">${body}</urlset>`);
+}
+
+async function articleChunkSitemap(chunkRaw) {
+  const chunk = Math.max(1, parseInt(String(chunkRaw || '1'), 10) || 1);
+  const startPage = (chunk - 1) * ARCHIVE_CHUNK_PAGES + 1;
+
+  const requests = [];
+  for (let page = startPage; page < startPage + ARCHIVE_CHUNK_PAGES; page++) {
+    requests.push(fetchNewsPage(page).catch(() => ({ articles: [], hasMore: false })));
+  }
+  const pages = await Promise.all(requests);
+  const articles = dedupeArticles(pages.flatMap((data) => data?.articles || []));
+
+  const body = articles.map((article) => {
+    const sport = normalizeSport(article.sport);
+    if (!sport || !article.slug) return '';
+    const lastmod = article.updated_at || article.published_at || null;
+    return `<url><loc>${esc(`${SITE}/news/${sport}/${article.slug}`)}</loc>${lastmod ? `<lastmod>${esc(dateOnly(lastmod))}</lastmod>` : ''}<changefreq>weekly</changefreq><priority>0.65</priority></url>`;
+  }).filter(Boolean).join('\n');
+
+  return urlset(body);
 }
 
 async function articleSitemap(monthRaw) {
