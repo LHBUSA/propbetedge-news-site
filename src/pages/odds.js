@@ -3,7 +3,7 @@
  * Cross-sport public sampler for the PropBetEdge network.
  *
  * Contract:
- *   - MLB: up to 2 current +EV player-prop edges
+ *   - MLB: up to 2 current +EV player-prop edges + 1 featured HR target
  *   - NFL: up to 2 current PBE picks / validation signals
  *   - UFC: up to 1 current PBE Algo call with market odds
  *
@@ -21,6 +21,7 @@ import {
 } from '../schema.js';
 
 const MLB_EDGES_URL = 'https://propbetedge-ev-finder.sales-fd3.workers.dev/edges-today';
+const MLB_HR_SAMPLE_URL = '/api/mlb-hr-sample';
 const NFL_SAMPLE_URL = 'https://nfl.propbetedge.ai/api/pbe-picks?view=free-sample';
 const UFC_SAMPLE_URL = 'https://ufc.propbetedge.ai/api/ufc/free-sample';
 const WNBA_SAMPLE_URL = 'https://wnba-api.propbetedge.ai/v1/pbe/free-sample';
@@ -34,7 +35,7 @@ const SPORTS = Object.freeze({
     emoji: '⚾',
     href: PROPBET_LINKS.picks_mlb,
     cta: 'Open MLB Intelligence',
-    deck: 'Player-prop model edges from the live baseball board.',
+    deck: 'Live player-prop edges plus a featured home run model target.',
     cadence: 'Game-day · refreshed throughout the slate',
   },
   nfl: {
@@ -110,8 +111,9 @@ export async function renderOdds(root) {
 }
 
 async function loadAndRender() {
-  const [mlb, nfl, ufc, wnba, nhl] = await Promise.allSettled([
+  const [mlb, mlbHr, nfl, ufc, wnba, nhl] = await Promise.allSettled([
     fetchJson(MLB_EDGES_URL),
+    fetchJson(MLB_HR_SAMPLE_URL),
     fetchJson(NFL_SAMPLE_URL),
     fetchJson(UFC_SAMPLE_URL),
     fetchJson(WNBA_SAMPLE_URL),
@@ -119,7 +121,7 @@ async function loadAndRender() {
   ]);
 
   const payload = {
-    mlb: mlb.status === 'fulfilled' ? normalizeMlb(mlb.value) : sourceFailure('mlb', mlb.reason),
+    mlb: buildMlbSource(mlb, mlbHr),
     nfl: nfl.status === 'fulfilled' ? normalizeNfl(nfl.value) : sourceFailure('nfl', nfl.reason),
     ufc: ufc.status === 'fulfilled' ? normalizeUfc(ufc.value) : sourceFailure('ufc', ufc.reason),
     wnba: wnba.status === 'fulfilled' ? normalizeWnba(wnba.value) : sourceFailure('wnba', wnba.reason),
@@ -143,6 +145,66 @@ async function fetchJson(url) {
 function sourceFailure(sport, error) {
   console.warn(`[odds] ${sport} source unavailable:`, error);
   return { sport, cards: [], generatedAt: null, unavailable: true };
+}
+
+function buildMlbSource(edgeResult, hrResult) {
+  const edgeAvailable = edgeResult.status === 'fulfilled';
+  const hrAvailable = hrResult.status === 'fulfilled';
+  const source = normalizeMlb(edgeAvailable ? edgeResult.value : {});
+  const hrCard = hrAvailable ? normalizeMlbHr(hrResult.value) : null;
+
+  if (hrCard) source.cards.push(hrCard);
+  source.generatedAt = latestTimestamp([
+    edgeAvailable ? edgeResult.value?.generated_at : null,
+    hrAvailable ? hrResult.value?.generated_at : null,
+  ]);
+  source.unavailable = !edgeAvailable && !hrAvailable;
+  source.stateTitle = source.cards.length ? null : 'No MLB sample right now';
+  source.stateCopy = source.cards.length
+    ? null
+    : 'No qualifying priced edge or published HR target is available right now. The board will repopulate from the next model cycle.';
+
+  return source;
+}
+
+function normalizeMlbHr(data) {
+  const pick = data?.early_bird || data?.featured || null;
+  if (!pick?.player_name) return null;
+
+  const early = String(pick.phase || '').toLowerCase() === 'early_bird';
+  const score = Number(pick.model_score);
+  const context = [
+    pick.team,
+    pick.opponent ? `vs ${pick.opponent}` : null,
+    Number.isFinite(Number(pick.batting_order)) ? `Batting #${pick.batting_order}` : null,
+  ].filter(Boolean).join(' · ');
+
+  return {
+    sport: 'mlb',
+    variant: 'hr-spotlight',
+    eyebrow: early ? 'MLB · EARLY BIRD HR PICK' : 'MLB · FEATURED HR TARGET',
+    title: pick.player_name,
+    selection: 'TO HIT A HOME RUN',
+    context,
+    odds: 'PENDING',
+    oddsLabel: 'LIVE ODDS',
+    metrics: [
+      { label: 'HR PROB', value: probabilityPct(pick.hr_probability) },
+      { label: 'PBE SCORE', value: Number.isFinite(score) ? `${Math.round(score)}/100` : '—' },
+      { label: 'MARKET', value: 'Pending' },
+    ],
+    detail: early
+      ? '🐦 Early Bird · model spotlight before live market pricing'
+      : 'Published HR model target · live market pricing pending',
+    timestamp: data?.generated_at || null,
+    href: data?.full_product_url || PROPBET_LINKS.hr_targets || SPORTS.mlb.href,
+    media: pick.player_image ? {
+      kind: 'portrait',
+      images: [pick.player_image],
+      alt: `${pick.player_name} MLB player photo`,
+      credit: 'MLB',
+    } : null,
+  };
 }
 
 function normalizeMlb(data) {
@@ -238,6 +300,7 @@ function normalizeUfc(data) {
 async function enrichMlbMedia(source) {
   if (!source?.cards?.length) return;
   await Promise.all(source.cards.map(async (card) => {
+    if (card.media?.images?.length) return;
     try {
       const media = await fetchJson(`/api/mlb-media?name=${encodeURIComponent(card.title)}`);
       if (media?.image) {
@@ -361,7 +424,7 @@ function renderHero() {
         each published on the cadence that actually fits the sport.
       </p>
       <div class="free-board-pills" aria-label="Sports on the free board">
-        <span>⚾ MLB · player edges</span>
+        <span>⚾ MLB · edges + HR target</span>
         <span>🏈 NFL · game calls</span>
         <span>🥊 UFC · fight pick</span>
         <span>🏀 WNBA · game calls</span>
@@ -505,8 +568,17 @@ function renderCardMedia(card) {
 }
 
 function renderFreeCard(card) {
+  const variantClass = card.variant === 'hr-spotlight' ? ' is-hr-spotlight' : '';
+  const metrics = Array.isArray(card.metrics) && card.metrics.length
+    ? card.metrics
+    : [
+        { label: 'Model', value: card.model || '—' },
+        { label: 'Market', value: card.market || '—' },
+        { label: 'Edge', value: card.edge || '—', edge: true },
+      ];
+
   return `
-    <article class="free-edge-card has-media" data-sport="${escapeHtml(card.sport)}">
+    <article class="free-edge-card has-media${variantClass}" data-sport="${escapeHtml(card.sport)}">
       ${renderCardMedia(card)}
       <div class="free-edge-card-body">
         <div class="free-edge-topline">
@@ -522,9 +594,12 @@ function renderFreeCard(card) {
           ${card.context ? `<div class="free-edge-context">${escapeHtml(card.context)}</div>` : ''}
         </div>
         <div class="free-edge-metrics">
-          <div><span>Model</span><strong>${escapeHtml(card.model || '—')}</strong></div>
-          <div><span>Market</span><strong>${escapeHtml(card.market || '—')}</strong></div>
-          <div class="is-edge"><span>Edge</span><strong>${escapeHtml(card.edge || '—')}</strong></div>
+          ${metrics.slice(0, 3).map((metric) => `
+            <div class="${metric.edge ? 'is-edge' : ''}">
+              <span>${escapeHtml(metric.label || '')}</span>
+              <strong>${escapeHtml(metric.value || '—')}</strong>
+            </div>
+          `).join('')}
         </div>
         <div class="free-edge-foot">
           <span>${escapeHtml(card.detail || 'Current model sample')}</span>
