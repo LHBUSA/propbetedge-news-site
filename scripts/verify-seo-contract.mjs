@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const root = resolve(new URL('..', import.meta.url).pathname);
+const root = process.cwd();
 const read = (path) => readFileSync(resolve(root, path), 'utf8');
 
 const vercel = read('vercel.json');
