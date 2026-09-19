@@ -1,3 +1,5 @@
+import { assessArticleIntegrity, filterIntegritySafeArticles } from '../news-integrity.js';
+
 const API_BASE = 'https://propbet-news-api.sales-fd3.workers.dev';
 
 async function get(path) {
@@ -109,7 +111,9 @@ function normalizeArticleList(data, { maxAgeMs = null, limit = null } = {}) {
   if (!data || !Array.isArray(data.articles)) return data;
 
   const now = Date.now();
-  let articles = data.articles
+  const integritySafe = filterIntegritySafeArticles(data.articles);
+
+  let articles = integritySafe
     .filter((article) => !isRetiredAuthor(article))
     .map((article) => normalizeArticleImage(normalizeArticleDate(normalizeArticleAuthor(article), now)))
     .filter(Boolean)
@@ -168,6 +172,11 @@ export const api = {
     const data = await get(`/news/article/${encodeURIComponent(slug)}`);
     if (!data?.article || isRetiredAuthor(data.article)) {
       return data ? { ...data, article: null } : data;
+    }
+    const integrity = assessArticleIntegrity(data.article);
+    if (!integrity.ok) {
+      console.warn('[news integrity] withheld article', slug, integrity.reason);
+      return { ...data, article: null, integrity };
     }
     return { ...data, article: normalizeArticleImage(normalizeArticleDate(normalizeArticleAuthor(data.article))) };
   },
