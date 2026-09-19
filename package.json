@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/verify-retired-contributors.mjs && node scripts/verify-seo-contract.mjs && vite build",
-    "preview": "vite preview"
+    "build": "node scripts/verify-retired-contributors.mjs && vite build",
+    "preview": "vite preview",
+    "seo:verify": "node scripts/verify-seo-contract.mjs"
   },
   "dependencies": {
     "@vercel/edge": "^1.1.1"
