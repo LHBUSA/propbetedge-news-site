@@ -337,20 +337,22 @@ function normalizeNhl(data) {
 function renderHero() {
   return `
     <header class="odds-hero free-board-hero">
-      <div class="kicker kicker-gold" style="margin-bottom:8px">⚡ FREE PREVIEW · MLB · NFL · UFC</div>
+      <div class="kicker kicker-gold" style="margin-bottom:8px">⚡ FREE SPORTS INTELLIGENCE BOARD</div>
       <h1 class="odds-title">Free Picks & Model Edges</h1>
       <p class="odds-dek">
-        A small live sample from the PropBetEdge sports intelligence network.
-        Two baseball edges, two football calls, and one UFC pick when each model has something publishable.
+        A visual live sample from the PropBetEdge network — player props, game calls and fight picks,
+        each published on the cadence that actually fits the sport.
       </p>
-      <div class="free-board-pills" aria-label="Free board limits">
-        <span>⚾ MLB · up to 2</span>
-        <span>🏈 NFL · up to 2</span>
-        <span>🥊 UFC · up to 1</span>
-        <span>Always free</span>
+      <div class="free-board-pills" aria-label="Sports on the free board">
+        <span>⚾ MLB · player edges</span>
+        <span>🏈 NFL · game calls</span>
+        <span>🥊 UFC · fight pick</span>
+        <span>🏀 WNBA · game calls</span>
+        <span>🏒 NHL · wired</span>
+        <span>🏀 NBA · next month</span>
       </div>
       <div class="odds-meta-row">
-        <span class="odds-meta-item" id="odds-updated"><span class="pulse-dot"></span> Loading live model feeds...</span>
+        <span class="odds-meta-item" id="odds-updated"><span class="pulse-dot"></span> Loading current model feeds...</span>
         <span class="odds-meta-divider">·</span>
         <span class="odds-meta-item" id="odds-counts">—</span>
         <span class="odds-meta-divider">·</span>
@@ -363,7 +365,7 @@ function renderHero() {
 function renderSkeleton() {
   return `
     <div class="free-sport-stack">
-      ${['MLB', 'NFL', 'UFC'].map((label) => `
+      ${['MLB', 'NFL', 'UFC', 'WNBA', 'NHL'].map((label) => `
         <section class="free-sport-section">
           <div class="free-sport-head">
             <div><span class="free-sport-kicker">${label}</span><h2>Loading current model output...</h2></div>
@@ -396,10 +398,13 @@ function renderBoard(payload) {
       ${renderSportSection('mlb', payload.mlb)}
       ${renderSportSection('nfl', payload.nfl)}
       ${renderSportSection('ufc', payload.ufc)}
+      ${renderSportSection('wnba', payload.wnba)}
+      ${renderSportSection('nhl', payload.nhl)}
+      ${renderComingSport('nba')}
     </div>
     <div class="free-board-truth">
       <strong>This is a sampler, not the full card.</strong>
-      <span>Each sport uses its own model and publication rules. Nothing is filled with placeholder picks when a model has no qualifying call.</span>
+      <span>Every sport keeps its own model, release gate and refresh cadence. Empty space stays empty instead of being filled with placeholder picks.</span>
     </div>
   `;
 }
@@ -414,15 +419,43 @@ function renderSportSection(sportKey, source) {
           <div>
             <span class="free-sport-kicker">${sport.label} FREE BOARD</span>
             <h2>${sport.deck}</h2>
+            <span class="free-sport-cadence">${sport.cadence}</span>
           </div>
         </div>
         <a class="free-sport-link" href="${sport.href}" target="_blank" rel="noopener">${sport.cta} →</a>
       </div>
       ${source.unavailable
-        ? renderSportState(sport, 'Feed temporarily unavailable', 'The rest of the free board stays live while this source reconnects.')
+        ? renderSportState(sport, 'Feed temporarily unavailable', 'This sport is isolated from the rest of the board, so the other live samples stay online.')
         : source.cards.length
           ? `<div class="edge-grid free-edge-grid">${source.cards.map(renderFreeCard).join('')}</div>`
-          : renderSportState(sport, 'No public sample right now', 'The model only publishes when its current rules are satisfied. We do not manufacture a pick to fill the space.')}
+          : renderSportState(
+              sport,
+              source.stateTitle || 'No public sample right now',
+              source.stateCopy || 'The model only publishes when its current rules are satisfied. We do not manufacture a pick to fill the space.'
+            )}
+    </section>
+  `;
+}
+
+function renderComingSport(sportKey) {
+  const sport = SPORTS[sportKey];
+  return `
+    <section class="free-sport-section free-sport-${sportKey} is-coming">
+      <div class="free-sport-head">
+        <div class="free-sport-title-wrap">
+          <span class="free-sport-icon" aria-hidden="true">${sport.emoji}</span>
+          <div>
+            <span class="free-sport-kicker">${sport.label} · COMING NEXT MONTH</span>
+            <h2>${sport.deck}</h2>
+            <span class="free-sport-cadence">${sport.cadence}</span>
+          </div>
+        </div>
+        <a class="free-sport-link" href="${sport.href}" target="_blank" rel="noopener">${sport.cta} →</a>
+      </div>
+      <div class="free-coming-panel">
+        <strong>Same contract, new league.</strong>
+        <span>NBA will join this board when the season model starts publishing. No placeholder picks before then.</span>
+      </div>
     </section>
   `;
 }
