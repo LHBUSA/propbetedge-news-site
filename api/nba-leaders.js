@@ -18,6 +18,17 @@ export default async function handler(req, res) {
     const response = await fetch(`${ESPN_NBA_LEADERS}?season=${season}&seasontype=2`, {
       headers: { accept: 'application/json' },
     });
+    if (response.status === 400 || response.status === 404) {
+      return res.status(200).json({
+        sport: 'nba',
+        season,
+        seasonType: 2,
+        source: 'ESPN',
+        generatedAt: new Date().toISOString(),
+        availability: 'pending',
+        categories: [],
+      });
+    }
     if (!response.ok) throw new Error(`espn_nba_leaders_${response.status}`);
 
     const raw = await response.json();
