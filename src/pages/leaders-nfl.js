@@ -10,6 +10,9 @@ import {
   renderLeaderRow,
   renderEmptyStatCard,
   renderLeaderLoading,
+  renderLeaderLiveStatus,
+  markLeaderUpdated,
+  startLeaderAutoRefresh,
 } from './leaders-shared.js';
 
 let _activeType = 'offense'; // offense | defense
@@ -44,6 +47,7 @@ export async function renderNflLeadersPage(root) {
       <button class="leaders-subtab ${_activeType === 'offense' ? 'active' : ''}" data-type="offense">Offense</button>
       <button class="leaders-subtab ${_activeType === 'defense' ? 'active' : ''}" data-type="defense">Defense</button>
     </div>
+    ${renderLeaderLiveStatus('ESPN', 60)}
     <div id="leaders-body">${renderLeaderLoading()}</div>
   `, 'UPDATED LIVE');
 
@@ -57,17 +61,24 @@ export async function renderNflLeadersPage(root) {
     });
   });
 
-  await loadData();
+  await loadData({ force: true });
   renderActive();
+  markLeaderUpdated('ESPN');
+  startLeaderAutoRefresh('nfl', async () => {
+    await loadData({ force: true });
+    renderActive();
+    markLeaderUpdated('ESPN');
+  }, 60000);
 }
 
-async function loadData() {
-  if (_payload) return _payload;
+async function loadData({ force = false } = {}) {
+  if (_payload && !force) return _payload;
   if (_loadingPromise) return _loadingPromise;
 
   const season = currentNflSeason();
-  _loadingPromise = fetch(`/api/nfl-leaders?season=${season}&seasontype=2`, {
+  _loadingPromise = fetch(`/api/nfl-leaders?season=${season}&seasontype=2&t=${Date.now()}`, {
     credentials: 'omit',
+    cache: 'no-store',
   })
     .then((response) => {
       if (!response.ok) throw new Error(`NFL leaders ${response.status}`);
