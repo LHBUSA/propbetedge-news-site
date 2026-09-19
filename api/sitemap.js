@@ -81,6 +81,7 @@ function staticSitemap() {
     ['/standings/nba', 'daily', '0.75'],
     ['/standings/nhl', 'daily', '0.75'],
     ['/games', 'daily', '0.70'],
+    ['/about', 'monthly', '0.70'],
     ['/editorial-standards', 'monthly', '0.55'],
     ['/authors', 'weekly', '0.65'],
     ['/authors/justin-erickson', 'weekly', '0.60'],
