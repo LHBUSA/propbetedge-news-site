@@ -48,6 +48,39 @@ const LIVE_PRODUCTS = Object.freeze([
     external: true,
     keywords: ['ufc', 'mma', 'fight', 'fighter', 'fight dna', 'rankings', 'cards', 'live intelligence', 'matchup'],
   }),
+  Object.freeze({
+    type: 'product',
+    sport: 'nba',
+    eyebrow: '🏀 NBA · LIVE INTELLIGENCE',
+    title: 'NBA Intelligence',
+    subtitle: 'Live scores, player research, props, matchups and basketball intelligence',
+    href: 'https://nba.propbetedge.ai',
+    domain: 'nba.propbetedge.ai',
+    external: true,
+    keywords: ['nba', 'basketball', 'live intelligence', 'players', 'props', 'picks', 'matchups', 'scores'],
+  }),
+  Object.freeze({
+    type: 'product',
+    sport: 'wnba',
+    eyebrow: '🏀 WNBA · LIVE INTELLIGENCE',
+    title: 'WNBA Intelligence',
+    subtitle: 'WNBACast, live scores, game predictions, player research and women’s basketball intelligence',
+    href: 'https://wnba.propbetedge.ai',
+    domain: 'wnba.propbetedge.ai',
+    external: true,
+    keywords: ['wnba', 'women basketball', 'womens basketball', 'wnbacast', 'live intelligence', 'predictions', 'picks', 'players', 'scores'],
+  }),
+  Object.freeze({
+    type: 'product',
+    sport: 'nhl',
+    eyebrow: '🏒 NHL · LIVE INTELLIGENCE',
+    title: 'NHL Intelligence',
+    subtitle: 'Ice Board, PBE Cast, player research, picks and hockey intelligence',
+    href: 'https://nhl.propbetedge.ai',
+    domain: 'nhl.propbetedge.ai',
+    external: true,
+    keywords: ['nhl', 'hockey', 'ice board', 'pbe cast', 'live intelligence', 'players', 'picks', 'scores'],
+  }),
 ]);
 
 export function initSearchPalette() {
@@ -126,13 +159,16 @@ function ensurePalette() {
       ${renderNetworkShortcuts()}
       <label class="pbe-search-input-wrap">
         <span class="pbe-search-icon">⌕</span>
-        <input type="search" autocomplete="off" spellcheck="false" placeholder="Search Mahomes, UFC, injuries, standings, teams, headlines…" aria-label="Search PropBetEdge" />
+        <input type="search" autocomplete="off" spellcheck="false" placeholder="Search WNBA, NBA, NHL, teams, players, injuries, headlines…" aria-label="Search PropBetEdge" />
         <kbd>↵</kbd>
       </label>
       <div class="pbe-search-prompts" aria-label="Suggested searches">
         <span>Try</span>
         <button type="button" data-search-query="NFL">NFL</button>
         <button type="button" data-search-query="UFC">UFC</button>
+        <button type="button" data-search-query="NBA">NBA</button>
+        <button type="button" data-search-query="WNBA">WNBA</button>
+        <button type="button" data-search-query="NHL">NHL</button>
         <button type="button" data-search-query="injuries">Injuries</button>
         <button type="button" data-search-query="standings">Standings</button>
       </div>
@@ -470,6 +506,7 @@ function recentFirst(a, b) {
 
 function iconFor(type, sport) {
   if (sport === 'ufc') return '🥊';
+  if (sport === 'wnba') return '🏀';
   if (sport && SPORT_CONFIG[sport]) return SPORT_CONFIG[sport].emoji;
   if (type === 'home') return '⌂';
   if (type === 'story' || type === 'news') return '✦';
