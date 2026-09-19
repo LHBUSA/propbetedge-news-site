@@ -23,6 +23,7 @@ export default async function handler(req, res) {
     if (type === 'static') return send(res, staticSitemap());
     if (type === 'entities') return send(res, await entitySitemap());
     if (type === 'players') return send(res, await playerSitemap(String(req.query?.sport || '').toLowerCase()));
+    if (type === 'games') return send(res, await gameSitemap(String(req.query?.sport || '').toLowerCase()));
     if (type === 'news') return send(res, await newsSitemap());
     if (type === 'article-chunk') return send(res, await articleChunkSitemap(req.query?.chunk));
     if (type === 'articles') return send(res, await articleSitemap(req.query?.month));
@@ -53,6 +54,10 @@ async function sitemapIndex() {
     ${sitemapRef('/sitemaps/players-nfl.xml', today)}
     ${sitemapRef('/sitemaps/players-nba.xml', today)}
     ${sitemapRef('/sitemaps/players-nhl.xml', today)}
+    ${sitemapRef('/sitemaps/games-mlb.xml', today)}
+    ${sitemapRef('/sitemaps/games-nfl.xml', today)}
+    ${sitemapRef('/sitemaps/games-nba.xml', today)}
+    ${sitemapRef('/sitemaps/games-nhl.xml', today)}
     ${archiveRefs}
   </sitemapindex>`);
 }
@@ -183,6 +188,79 @@ async function fetchNhlPlayers() {
     for (const rows of results) out.push(...rows);
   }
   return out;
+}
+
+async function gameSitemap(sport) {
+  if (!SPORTS[sport]) throw new Error('unsupported_game_sport');
+
+  const games = sport === 'mlb'
+    ? await fetchMlbSeasonGames()
+    : await fetchEspnSeasonGames(sport);
+
+  const seen = new Set();
+  const today = dateOnly(new Date());
+  const body = games.map((game) => {
+    const id = String(game?.id || game?.gamePk || '').trim();
+    if (!/^\d+$/.test(id) || seen.has(id)) return '';
+    seen.add(id);
+
+    const start = game?.date || game?.gameDate || null;
+    const lastmod = start ? dateOnly(start) : today;
+    return `<url><loc>${esc(`${SITE}/games/${sport}/${id}`)}</loc><lastmod>${esc(lastmod || today)}</lastmod><changefreq>daily</changefreq><priority>0.66</priority></url>`;
+  }).filter(Boolean).join('\n');
+
+  return urlset(body);
+}
+
+async function fetchMlbSeasonGames() {
+  const year = new Date().getUTCFullYear();
+  const response = await fetch(
+    `https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=${year}-02-01&endDate=${year}-11-30`
+  );
+  if (!response.ok) throw new Error(`mlb_games_${response.status}`);
+  const data = await response.json();
+  return (data?.dates || []).flatMap((row) => row?.games || []);
+}
+
+async function fetchEspnSeasonGames(sport) {
+  const config = SPORTS[sport];
+  const { start, end } = seasonRange(sport);
+  const dates = `${compactDate(start)}-${compactDate(end)}`;
+  const response = await fetch(
+    `https://site.api.espn.com/apis/site/v2/sports/${config.category}/${config.league}/scoreboard?dates=${dates}&limit=2000`,
+    { headers: { accept: 'application/json' } }
+  );
+  if (!response.ok) throw new Error(`${sport}_games_${response.status}`);
+  const data = await response.json();
+  const events = Array.isArray(data?.events) ? data.events : [];
+
+  // ESPN occasionally ignores a date range for a league and returns only the
+  // current slate. The sitemap remains valid in that case; linked team/game
+  // pages continue to supply crawl discovery while the next refresh retries.
+  return events;
+}
+
+function seasonRange(sport) {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth() + 1;
+  const seasonYear = month >= 7 ? year : year - 1;
+
+  if (sport === 'nfl') {
+    return {
+      start: new Date(Date.UTC(seasonYear, 7, 1)),
+      end: new Date(Date.UTC(seasonYear + 1, 1, 28)),
+    };
+  }
+
+  return {
+    start: new Date(Date.UTC(seasonYear, 8, 1)),
+    end: new Date(Date.UTC(seasonYear + 1, 6, 15)),
+  };
+}
+
+function compactDate(value) {
+  return value.toISOString().slice(0, 10).replace(/-/g, '');
 }
 
 async function newsSitemap() {
