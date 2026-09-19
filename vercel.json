@@ -9,6 +9,7 @@
     { "source": "/sitemaps/static.xml", "destination": "/api/sitemap?type=static" },
     { "source": "/sitemaps/entities.xml", "destination": "/api/sitemap?type=entities" },
     { "source": "/sitemaps/players-:sport.xml", "destination": "/api/sitemap?type=players&sport=:sport" },
+    { "source": "/sitemaps/archive-:chunk.xml", "destination": "/api/sitemap?type=article-chunk&chunk=:chunk" },
     { "source": "/sitemaps/articles.xml", "destination": "/api/sitemap?type=articles" },
     { "source": "/sitemaps/articles-:month.xml", "destination": "/api/sitemap?type=articles&month=:month" },
     { "source": "/robots.txt", "destination": "https://propbet-news-sitemap.sales-fd3.workers.dev/robots.txt" },
