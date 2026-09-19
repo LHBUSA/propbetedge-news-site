@@ -139,6 +139,55 @@ async function nbaSummaryRaw(gameId) {
   };
 }
 
+async function nflSummaryRaw(gameId) {
+  const summary = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${gameId}`);
+  const comp = summary?.header?.competitions?.[0] || {};
+  const competitors = comp.competitors || [];
+  const home = competitors.find((c) => c.homeAway === 'home') || competitors[0] || {};
+  const away = competitors.find((c) => c.homeAway === 'away') || competitors[1] || {};
+  return {
+    gameId,
+    header: {
+      home: {
+        id: home.id,
+        abbr: home.team?.abbreviation,
+        name: home.team?.displayName,
+        logo: home.team?.logos?.[0]?.href || home.team?.logo,
+        score: home.score,
+        winner: home.winner,
+        record: home.records?.[0]?.summary,
+      },
+      away: {
+        id: away.id,
+        abbr: away.team?.abbreviation,
+        name: away.team?.displayName,
+        logo: away.team?.logos?.[0]?.href || away.team?.logo,
+        score: away.score,
+        winner: away.winner,
+        record: away.records?.[0]?.summary,
+      },
+      status: {
+        state: comp.status?.type?.state,
+        period: comp.status?.period,
+        clock: comp.status?.displayClock,
+        detail: comp.status?.type?.shortDetail,
+        completed: comp.status?.type?.completed,
+      },
+      venue: comp.venue?.fullName || '',
+    },
+    boxscore: summary.boxscore || {},
+    plays: summary.plays || [],
+    drives: summary.drives || {},
+    scoringPlays: summary.scoringPlays || [],
+  };
+}
+
+async function nhlGameRaw(gameId) {
+  const target = `https://api-web.nhle.com/v1/gamecenter/${gameId}/landing`;
+  return fetchJson(`${NHL_PROXY}/?url=${encodeURIComponent(target)}`);
+}
+
+
 async function nhlScheduleRaw(date) {
   const d = date || todayET();
   const target = `https://api-web.nhle.com/v1/schedule/${d}`;
@@ -217,6 +266,8 @@ export const sports = {
   },
 
   nbaSummary: (gameId) => nbaSummaryRaw(gameId),
+  nflSummary: (gameId) => nflSummaryRaw(gameId),
+  nhlGame: (gameId) => nhlGameRaw(gameId),
 
   async allTodayScoreboards() {
     const results = await Promise.allSettled([
