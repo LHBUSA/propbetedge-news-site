@@ -12,16 +12,18 @@ import { renderFooter } from '../components/footer.js';
 import { getSportConfig } from '../sport-config.js';
 
 // ─── Hero ────────────────────────────────────────────────────────────────
-export function renderLeadersHero(sportLabel, dek, kickerSuffix = '') {
+export function renderLeadersHero(sportLabel, dek, kickerSuffix = '', options = {}) {
+  const kicker = options.kicker || `${sportLabel.toUpperCase()} STAT LEADERS`;
+  const title = options.title || `${sportLabel} Leaders`;
   return `
     <section class="leaders-hero">
       <div class="leaders-hero-mesh"></div>
       <div class="leaders-hero-inner">
         <div class="leaders-hero-kicker">
           <span class="live-dot-big"></span>
-          <span>${sportLabel.toUpperCase()} STAT LEADERS${kickerSuffix ? ' · ' + kickerSuffix : ''}</span>
+          <span>${escapeHtml(kicker)}${kickerSuffix ? ' · ' + escapeHtml(kickerSuffix) : ''}</span>
         </div>
-        <h1 class="leaders-hero-title">${sportLabel} Leaders</h1>
+        <h1 class="leaders-hero-title">${escapeHtml(title)}</h1>
         <p class="leaders-hero-dek">${dek}</p>
       </div>
     </section>
@@ -50,12 +52,12 @@ export function renderSportTabStrip(activeSport) {
 }
 
 // ─── Page chrome wrapper ────────────────────────────────────────────────
-export function leadersPageShell(sportSlug, sportLabel, dek, bodyHtml, kickerSuffix = '') {
+export function leadersPageShell(sportSlug, sportLabel, dek, bodyHtml, kickerSuffix = '', options = {}) {
   return `
     ${renderHeader()}
     <main>
       <div class="container">
-        ${renderLeadersHero(sportLabel, dek, kickerSuffix)}
+        ${renderLeadersHero(sportLabel, dek, kickerSuffix, options)}
         ${renderSportTabStrip(sportSlug)}
         ${bodyHtml}
         ${renderEdgeStrip(sportSlug)}
