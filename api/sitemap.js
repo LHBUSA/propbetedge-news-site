@@ -240,7 +240,7 @@ async function fetchEspnSeasonGames(sport) {
       const id = team?.id;
       if (!id) return [];
       const response = await fetch(
-        `https://site.api.espn.com/apis/site/v2/sports/${config.category}/${config.league}/teams/${encodeURIComponent(id)}/schedule?season=${season}`,
+        `https://site.api.espn.com/apis/site/v2/sports/${config.category}/${config.league}/teams/${encodeURIComponent(id)}/schedule?season=${season}&seasontype=2`,
         { headers: { accept: 'application/json' } }
       );
       if (!response.ok) return [];
