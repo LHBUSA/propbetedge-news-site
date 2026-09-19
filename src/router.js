@@ -19,6 +19,7 @@ import { renderNewsIndex } from './pages/news-index.js';
 import { renderSport } from './pages/sport.js';
 import { renderArticle } from './pages/article.js';
 import { renderAuthor } from './pages/author.js';
+import { renderAuthorsIndex } from './pages/authors.js';
 import { renderEditorialStandards } from './pages/editorial-standards.js';
 import { renderNotFound } from './pages/404.js';
 import { renderGamesHub } from './pages/games-hub.js';
@@ -178,6 +179,8 @@ function clearAndRoute() {
     if (!VALID_SPORTS.has(sport)) return renderNotFound(root);
     return renderSport(root, sport, 1, setMeta);
   }
+
+  if (path === '/authors') return renderAuthorsIndex(root, setMeta);
 
   const authorMatch = path.match(/^\/authors\/([a-z0-9-]+)$/);
   if (authorMatch) return renderAuthor(root, authorMatch[1], setMeta);
