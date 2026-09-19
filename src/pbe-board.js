@@ -64,7 +64,7 @@ async function refresh() {
     const [newsResult, scoresResult, edgesResult] = await Promise.allSettled([
       api.homepage(),
       sports.allTodayScoreboards(),
-      fetch(EV_URL, { cache: 'no-store', credentials: 'omit' }).then((r) => r.ok ? r.json() : Promise.reject(new Error(`edges ${r.status}`))),
+      fetch(EV_URL, { credentials: 'omit' }).then((r) => r.ok ? r.json() : Promise.reject(new Error(`edges ${r.status}`))),
     ]);
     const articles = newsResult.status === 'fulfilled' ? newsResult.value?.articles || [] : [];
     const scoreboards = scoresResult.status === 'fulfilled' ? scoresResult.value || {} : {};
