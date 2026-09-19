@@ -27,7 +27,7 @@ const NFL_SAMPLE_URL = 'https://nfl.propbetedge.ai/api/pbe-picks?view=free-sampl
 const UFC_SAMPLE_URL = 'https://ufc.propbetedge.ai/api/ufc/free-sample';
 const WNBA_SAMPLE_URL = 'https://wnba-api.propbetedge.ai/v1/pbe/free-sample';
 const NHL_SAMPLE_URL = 'https://nhl-api.propbetedge.ai/nhl/picks/free-sample';
-const REFRESH_INTERVAL_MS = 4 * 60 * 60 * 1000;
+// The board can poll live sports every minute. MLB identity exposure is still\n// capped by its own 4-hour sample endpoints, so faster board polling cannot\n// rotate through extra MLB picks.\nconst REFRESH_INTERVAL_MS = 60 * 1000;
 let _refreshTimer = null;
 
 const SPORTS = Object.freeze({
