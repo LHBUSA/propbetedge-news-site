@@ -138,8 +138,8 @@ function clearAndRoute() {
 
   if (path === '/leaders') {
     setMeta({
-      title: 'Stat Leaders — PropBetEdge',
-      description: 'Top performers across MLB, NHL, NBA, and NFL — sourced from official league APIs.',
+      title: 'Stat Leaders & UFC Champions — PropBetEdge',
+      description: 'Live player leaderboards across MLB, WNBA, NFL, NHL and NBA, plus current UFC divisional champions.',
       canonical: 'https://propbetedge.ai/leaders',
     });
     return renderLeadersPage(root);
