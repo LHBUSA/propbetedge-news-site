@@ -6,7 +6,7 @@
  *   /standings/:sport         → live standings with team entity links
  *
  * v3.16 additions:
- *   /odds                     → public +EV edge board (fed by EV Finder Worker)
+ *   /odds                     → cross-sport free picks & model-edge sampler
  *
  * v3.15 additions:
  *   /news/page/N              → paginated all-news
@@ -92,8 +92,8 @@ function clearAndRoute() {
 
   if (path === '/odds') {
     setMeta({
-      title: "Today's +EV Edges — PropBetEdge",
-      description: 'Live MLB player prop edges where our Poisson model beats the book by 5%+. No paywall on today\'s edges. Updated every 15 minutes.',
+      title: 'Free Picks & Model Edges — PropBetEdge',
+      description: 'A live public sample of PropBetEdge model output across MLB, NFL and UFC, with current odds and market context when available.',
       canonical: 'https://propbetedge.ai/odds',
     });
     return renderOdds(root);
