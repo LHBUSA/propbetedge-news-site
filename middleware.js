@@ -156,6 +156,7 @@ async function resolveMeta(pathname) {
             modifiedTime: article.updated_at || article.published_at || null,
             section: SPORT_LABELS[sport],
             jsonLd: buildArticleSchema(article, sport, canonical),
+            ssrHtml: buildServerArticleHtml(article, sport, canonical),
           };
         }
       }
@@ -187,6 +188,14 @@ async function resolveMeta(pathname) {
       image: entity?.image || `${SITE}/logo/pbe-full-600.png`,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildTeamSchema(name, sport, canonical, entity?.image || null),
+      ssrHtml: buildServerEntityHtml({
+        kind: 'team',
+        name,
+        sport,
+        canonical,
+        image: entity?.image || null,
+        description: `${name} team hub with schedule, roster, standings context and connected PropBetEdge coverage.`,
+      }),
     };
   }
 
@@ -207,6 +216,14 @@ async function resolveMeta(pathname) {
       image: entity?.image || `${SITE}/logo/pbe-full-600.png`,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildPlayerSchema(name, sport, canonical, entity?.image || null),
+      ssrHtml: buildServerEntityHtml({
+        kind: 'player',
+        name,
+        sport,
+        canonical,
+        image: entity?.image || null,
+        description: `${name} player profile with current stats, recent form, game logs and connected PropBetEdge coverage.`,
+      }),
     };
   }
 
@@ -369,6 +386,13 @@ function injectMeta(html, meta) {
     html = html.replace(
       /<\/head>/i,
       `  <script type="application/ld+json" id="pbe-server-primary-schema">${serialized}</script>\n</head>`
+    );
+  }
+
+  if (meta.ssrHtml) {
+    html = html.replace(
+      /<div\s+id="app"\s*><\/div>/i,
+      `<div id="app">${meta.ssrHtml}</div>`
     );
   }
 
@@ -565,6 +589,95 @@ function titleFromSlug(value) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+}
+
+function buildServerArticleHtml(article, sport, canonical) {
+  const title = escapeHtml(article.title || `${SPORT_LABELS[sport]} News`);
+  const summary = escapeHtml(article.summary || article.take?.summary || '');
+  const author = escapeHtml(article.author || 'PropBetEdge Editorial Team');
+  const authorSlug = String(article.author || 'PropBetEdge Editorial Team')
+    .toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+  const published = article.published_at ? String(article.published_at) : '';
+  const body = articlePlainText(article).slice(0, 30000);
+  const paragraphs = body
+    .split(/\n{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .slice(0, 80)
+    .map((part) => `<p>${escapeHtml(part)}</p>`)
+    .join('');
+
+  return `<article class="pbe-ssr-article" data-server-rendered="1">
+    <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; <a href="/news/${sport}">${SPORT_LABELS[sport]} News</a></nav>
+    <header>
+      <h1>${title}</h1>
+      <p>By <a href="/authors/${escapeAttr(authorSlug)}">${author}</a>${published ? ` · <time datetime="${escapeAttr(published)}">${escapeHtml(formatServerDate(published))}</time>` : ''}</p>
+      ${summary ? `<p>${summary}</p>` : ''}
+      ${article.image_url ? `<img src="${escapeAttr(article.image_url)}" alt="${title}" width="1200" loading="eager" />` : ''}
+    </header>
+    <section>${paragraphs || (summary ? `<p>${summary}</p>` : '')}</section>
+    <footer>
+      <a href="${escapeAttr(canonical)}">Permalink</a>
+      ${safeHttpUrl(article.source_url) ? ` · <a href="${escapeAttr(article.source_url)}" rel="nofollow noopener">Original source</a>` : ''}
+    </footer>
+  </article>`;
+}
+
+function buildServerEntityHtml({ kind, name, sport, canonical, image, description }) {
+  const label = kind === 'player' ? 'Player Intelligence' : 'Team Intelligence';
+  return `<main class="pbe-ssr-entity" data-server-rendered="1">
+    <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; <a href="/news/${sport}">${SPORT_LABELS[sport]}</a></nav>
+    <article>
+      ${image ? `<img src="${escapeAttr(image)}" alt="${escapeAttr(name)}" width="600" loading="eager" />` : ''}
+      <p>${SPORT_LABELS[sport]} · ${label}</p>
+      <h1>${escapeHtml(name)}</h1>
+      <p>${escapeHtml(description)}</p>
+      <p><a href="/news/${sport}">Latest ${SPORT_LABELS[sport]} news</a> · <a href="/standings/${sport}">${SPORT_LABELS[sport]} standings</a> · <a href="${escapeAttr(canonical)}">Permanent profile</a></p>
+    </article>
+  </main>`;
+}
+
+function articlePlainText(article) {
+  const raw = article.body || stripHtmlText(article.body_html || '') || article.summary || '';
+  return String(raw)
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/[*_~`]+/g, '')
+    .replace(/\r/g, '')
+    .trim();
+}
+
+function stripHtmlText(value) {
+  return String(value || '')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<\/(p|div|h[1-6]|li|section|article|blockquote)>/gi, '\n\n')
+    .replace(/<br\s*\/?\s*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+\n/g, '\n')
+    .replace(/\n\s+/g, '\n')
+    .trim();
+}
+
+function safeHttpUrl(value) {
+  try {
+    const url = new URL(String(value || ''));
+    return /^https?:$/.test(url.protocol);
+  } catch {
+    return false;
+  }
+}
+
+function formatServerDate(value) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  return date.toISOString().slice(0, 10);
 }
 
 function buildPlayerSchema(name, sport, canonical, image) {
