@@ -13,6 +13,7 @@ import {
   startLeaderAutoRefresh,
   escapeHtml,
   escapeAttr,
+  renderPropSportsLink,
 } from './leaders-shared.js';
 
 let _payload = null;
@@ -22,9 +23,9 @@ export async function renderUfcChampionsPage(root) {
   root.innerHTML = leadersPageShell(
     'ufc',
     'UFC',
-    'Current divisional champions from the dated UFC official rankings snapshot. No pound-for-pound list and no invented belt status.',
+    `Current divisional champions delivered through ${renderPropSportsLink()} from the dated UFC official rankings snapshot. No pound-for-pound list and no invented belt status.`,
     `
-      ${renderLeaderLiveStatus('UFC official rankings snapshot', 300)}
+      ${renderLeaderLiveStatus('PropSports.PropTechUSA.ai', 300)}
       <div id="leaders-body">${renderLeaderLoading()}</div>
     `,
     'CURRENT BELTS',
@@ -33,12 +34,12 @@ export async function renderUfcChampionsPage(root) {
 
   await loadData({ force: true });
   renderActive();
-  markLeaderUpdated('UFC rankings');
+  markLeaderUpdated('PropSports.PropTechUSA.ai');
 
   startLeaderAutoRefresh('ufc', async () => {
     await loadData({ force: true });
     renderActive();
-    markLeaderUpdated('UFC rankings');
+    markLeaderUpdated('PropSports.PropTechUSA.ai');
   }, 300000);
 }
 
