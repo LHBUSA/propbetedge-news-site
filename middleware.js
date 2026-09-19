@@ -519,32 +519,30 @@ function buildArticleSchema(article, sport, canonical) {
 }
 
 async function resolveTeamMeta(sport, slug) {
-  const api = SPORT_API[sport];
-  if (!api) return { notFound: true };
-  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${api.category}/${api.league}/teams?limit=100`);
+  if (!SPORT_API[sport]) return { notFound: true };
+
+  // Resolve through the app's serverless media gateway instead of calling ESPN
+  // directly from Edge Middleware. That gateway is cacheable, runs in the Node
+  // runtime and already owns provider normalization/error semantics.
+  const query = titleFromSlug(slug);
+  const endpoint = `${SITE}/api/sports-media?kind=team&sport=${encodeURIComponent(sport)}&name=${encodeURIComponent(query)}`;
+  const res = await fetch(endpoint, { headers: { Accept: 'application/json' } });
   if (res.status === 404) return { notFound: true };
   if (!res.ok) return { unavailable: true };
-  const data = await res.json();
-  const teams = data?.sports?.[0]?.leagues?.[0]?.teams?.map((entry) => entry?.team || entry).filter(Boolean) || [];
-  const target = slugify(slug);
-  const team = teams.find((candidate) => {
-    const names = [
-      candidate.displayName,
-      candidate.shortDisplayName,
-      candidate.name,
-      candidate.abbreviation,
-    ].filter(Boolean).map(slugify);
-    return names.includes(target);
-  });
-  if (!team) return { notFound: true };
+
+  const team = await res.json();
+  if (!team?.name) return { notFound: true };
+  if (slugify(team.name) !== slugify(slug) && slugify(team.abbreviation) !== slugify(slug)) {
+    return { notFound: true };
+  }
   return {
-    name: team.displayName || team.shortDisplayName || titleFromSlug(slug),
-    image: team.logos?.[0]?.href || null,
+    name: team.name,
+    image: team.image || null,
   };
 }
 
 async function resolvePlayerMeta(sport, id) {
-  if (!/^\d+$/.test(String(id))) return { notFound: true };
+  if (!/^\d{1,9}$/.test(String(id))) return { notFound: true };
 
   if (sport === 'mlb') {
     const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${encodeURIComponent(id)}`);
