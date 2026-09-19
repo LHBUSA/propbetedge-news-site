@@ -455,15 +455,24 @@ async function enhanceArticleEntities(sport, slug) {
       <span>In this story</span>
     </div>
     <div class="pbe-story-entities-grid">
-      ${resolved.map((entity) => `
-        <div class="pbe-story-entity ${escapeAttr(entity.kind)}">
-          <img src="${escapeAttr(entity.image)}" alt="${escapeAttr(entity.name)}" loading="lazy" onerror="this.closest('.pbe-story-entity')?.remove()" />
-          <span class="pbe-story-entity-text">
-            <span class="pbe-story-entity-kind">${entity.kind === 'player' ? 'Player' : 'Team'}</span>
-            <span class="pbe-story-entity-name">${escapeHtml(entity.name)}</span>
-          </span>
-        </div>
-      `).join('')}
+      ${resolved.map((entity) => {
+        const href = entity.kind === 'player' && entity.id
+          ? `/player/${sport}/${encodeURIComponent(entity.id)}`
+          : entity.kind === 'team'
+            ? `/team/${sport}/${slugifyEntityName(entity.name)}`
+            : '';
+        const tag = href ? 'a' : 'div';
+        const hrefAttr = href ? ` href="${escapeAttr(href)}"` : '';
+        return `
+          <${tag} class="pbe-story-entity ${escapeAttr(entity.kind)}"${hrefAttr}>
+            <img src="${escapeAttr(entity.image)}" alt="${escapeAttr(entity.name)}" loading="lazy" onerror="this.closest('.pbe-story-entity')?.remove()" />
+            <span class="pbe-story-entity-text">
+              <span class="pbe-story-entity-kind">${entity.kind === 'player' ? 'Player' : 'Team'}</span>
+              <span class="pbe-story-entity-name">${escapeHtml(entity.name)}</span>
+            </span>
+          </${tag}>
+        `;
+      }).join('')}
     </div>
   `;
   anchor.insertAdjacentElement('afterend', section);
@@ -560,4 +569,14 @@ function escapeHtml(value) {
 
 function escapeAttr(value) {
   return escapeHtml(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+
+function slugifyEntityName(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
