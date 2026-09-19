@@ -1,6 +1,6 @@
 const STORAGE_SCENE = 'pbe_background_scene_v2';
 const STORAGE_AUTO = 'pbe_background_auto_v2';
-const VALID_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl']);
+const VALID_SPORTS = new Set(['mlb', 'wnba', 'nfl', 'nba', 'nhl', 'ufc']);
 
 const ASSET_ROOT = '/backgrounds/pbe/';
 const ORIGINAL_WRIGLEY = 'https://images.unsplash.com/photo-1666366330282-b11566b272cf?w=1800&q=72&auto=format&fit=crop';
@@ -30,6 +30,8 @@ const FOLLOW_SCENE = {
   nfl: 'nfl',
   nba: 'nba',
   nhl: 'nhl',
+  wnba: 'nba',
+  ufc: 'network',
 };
 
 let initialized = false;
@@ -85,7 +87,7 @@ function ensureSelector() {
         <div>
           <span class="pbe-scene-panel-kicker">YOUR PBE · YOUR ATMOSPHERE</span>
           <strong class="pbe-scene-panel-title">Choose the backdrop.</strong>
-          <span class="pbe-scene-panel-sub">Twelve looks. Four leagues. One PropBetEdge system.</span>
+          <span class="pbe-scene-panel-sub">Sports-native backdrops across the PropBetEdge network.</span>
         </div>
         <button class="pbe-scene-close" type="button" aria-label="Close background selector">×</button>
       </div>
@@ -107,7 +109,7 @@ function ensureSelector() {
         <span class="pbe-scene-auto-toggle" aria-hidden="true"></span>
         <span class="pbe-scene-auto-copy">
           <strong>Follow what I’m viewing</strong>
-          <small>News, articles, leader pages and PBEcast sport filters automatically match MLB, NFL, NBA or NHL.</small>
+          <small>News, leader pages and PBEcast sport filters automatically follow the sport you’re viewing.</small>
         </span>
       </label>
       <div class="pbe-scene-follow-status" aria-live="polite"></div>
@@ -318,10 +320,10 @@ function patchHistorySignals() {
 
 function sportFromPath(pathname) {
   const path = String(pathname || '');
-  const match = path.match(/\/(?:news|games|leaders)\/(mlb|nfl|nba|nhl)(?:\/|$)/i);
+  const match = path.match(/\/(?:news|games|leaders)\/(mlb|wnba|nfl|nba|nhl|ufc)(?:\/|$)/i);
   if (match?.[1]) return match[1].toLowerCase();
 
-  const standalone = path.match(/^\/(mlb|nfl|nba|nhl)(?:\/|$)/i);
+  const standalone = path.match(/^\/(mlb|wnba|nfl|nba|nhl|ufc)(?:\/|$)/i);
   return standalone?.[1]?.toLowerCase() || null;
 }
 
