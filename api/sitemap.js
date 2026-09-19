@@ -232,13 +232,15 @@ async function fetchEspnSeasonGames(sport) {
   // ESPN's team schedule route is much more reliable than large date-range
   // scoreboard queries and normally returns the team's current full season.
   // Crawl every club, dedupe by event id, and we get a league-wide event graph.
+  const season = espnSeasonYear(sport);
+
   for (let start = 0; start < teams.length; start += 8) {
     const batch = teams.slice(start, start + 8);
     const results = await Promise.all(batch.map(async (team) => {
       const id = team?.id;
       if (!id) return [];
       const response = await fetch(
-        `https://site.api.espn.com/apis/site/v2/sports/${config.category}/${config.league}/teams/${encodeURIComponent(id)}/schedule`,
+        `https://site.api.espn.com/apis/site/v2/sports/${config.category}/${config.league}/teams/${encodeURIComponent(id)}/schedule?season=${season}`,
         { headers: { accept: 'application/json' } }
       );
       if (!response.ok) return [];
@@ -258,6 +260,16 @@ async function fetchEspnSeasonGames(sport) {
 
   if (!events.length) throw new Error(`${sport}_games_empty`);
   return events;
+}
+
+function espnSeasonYear(sport) {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth() + 1;
+
+  // ESPN labels NBA/NHL seasons by their ending calendar year.
+  if (sport === 'nba' || sport === 'nhl') return month >= 7 ? year + 1 : year;
+  return year;
 }
 
 async function newsSitemap() {
