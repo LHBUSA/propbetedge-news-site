@@ -6791,3 +6791,167 @@ a.leaders-sport-tab.active,
     padding: 24px 20px;
   }
 }
+
+
+/* v3.22 — Visual multi-sport free board */
+.free-sport-section.free-sport-wnba { border-top: 3px solid #f3a83b; }
+.free-sport-section.free-sport-nhl { border-top: 3px solid #9fd9ef; }
+.free-sport-section.free-sport-nba { border-top: 3px solid #b69cff; }
+
+.free-sport-cadence {
+  display: block;
+  margin-top: 7px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.35;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--paper-faint);
+}
+
+.free-edge-card.has-media {
+  padding: 0;
+  gap: 0;
+}
+
+.free-edge-card-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  padding: 20px;
+}
+
+.free-edge-media {
+  position: relative;
+  min-height: 154px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  background:
+    radial-gradient(circle at 50% 20%, rgba(212,175,55,.12), transparent 50%),
+    linear-gradient(145deg, rgba(38,33,27,.96), rgba(16,14,12,.98));
+}
+
+.free-edge-media-images {
+  width: 100%;
+  min-height: 154px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.free-edge-media.is-portrait .free-edge-media-images {
+  height: 220px;
+}
+
+.free-edge-media.is-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+  filter: saturate(.92) contrast(1.03);
+}
+
+.free-edge-media.is-team .free-edge-media-images {
+  gap: 24px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 55%, rgba(255,255,255,.05), transparent 50%);
+}
+
+.free-edge-media.is-team img {
+  width: min(116px, 31%);
+  height: 108px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,.35));
+}
+
+.free-edge-media.is-team .free-edge-media-images.is-pair img {
+  width: min(104px, 28%);
+}
+
+.free-edge-media small {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  max-width: calc(100% - 16px);
+  padding: 3px 6px;
+  border-radius: 2px;
+  background: rgba(9,8,7,.76);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  line-height: 1.3;
+  color: var(--paper-faint);
+}
+
+.free-edge-media.is-fallback {
+  min-height: 154px;
+  grid-template-columns: auto auto;
+  gap: 10px;
+  align-content: center;
+  color: var(--paper-faint);
+}
+
+.free-edge-media.is-fallback span {
+  font-size: 38px;
+}
+
+.free-edge-media.is-fallback b {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  letter-spacing: -.03em;
+  color: rgba(245,241,235,.22);
+}
+
+.free-edge-card[data-sport="wnba"]::before { background: #f3a83b; }
+.free-edge-card[data-sport="nhl"]::before { background: #9fd9ef; }
+
+.free-edge-card[data-sport="wnba"] .free-edge-selection { color: #f7c46f; }
+.free-edge-card[data-sport="nhl"] .free-edge-selection { color: #bde8f7; }
+
+.free-coming-panel {
+  display: flex;
+  align-items: baseline;
+  gap: 10px 18px;
+  flex-wrap: wrap;
+  padding: 18px 20px;
+  border: 1px dashed rgba(182,156,255,.26);
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(182,156,255,.06), rgba(255,255,255,.02));
+}
+
+.free-coming-panel strong {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--paper);
+}
+
+.free-coming-panel span {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--paper-dim);
+}
+
+.free-sport-section.is-coming {
+  background:
+    radial-gradient(circle at 85% 0%, rgba(182,156,255,.08), transparent 34%),
+    linear-gradient(145deg, rgba(18,16,13,.95), rgba(10,9,8,.94));
+}
+
+@media (max-width: 640px) {
+  .free-edge-media.is-portrait .free-edge-media-images {
+    height: 188px;
+  }
+
+  .free-edge-media.is-team img {
+    height: 86px;
+  }
+
+  .free-sport-cadence {
+    margin-top: 6px;
+  }
+}
