@@ -93,7 +93,7 @@ function clearAndRoute() {
   if (path === '/odds') {
     setMeta({
       title: 'Free Picks & Model Edges — PropBetEdge',
-      description: 'A live public sample of PropBetEdge model output across MLB, NFL and UFC, with current odds and market context when available.',
+      description: 'Free PropBetEdge model samples across MLB, NFL, UFC, WNBA and NHL, with player or team visuals, current odds and market context when available. NBA joins next month.',
       canonical: 'https://propbetedge.ai/odds',
     });
     return renderOdds(root);
