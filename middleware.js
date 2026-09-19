@@ -303,11 +303,15 @@ async function resolveMeta(pathname) {
         status: 404,
       };
     }
+    const canonical = `${SITE}/authors/${slug}`;
     return {
-      canonical: `${SITE}/authors/${slug}`,
+      canonical,
       title: `${author.name} — ${author.role} · PropBetEdge`,
       description: `Articles by ${author.name} on PropBetEdge.`,
       image: `${SITE}/logo/pbe-full-600.png`,
+      robots: DEFAULT_ROBOTS,
+      jsonLd: buildAuthorSchema(slug, author, canonical),
+      ssrHtml: buildServerAuthorHtml(slug, author),
     };
   }
 
@@ -840,6 +844,42 @@ function formatServerDateTime(value) {
   const date = new Date(value);
   if (!Number.isFinite(date.getTime())) return '';
   return date.toISOString().replace('T', ' ').replace(/\.000Z$/, ' UTC');
+}
+
+function buildAuthorSchema(slug, author, canonical) {
+  const isTeam = slug === 'propbetedge-editorial-team';
+  const entity = {
+    '@type': isTeam ? 'Organization' : 'Person',
+    '@id': `${canonical}#author`,
+    name: author.name,
+    url: canonical,
+    worksFor: isTeam ? undefined : { '@id': `${SITE}/#organization` },
+    jobTitle: isTeam ? undefined : author.role,
+    memberOf: isTeam ? { '@id': `${SITE}/#organization` } : undefined,
+  };
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    '@id': `${canonical}#profile`,
+    url: canonical,
+    name: `${author.name} — PropBetEdge`,
+    mainEntity: entity,
+    isPartOf: { '@id': `${SITE}/#website` },
+    publisher: { '@id': `${SITE}/#organization` },
+  };
+}
+
+function buildServerAuthorHtml(slug, author) {
+  return `<main class="pbe-ssr-author" data-server-rendered="1">
+    <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; <a href="/authors">Editorial Team</a> &rsaquo; ${escapeHtml(author.name)}</nav>
+    <article>
+      <p>${escapeHtml(author.role)}</p>
+      <h1>${escapeHtml(author.name)}</h1>
+      <p>${escapeHtml(author.name)} contributes to PropBetEdge sports journalism and intelligence coverage.</p>
+      <p><a href="/editorial-standards">Editorial Standards</a> · <a href="/authors">Full masthead</a></p>
+    </article>
+  </main>`;
 }
 
 function buildAuthorsSchema(canonical) {
