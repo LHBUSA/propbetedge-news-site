@@ -742,104 +742,19 @@ function formatServerDate(value) {
 async function resolveGameMeta(sport, gameId) {
   if (!/^\d{1,12}$/.test(String(gameId))) return { notFound: true };
 
-  if (sport === 'mlb') {
-    const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule?gamePks=${encodeURIComponent(gameId)}&hydrate=team,venue,linescore,probablePitcher`);
-    if (res.status === 404 || res.status === 400) return { notFound: true };
-    if (!res.ok) return { unavailable: true };
-    const data = await res.json();
-    const game = (data?.dates || []).flatMap((row) => row?.games || [])[0];
-    if (!game) return { notFound: true };
-
-    const away = game?.teams?.away || {};
-    const home = game?.teams?.home || {};
-    return {
-      id: String(game.gamePk || gameId),
-      startDate: game.gameDate || null,
-      status: game?.status?.abstractGameState || game?.status?.detailedState || '',
-      statusDetail: game?.status?.detailedState || '',
-      venue: game?.venue?.name || '',
-      away: {
-        id: away?.team?.id || null,
-        name: away?.team?.name || 'Away Team',
-        abbreviation: away?.team?.abbreviation || '',
-        score: away?.score ?? null,
-        winner: away?.isWinner === true,
-        image: away?.team?.id ? `https://www.mlbstatic.com/team-logos/${away.team.id}.svg` : null,
-      },
-      home: {
-        id: home?.team?.id || null,
-        name: home?.team?.name || 'Home Team',
-        abbreviation: home?.team?.abbreviation || '',
-        score: home?.score ?? null,
-        winner: home?.isWinner === true,
-        image: home?.team?.id ? `https://www.mlbstatic.com/team-logos/${home.team.id}.svg` : null,
-      },
-      image: home?.team?.id ? `https://www.mlbstatic.com/team-logos/${home.team.id}.svg` : null,
-    };
-  }
-
-  if (sport === 'nhl') {
-    const res = await fetch(`https://api-web.nhle.com/v1/gamecenter/${encodeURIComponent(gameId)}/landing`);
-    if (res.status === 404 || res.status === 400) return { notFound: true };
-    if (!res.ok) return { unavailable: true };
-    const game = await res.json();
-    if (!game?.homeTeam || !game?.awayTeam) return { notFound: true };
-
-    const nhlTeam = (team, fallback) => ({
-      id: team?.id || null,
-      name: [
-        team?.placeName?.default,
-        team?.commonName?.default,
-      ].filter(Boolean).join(' ') || team?.name?.default || fallback,
-      abbreviation: team?.abbrev || '',
-      score: team?.score ?? null,
-      winner: false,
-      image: team?.logo || null,
-    });
-
-    return {
-      id: String(game.id || gameId),
-      startDate: game.startTimeUTC || null,
-      status: game.gameState || '',
-      statusDetail: game.gameScheduleState || game.gameState || '',
-      venue: game?.venue?.default || '',
-      away: nhlTeam(game.awayTeam, 'Away Team'),
-      home: nhlTeam(game.homeTeam, 'Home Team'),
-      image: game?.homeTeam?.logo || game?.awayTeam?.logo || null,
-    };
-  }
-
-  const api = SPORT_API[sport];
-  if (!api) return { notFound: true };
-  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${api.category}/${api.league}/summary?event=${encodeURIComponent(gameId)}`);
+  // Game identity is normalized by the Node-side gateway. This avoids provider
+  // differences in the Edge runtime and keeps ESPN ids consistent across
+  // NFL/NBA/NHL team schedules, game pages and sitemaps.
+  const endpoint = `${SITE}/api/game-meta?sport=${encodeURIComponent(sport)}&id=${encodeURIComponent(gameId)}`;
+  const res = await fetch(endpoint, { headers: { Accept: 'application/json' } });
   if (res.status === 404 || res.status === 400) return { notFound: true };
   if (!res.ok) return { unavailable: true };
-  const data = await res.json();
-  const competition = data?.header?.competitions?.[0];
-  if (!competition) return { notFound: true };
-  const competitors = competition.competitors || [];
-  const homeRaw = competitors.find((row) => row?.homeAway === 'home') || competitors[0];
-  const awayRaw = competitors.find((row) => row?.homeAway === 'away') || competitors[1];
-  if (!homeRaw?.team || !awayRaw?.team) return { notFound: true };
 
-  const espnTeam = (row, fallback) => ({
-    id: row?.team?.id || row?.id || null,
-    name: row?.team?.displayName || row?.team?.shortDisplayName || row?.team?.name || fallback,
-    abbreviation: row?.team?.abbreviation || '',
-    score: row?.score ?? null,
-    winner: row?.winner === true,
-    image: row?.team?.logos?.[0]?.href || row?.team?.logo || null,
-  });
-
+  const game = await res.json();
+  if (!game?.home?.name || !game?.away?.name) return { notFound: true };
   return {
-    id: String(data?.header?.id || gameId),
-    startDate: competition?.date || data?.header?.competitions?.[0]?.date || null,
-    status: competition?.status?.type?.state || competition?.status?.type?.description || '',
-    statusDetail: competition?.status?.type?.shortDetail || competition?.status?.type?.detail || '',
-    venue: competition?.venue?.fullName || competition?.venue?.name || '',
-    away: espnTeam(awayRaw, 'Away Team'),
-    home: espnTeam(homeRaw, 'Home Team'),
-    image: homeRaw?.team?.logos?.[0]?.href || awayRaw?.team?.logos?.[0]?.href || null,
+    ...game,
+    image: game?.home?.image || game?.away?.image || null,
   };
 }
 
