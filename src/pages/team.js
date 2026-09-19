@@ -55,22 +55,25 @@ function playerHeadshot(player) {
   return player?.headshot?.href || player?.headshot || '';
 }
 
-function renderRoster(players) {
+function renderRoster(players, sport) {
   if (!players.length) return '<div class="pbe-intel-empty compact"><strong>Roster unavailable</strong><span>The source did not return a current roster.</span></div>';
   return `
     <div class="pbe-team-roster">
-      ${players.slice(0, 16).map((player) => {
+      ${players.slice(0, 24).map((player) => {
         const photo = playerHeadshot(player);
         const position = player?.position?.abbreviation || player?.position?.name || '';
         const jersey = player?.jersey ? `#${player.jersey}` : '';
+        const canLink = (sport === 'nfl' || sport === 'nba') && /^\d+$/.test(String(player?.id || ''));
+        const tag = canLink ? 'a' : 'div';
+        const href = canLink ? ` href="/player/${sport}/${escapeAttr(player.id)}"` : '';
         return `
-          <div class="pbe-team-player">
+          <${tag} class="pbe-team-player"${href}>
             ${photo ? `<img src="${escapeAttr(photo)}" alt="${escapeAttr(player.fullName || player.displayName || '')}" loading="lazy" onerror="this.style.display='none'" />` : '<span class="pbe-team-player-fallback">PBE</span>'}
             <span>
               <strong>${escapeHtml(player.fullName || player.displayName || 'Player')}</strong>
               <small>${escapeHtml([position, jersey].filter(Boolean).join(' · '))}</small>
             </span>
-          </div>
+          </${tag}>
         `;
       }).join('')}
     </div>
@@ -260,7 +263,7 @@ export async function renderTeamPage(root, sport, teamSlug, setMeta) {
         <aside class="pbe-team-side">
           <section class="pbe-intel-section">
             <div class="pbe-intel-section-head"><div><span>Current entity</span><h2>Roster</h2></div></div>
-            ${renderRoster(roster)}
+            ${renderRoster(roster, sport)}
           </section>
           <section class="pbe-team-model-card">
             <span>PROP BET EDGE</span>
