@@ -33,16 +33,6 @@ const NHL_PRESEASON_URL = (date) => `https://nhl-api.propbetedge.ai/nhl/picks/pr
 // picks can rotate through from the NHL-specific refresh.
 const REFRESH_INTERVAL_MS = 60 * 1000;
 const NHL_REFRESH_INTERVAL_MS = 10 * 1000;
-const NHL_MAX_FREE_PICKS = 2;
-const FREE_TRACKER_START_ET = '2026-09-20';
-const TRACKER_CADENCE = Object.freeze({
-  nfl: 'weekly',
-  ufc: 'weekly',
-  mlb: 'daily',
-  wnba: 'daily',
-  nhl: 'daily',
-  nba: 'daily',
-});
 let _refreshTimer = null;
 let _nhlRefreshTimer = null;
 let _lastPayload = null;
@@ -261,13 +251,10 @@ function normalizeMlbHrPick(pick, data, oddsSnapshot, index = 0) {
   const marketProbability = live?.fairProbability ?? live?.impliedProbability ?? null;
   const snapshotStamp = oddsSnapshot?.cachedAt || oddsSnapshot?.snapshot?.captured_at || null;
 
-  const outcome = simpleOutcome(pick.result, { gradedAt: pick.graded_at });
   return {
     sport: 'mlb',
     variant: 'hr-spotlight',
-    eyebrow: outcome?.result === 'WIN'
-      ? `MLB · FREE HR HIT #${index + 1}`
-      : `MLB · FREE HR PICK #${index + 1}`,
+    eyebrow: `MLB · FREE HR PICK #${index + 1}`,
     title: pick.player_name,
     selection: 'TO HIT A HOME RUN',
     context,
@@ -278,13 +265,10 @@ function normalizeMlbHrPick(pick, data, oddsSnapshot, index = 0) {
       { label: 'PBE SCORE', value: Number.isFinite(score) ? `${Math.round(score)}/100` : '—' },
       { label: 'MARKET', value: live ? probabilityPct(marketProbability) : 'Pending' },
     ],
-    detail: outcome
-      ? [outcome.label, outcome.gradedAt ? `Graded ${formatRelativeStamp(outcome.gradedAt)}` : null].filter(Boolean).join(' · ')
-      : live
-        ? `Free HR prop · live market matched${snapshotStamp ? ` · ${formatRelativeStamp(snapshotStamp)}` : ''}`
-        : 'Free HR prop · live market pricing pending',
-    outcome,
-    timestamp: latestTimestamp([pick.graded_at, data?.generated_at, snapshotStamp]),
+    detail: live
+      ? `Free HR prop · live market matched${snapshotStamp ? ` · ${formatRelativeStamp(snapshotStamp)}` : ''}`
+      : 'Free HR prop · live market pricing pending',
+    timestamp: latestTimestamp([data?.generated_at, snapshotStamp]),
     href: data?.full_product_url || PROPBET_LINKS.hr_targets || SPORTS.mlb.href,
     media: pick.player_image ? {
       kind: 'portrait',
@@ -301,11 +285,10 @@ function normalizeNfl(data) {
       ? `${pick.matchup.away_team} @ ${pick.matchup.home_team}`
       : 'NFL matchup';
     const scope = pick.scope_label || (pick.publication_scope === 'tracking' ? 'PBE VALIDATION SIGNAL' : 'PBE PICK');
-    const outcome = simpleOutcome(pick.grade?.result, { gradedAt: pick.grade?.graded_at });
 
     return {
       sport: 'nfl',
-      eyebrow: outcome?.result === 'WIN' ? 'NFL · FREE PICK HIT' : `NFL · ${scope}`,
+      eyebrow: `NFL · ${scope}`,
       title: pick.selection || 'NFL pick',
       selection: matchup,
       context: [prettyMarket(pick.market), formatDateTime(pick.kickoff_ts)].filter(Boolean).join(' · '),
@@ -314,11 +297,8 @@ function normalizeNfl(data) {
       model: probabilityPct(pick.model_probability),
       market: probabilityPct(pick.market_probability),
       edge: probabilityPointEdge(pick.edge_pct),
-      detail: outcome
-        ? [outcome.label, outcome.gradedAt ? `Graded ${formatRelativeStamp(outcome.gradedAt)}` : null].filter(Boolean).join(' · ')
-        : [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.lifecycle].filter(Boolean).join(' · '),
-      outcome,
-      timestamp: latestTimestamp([pick.grade?.graded_at, data.generated_at, pick.issued_at]),
+      detail: [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.lifecycle].filter(Boolean).join(' · '),
+      timestamp: data.generated_at || pick.issued_at || null,
       href: SPORTS.nfl.href,
       media: {
         kind: 'team',
@@ -350,12 +330,11 @@ function normalizeUfc(data) {
       : slot === 'NEXT_BEST'
         ? 'NEXT BEST'
         : 'BEST BET';
-    const outcome = simpleOutcome(pick.grade?.result, { gradedAt: pick.grade?.graded_at });
 
     return {
       sport: 'ufc',
       variant: slot === 'UNDERDOG_VALUE' ? 'ufc-top-upset' : null,
-      eyebrow: outcome?.result === 'WIN' ? `UFC · ${slotLabel} · HIT` : `UFC · ${slotLabel}`,
+      eyebrow: `UFC · ${slotLabel}`,
       title: pick.pick_name || 'UFC pick',
       selection: pick.opponent_name ? `vs ${pick.opponent_name}` : pick.matchup || 'Fight pick',
       context: [pick.event_name, formatDate(pick.event_date)].filter(Boolean).join(' · '),
@@ -364,25 +343,18 @@ function normalizeUfc(data) {
       model: probabilityPct(pick.model_probability),
       market: probabilityPct(pick.market_probability),
       edge: pointEdge(pick.edge_pts),
-      detail: outcome
+      detail: slot === 'UNDERDOG_VALUE'
         ? [
-            outcome.label,
-            outcome.gradedAt ? `Graded ${formatRelativeStamp(outcome.gradedAt)}` : null,
-            pick.event_name,
+            'PBE +money underdog value',
+            pick.upset_rank ? `Upset Radar #${pick.upset_rank}` : null,
+            pick.lifecycle,
           ].filter(Boolean).join(' · ')
-        : slot === 'UNDERDOG_VALUE'
-          ? [
-              'PBE +money underdog value',
-              pick.upset_rank ? `Upset Radar #${pick.upset_rank}` : null,
-              pick.lifecycle,
-            ].filter(Boolean).join(' · ')
-          : [
-              pick.confidence ? `Confidence ${pick.confidence}` : null,
-              pick.lifecycle,
-              pick.observed_at ? `Market ${formatRelativeStamp(pick.observed_at)}` : null,
-            ].filter(Boolean).join(' · '),
-      outcome,
-      timestamp: latestTimestamp([pick.grade?.graded_at, data.generated_at, pick.observed_at]),
+        : [
+            pick.confidence ? `Confidence ${pick.confidence}` : null,
+            pick.lifecycle,
+            pick.observed_at ? `Market ${formatRelativeStamp(pick.observed_at)}` : null,
+          ].filter(Boolean).join(' · '),
+      timestamp: data.generated_at || pick.observed_at || null,
       href: data.full_product_url || SPORTS.ufc.href,
       media: pick.media?.image_url ? {
         kind: 'portrait',
@@ -452,17 +424,9 @@ function normalizeWnba(data) {
     const away = pick.away?.abbr || pick.away?.name || 'AWAY';
     const pickName = pick.pick_team?.name || pick.pick_team?.short_name || pick.pick_team?.abbr || 'WNBA pick';
     const opponent = pick.opponent?.name || pick.opponent?.short_name || pick.opponent?.abbr || null;
-    const outcome = simpleOutcome(pick.grade?.result, {
-      gradedAt: pick.grade?.graded_at,
-      score: Number.isFinite(Number(pick.grade?.away_score)) && Number.isFinite(Number(pick.grade?.home_score))
-        ? `${away} ${pick.grade.away_score} · ${home} ${pick.grade.home_score}`
-        : null,
-    });
     return {
       sport: 'wnba',
-      eyebrow: outcome?.result === 'WIN'
-        ? 'WNBA · PBE ALGO HIT'
-        : `WNBA · ${pick.phase === 'LOCKED' ? 'LOCKED PBE PICK' : 'PBE MODEL CALL'}`,
+      eyebrow: `WNBA · ${pick.phase === 'LOCKED' ? 'LOCKED PBE PICK' : 'PBE MODEL CALL'}`,
       title: pickName,
       selection: opponent ? `vs ${opponent}` : `${away} @ ${home}`,
       context: [`${away} @ ${home}`, formatDateTime(pick.scheduled_tip_utc)].filter(Boolean).join(' · '),
@@ -471,11 +435,8 @@ function normalizeWnba(data) {
       model: probabilityPct(pick.model_probability),
       market: probabilityPct(pick.market_probability),
       edge: pointEdge(pick.edge_pts),
-      detail: outcome
-        ? [outcome.score, outcome.gradedAt ? `Graded ${formatRelativeStamp(outcome.gradedAt)}` : null].filter(Boolean).join(' · ')
-        : [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.phase].filter(Boolean).join(' · '),
-      outcome,
-      timestamp: latestTimestamp([pick.grade?.graded_at, body.generated_at, pick.locked_at]),
+      detail: [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.phase].filter(Boolean).join(' · '),
+      timestamp: body.generated_at || pick.locked_at || null,
       href: body.full_product_url || SPORTS.wnba.href,
       media: {
         kind: 'team',
@@ -509,7 +470,7 @@ function normalizeNhlSources({ official, preseason, date }) {
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, NHL_MAX_FREE_PICKS);
+  }).slice(0, 2);
 
   const validating = official.value?.reason === 'no_official_model'
     || official.value?.publish_gate?.open === false;
@@ -559,11 +520,8 @@ function normalizeNhlOfficial(data) {
       href: data.full_product_url || SPORTS.nhl.href,
       media: {
         kind: 'team',
-        images: [
-          pick.pick_team_logo_url || nhlLogoUrl(pick.pick_team),
-          pick.opponent_team_logo_url || nhlLogoUrl(pick.opponent_team),
-        ].filter(Boolean),
-        alt: pick.pick_team ? `${pick.pick_team} vs ${pick.opponent_team || 'opponent'} team logos` : 'NHL team logos',
+        images: [pick.pick_team_logo_url].filter(Boolean),
+        alt: pick.pick_team ? `${pick.pick_team} team logo` : 'NHL team logo',
       },
     };
   });
@@ -617,11 +575,8 @@ function normalizeNhlPreseason(data, date) {
         href: SPORTS.nhl.href,
         media: {
           kind: 'team',
-          images: [
-            game.pick_team_logo_url || nhlLogoUrl(pickTeam),
-            game.opponent_team_logo_url || nhlLogoUrl(opponent),
-          ].filter(Boolean),
-          alt: `${pickTeam || 'NHL'} vs ${opponent || 'opponent'} team logos`,
+          images: [],
+          alt: `${pickTeam || 'NHL'} team`,
         },
       };
     });
@@ -634,21 +589,6 @@ function normalizeNhlPreseason(data, date) {
     stateTitle: cards.length ? null : `No locked NHL preseason calls for ${date}`,
     stateCopy: cards.length ? null : 'When the preseason model locks a real call, it appears here automatically.',
   };
-}
-
-function simpleOutcome(result, { gradedAt = null, score = null } = {}) {
-  const value = String(result || '').toUpperCase();
-  const normalized = value === 'W' || value === 'WON' || value === 'HIT' ? 'WIN'
-    : value === 'L' || value === 'LOST' || value === 'MISS' ? 'LOSS'
-      : value;
-  if (!['WIN', 'LOSS', 'PUSH', 'VOID'].includes(normalized)) return null;
-  const labels = {
-    WIN: { label: 'HIT', headline: 'PBE ALGO CALLED IT', tone: 'hit' },
-    LOSS: { label: 'MISS', headline: 'PBE ALGO RESULT', tone: 'miss' },
-    PUSH: { label: 'PUSH', headline: 'PBE ALGO RESULT', tone: 'push' },
-    VOID: { label: 'VOID', headline: 'PBE ALGO RESULT', tone: 'void' },
-  };
-  return { result: normalized, ...labels[normalized], score, gradedAt };
 }
 
 function nhlOutcome(result, { away, home, awayScore, homeScore, gradedAt } = {}) {
@@ -668,136 +608,6 @@ function nhlOutcome(result, { away, home, awayScore, homeScore, gradedAt } = {})
     score: hasScore ? `${away} ${awayScore} · ${home} ${homeScore}` : null,
     gradedAt: gradedAt || null,
   };
-}
-
-function nhlLogoUrl(abbr) {
-  const clean = String(abbr || '').toUpperCase().replace(/[^A-Z]/g, '');
-  return clean ? `https://assets.nhle.com/logos/nhl/svg/${clean}_dark.svg` : null;
-}
-
-function etDateFrom(value) {
-  if (!value) return null;
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(value))
-    ? new Date(`${value}T12:00:00Z`)
-    : new Date(value);
-  if (!Number.isFinite(date.getTime())) return null;
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date);
-  const part = (type) => parts.find((x) => x.type === type)?.value || '';
-  return `${part('year')}-${part('month')}-${part('day')}`;
-}
-
-function addEtDays(dateText, days) {
-  const base = new Date(`${dateText}T12:00:00Z`);
-  base.setUTCDate(base.getUTCDate() + days);
-  return base.toISOString().slice(0, 10);
-}
-
-function currentTrackerWeek() {
-  const today = todayEtDate();
-  const base = new Date(`${today}T12:00:00Z`);
-  const sunday = addEtDays(today, -base.getUTCDay());
-  const start = sunday < FREE_TRACKER_START_ET ? FREE_TRACKER_START_ET : sunday;
-  return { start, endExclusive: addEtDays(sunday, 7) };
-}
-
-function trackerCardEligible(card, cadence) {
-  const today = todayEtDate();
-  if (today < FREE_TRACKER_START_ET) return false;
-  const eventDate = etDateFrom(card?.trackerDate);
-  const gradedDate = etDateFrom(card?.outcome?.gradedAt);
-  const result = String(card?.outcome?.result || '').toUpperCase();
-
-  if (result && gradedDate && gradedDate < FREE_TRACKER_START_ET) return false;
-
-  if (cadence === 'weekly') {
-    const { start, endExclusive } = currentTrackerWeek();
-    return Boolean(eventDate && eventDate >= start && eventDate < endExclusive);
-  }
-  return eventDate === today;
-}
-
-function trackerStats(source, sportKey) {
-  const cadence = TRACKER_CADENCE[sportKey];
-  const cards = (Array.isArray(source?.cards) ? source.cards : [])
-    .filter((card) => trackerCardEligible(card, cadence));
-  let wins = 0; let losses = 0; let pushes = 0; let voids = 0; let pending = 0;
-  for (const card of cards) {
-    const result = String(card?.outcome?.result || '').toUpperCase();
-    if (result === 'WIN') wins += 1;
-    else if (result === 'LOSS') losses += 1;
-    else if (result === 'PUSH') pushes += 1;
-    else if (result === 'VOID') voids += 1;
-    else pending += 1;
-  }
-  return { total: cards.length, wins, losses, pushes, voids, pending };
-}
-
-function trackerPeriod(sportKey) {
-  const cadence = TRACKER_CADENCE[sportKey];
-  if (cadence === 'weekly') {
-    const { start, endExclusive } = currentTrackerWeek();
-    return `${start} → ${addEtDays(endExclusive, -1)} ET`;
-  }
-  return `TODAY · ${todayEtDate()} ET`;
-}
-
-function renderTrackerSport(sportKey, source = null) {
-  const sport = SPORTS[sportKey];
-  const stats = trackerStats(source, sportKey);
-  const live = stats.total > 0;
-  const record = stats.wins || stats.losses || stats.pushes
-    ? `${stats.wins}-${stats.losses}${stats.pushes ? `-${stats.pushes}P` : ''}`
-    : '0-0';
-  const pendingCopy = stats.pending ? `${stats.pending} pending` : stats.voids ? `${stats.voids} void` : 'No pending result';
-  const state = sportKey === 'nba'
-    ? 'Starts when NBA free picks launch'
-    : live
-      ? pendingCopy
-      : 'No free picks in this period yet';
-  return `<article class="free-tracker-sport" data-tracker-sport="${sportKey}">
-    <div class="free-tracker-sport__head">
-      <span class="free-tracker-sport__icon">${sport.emoji}</span>
-      <div><b>${sport.label}</b><small>${trackerPeriod(sportKey)}</small></div>
-    </div>
-    <div class="free-tracker-record">${record}</div>
-    <div class="free-tracker-meta">${escapeHtml(state)}</div>
-    <div class="free-tracker-proof">${stats.total ? `${stats.total} exact free pick${stats.total === 1 ? '' : 's'} on board` : 'Waiting for public card'}</div>
-  </article>`;
-}
-
-function renderFreePicksTracker(payload) {
-  return `<section class="free-tracker">
-    <div class="free-tracker-head">
-      <div>
-        <span class="kicker kicker-gold">FREE PICKS TRACKER</span>
-        <h2>The exact public picks. Tracked on the sport's real cadence.</h2>
-        <p>Weekly for NFL and UFC. Daily for MLB, WNBA, NHL and NBA. The public tracker starts September 20, 2026 — no historical backfill. Only picks actually published on this free board count here.</p>
-      </div>
-      <span class="free-tracker-rule">STARTED 09/20/26 · NO BACKFILL</span>
-    </div>
-    <div class="free-tracker-group">
-      <div class="free-tracker-group__label"><b>Weekly</b><span>NFL · UFC</span></div>
-      <div class="free-tracker-grid free-tracker-grid--weekly">
-        ${renderTrackerSport('nfl', payload.nfl)}
-        ${renderTrackerSport('ufc', payload.ufc)}
-      </div>
-    </div>
-    <div class="free-tracker-group">
-      <div class="free-tracker-group__label"><b>Daily</b><span>MLB · WNBA · NHL · NBA</span></div>
-      <div class="free-tracker-grid">
-        ${renderTrackerSport('mlb', payload.mlb)}
-        ${renderTrackerSport('wnba', payload.wnba)}
-        ${renderTrackerSport('nhl', payload.nhl)}
-        ${renderTrackerSport('nba', null)}
-      </div>
-    </div>
-    <div class="free-tracker-note">Tracker epoch: September 20, 2026 ET. Nothing before launch is imported. A result changes only when that sport's public grading feed proves it; pending stays pending and losses stay visible.</div>
-  </section>`;
 }
 
 function renderHero() {
@@ -860,7 +670,6 @@ function renderBoard(payload) {
   if (countEl) countEl.textContent = `${total} free sample${total === 1 ? '' : 's'} live`;
 
   document.getElementById('odds-board').innerHTML = `
-    ${renderFreePicksTracker(payload)}
     <div class="free-sport-stack">
       ${renderSportSection('mlb', payload.mlb)}
       ${renderSportSection('nfl', payload.nfl)}
@@ -940,26 +749,11 @@ function renderSportState(sport, title, copy) {
 }
 
 function renderCardAvatar(card) {
-  const images = (card.media?.images || []).filter(Boolean);
-  const image = images[0] || null;
+  const image = (card.media?.images || []).filter(Boolean)[0] || null;
   const isPortrait = card.media?.kind === 'portrait';
-  const isTeamPair = !isPortrait && images.length > 1;
   const fallback = isPortrait
     ? String(card.title || '?').split(/\s+/).filter(Boolean).map((part) => part[0]).slice(0, 2).join('').toUpperCase()
     : (SPORTS[card.sport]?.emoji || '⚡');
-
-  if (isTeamPair) {
-    return `
-      <div class="free-edge-avatar-wrap">
-        <div class="free-edge-avatar is-team-logo is-team-pair" aria-label="${escapeHtml(card.media?.alt || card.title || '')}">
-          <span class="free-edge-avatar-fallback" aria-hidden="true">${escapeHtml(fallback || '⚡')}</span>
-          ${images.slice(0, 2).map((src, index) => `<img class="team-logo-${index + 1}" src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">`).join('')}
-        </div>
-        ${card.media?.credit ? `<small class="free-edge-avatar-credit">${escapeHtml(card.media.credit)}</small>` : ''}
-      </div>
-    `;
-  }
-
   // UFC free-sample media is already identity-verified by the UFC product.
   // Use that source directly first so a proxy/cache hiccup cannot blank a fighter.
   const primaryImage = image && card.sport === 'ufc' ? image : proxyImage(image);
