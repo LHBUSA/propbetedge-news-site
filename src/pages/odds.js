@@ -950,7 +950,7 @@ function renderFreeTrackRecord(tracker) {
       <div>
         <span class="kicker kicker-gold">FREE PICKS TRACK RECORD</span>
         <h2>Every public call stays on the board.</h2>
-        <p>Separate from the live samplers. Once a free pick is published here, its identity is frozen; only the result can change.</p>
+        <p>Separate from all Pro-platform model records. This ledger tracks only picks published on the Free Picks board; once published here, the pick is frozen and only its result can change.</p>
       </div>
       <div class="pbe-free-track__actions">
         <span class="pbe-free-track__epoch">STARTED 09/20/26 · NO BACKFILL</span>
