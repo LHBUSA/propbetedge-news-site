@@ -28,20 +28,30 @@ export default async function handler(req, res) {
     const body = await response.json();
     const fighters = Array.isArray(body?.data) ? body.data : [];
     const q = normalize(name);
-    const fighter = fighters.find((row) => normalize(row?.name) === q && row?.primary_image?.image_url);
+    const fighter = fighters.find((row) => normalize(row?.name) === q);
     if (!fighter) return res.status(404).json({ error: 'media_not_found' });
 
-    const image = fighter.primary_image;
+    const image = fighter.primary_image || null;
+    const primaryUrl = image?.card_url || image?.image_url || image?.thumb_url || null;
+    const espnId = /^\d+$/.test(String(fighter.slug_id || '')) ? String(fighter.slug_id) : null;
+    const fallbackUrl = espnId
+      ? `https://a.espncdn.com/i/headshots/mma/players/full/${espnId}.png`
+      : null;
+    const imageUrl = primaryUrl || fallbackUrl;
+
+    if (!imageUrl) return res.status(404).json({ error: 'media_not_found' });
+
     return res.status(200).json({
       kind: 'fighter',
       id: fighter.id || null,
       name: fighter.name || name,
-      image_url: image.card_url || image.image_url || image.thumb_url || null,
-      thumb_url: image.thumb_url || null,
-      attribution_text: image.attribution_text || null,
-      license: image.license || null,
-      source_url: image.source_url || null,
-      resolved_by: 'exact_fighter_name',
+      image_url: imageUrl,
+      thumb_url: image?.thumb_url || fallbackUrl,
+      attribution_text: image?.attribution_text || (fallbackUrl ? 'Photo: ESPN' : null),
+      license: image?.license || null,
+      source_url: image?.source_url || (espnId ? `https://www.espn.com/mma/fighter/_/id/${espnId}` : null),
+      display_policy: primaryUrl ? 'stored_asset' : 'display_only',
+      resolved_by: primaryUrl ? 'exact_fighter_primary_image' : 'exact_fighter_espn_id',
     });
   } catch {
     return res.status(404).json({ error: 'media_not_found' });
