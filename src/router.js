@@ -37,6 +37,7 @@ import { renderNhlPlayerPage } from './pages/player-nhl.js';
 import { renderNbaPlayerPage } from './pages/player-nba.js';
 import { renderNflPlayerPage } from './pages/player-nfl.js';
 import { renderOdds } from './pages/odds.js';
+import { renderFreePicksHistory } from './pages/free-picks-history.js';
 import { renderTeamPage } from './pages/team.js';
 import { renderStandingsPage } from './pages/standings.js';
 
@@ -101,6 +102,15 @@ function clearAndRoute() {
       canonical: 'https://propbetedge.ai/odds',
     });
     return renderOdds(root);
+  }
+
+  if (path === '/odds/history') {
+    setMeta({
+      title: 'Free Picks History — PropBetEdge',
+      description: 'The complete public PropBetEdge free-picks ledger: every recorded free pick, result, score and settlement proof since tracking began September 20, 2026.',
+      canonical: 'https://propbetedge.ai/odds/history',
+    });
+    return renderFreePicksHistory(root);
   }
 
   const newsPageMatch = path.match(/^\/news\/page\/(\d+)$/);
