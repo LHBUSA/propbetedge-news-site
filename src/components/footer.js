@@ -75,6 +75,8 @@ export function renderFooter() {
             <a href="${PROPBET_LINKS.linkedin}" target="_blank" rel="noopener">
               <span class="footer-icon">in</span> LinkedIn
             </a>
+            <a href="https://billing.stripe.com/p/login/cNi3cv2vY7em3lr4oj7wA00" target="_blank" rel="noopener noreferrer">Manage Subscriptions</a>
+            <a href="mailto:support@proptechusa.ai">Contact Us · support@proptechusa.ai</a>
           </div>
 
         </div>
