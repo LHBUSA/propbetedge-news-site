@@ -839,7 +839,10 @@ function renderFreeTrackRecord(tracker) {
     return `<section class="pbe-free-track">
       <div class="pbe-free-track__head">
         <div><span class="kicker kicker-gold">FREE PICKS TRACK RECORD</span><h2>Public proof ledger</h2></div>
-        <span class="pbe-free-track__epoch">STARTED 09/20/26 · NO BACKFILL</span>
+        <div class="pbe-free-track__actions">
+          <span class="pbe-free-track__epoch">STARTED 09/20/26 · NO BACKFILL</span>
+          <a class="pbe-free-track__history-link" href="/odds/history">View Full History →</a>
+        </div>
       </div>
       <div class="pbe-free-track__offline">Track Record is reconnecting. Live sport cards remain independent.</div>
     </section>`;
@@ -863,7 +866,10 @@ function renderFreeTrackRecord(tracker) {
         <h2>Every public call stays on the board.</h2>
         <p>Separate from the live samplers. Once a free pick is published here, its identity is frozen; only the result can change.</p>
       </div>
-      <span class="pbe-free-track__epoch">STARTED 09/20/26 · NO BACKFILL</span>
+      <div class="pbe-free-track__actions">
+        <span class="pbe-free-track__epoch">STARTED 09/20/26 · NO BACKFILL</span>
+        <a class="pbe-free-track__history-link" href="/odds/history">View Full Free Picks History →</a>
+      </div>
     </div>
 
     <div class="pbe-free-track__scoreline">
