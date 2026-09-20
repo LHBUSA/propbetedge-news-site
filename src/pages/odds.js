@@ -158,6 +158,7 @@ async function loadAndRender() {
   } catch (error) {
     console.warn('[odds] Free Picks Track Record unavailable:', error);
   }
+  applyTrackerOutcomes(payload, _lastTracker);
   renderBoard(payload, _lastTracker);
   injectEdgeSchema(payload);
 }
@@ -168,6 +169,7 @@ async function refreshNhlOnly() {
   try {
     const nhl = await loadNhlSource();
     _lastPayload = { ..._lastPayload, nhl };
+    applyTrackerOutcomes(_lastPayload, _lastTracker);
     renderBoard(_lastPayload, _lastTracker);
     injectEdgeSchema(_lastPayload);
   } catch (error) {
@@ -183,6 +185,7 @@ async function refreshTrackerOnly() {
   try {
     const tracker = await fetchJson(FREE_TRACKER_URL);
     if (tracker?.ok) _lastTracker = tracker;
+    applyTrackerOutcomes(_lastPayload, _lastTracker);
     renderBoard(_lastPayload, _lastTracker);
   } catch (error) {
     console.warn('[odds] Free Picks Track Record refresh unavailable:', error);
@@ -722,6 +725,68 @@ function renderBoard(payload, tracker = _lastTracker) {
       <span>Every sport keeps its own model, release gate and refresh cadence. Empty space stays empty instead of being filled with placeholder picks.</span>
     </div>
   `;
+}
+
+function trackerOutcome(entry) {
+  const result = String(entry?.result || '').toUpperCase();
+  if (!['WIN','LOSS','PUSH','VOID'].includes(result)) return null;
+  const labels = {
+    WIN: { label:'HIT', headline:'PBE ALGO CALLED IT', tone:'hit' },
+    LOSS: { label:'MISS', headline:'PBE ALGO RESULT', tone:'miss' },
+    PUSH: { label:'PUSH', headline:'PBE ALGO RESULT', tone:'push' },
+    VOID: { label:'VOID', headline:'PBE ALGO RESULT', tone:'void' },
+  };
+  return {
+    result,
+    ...labels[result],
+    score: entry.score || null,
+    gradedAt: entry.result_at || null,
+  };
+}
+
+function normTrackerText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function trackerEntryMatchesCard(entry, card) {
+  if (!entry || !card || String(entry.sport || '').toLowerCase() !== String(card.sport || '').toLowerCase()) return false;
+  const pick = normTrackerText(entry.selection);
+  const title = normTrackerText(card.title);
+  if (pick && title && pick === title) return true;
+
+  // NHL cards often use abbreviations while the ledger uses full team names.
+  if (card.sport === 'nhl') {
+    const matchup = normTrackerText(entry.matchup);
+    const context = normTrackerText(card.context);
+    return Boolean(matchup && context && (context.includes(matchup) || matchup.includes(context)));
+  }
+  return false;
+}
+
+function applyTrackerOutcomes(payload, tracker) {
+  if (!tracker?.ok || !payload) return;
+  const settled = (Array.isArray(tracker.entries) ? tracker.entries : [])
+    .filter((entry) => ['WIN','LOSS','PUSH','VOID'].includes(String(entry.result || '').toUpperCase()));
+
+  for (const source of Object.values(payload)) {
+    for (const card of (source?.cards || [])) {
+      const entry = settled.find((candidate) => trackerEntryMatchesCard(candidate, card));
+      if (!entry) continue;
+      const outcome = trackerOutcome(entry);
+      if (!outcome) continue;
+      card.outcome = outcome;
+      if (outcome.result === 'WIN') {
+        card.eyebrow = `${card.sport.toUpperCase()} · PBE ALGO HIT`;
+      }
+      card.detail = [
+        outcome.score,
+        outcome.gradedAt ? `Graded ${formatRelativeStamp(outcome.gradedAt)}` : null,
+      ].filter(Boolean).join(' · ') || card.detail;
+    }
+  }
 }
 
 function trackerSportLine(tracker, sportKey) {
