@@ -27,17 +27,22 @@ const UFC_SAMPLE_URL = 'https://ufc.propbetedge.ai/api/ufc/free-sample';
 const WNBA_SAMPLE_URL = 'https://wnba-api.propbetedge.ai/v1/pbe/free-sample';
 const NHL_SAMPLE_URL = 'https://nhl-api.propbetedge.ai/nhl/picks/free-sample';
 const NHL_PRESEASON_URL = (date) => `https://nhl-api.propbetedge.ai/nhl/picks/preseason?date=${encodeURIComponent(date)}`;
+const FREE_TRACKER_URL = 'https://tkmlnhmylqnttmnsnief.supabase.co/functions/v1/free-picks-tracker';
 // Keep the multi-sport board on its natural one-minute cadence, but NHL result
 // receipts are a live proof surface and poll independently every 10 seconds.
 // MLB identity exposure remains capped by its own publisher, so no extra MLB
 // picks can rotate through from the NHL-specific refresh.
 const REFRESH_INTERVAL_MS = 60 * 1000;
 const NHL_REFRESH_INTERVAL_MS = 10 * 1000;
+const TRACKER_REFRESH_INTERVAL_MS = 10 * 1000;
 const NHL_MAX_FREE_PICKS = 2;
 let _refreshTimer = null;
 let _nhlRefreshTimer = null;
+let _trackerTimer = null;
 let _lastPayload = null;
+let _lastTracker = null;
 let _nhlRefreshInFlight = false;
+let _trackerRefreshInFlight = false;
 
 const SPORTS = Object.freeze({
   mlb: {
@@ -118,8 +123,10 @@ export async function renderOdds(root) {
 
   if (_refreshTimer) clearInterval(_refreshTimer);
   if (_nhlRefreshTimer) clearInterval(_nhlRefreshTimer);
+  if (_trackerTimer) clearInterval(_trackerTimer);
   _refreshTimer = setInterval(loadAndRender, REFRESH_INTERVAL_MS);
   _nhlRefreshTimer = setInterval(refreshNhlOnly, NHL_REFRESH_INTERVAL_MS);
+  _trackerTimer = setInterval(refreshTrackerOnly, TRACKER_REFRESH_INTERVAL_MS);
 }
 
 async function loadAndRender() {
@@ -146,7 +153,12 @@ async function loadAndRender() {
     enrichUfcMedia(payload.ufc),
   ]);
   _lastPayload = payload;
-  renderBoard(payload);
+  try {
+    _lastTracker = await fetchJson(FREE_TRACKER_URL);
+  } catch (error) {
+    console.warn('[odds] Free Picks Track Record unavailable:', error);
+  }
+  renderBoard(payload, _lastTracker);
   injectEdgeSchema(payload);
 }
 
@@ -156,12 +168,26 @@ async function refreshNhlOnly() {
   try {
     const nhl = await loadNhlSource();
     _lastPayload = { ..._lastPayload, nhl };
-    renderBoard(_lastPayload);
+    renderBoard(_lastPayload, _lastTracker);
     injectEdgeSchema(_lastPayload);
   } catch (error) {
     console.warn('[odds] NHL rapid refresh unavailable:', error);
   } finally {
     _nhlRefreshInFlight = false;
+  }
+}
+
+async function refreshTrackerOnly() {
+  if (_trackerRefreshInFlight || !_lastPayload || !document.getElementById('odds-board')) return;
+  _trackerRefreshInFlight = true;
+  try {
+    const tracker = await fetchJson(FREE_TRACKER_URL);
+    if (tracker?.ok) _lastTracker = tracker;
+    renderBoard(_lastPayload, _lastTracker);
+  } catch (error) {
+    console.warn('[odds] Free Picks Track Record refresh unavailable:', error);
+  } finally {
+    _trackerRefreshInFlight = false;
   }
 }
 
@@ -667,7 +693,7 @@ function renderSkeleton() {
   `;
 }
 
-function renderBoard(payload) {
+function renderBoard(payload, tracker = _lastTracker) {
   const all = Object.values(payload);
   const total = all.reduce((sum, source) => sum + source.cards.length, 0);
   const latest = latestTimestamp(all.map((source) => source.generatedAt));
@@ -682,6 +708,7 @@ function renderBoard(payload) {
   if (countEl) countEl.textContent = `${total} free sample${total === 1 ? '' : 's'} live`;
 
   document.getElementById('odds-board').innerHTML = `
+    ${renderFreeTrackRecord(tracker)}
     <div class="free-sport-stack">
       ${renderSportSection('mlb', payload.mlb)}
       ${renderSportSection('nfl', payload.nfl)}
@@ -695,6 +722,104 @@ function renderBoard(payload) {
       <span>Every sport keeps its own model, release gate and refresh cadence. Empty space stays empty instead of being filled with placeholder picks.</span>
     </div>
   `;
+}
+
+function trackerSportLine(tracker, sportKey) {
+  const s = tracker?.by_sport?.[sportKey] || { wins:0, losses:0, pushes:0, pending:0 };
+  const record = `${s.wins || 0}–${s.losses || 0}${s.pushes ? `–${s.pushes}P` : ''}`;
+  const pending = s.pending ? `${s.pending} pending` : 'settled';
+  return { record, pending };
+}
+
+function renderTrackerSport(tracker, sportKey, cadenceLabel) {
+  const stat = trackerSportLine(tracker, sportKey);
+  const sport = SPORTS[sportKey];
+  return `<div class="pbe-free-track-sport">
+    <span class="pbe-free-track-sport__icon" aria-hidden="true">${sport.emoji}</span>
+    <div class="pbe-free-track-sport__body">
+      <b>${sport.label}</b>
+      <small>${cadenceLabel}</small>
+    </div>
+    <strong>${stat.record}</strong>
+    <em>${stat.pending}</em>
+  </div>`;
+}
+
+function renderTrackerReceipt(entry) {
+  const isWin = entry.result === 'WIN';
+  const resultLabel = isWin ? 'HIT' : entry.result;
+  return `<article class="pbe-free-track-receipt is-${escapeHtml(String(entry.result || 'pending').toLowerCase())}">
+    <div class="pbe-free-track-receipt__sport">${escapeHtml(entry.sport)}</div>
+    <div class="pbe-free-track-receipt__main">
+      <span>${isWin ? 'PBE ALGO CALLED IT' : 'FREE PICK RESULT'}</span>
+      <strong>${escapeHtml(entry.selection || 'Free pick')}</strong>
+      <small>${escapeHtml(entry.matchup || entry.opponent || entry.pick_type || '')}</small>
+    </div>
+    <div class="pbe-free-track-receipt__result">
+      <b>${escapeHtml(resultLabel)}</b>
+      ${entry.score ? `<small>${escapeHtml(entry.score)}</small>` : ''}
+    </div>
+  </article>`;
+}
+
+function renderFreeTrackRecord(tracker) {
+  if (!tracker?.ok) {
+    return `<section class="pbe-free-track">
+      <div class="pbe-free-track__head">
+        <div><span class="kicker kicker-gold">FREE PICKS TRACK RECORD</span><h2>Public proof ledger</h2></div>
+        <span class="pbe-free-track__epoch">STARTED 09/20/26 · NO BACKFILL</span>
+      </div>
+      <div class="pbe-free-track__offline">Track Record is reconnecting. Live sport cards remain independent.</div>
+    </section>`;
+  }
+
+  const record = tracker.record || {};
+  const wins = Number(record.wins || 0);
+  const losses = Number(record.losses || 0);
+  const pushes = Number(record.pushes || 0);
+  const pending = Number(record.pending || 0);
+  const entries = Array.isArray(tracker.entries) ? tracker.entries : [];
+  const receipts = entries
+    .filter((entry) => ['WIN','LOSS','PUSH'].includes(entry.result))
+    .sort((a, b) => Date.parse(b.result_at || b.published_at || 0) - Date.parse(a.result_at || a.published_at || 0))
+    .slice(0, 6);
+
+  return `<section class="pbe-free-track">
+    <div class="pbe-free-track__head">
+      <div>
+        <span class="kicker kicker-gold">FREE PICKS TRACK RECORD</span>
+        <h2>Every public call stays on the board.</h2>
+        <p>Separate from the live samplers. Once a free pick is published here, its identity is frozen; only the result can change.</p>
+      </div>
+      <span class="pbe-free-track__epoch">STARTED 09/20/26 · NO BACKFILL</span>
+    </div>
+
+    <div class="pbe-free-track__scoreline">
+      <div class="pbe-free-track__record">
+        <span>OVERALL FREE RECORD</span>
+        <strong>${wins}–${losses}${pushes ? `–${pushes}P` : ''}</strong>
+        <small>${pending} pending · updates independently from live cards</small>
+      </div>
+      <div class="pbe-free-track__cadence">
+        <div><b>WEEKLY</b><span>NFL · UFC</span></div>
+        <div><b>DAILY</b><span>MLB · WNBA · NHL · NBA</span></div>
+      </div>
+    </div>
+
+    <div class="pbe-free-track__sports">
+      ${renderTrackerSport(tracker, 'nfl', 'WEEKLY')}
+      ${renderTrackerSport(tracker, 'ufc', 'WEEKLY')}
+      ${renderTrackerSport(tracker, 'mlb', 'DAILY')}
+      ${renderTrackerSport(tracker, 'wnba', 'DAILY')}
+      ${renderTrackerSport(tracker, 'nhl', 'DAILY')}
+      ${renderTrackerSport(tracker, 'nba', 'DAILY')}
+    </div>
+
+    ${receipts.length ? `<div class="pbe-free-track__receipts">
+      <div class="pbe-free-track__receipts-head"><b>LATEST SETTLED FREE PICKS</b><span>immutable public receipts</span></div>
+      <div class="pbe-free-track__receipt-grid">${receipts.map(renderTrackerReceipt).join('')}</div>
+    </div>` : ''}
+  </section>`;
 }
 
 function renderSportSection(sportKey, source) {
