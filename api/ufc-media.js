@@ -24,8 +24,13 @@ export default async function handler(req, res) {
     }).catch(() => null);
     if (sampleResponse?.ok) {
       const sample = await sampleResponse.json().catch(() => null);
-      const pick = sample?.pick || null;
-      if (pick && normalize(pick.pick_name) === normalize(name) && pick.media?.image_url) {
+      const samplePicks = Array.isArray(sample?.picks) && sample.picks.length
+        ? sample.picks
+        : sample?.pick
+          ? [sample.pick]
+          : [];
+      const pick = samplePicks.find((row) => normalize(row?.pick_name) === normalize(name)) || null;
+      if (pick?.media?.image_url) {
         return res.status(200).json({
           kind: 'fighter',
           id: null,
