@@ -17,6 +17,14 @@ function numberOrNull(value) {
   return Number.isFinite(n) ? n : null;
 }
 
+function normalizedHrResult(row) {
+  const raw = Array.isArray(row?.results) ? row.results[0] : row?.results;
+  if (!raw || typeof raw !== 'object') return null;
+  if (raw.hit_hr === true || raw.won === true || ['won', 'hit', 'W', 'WIN'].includes(raw.result)) return 'WIN';
+  if (raw.hit_hr === false || raw.won === false || ['lost', 'miss', 'L', 'LOSS'].includes(raw.result)) return 'LOSS';
+  return null;
+}
+
 function normalize(row) {
   if (!row) return null;
   const playerId = /^\d+$/.test(String(row.mlb_player_id || '')) ? String(row.mlb_player_id) : null;
@@ -37,6 +45,8 @@ function normalize(row) {
     model_score: numberOrNull(row.score),
     batting_order: numberOrNull(row.batting_order),
     recommendation: row.recommendation || null,
+    result: normalizedHrResult(row),
+    graded_at: row.graded_at || null,
     // Deliberately no published snapshot odds here. The MLB product itself
     // stopped presenting stale publication-time prices as live market odds.
     market_pricing: 'pending_live_market',
@@ -64,13 +74,15 @@ export default async function handler(req, res) {
   const date = todayEt();
   const query = new URL('/rest/v1/picks', SUPABASE_URL);
   query.searchParams.set('game_date', `eq.${date}`);
-  query.searchParams.set('status', 'eq.published');
+  // Keep today's published picks visible after grading; the MLB grader moves
+  // completed rows to archived, but that must never erase a free-board receipt.
+  query.searchParams.set('status', 'in.(published,archived)');
   query.searchParams.set('prop_type', 'eq.hr');
   query.searchParams.set('is_scratched', 'eq.false');
   query.searchParams.set('phase', 'not.in.(replaced,scratched)');
   query.searchParams.set('select', [
     'id','game_date','player_name','mlb_player_id','team','opponent','tag',
-    'score','hr_prob_today','phase','is_convergence','batting_order','recommendation'
+    'score','hr_prob_today','phase','is_convergence','batting_order','recommendation','results','graded_at'
   ].join(','));
   query.searchParams.set('order', 'score.desc');
   query.searchParams.set('limit', '100');
