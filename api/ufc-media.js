@@ -19,6 +19,28 @@ export default async function handler(req, res) {
   if (!name || name.length > 100) return res.status(400).json({ error: 'invalid_name' });
 
   try {
+    const sampleResponse = await fetch('https://ufc.propbetedge.ai/api/ufc/free-sample', {
+      headers: { accept: 'application/json' },
+    }).catch(() => null);
+    if (sampleResponse?.ok) {
+      const sample = await sampleResponse.json().catch(() => null);
+      const pick = sample?.pick || null;
+      if (pick && normalize(pick.pick_name) === normalize(name) && pick.media?.image_url) {
+        return res.status(200).json({
+          kind: 'fighter',
+          id: null,
+          name: pick.pick_name,
+          image_url: pick.media.image_url,
+          thumb_url: pick.media.thumb_url || pick.media.image_url,
+          attribution_text: pick.media.attribution_text || null,
+          license: null,
+          source_url: pick.media.source_url || null,
+          display_policy: pick.media.display_policy || 'display_only',
+          resolved_by: 'ufc_free_sample_verified_media',
+        });
+      }
+    }
+
     const url = new URL('https://ufc-api.propbetedge.ai/v1/ufc/fighters');
     url.searchParams.set('q', name);
     url.searchParams.set('limit', '20');
