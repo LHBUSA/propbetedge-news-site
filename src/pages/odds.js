@@ -33,6 +33,15 @@ const NHL_PRESEASON_URL = (date) => `https://nhl-api.propbetedge.ai/nhl/picks/pr
 // picks can rotate through from the NHL-specific refresh.
 const REFRESH_INTERVAL_MS = 60 * 1000;
 const NHL_REFRESH_INTERVAL_MS = 10 * 1000;
+const NHL_MAX_FREE_PICKS = 2;
+const TRACKER_CADENCE = Object.freeze({
+  nfl: 'weekly',
+  ufc: 'weekly',
+  mlb: 'daily',
+  wnba: 'daily',
+  nhl: 'daily',
+  nba: 'daily',
+});
 let _refreshTimer = null;
 let _nhlRefreshTimer = null;
 let _lastPayload = null;
@@ -470,7 +479,7 @@ function normalizeNhlSources({ official, preseason, date }) {
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, 2);
+  }).slice(0, NHL_MAX_FREE_PICKS);
 
   const validating = official.value?.reason === 'no_official_model'
     || official.value?.publish_gate?.open === false;
@@ -520,8 +529,11 @@ function normalizeNhlOfficial(data) {
       href: data.full_product_url || SPORTS.nhl.href,
       media: {
         kind: 'team',
-        images: [pick.pick_team_logo_url].filter(Boolean),
-        alt: pick.pick_team ? `${pick.pick_team} team logo` : 'NHL team logo',
+        images: [
+          pick.pick_team_logo_url || nhlLogoUrl(pick.pick_team),
+          pick.opponent_team_logo_url || nhlLogoUrl(pick.opponent_team),
+        ].filter(Boolean),
+        alt: pick.pick_team ? `${pick.pick_team} vs ${pick.opponent_team || 'opponent'} team logos` : 'NHL team logos',
       },
     };
   });
@@ -575,8 +587,11 @@ function normalizeNhlPreseason(data, date) {
         href: SPORTS.nhl.href,
         media: {
           kind: 'team',
-          images: [],
-          alt: `${pickTeam || 'NHL'} team`,
+          images: [
+            game.pick_team_logo_url || nhlLogoUrl(pickTeam),
+            game.opponent_team_logo_url || nhlLogoUrl(opponent),
+          ].filter(Boolean),
+          alt: `${pickTeam || 'NHL'} vs ${opponent || 'opponent'} team logos`,
         },
       };
     });
@@ -608,6 +623,85 @@ function nhlOutcome(result, { away, home, awayScore, homeScore, gradedAt } = {})
     score: hasScore ? `${away} ${awayScore} · ${home} ${homeScore}` : null,
     gradedAt: gradedAt || null,
   };
+}
+
+function nhlLogoUrl(abbr) {
+  const clean = String(abbr || '').toUpperCase().replace(/[^A-Z]/g, '');
+  return clean ? `https://assets.nhle.com/logos/nhl/svg/${clean}_dark.svg` : null;
+}
+
+function trackerStats(source) {
+  const cards = Array.isArray(source?.cards) ? source.cards : [];
+  let wins = 0; let losses = 0; let pushes = 0; let voids = 0; let pending = 0;
+  for (const card of cards) {
+    const result = String(card?.outcome?.result || '').toUpperCase();
+    if (result === 'WIN') wins += 1;
+    else if (result === 'LOSS') losses += 1;
+    else if (result === 'PUSH') pushes += 1;
+    else if (result === 'VOID') voids += 1;
+    else pending += 1;
+  }
+  return { total: cards.length, wins, losses, pushes, voids, pending };
+}
+
+function trackerPeriod(sportKey) {
+  const cadence = TRACKER_CADENCE[sportKey];
+  if (cadence === 'weekly') return 'THIS WEEK';
+  return `TODAY · ${todayEtDate()} ET`;
+}
+
+function renderTrackerSport(sportKey, source = null) {
+  const sport = SPORTS[sportKey];
+  const stats = trackerStats(source);
+  const live = stats.total > 0;
+  const record = stats.wins || stats.losses || stats.pushes
+    ? `${stats.wins}-${stats.losses}${stats.pushes ? `-${stats.pushes}P` : ''}`
+    : '0-0';
+  const pendingCopy = stats.pending ? `${stats.pending} pending` : stats.voids ? `${stats.voids} void` : 'No pending result';
+  const state = sportKey === 'nba'
+    ? 'Starts when NBA free picks launch'
+    : live
+      ? pendingCopy
+      : 'No free picks in this period yet';
+  return `<article class="free-tracker-sport" data-tracker-sport="${sportKey}">
+    <div class="free-tracker-sport__head">
+      <span class="free-tracker-sport__icon">${sport.emoji}</span>
+      <div><b>${sport.label}</b><small>${trackerPeriod(sportKey)}</small></div>
+    </div>
+    <div class="free-tracker-record">${record}</div>
+    <div class="free-tracker-meta">${escapeHtml(state)}</div>
+    <div class="free-tracker-proof">${stats.total ? `${stats.total} exact free pick${stats.total === 1 ? '' : 's'} on board` : 'Waiting for public card'}</div>
+  </article>`;
+}
+
+function renderFreePicksTracker(payload) {
+  return `<section class="free-tracker">
+    <div class="free-tracker-head">
+      <div>
+        <span class="kicker kicker-gold">FREE PICKS TRACKER</span>
+        <h2>The exact public picks. Tracked on the sport's real cadence.</h2>
+        <p>Weekly for NFL and UFC. Daily for MLB, WNBA, NHL and NBA. Only picks actually published on this free board count here — never the paid card.</p>
+      </div>
+      <span class="free-tracker-rule">FREE BOARD ONLY</span>
+    </div>
+    <div class="free-tracker-group">
+      <div class="free-tracker-group__label"><b>Weekly</b><span>NFL · UFC</span></div>
+      <div class="free-tracker-grid free-tracker-grid--weekly">
+        ${renderTrackerSport('nfl', payload.nfl)}
+        ${renderTrackerSport('ufc', payload.ufc)}
+      </div>
+    </div>
+    <div class="free-tracker-group">
+      <div class="free-tracker-group__label"><b>Daily</b><span>MLB · WNBA · NHL · NBA</span></div>
+      <div class="free-tracker-grid">
+        ${renderTrackerSport('mlb', payload.mlb)}
+        ${renderTrackerSport('wnba', payload.wnba)}
+        ${renderTrackerSport('nhl', payload.nhl)}
+        ${renderTrackerSport('nba', null)}
+      </div>
+    </div>
+    <div class="free-tracker-note">A result changes only when that sport's public grading feed proves it. Pending stays pending; losses stay visible.</div>
+  </section>`;
 }
 
 function renderHero() {
@@ -670,6 +764,7 @@ function renderBoard(payload) {
   if (countEl) countEl.textContent = `${total} free sample${total === 1 ? '' : 's'} live`;
 
   document.getElementById('odds-board').innerHTML = `
+    ${renderFreePicksTracker(payload)}
     <div class="free-sport-stack">
       ${renderSportSection('mlb', payload.mlb)}
       ${renderSportSection('nfl', payload.nfl)}
@@ -749,11 +844,26 @@ function renderSportState(sport, title, copy) {
 }
 
 function renderCardAvatar(card) {
-  const image = (card.media?.images || []).filter(Boolean)[0] || null;
+  const images = (card.media?.images || []).filter(Boolean);
+  const image = images[0] || null;
   const isPortrait = card.media?.kind === 'portrait';
+  const isTeamPair = !isPortrait && images.length > 1;
   const fallback = isPortrait
     ? String(card.title || '?').split(/\s+/).filter(Boolean).map((part) => part[0]).slice(0, 2).join('').toUpperCase()
     : (SPORTS[card.sport]?.emoji || '⚡');
+
+  if (isTeamPair) {
+    return `
+      <div class="free-edge-avatar-wrap">
+        <div class="free-edge-avatar is-team-logo is-team-pair" aria-label="${escapeHtml(card.media?.alt || card.title || '')}">
+          <span class="free-edge-avatar-fallback" aria-hidden="true">${escapeHtml(fallback || '⚡')}</span>
+          ${images.slice(0, 2).map((src, index) => `<img class="team-logo-${index + 1}" src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">`).join('')}
+        </div>
+        ${card.media?.credit ? `<small class="free-edge-avatar-credit">${escapeHtml(card.media.credit)}</small>` : ''}
+      </div>
+    `;
+  }
+
   // UFC free-sample media is already identity-verified by the UFC product.
   // Use that source directly first so a proxy/cache hiccup cannot blank a fighter.
   const primaryImage = image && card.sport === 'ufc' ? image : proxyImage(image);
