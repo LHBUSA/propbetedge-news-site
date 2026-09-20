@@ -592,12 +592,19 @@ function renderCardAvatar(card) {
   const fallback = isPortrait
     ? String(card.title || '?').split(/\s+/).filter(Boolean).map((part) => part[0]).slice(0, 2).join('').toUpperCase()
     : (SPORTS[card.sport]?.emoji || '⚡');
+  // UFC free-sample media is already identity-verified by the UFC product.
+  // Use that source directly first so a proxy/cache hiccup cannot blank a fighter.
+  const primaryImage = image && card.sport === 'ufc' ? image : proxyImage(image);
+  const fallbackImage = image && card.sport === 'ufc' ? proxyImage(image) : null;
+  const onError = fallbackImage && fallbackImage !== primaryImage
+    ? `if(!this.dataset.fallbackUsed){this.dataset.fallbackUsed='1';this.src='${escapeHtml(fallbackImage)}';}else{this.style.display='none';}`
+    : "this.style.display='none'";
 
   return `
     <div class="free-edge-avatar-wrap">
       <div class="free-edge-avatar ${isPortrait ? 'is-headshot' : 'is-team-logo'}" aria-label="${escapeHtml(card.media?.alt || card.title || '')}">
         <span class="free-edge-avatar-fallback" aria-hidden="true">${escapeHtml(fallback || '⚡')}</span>
-        ${image ? `<img src="${escapeHtml(proxyImage(image))}" alt="${escapeHtml(card.media?.alt || card.title || '')}" loading="lazy" decoding="async" onerror="this.style.display='none'">` : ''}
+        ${primaryImage ? `<img src="${escapeHtml(primaryImage)}" alt="${escapeHtml(card.media?.alt || card.title || '')}" loading="lazy" decoding="async" onerror="${onError}">` : ''}
       </div>
       ${card.media?.credit ? `<small class="free-edge-avatar-credit">${escapeHtml(card.media.credit)}</small>` : ''}
     </div>
