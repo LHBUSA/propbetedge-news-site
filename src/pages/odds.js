@@ -300,10 +300,11 @@ function normalizeNfl(data) {
       ? `${pick.matchup.away_team} @ ${pick.matchup.home_team}`
       : 'NFL matchup';
     const scope = pick.scope_label || (pick.publication_scope === 'tracking' ? 'PBE VALIDATION SIGNAL' : 'PBE PICK');
+    const outcome = simpleOutcome(pick.grade?.result, { gradedAt: pick.grade?.graded_at });
 
     return {
       sport: 'nfl',
-      eyebrow: `NFL · ${scope}`,
+      eyebrow: outcome?.result === 'WIN' ? 'NFL · FREE PICK HIT' : `NFL · ${scope}`,
       title: pick.selection || 'NFL pick',
       selection: matchup,
       context: [prettyMarket(pick.market), formatDateTime(pick.kickoff_ts)].filter(Boolean).join(' · '),
@@ -312,8 +313,11 @@ function normalizeNfl(data) {
       model: probabilityPct(pick.model_probability),
       market: probabilityPct(pick.market_probability),
       edge: probabilityPointEdge(pick.edge_pct),
-      detail: [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.lifecycle].filter(Boolean).join(' · '),
-      timestamp: data.generated_at || pick.issued_at || null,
+      detail: outcome
+        ? [outcome.label, outcome.gradedAt ? `Graded ${formatRelativeStamp(outcome.gradedAt)}` : null].filter(Boolean).join(' · ')
+        : [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.lifecycle].filter(Boolean).join(' · '),
+      outcome,
+      timestamp: latestTimestamp([pick.grade?.graded_at, data.generated_at, pick.issued_at]),
       href: SPORTS.nfl.href,
       media: {
         kind: 'team',
@@ -345,11 +349,12 @@ function normalizeUfc(data) {
       : slot === 'NEXT_BEST'
         ? 'NEXT BEST'
         : 'BEST BET';
+    const outcome = simpleOutcome(pick.grade?.result, { gradedAt: pick.grade?.graded_at });
 
     return {
       sport: 'ufc',
       variant: slot === 'UNDERDOG_VALUE' ? 'ufc-top-upset' : null,
-      eyebrow: `UFC · ${slotLabel}`,
+      eyebrow: outcome?.result === 'WIN' ? `UFC · ${slotLabel} · HIT` : `UFC · ${slotLabel}`,
       title: pick.pick_name || 'UFC pick',
       selection: pick.opponent_name ? `vs ${pick.opponent_name}` : pick.matchup || 'Fight pick',
       context: [pick.event_name, formatDate(pick.event_date)].filter(Boolean).join(' · '),
@@ -358,18 +363,25 @@ function normalizeUfc(data) {
       model: probabilityPct(pick.model_probability),
       market: probabilityPct(pick.market_probability),
       edge: pointEdge(pick.edge_pts),
-      detail: slot === 'UNDERDOG_VALUE'
+      detail: outcome
         ? [
-            'PBE +money underdog value',
-            pick.upset_rank ? `Upset Radar #${pick.upset_rank}` : null,
-            pick.lifecycle,
+            outcome.label,
+            outcome.gradedAt ? `Graded ${formatRelativeStamp(outcome.gradedAt)}` : null,
+            pick.event_name,
           ].filter(Boolean).join(' · ')
-        : [
-            pick.confidence ? `Confidence ${pick.confidence}` : null,
-            pick.lifecycle,
-            pick.observed_at ? `Market ${formatRelativeStamp(pick.observed_at)}` : null,
-          ].filter(Boolean).join(' · '),
-      timestamp: data.generated_at || pick.observed_at || null,
+        : slot === 'UNDERDOG_VALUE'
+          ? [
+              'PBE +money underdog value',
+              pick.upset_rank ? `Upset Radar #${pick.upset_rank}` : null,
+              pick.lifecycle,
+            ].filter(Boolean).join(' · ')
+          : [
+              pick.confidence ? `Confidence ${pick.confidence}` : null,
+              pick.lifecycle,
+              pick.observed_at ? `Market ${formatRelativeStamp(pick.observed_at)}` : null,
+            ].filter(Boolean).join(' · '),
+      outcome,
+      timestamp: latestTimestamp([pick.grade?.graded_at, data.generated_at, pick.observed_at]),
       href: data.full_product_url || SPORTS.ufc.href,
       media: pick.media?.image_url ? {
         kind: 'portrait',
