@@ -33,13 +33,13 @@ function getEnhancedStyles() {
 <style id="leaders-mlb-v4-styles">
 /* === Leaders MLB v4 — Visual Upgrade ============================ */
 :root {
-  --lm-surface: rgba(255,255,255,0.03);
-  --lm-surface-2: rgba(255,255,255,0.05);
-  --lm-border: rgba(255,255,255,0.08);
-  --lm-border-strong: rgba(255,255,255,0.16);
-  --lm-text: #f5f5f7;
-  --lm-text-dim: rgba(245,245,247,0.62);
-  --lm-text-faint: rgba(245,245,247,0.4);
+  --lm-surface: #ffffff;
+  --lm-surface-2: #f7f5f0;
+  --lm-border: rgba(20,17,13,0.14);
+  --lm-border-strong: rgba(20,17,13,0.24);
+  --lm-text: #14110d;
+  --lm-text-dim: rgba(20,17,13,0.68);
+  --lm-text-faint: rgba(20,17,13,0.48);
   --lm-gold: var(--gold, #d4af37);
   --lm-mlb: #ef4444;
   --lm-mlb-2: #b91c1c;
@@ -50,10 +50,10 @@ function getEnhancedStyles() {
   display: flex; gap: 6px;
   margin: 24px 0 24px;
   flex-wrap: wrap; padding: 6px;
-  background: rgba(255,255,255,0.03);
+  background: #ffffff;
   border: 1px solid var(--lm-border);
   border-radius: 14px;
-  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(20,17,13,0.10);
   width: fit-content; max-width: 100%;
 }
 .leaders-subtab {
@@ -68,12 +68,12 @@ function getEnhancedStyles() {
 }
 .leaders-subtab:hover {
   color: var(--lm-text);
-  background: rgba(255,255,255,0.05);
+  background: rgba(20,17,13,0.05);
 }
 .leaders-subtab.active {
-  background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(239,68,68,0.08));
+  background: linear-gradient(135deg, rgba(239,68,68,0.14), rgba(239,68,68,0.06));
   border-color: rgba(239,68,68,0.4);
-  color: #fff;
+  color: #14110d;
   box-shadow:
     0 1px 0 rgba(255,255,255,0.1) inset,
     0 8px 24px rgba(239,68,68,0.18);
@@ -84,7 +84,7 @@ function getEnhancedStyles() {
   position: relative;
   padding: 14px 20px 14px 22px;
   margin: 0 0 24px;
-  background: linear-gradient(90deg, rgba(239,68,68,0.10) 0%, rgba(255,255,255,0.02) 60%);
+  background: linear-gradient(90deg, #fff8f7 0%, #ffffff 60%);
   border: 1px solid rgba(239,68,68,0.18);
   border-radius: 12px;
   font-size: 13px;
@@ -130,8 +130,10 @@ function getEnhancedStyles() {
 .leader-card {
   position: relative;
   padding: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%);
+  background: #ffffff;
   border: 1px solid var(--lm-border);
+  color: var(--lm-text);
+  box-shadow: 0 8px 24px rgba(20,17,13,0.12);
   border-radius: 16px;
   overflow: hidden;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
@@ -139,7 +141,7 @@ function getEnhancedStyles() {
 .leader-card:hover {
   transform: translateY(-2px);
   border-color: var(--lm-border-strong);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+  box-shadow: 0 14px 34px rgba(20,17,13,0.16);
 }
 
 /* Card head — gradient accent bar on top */
@@ -193,14 +195,14 @@ a.leader-row {
 }
 .leader-row:last-child { border-bottom: none; }
 a.leader-row:hover {
-  background: rgba(255,255,255,0.04);
+  background: rgba(20,17,13,0.04);
 }
 a.leader-row:hover .leader-photo,
 a.leader-row:hover .leader-headshot {
   box-shadow: 0 0 0 2px rgba(239,68,68,0.5), 0 4px 12px rgba(239,68,68,0.25);
 }
 a.leader-row:hover .leader-name {
-  color: #fff;
+  color: #14110d;
 }
 
 /* Rank — gradient number */
@@ -210,7 +212,7 @@ a.leader-row:hover .leader-name {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
-  background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.35));
+  background: linear-gradient(180deg, rgba(20,17,13,0.88), rgba(20,17,13,0.48));
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
   text-align: center;
@@ -241,7 +243,7 @@ a.leader-row:hover .leader-name {
   width: 40px; height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  background: rgba(255,255,255,0.06);
+  background: rgba(20,17,13,0.06);
   border: 1px solid var(--lm-border);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
@@ -289,7 +291,7 @@ a.leader-row:hover .leader-name {
 /* ── Premium / locked stat cards ───────────────────────────────── */
 .leader-card.premium,
 .leader-card-premium {
-  background: linear-gradient(180deg, rgba(212,175,55,0.06) 0%, rgba(0,0,0,0.25) 100%);
+  background: linear-gradient(180deg, #fffdf7 0%, #ffffff 100%);
   border-color: rgba(212,175,55,0.25);
   position: relative;
   min-height: 280px;
@@ -299,7 +301,7 @@ a.leader-row:hover .leader-name {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(80% 100% at 50% 0%, rgba(212,175,55,0.10), transparent 60%);
+  background: radial-gradient(80% 100% at 50% 0%, rgba(212,175,55,0.08), transparent 60%);
   pointer-events: none;
 }
 .leader-card.premium:hover,
