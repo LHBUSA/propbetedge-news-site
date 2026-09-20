@@ -7442,6 +7442,62 @@ a.leaders-sport-tab.active,
   object-fit: contain;
 }
 
+/* NHL free-pick matchup lockup: two real team marks, centered as one unit. */
+.free-edge-card[data-sport="nhl"] .free-edge-compact-head {
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+}
+.free-edge-card[data-sport="nhl"] .free-edge-avatar-wrap--nhl {
+  width: 72px;
+  justify-items: stretch;
+}
+.free-edge-avatar.is-team-pair {
+  position: relative;
+  width: 72px;
+  height: 52px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.free-edge-avatar.is-team-pair img {
+  position: absolute;
+  top: 7px;
+  width: 38px;
+  height: 38px;
+  padding: 4px;
+  object-fit: contain;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 50%;
+  background: rgba(16,18,20,.98);
+  box-shadow: 0 6px 14px rgba(0,0,0,.24);
+}
+.free-edge-avatar.is-team-pair .team-logo-1 {
+  left: 0;
+  z-index: 2;
+}
+.free-edge-avatar.is-team-pair .team-logo-2 {
+  right: 0;
+  z-index: 1;
+}
+.free-edge-avatar.is-team-pair .team-pair-vs {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 50%;
+  background: #111315;
+  font: 800 6px/1 var(--font-mono);
+  letter-spacing: .04em;
+  color: var(--paper-faint);
+}
+
 .free-edge-avatar-fallback {
   position: relative;
   z-index: 0;
@@ -7559,6 +7615,22 @@ a.leaders-sport-tab.active,
     inset: 7px;
     width: calc(100% - 14px);
     height: calc(100% - 14px);
+  }
+
+  .free-edge-card[data-sport="nhl"] .free-edge-compact-head {
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+  }
+  .free-edge-card[data-sport="nhl"] .free-edge-avatar-wrap--nhl,
+  .free-edge-avatar.is-team-pair {
+    width: 64px;
+  }
+  .free-edge-avatar.is-team-pair {
+    height: 46px;
+  }
+  .free-edge-avatar.is-team-pair img {
+    top: 6px;
+    width: 34px;
+    height: 34px;
   }
 
   .free-edge-identity .free-edge-main h3 {
