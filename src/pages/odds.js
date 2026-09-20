@@ -34,6 +34,7 @@ const NHL_PRESEASON_URL = (date) => `https://nhl-api.propbetedge.ai/nhl/picks/pr
 const REFRESH_INTERVAL_MS = 60 * 1000;
 const NHL_REFRESH_INTERVAL_MS = 10 * 1000;
 const NHL_MAX_FREE_PICKS = 2;
+const FREE_TRACKER_START_ET = '2026-09-20';
 const TRACKER_CADENCE = Object.freeze({
   nfl: 'weekly',
   ufc: 'weekly',
@@ -674,8 +675,56 @@ function nhlLogoUrl(abbr) {
   return clean ? `https://assets.nhle.com/logos/nhl/svg/${clean}_dark.svg` : null;
 }
 
-function trackerStats(source) {
-  const cards = Array.isArray(source?.cards) ? source.cards : [];
+function etDateFrom(value) {
+  if (!value) return null;
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(value))
+    ? new Date(`${value}T12:00:00Z`)
+    : new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const part = (type) => parts.find((x) => x.type === type)?.value || '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}
+
+function addEtDays(dateText, days) {
+  const base = new Date(`${dateText}T12:00:00Z`);
+  base.setUTCDate(base.getUTCDate() + days);
+  return base.toISOString().slice(0, 10);
+}
+
+function currentTrackerWeek() {
+  const today = todayEtDate();
+  const base = new Date(`${today}T12:00:00Z`);
+  const sunday = addEtDays(today, -base.getUTCDay());
+  const start = sunday < FREE_TRACKER_START_ET ? FREE_TRACKER_START_ET : sunday;
+  return { start, endExclusive: addEtDays(sunday, 7) };
+}
+
+function trackerCardEligible(card, cadence) {
+  const today = todayEtDate();
+  if (today < FREE_TRACKER_START_ET) return false;
+  const eventDate = etDateFrom(card?.trackerDate);
+  const gradedDate = etDateFrom(card?.outcome?.gradedAt);
+  const result = String(card?.outcome?.result || '').toUpperCase();
+
+  if (result && gradedDate && gradedDate < FREE_TRACKER_START_ET) return false;
+
+  if (cadence === 'weekly') {
+    const { start, endExclusive } = currentTrackerWeek();
+    return Boolean(eventDate && eventDate >= start && eventDate < endExclusive);
+  }
+  return eventDate === today;
+}
+
+function trackerStats(source, sportKey) {
+  const cadence = TRACKER_CADENCE[sportKey];
+  const cards = (Array.isArray(source?.cards) ? source.cards : [])
+    .filter((card) => trackerCardEligible(card, cadence));
   let wins = 0; let losses = 0; let pushes = 0; let voids = 0; let pending = 0;
   for (const card of cards) {
     const result = String(card?.outcome?.result || '').toUpperCase();
@@ -690,13 +739,16 @@ function trackerStats(source) {
 
 function trackerPeriod(sportKey) {
   const cadence = TRACKER_CADENCE[sportKey];
-  if (cadence === 'weekly') return 'THIS WEEK';
+  if (cadence === 'weekly') {
+    const { start, endExclusive } = currentTrackerWeek();
+    return `${start} → ${addEtDays(endExclusive, -1)} ET`;
+  }
   return `TODAY · ${todayEtDate()} ET`;
 }
 
 function renderTrackerSport(sportKey, source = null) {
   const sport = SPORTS[sportKey];
-  const stats = trackerStats(source);
+  const stats = trackerStats(source, sportKey);
   const live = stats.total > 0;
   const record = stats.wins || stats.losses || stats.pushes
     ? `${stats.wins}-${stats.losses}${stats.pushes ? `-${stats.pushes}P` : ''}`
@@ -724,9 +776,9 @@ function renderFreePicksTracker(payload) {
       <div>
         <span class="kicker kicker-gold">FREE PICKS TRACKER</span>
         <h2>The exact public picks. Tracked on the sport's real cadence.</h2>
-        <p>Weekly for NFL and UFC. Daily for MLB, WNBA, NHL and NBA. Only picks actually published on this free board count here — never the paid card.</p>
+        <p>Weekly for NFL and UFC. Daily for MLB, WNBA, NHL and NBA. The public tracker starts September 20, 2026 — no historical backfill. Only picks actually published on this free board count here.</p>
       </div>
-      <span class="free-tracker-rule">FREE BOARD ONLY</span>
+      <span class="free-tracker-rule">STARTED 09/20/26 · NO BACKFILL</span>
     </div>
     <div class="free-tracker-group">
       <div class="free-tracker-group__label"><b>Weekly</b><span>NFL · UFC</span></div>
@@ -744,7 +796,7 @@ function renderFreePicksTracker(payload) {
         ${renderTrackerSport('nba', null)}
       </div>
     </div>
-    <div class="free-tracker-note">A result changes only when that sport's public grading feed proves it. Pending stays pending; losses stay visible.</div>
+    <div class="free-tracker-note">Tracker epoch: September 20, 2026 ET. Nothing before launch is imported. A result changes only when that sport's public grading feed proves it; pending stays pending and losses stay visible.</div>
   </section>`;
 }
 
