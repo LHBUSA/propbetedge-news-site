@@ -790,9 +790,16 @@ function applyTrackerOutcomes(payload, tracker) {
 }
 
 function trackerSportLine(tracker, sportKey) {
-  const s = tracker?.by_sport?.[sportKey] || { wins:0, losses:0, pushes:0, pending:0 };
-  const record = `${s.wins || 0}–${s.losses || 0}${s.pushes ? `–${s.pushes}P` : ''}`;
-  const pending = s.pending ? `${s.pending} pending` : 'settled';
+  const key = String(sportKey || '').toUpperCase();
+  const s = tracker?.by_sport?.[key] || { wins:0, losses:0, pushes:0, pending:0 };
+  const wins = Number(s.wins || 0);
+  const losses = Number(s.losses || 0);
+  const pushes = Number(s.pushes || 0);
+  const pendingCount = Number(s.pending || 0);
+  const record = `${wins}–${losses}${pushes ? `–${pushes}P` : ''}`;
+  const pending = pendingCount
+    ? `${pendingCount} pending`
+    : (wins || losses || pushes) ? 'settled' : 'no picks yet';
   return { record, pending };
 }
 
