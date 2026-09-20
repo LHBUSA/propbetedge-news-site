@@ -296,7 +296,12 @@ function normalizeUfc(data) {
       : [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.observed_at ? `Market ${formatRelativeStamp(pick.observed_at)}` : null].filter(Boolean).join(' · '),
     timestamp: data.generated_at || pick.observed_at || null,
     href: data.full_product_url || SPORTS.ufc.href,
-    media: null,
+    media: pick.media?.image_url ? {
+      kind: 'portrait',
+      images: [pick.media.image_url],
+      alt: `${pick.pick_name || 'UFC fighter'} fighter portrait`,
+      credit: pick.media.attribution_text || null,
+    } : null,
   }] : [];
 
   return {
@@ -330,6 +335,7 @@ async function enrichMlbMedia(source) {
 async function enrichUfcMedia(source) {
   if (!source?.cards?.length) return;
   await Promise.all(source.cards.map(async (card) => {
+    if (card.media?.images?.length) return;
     try {
       const media = await fetchJson(`/api/ufc-media?name=${encodeURIComponent(card.title)}`);
       if (media?.image_url) {
