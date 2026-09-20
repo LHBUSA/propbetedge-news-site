@@ -5,7 +5,7 @@
  * Contract:
  *   - MLB: exactly 2 free current HR model picks when two are published
  *   - NFL: up to 2 current PBE picks / validation signals
- *   - UFC: up to 1 current PBE Algo call with market odds
+ *   - UFC: up to 2 current PBE Algo calls — Best Bet + Underdog Value
  *
  * The board is intentionally small. Full cards, research and track records
  * stay inside each sport product. Each source fails independently so one sport
@@ -51,7 +51,7 @@ const SPORTS = Object.freeze({
     emoji: '🥊',
     href: PROPBET_LINKS.picks_ufc,
     cta: 'Open UFC Intelligence',
-    deck: 'A current fight-model call with the market snapshot behind it.',
+    deck: 'Two free fight-model calls: Best Bet + Underdog Value.',
     cadence: 'Fight week · refreshed as the card and market move',
   },
   wnba: {
@@ -270,45 +270,63 @@ function normalizeNfl(data) {
 }
 
 function normalizeUfc(data) {
-  const pick = data?.pick;
-  const cards = pick ? [{
-    sport: 'ufc',
-    variant: pick.is_top_upset ? 'ufc-top-upset' : null,
-    eyebrow: pick.is_top_upset
-      ? 'UFC · PBE ALGO · #1 TOP UPSET PICK'
-      : pick.is_upset_pick
-        ? `UFC · PBE ALGO · #${pick.upset_rank || '—'} UPSET PICK`
-        : `UFC · ${pick.lifecycle === 'LOCKED' ? 'LOCKED PBE PICK' : 'PBE MODEL CALL'}`,
-    title: pick.pick_name || 'UFC pick',
-    selection: pick.opponent_name ? `vs ${pick.opponent_name}` : pick.matchup || 'Fight pick',
-    context: [pick.event_name, formatDate(pick.event_date)].filter(Boolean).join(' · '),
-    odds: ufcAmericanOdds(pick.best_odds ?? pick.consensus_odds),
-    oddsLabel: pick.best_book || (pick.best_odds != null ? 'Best available' : 'Consensus'),
-    model: probabilityPct(pick.model_probability),
-    market: probabilityPct(pick.market_probability),
-    edge: pointEdge(pick.edge_pts),
-    detail: pick.is_top_upset
-      ? [
-          pick.opponent_name ? `Market favors ${pick.opponent_name}${pick.opponent_consensus_odds != null ? ` ${ufcAmericanOdds(pick.opponent_consensus_odds)}` : ''}` : null,
-          `PBE backs ${pick.pick_name} ${ufcAmericanOdds(pick.consensus_odds)}`,
-          pick.lifecycle,
-        ].filter(Boolean).join(' · ')
-      : [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.observed_at ? `Market ${formatRelativeStamp(pick.observed_at)}` : null].filter(Boolean).join(' · '),
-    timestamp: data.generated_at || pick.observed_at || null,
-    href: data.full_product_url || SPORTS.ufc.href,
-    media: pick.media?.image_url ? {
-      kind: 'portrait',
-      images: [pick.media.image_url],
-      alt: `${pick.pick_name || 'UFC fighter'} fighter portrait`,
-      credit: pick.media.attribution_text || null,
-    } : null,
-  }] : [];
+  const rawPicks = Array.isArray(data?.picks) && data.picks.length
+    ? data.picks
+    : data?.pick
+      ? [data.pick]
+      : [];
+
+  const cards = rawPicks.slice(0, 2).map((pick, index) => {
+    const slot = pick.slot || (index === 0 ? 'BEST_BET' : pick.is_upset_pick ? 'UNDERDOG_VALUE' : 'NEXT_BEST');
+    const slotLabel = slot === 'UNDERDOG_VALUE'
+      ? 'UNDERDOG VALUE'
+      : slot === 'NEXT_BEST'
+        ? 'NEXT BEST'
+        : 'BEST BET';
+
+    return {
+      sport: 'ufc',
+      variant: slot === 'UNDERDOG_VALUE' ? 'ufc-top-upset' : null,
+      eyebrow: `UFC · ${slotLabel}`,
+      title: pick.pick_name || 'UFC pick',
+      selection: pick.opponent_name ? `vs ${pick.opponent_name}` : pick.matchup || 'Fight pick',
+      context: [pick.event_name, formatDate(pick.event_date)].filter(Boolean).join(' · '),
+      odds: ufcAmericanOdds(pick.best_odds ?? pick.consensus_odds),
+      oddsLabel: pick.best_book || (pick.best_odds != null ? 'Best available' : 'Consensus'),
+      model: probabilityPct(pick.model_probability),
+      market: probabilityPct(pick.market_probability),
+      edge: pointEdge(pick.edge_pts),
+      detail: slot === 'UNDERDOG_VALUE'
+        ? [
+            'PBE +money underdog value',
+            pick.upset_rank ? `Upset Radar #${pick.upset_rank}` : null,
+            pick.lifecycle,
+          ].filter(Boolean).join(' · ')
+        : [
+            pick.confidence ? `Confidence ${pick.confidence}` : null,
+            pick.lifecycle,
+            pick.observed_at ? `Market ${formatRelativeStamp(pick.observed_at)}` : null,
+          ].filter(Boolean).join(' · '),
+      timestamp: data.generated_at || pick.observed_at || null,
+      href: data.full_product_url || SPORTS.ufc.href,
+      media: pick.media?.image_url ? {
+        kind: 'portrait',
+        images: [pick.media.image_url],
+        alt: `${pick.pick_name || 'UFC fighter'} fighter portrait`,
+        credit: pick.media.attribution_text || null,
+      } : null,
+    };
+  });
 
   return {
     sport: 'ufc',
     cards,
     generatedAt: data?.generated_at || null,
     unavailable: false,
+    stateTitle: cards.length ? null : 'No qualifying UFC free picks right now',
+    stateCopy: cards.length
+      ? null
+      : 'The UFC model only publishes current eligible calls. It will not manufacture an underdog or filler pick.',
   };
 }
 
