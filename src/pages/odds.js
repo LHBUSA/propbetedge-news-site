@@ -33,6 +33,7 @@ const NHL_PRESEASON_URL = (date) => `https://nhl-api.propbetedge.ai/nhl/picks/pr
 // picks can rotate through from the NHL-specific refresh.
 const REFRESH_INTERVAL_MS = 60 * 1000;
 const NHL_REFRESH_INTERVAL_MS = 10 * 1000;
+const NHL_MAX_FREE_PICKS = 2;
 let _refreshTimer = null;
 let _nhlRefreshTimer = null;
 let _lastPayload = null;
@@ -214,7 +215,7 @@ function buildMlbSource(hrResult, oddsSnapshots = {}) {
     if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, 2);
+  }).slice(0, NHL_MAX_FREE_PICKS);
 
   const cards = picks.map((pick, index) => normalizeMlbHrPick(
     pick,
@@ -520,8 +521,11 @@ function normalizeNhlOfficial(data) {
       href: data.full_product_url || SPORTS.nhl.href,
       media: {
         kind: 'team',
-        images: [pick.pick_team_logo_url].filter(Boolean),
-        alt: pick.pick_team ? `${pick.pick_team} team logo` : 'NHL team logo',
+        images: [
+          pick.pick_team_logo_url || nhlLogoUrl(pick.pick_team),
+          pick.opponent_team_logo_url || nhlLogoUrl(pick.opponent_team),
+        ].filter(Boolean),
+        alt: pick.pick_team ? `${pick.pick_team} vs ${pick.opponent_team || 'opponent'} team logos` : 'NHL team logos',
       },
     };
   });
@@ -575,8 +579,11 @@ function normalizeNhlPreseason(data, date) {
         href: SPORTS.nhl.href,
         media: {
           kind: 'team',
-          images: [],
-          alt: `${pickTeam || 'NHL'} team`,
+          images: [
+            game.pick_team_logo_url || nhlLogoUrl(pickTeam),
+            game.opponent_team_logo_url || nhlLogoUrl(opponent),
+          ].filter(Boolean),
+          alt: `${pickTeam || 'NHL'} vs ${opponent || 'opponent'} team logos`,
         },
       };
     });
@@ -589,6 +596,11 @@ function normalizeNhlPreseason(data, date) {
     stateTitle: cards.length ? null : `No locked NHL preseason calls for ${date}`,
     stateCopy: cards.length ? null : 'When the preseason model locks a real call, it appears here automatically.',
   };
+}
+
+function nhlLogoUrl(abbr) {
+  const clean = String(abbr || '').toUpperCase().replace(/[^A-Z]/g, '');
+  return clean ? `https://assets.nhle.com/logos/nhl/svg/${clean}_dark.svg` : null;
 }
 
 function nhlOutcome(result, { away, home, awayScore, homeScore, gradedAt } = {}) {
@@ -749,11 +761,26 @@ function renderSportState(sport, title, copy) {
 }
 
 function renderCardAvatar(card) {
-  const image = (card.media?.images || []).filter(Boolean)[0] || null;
+  const images = (card.media?.images || []).filter(Boolean);
+  const image = images[0] || null;
   const isPortrait = card.media?.kind === 'portrait';
+  const isNhlPair = card.sport === 'nhl' && images.length > 1;
   const fallback = isPortrait
     ? String(card.title || '?').split(/\s+/).filter(Boolean).map((part) => part[0]).slice(0, 2).join('').toUpperCase()
     : (SPORTS[card.sport]?.emoji || '⚡');
+
+  if (isNhlPair) {
+    return `
+      <div class="free-edge-avatar-wrap free-edge-avatar-wrap--nhl">
+        <div class="free-edge-avatar is-team-pair" aria-label="${escapeHtml(card.media?.alt || card.title || '')}">
+          <img class="team-logo-1" src="${escapeHtml(images[0])}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">
+          <span class="team-pair-vs" aria-hidden="true">VS</span>
+          <img class="team-logo-2" src="${escapeHtml(images[1])}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">
+        </div>
+      </div>
+    `;
+  }
+
   // UFC free-sample media is already identity-verified by the UFC product.
   // Use that source directly first so a proxy/cache hiccup cannot blank a fighter.
   const primaryImage = image && card.sport === 'ufc' ? image : proxyImage(image);
