@@ -5,8 +5,7 @@
 import { ad_header_banner, PROPBET_LINKS } from '../ads-config.js';
 import { renderScoreStripShell, mountScoreStrip } from './score-strip.js';
 
-const EV_FINDER_URL = '/api/mlb-edge-sample';
-const MLB_HR_SAMPLE_URL = '/api/mlb-hr-sample';
+const MLB_HR_SAMPLE_URL = 'https://mlb.propbetedge.ai/api/free-hr-sample';
 const NFL_SAMPLE_URL = 'https://nfl.propbetedge.ai/api/pbe-picks?view=free-sample';
 const UFC_SAMPLE_URL = 'https://ufc.propbetedge.ai/api/ufc/free-sample';
 const WNBA_SAMPLE_URL = 'https://wnba-api.propbetedge.ai/v1/pbe/free-sample';
@@ -115,7 +114,7 @@ export function renderHeader() {
           <a href="/games" class="nav-link live-link ${isLive ? 'active' : ''}">PBEcast</a>
           <a href="/leaders" class="nav-link ${isLeaders ? 'active' : ''}">Leaders</a>
           <a href="/odds" class="nav-link edges-link ${isOdds ? 'active' : ''}">
-            <span class="edges-bolt">⚡</span><span class="edges-label">Edges</span><span class="edges-count" id="edges-count" aria-live="polite"></span>
+            <span class="edges-bolt">⚡</span><span class="edges-label">Free Picks</span><span class="edges-count" id="edges-count" aria-live="polite"></span>
           </a>
           ${renderIntelligenceSwitcher(sport)}
         </div>
@@ -189,7 +188,6 @@ function inferSport(path) {
 async function fetchEdgeCount() {
   try {
     const results = await Promise.allSettled([
-      fetch(EV_FINDER_URL, { credentials: 'omit' }).then(r => r.ok ? r.json() : null),
       fetch(MLB_HR_SAMPLE_URL, { credentials: 'omit' }).then(r => r.ok ? r.json() : null),
       fetch(NFL_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
       fetch(UFC_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
@@ -197,15 +195,13 @@ async function fetchEdgeCount() {
       fetch(NHL_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
     ]);
     const body = (index) => results[index].status === 'fulfilled' ? results[index].value : null;
-    const mlb = body(0);
-    const mlbHr = body(1);
-    const nfl = body(2);
-    const ufc = body(3);
-    const wnba = body(4)?.data || body(4);
-    const nhl = body(5);
+    const mlbHr = body(0);
+    const nfl = body(1);
+    const ufc = body(2);
+    const wnba = body(3)?.data || body(3);
+    const nhl = body(4);
     const count =
-      Math.min(2, Array.isArray(mlb?.edges) ? mlb.edges.length : 0)
-      + (mlbHr?.early_bird || mlbHr?.featured ? 1 : 0)
+      Math.min(2, Array.isArray(mlbHr?.picks) ? mlbHr.picks.length : 0)
       + Math.min(2, Array.isArray(nfl?.picks) ? nfl.picks.length : 0)
       + (ufc?.pick ? 1 : 0)
       + Math.min(2, Array.isArray(wnba?.picks) ? wnba.picks.length : 0)
