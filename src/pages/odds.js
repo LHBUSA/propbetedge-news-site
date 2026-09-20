@@ -215,7 +215,7 @@ function buildMlbSource(hrResult, oddsSnapshots = {}) {
     if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, NHL_MAX_FREE_PICKS);
+  }).slice(0, 2);
 
   const cards = picks.map((pick, index) => normalizeMlbHrPick(
     pick,
@@ -471,7 +471,7 @@ function normalizeNhlSources({ official, preseason, date }) {
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, 2);
+  }).slice(0, NHL_MAX_FREE_PICKS);
 
   const validating = official.value?.reason === 'no_official_model'
     || official.value?.publish_gate?.open === false;
