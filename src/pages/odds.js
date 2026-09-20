@@ -260,10 +260,13 @@ function normalizeMlbHrPick(pick, data, oddsSnapshot, index = 0) {
   const marketProbability = live?.fairProbability ?? live?.impliedProbability ?? null;
   const snapshotStamp = oddsSnapshot?.cachedAt || oddsSnapshot?.snapshot?.captured_at || null;
 
+  const outcome = simpleOutcome(pick.result, { gradedAt: pick.graded_at });
   return {
     sport: 'mlb',
     variant: 'hr-spotlight',
-    eyebrow: `MLB · FREE HR PICK #${index + 1}`,
+    eyebrow: outcome?.result === 'WIN'
+      ? `MLB · FREE HR HIT #${index + 1}`
+      : `MLB · FREE HR PICK #${index + 1}`,
     title: pick.player_name,
     selection: 'TO HIT A HOME RUN',
     context,
@@ -274,10 +277,13 @@ function normalizeMlbHrPick(pick, data, oddsSnapshot, index = 0) {
       { label: 'PBE SCORE', value: Number.isFinite(score) ? `${Math.round(score)}/100` : '—' },
       { label: 'MARKET', value: live ? probabilityPct(marketProbability) : 'Pending' },
     ],
-    detail: live
-      ? `Free HR prop · live market matched${snapshotStamp ? ` · ${formatRelativeStamp(snapshotStamp)}` : ''}`
-      : 'Free HR prop · live market pricing pending',
-    timestamp: latestTimestamp([data?.generated_at, snapshotStamp]),
+    detail: outcome
+      ? [outcome.label, outcome.gradedAt ? `Graded ${formatRelativeStamp(outcome.gradedAt)}` : null].filter(Boolean).join(' · ')
+      : live
+        ? `Free HR prop · live market matched${snapshotStamp ? ` · ${formatRelativeStamp(snapshotStamp)}` : ''}`
+        : 'Free HR prop · live market pricing pending',
+    outcome,
+    timestamp: latestTimestamp([pick.graded_at, data?.generated_at, snapshotStamp]),
     href: data?.full_product_url || PROPBET_LINKS.hr_targets || SPORTS.mlb.href,
     media: pick.player_image ? {
       kind: 'portrait',
@@ -433,9 +439,17 @@ function normalizeWnba(data) {
     const away = pick.away?.abbr || pick.away?.name || 'AWAY';
     const pickName = pick.pick_team?.name || pick.pick_team?.short_name || pick.pick_team?.abbr || 'WNBA pick';
     const opponent = pick.opponent?.name || pick.opponent?.short_name || pick.opponent?.abbr || null;
+    const outcome = simpleOutcome(pick.grade?.result, {
+      gradedAt: pick.grade?.graded_at,
+      score: Number.isFinite(Number(pick.grade?.away_score)) && Number.isFinite(Number(pick.grade?.home_score))
+        ? `${away} ${pick.grade.away_score} · ${home} ${pick.grade.home_score}`
+        : null,
+    });
     return {
       sport: 'wnba',
-      eyebrow: `WNBA · ${pick.phase === 'LOCKED' ? 'LOCKED PBE PICK' : 'PBE MODEL CALL'}`,
+      eyebrow: outcome?.result === 'WIN'
+        ? 'WNBA · PBE ALGO HIT'
+        : `WNBA · ${pick.phase === 'LOCKED' ? 'LOCKED PBE PICK' : 'PBE MODEL CALL'}`,
       title: pickName,
       selection: opponent ? `vs ${opponent}` : `${away} @ ${home}`,
       context: [`${away} @ ${home}`, formatDateTime(pick.scheduled_tip_utc)].filter(Boolean).join(' · '),
@@ -444,8 +458,11 @@ function normalizeWnba(data) {
       model: probabilityPct(pick.model_probability),
       market: probabilityPct(pick.market_probability),
       edge: pointEdge(pick.edge_pts),
-      detail: [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.phase].filter(Boolean).join(' · '),
-      timestamp: body.generated_at || pick.locked_at || null,
+      detail: outcome
+        ? [outcome.score, outcome.gradedAt ? `Graded ${formatRelativeStamp(outcome.gradedAt)}` : null].filter(Boolean).join(' · ')
+        : [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.phase].filter(Boolean).join(' · '),
+      outcome,
+      timestamp: latestTimestamp([pick.grade?.graded_at, body.generated_at, pick.locked_at]),
       href: body.full_product_url || SPORTS.wnba.href,
       media: {
         kind: 'team',
@@ -604,6 +621,21 @@ function normalizeNhlPreseason(data, date) {
     stateTitle: cards.length ? null : `No locked NHL preseason calls for ${date}`,
     stateCopy: cards.length ? null : 'When the preseason model locks a real call, it appears here automatically.',
   };
+}
+
+function simpleOutcome(result, { gradedAt = null, score = null } = {}) {
+  const value = String(result || '').toUpperCase();
+  const normalized = value === 'W' || value === 'WON' || value === 'HIT' ? 'WIN'
+    : value === 'L' || value === 'LOST' || value === 'MISS' ? 'LOSS'
+      : value;
+  if (!['WIN', 'LOSS', 'PUSH', 'VOID'].includes(normalized)) return null;
+  const labels = {
+    WIN: { label: 'HIT', headline: 'PBE ALGO CALLED IT', tone: 'hit' },
+    LOSS: { label: 'MISS', headline: 'PBE ALGO RESULT', tone: 'miss' },
+    PUSH: { label: 'PUSH', headline: 'PBE ALGO RESULT', tone: 'push' },
+    VOID: { label: 'VOID', headline: 'PBE ALGO RESULT', tone: 'void' },
+  };
+  return { result: normalized, ...labels[normalized], score, gradedAt };
 }
 
 function nhlOutcome(result, { away, home, awayScore, homeScore, gradedAt } = {}) {
