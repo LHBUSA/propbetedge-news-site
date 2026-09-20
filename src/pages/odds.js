@@ -75,7 +75,7 @@ const SPORTS = Object.freeze({
     href: PROPBET_LINKS.picks_wnba,
     cta: 'Open WNBA Intelligence',
     deck: 'Current game-prediction calls from the WNBA model.',
-    cadence: 'Game-day · refreshed through the active slate',
+    cadence: '2 daily free picks · first published calls stay locked all day',
   },
   nhl: {
     label: 'NHL',
@@ -158,6 +158,7 @@ async function loadAndRender() {
   } catch (error) {
     console.warn('[odds] Free Picks Track Record unavailable:', error);
   }
+  pinWnbaDailyFreeBoard(payload, _lastTracker);
   applyTrackerOutcomes(payload, _lastTracker);
   renderBoard(payload, _lastTracker);
   injectEdgeSchema(payload);
@@ -185,6 +186,7 @@ async function refreshTrackerOnly() {
   try {
     const tracker = await fetchJson(FREE_TRACKER_URL);
     if (tracker?.ok) _lastTracker = tracker;
+    pinWnbaDailyFreeBoard(_lastPayload, _lastTracker);
     applyTrackerOutcomes(_lastPayload, _lastTracker);
     renderBoard(_lastPayload, _lastTracker);
   } catch (error) {
@@ -445,6 +447,86 @@ async function enrichUfcMedia(source) {
       // The fighter card remains useful without a portrait.
     }
   }));
+}
+
+function wnbaTrackerCards(tracker) {
+  if (!tracker?.ok || !Array.isArray(tracker.entries)) return [];
+  const today = todayEtDate();
+  return tracker.entries
+    .filter((entry) => (
+      String(entry?.sport || '').toUpperCase() === 'WNBA'
+      && String(entry?.period_start || '') === today
+      && entry?.evidence?.suppressed !== true
+    ))
+    .sort((a, b) => Number(a.slot || 0) - Number(b.slot || 0))
+    .slice(0, 2)
+    .map((entry) => {
+      const snap = entry.snapshot || {};
+      const selectedTeamId = snap.selected_team_id || snap.pick_team?.team_id || null;
+      const modelProbability = snap.model_probability ?? snap.win_probability ?? null;
+      const marketProbability = snap.market_probability
+        ?? snap.market_devig_probability
+        ?? snap.market_at_lock?.pick?.devig_probability
+        ?? null;
+      const rawEdge = snap.edge_pts
+        ?? snap.market_at_lock?.pbe_edge_pts
+        ?? (Number.isFinite(Number(snap.pbe_edge_at_lock)) ? Number(snap.pbe_edge_at_lock) * 100 : null);
+      const lockOdds = snap.odds
+        ?? snap.market_at_lock?.pick?.consensus_moneyline
+        ?? null;
+      const title = entry.selection || snap.pick_team?.name || snap.pick_team?.abbr || 'WNBA pick';
+      const opponent = entry.opponent || snap.opponent?.name || snap.opponent?.abbr || null;
+      const matchup = entry.matchup || [
+        snap.away?.abbr || snap.away?.name,
+        snap.home?.abbr || snap.home?.name,
+      ].filter(Boolean).join(' @ ');
+
+      return {
+        sport: 'wnba',
+        variant: 'wnba-daily-locked',
+        trackerKey: entry.public_key || null,
+        eyebrow: `WNBA · DAILY FREE PICK #${Number(entry.slot || 1)}`,
+        title,
+        selection: opponent ? `vs ${opponent}` : matchup,
+        context: [matchup, formatDateTime(entry.event_start_at)].filter(Boolean).join(' · '),
+        odds: lockOdds != null ? americanOdds(lockOdds) : 'LOCKED',
+        oddsLabel: lockOdds != null ? 'At publication' : 'Published pick',
+        model: probabilityPct(modelProbability),
+        market: probabilityPct(marketProbability),
+        edge: pointEdge(rawEdge),
+        detail: [
+          snap.confidence ? `Confidence ${snap.confidence}` : null,
+          entry.published_at ? `Published ${formatRelativeStamp(entry.published_at)}` : null,
+        ].filter(Boolean).join(' · '),
+        timestamp: entry.result_at || entry.published_at || tracker.generated_at || null,
+        href: SPORTS.wnba.href,
+        media: {
+          kind: 'team',
+          images: [
+            snap.pick_team?.logo,
+            selectedTeamId ? `https://wnba.propbetedge.ai/media/teams/${selectedTeamId}/128.webp` : null,
+          ].filter(Boolean),
+          alt: title ? `${title} team logo` : 'WNBA team logo',
+        },
+        trackerEntry: entry,
+      };
+    });
+}
+
+function pinWnbaDailyFreeBoard(payload, tracker) {
+  if (!payload?.wnba) return;
+  const cards = wnbaTrackerCards(tracker);
+  if (!cards.length) return;
+
+  payload.wnba = {
+    ...payload.wnba,
+    cards,
+    generatedAt: latestTimestamp([payload.wnba.generatedAt, tracker.generated_at]),
+    unavailable: false,
+    stateTitle: null,
+    stateCopy: null,
+    pinnedToDailyLedger: true,
+  };
 }
 
 function normalizeWnba(data) {
@@ -753,6 +835,7 @@ function normTrackerText(value) {
 
 function trackerEntryMatchesCard(entry, card) {
   if (!entry || !card || String(entry.sport || '').toLowerCase() !== String(card.sport || '').toLowerCase()) return false;
+  if (card.trackerKey && entry.public_key && String(card.trackerKey) === String(entry.public_key)) return true;
   const pick = normTrackerText(entry.selection);
   const title = normTrackerText(card.title);
   if (pick && title && pick === title) return true;
@@ -773,7 +856,10 @@ function applyTrackerOutcomes(payload, tracker) {
 
   for (const source of Object.values(payload)) {
     for (const card of (source?.cards || [])) {
-      const entry = settled.find((candidate) => trackerEntryMatchesCard(candidate, card));
+      const embedded = card.trackerEntry && ['WIN','LOSS','PUSH','VOID'].includes(String(card.trackerEntry.result || '').toUpperCase())
+        ? card.trackerEntry
+        : null;
+      const entry = embedded || settled.find((candidate) => trackerEntryMatchesCard(candidate, card));
       if (!entry) continue;
       const outcome = trackerOutcome(entry);
       if (!outcome) continue;
