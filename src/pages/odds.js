@@ -26,8 +26,17 @@ const NFL_SAMPLE_URL = 'https://nfl.propbetedge.ai/api/pbe-picks?view=free-sampl
 const UFC_SAMPLE_URL = 'https://ufc.propbetedge.ai/api/ufc/free-sample';
 const WNBA_SAMPLE_URL = 'https://wnba-api.propbetedge.ai/v1/pbe/free-sample';
 const NHL_SAMPLE_URL = 'https://nhl-api.propbetedge.ai/nhl/picks/free-sample';
-// The board can poll live sports every minute. MLB identity exposure is still\n// capped by its own 4-hour sample endpoints, so faster board polling cannot\n// rotate through extra MLB picks.\nconst REFRESH_INTERVAL_MS = 60 * 1000;
+const NHL_PRESEASON_URL = (date) => `https://nhl-api.propbetedge.ai/nhl/picks/preseason?date=${encodeURIComponent(date)}`;
+// Keep the multi-sport board on its natural one-minute cadence, but NHL result
+// receipts are a live proof surface and poll independently every 10 seconds.
+// MLB identity exposure remains capped by its own publisher, so no extra MLB
+// picks can rotate through from the NHL-specific refresh.
+const REFRESH_INTERVAL_MS = 60 * 1000;
+const NHL_REFRESH_INTERVAL_MS = 10 * 1000;
 let _refreshTimer = null;
+let _nhlRefreshTimer = null;
+let _lastPayload = null;
+let _nhlRefreshInFlight = false;
 
 const SPORTS = Object.freeze({
   mlb: {
@@ -67,8 +76,8 @@ const SPORTS = Object.freeze({
     emoji: '🏒',
     href: PROPBET_LINKS.picks_nhl,
     cta: 'Open NHL Intelligence',
-    deck: 'The hockey model pipeline, wired to publish when its release gate opens.',
-    cadence: 'Daily slate · lock-aware publication',
+    deck: 'Locked NHL algo calls with public result receipts as games finish.',
+    cadence: 'NHL board checks every 10s · preseason and official calls stay visibly graded',
   },
   nba: {
     label: 'NBA',
@@ -107,7 +116,9 @@ export async function renderOdds(root) {
   await loadAndRender();
 
   if (_refreshTimer) clearInterval(_refreshTimer);
+  if (_nhlRefreshTimer) clearInterval(_nhlRefreshTimer);
   _refreshTimer = setInterval(loadAndRender, REFRESH_INTERVAL_MS);
+  _nhlRefreshTimer = setInterval(refreshNhlOnly, NHL_REFRESH_INTERVAL_MS);
 }
 
 async function loadAndRender() {
@@ -116,7 +127,7 @@ async function loadAndRender() {
     fetchJson(NFL_SAMPLE_URL),
     fetchJson(UFC_SAMPLE_URL),
     fetchJson(WNBA_SAMPLE_URL),
-    fetchJson(NHL_SAMPLE_URL),
+    loadNhlSource(),
   ]);
 
   const mlbOdds = await loadMlbOddsSnapshots(mlbHr);
@@ -126,15 +137,51 @@ async function loadAndRender() {
     nfl: nfl.status === 'fulfilled' ? normalizeNfl(nfl.value) : sourceFailure('nfl', nfl.reason),
     ufc: ufc.status === 'fulfilled' ? normalizeUfc(ufc.value) : sourceFailure('ufc', ufc.reason),
     wnba: wnba.status === 'fulfilled' ? normalizeWnba(wnba.value) : sourceFailure('wnba', wnba.reason),
-    nhl: nhl.status === 'fulfilled' ? normalizeNhl(nhl.value) : sourceFailure('nhl', nhl.reason),
+    nhl: nhl.status === 'fulfilled' ? nhl.value : sourceFailure('nhl', nhl.reason),
   };
 
   await Promise.all([
     enrichMlbMedia(payload.mlb),
     enrichUfcMedia(payload.ufc),
   ]);
+  _lastPayload = payload;
   renderBoard(payload);
   injectEdgeSchema(payload);
+}
+
+async function refreshNhlOnly() {
+  if (_nhlRefreshInFlight || !_lastPayload || !document.getElementById('odds-board')) return;
+  _nhlRefreshInFlight = true;
+  try {
+    const nhl = await loadNhlSource();
+    _lastPayload = { ..._lastPayload, nhl };
+    renderBoard(_lastPayload);
+    injectEdgeSchema(_lastPayload);
+  } catch (error) {
+    console.warn('[odds] NHL rapid refresh unavailable:', error);
+  } finally {
+    _nhlRefreshInFlight = false;
+  }
+}
+
+async function loadNhlSource() {
+  const date = todayEtDate();
+  const [official, preseason] = await Promise.allSettled([
+    fetchJson(NHL_SAMPLE_URL),
+    fetchJson(NHL_PRESEASON_URL(date)),
+  ]);
+  return normalizeNhlSources({ official, preseason, date });
+}
+
+function todayEtDate(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now);
+  const part = (type) => parts.find((x) => x.type === type)?.value || '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
 }
 
 async function fetchJson(url) {
@@ -409,12 +456,53 @@ function normalizeWnba(data) {
   };
 }
 
-function normalizeNhl(data) {
-  const cards = (Array.isArray(data?.picks) ? data.picks : []).slice(0, 2).map((pick) => {
+function normalizeNhlSources({ official, preseason, date }) {
+  const officialSource = official.status === 'fulfilled'
+    ? normalizeNhlOfficial(official.value)
+    : sourceFailure('nhl', official.reason);
+  const preseasonSource = preseason.status === 'fulfilled'
+    ? normalizeNhlPreseason(preseason.value, date)
+    : sourceFailure('nhl', preseason.reason);
+
+  const seen = new Set();
+  const cards = [...officialSource.cards, ...preseasonSource.cards].filter((card) => {
+    const key = String(card.gameId || `${card.title}|${card.selection}`);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 2);
+
+  const validating = official.value?.reason === 'no_official_model'
+    || official.value?.publish_gate?.open === false;
+
+  return {
+    sport: 'nhl',
+    cards,
+    generatedAt: latestTimestamp([officialSource.generatedAt, preseasonSource.generatedAt]),
+    unavailable: official.status === 'rejected' && preseason.status === 'rejected',
+    stateTitle: cards.length ? null : validating ? 'Official model in validation' : 'No NHL algo calls on the free board yet',
+    stateCopy: cards.length
+      ? null
+      : validating
+        ? 'Official regular-season calls remain gated, but published preseason rehearsal calls will appear here automatically when locked.'
+        : 'The NHL sampler only shows real locked calls. It does not manufacture a pick to fill the board.',
+  };
+}
+
+function normalizeNhlOfficial(data) {
+  const cards = (Array.isArray(data?.picks) ? data.picks : []).map((pick) => {
     const away = pick.matchup?.away || 'AWAY';
     const home = pick.matchup?.home || 'HOME';
+    const outcome = nhlOutcome(pick.result, {
+      away,
+      home,
+      awayScore: pick.final_score?.away,
+      homeScore: pick.final_score?.home,
+      gradedAt: pick.graded_at,
+    });
     return {
       sport: 'nhl',
+      gameId: pick.game_id || null,
       eyebrow: 'NHL · LOCKED PBE PICK',
       title: pick.pick_team || 'NHL pick',
       selection: pick.opponent_team ? `vs ${pick.opponent_team}` : `${away} @ ${home}`,
@@ -424,8 +512,11 @@ function normalizeNhl(data) {
       model: probabilityPct(pick.model_probability),
       market: probabilityPct(pick.market_probability),
       edge: pointEdge(pick.edge_pts),
-      detail: [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.locked_at ? `Locked ${formatRelativeStamp(pick.locked_at)}` : null].filter(Boolean).join(' · '),
-      timestamp: data.fetched_at || pick.locked_at || null,
+      detail: outcome
+        ? [outcome.score, outcome.gradedAt ? `Graded ${formatRelativeStamp(outcome.gradedAt)}` : null].filter(Boolean).join(' · ')
+        : [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.locked_at ? `Locked ${formatRelativeStamp(pick.locked_at)}` : null].filter(Boolean).join(' · '),
+      outcome,
+      timestamp: latestTimestamp([pick.graded_at, data.fetched_at, pick.locked_at]),
       href: data.full_product_url || SPORTS.nhl.href,
       media: {
         kind: 'team',
@@ -435,16 +526,87 @@ function normalizeNhl(data) {
     };
   });
 
-  const validating = data?.reason === 'no_official_model' || data?.publish_gate?.open === false;
   return {
     sport: 'nhl',
     cards,
     generatedAt: data?.fetched_at || null,
     unavailable: false,
-    stateTitle: validating ? 'Model in validation' : null,
-    stateCopy: validating
-      ? 'NHL is fully wired into the free board. Picks stay hidden until the official model release gate opens.'
-      : null,
+  };
+}
+
+function normalizeNhlPreseason(data, date) {
+  const games = Array.isArray(data?.games) ? data.games : [];
+  const cards = games
+    .filter((game) => game?.is_call === true && game?.pick_team)
+    .map((game) => {
+      const away = String(game.away || 'AWAY').toUpperCase();
+      const home = String(game.home || 'HOME').toUpperCase();
+      const pickTeam = String(game.pick_team || '').toUpperCase();
+      const opponent = pickTeam === home ? away : home;
+      const outcome = nhlOutcome(game.result, {
+        away,
+        home,
+        awayScore: game.away_score,
+        homeScore: game.home_score,
+        gradedAt: game.graded_at,
+      });
+      return {
+        sport: 'nhl',
+        gameId: game.game_id || null,
+        variant: 'nhl-preseason-call',
+        eyebrow: outcome?.result === 'WIN'
+          ? 'NHL · PRESEASON PBE ALGO HIT'
+          : 'NHL · PRESEASON PBE ALGO CALL',
+        title: pickTeam || 'NHL pick',
+        selection: opponent ? `vs ${opponent}` : `${away} @ ${home}`,
+        context: [`${away} @ ${home}`, formatDateTime(game.puck_drop_utc)].filter(Boolean).join(' · '),
+        odds: americanOdds(game.best_price),
+        oddsLabel: game.best_book || (game.best_price != null ? 'Best at lock' : 'Unpriced'),
+        metrics: [
+          { label: 'MODEL', value: probabilityPct(game.probability) },
+          { label: 'LOCK ODDS', value: game.best_price != null ? americanOdds(game.best_price) : 'Unpriced' },
+          { label: outcome ? 'RESULT' : 'STATE', value: outcome?.label || 'LOCKED', edge: outcome?.result === 'WIN' },
+        ],
+        detail: outcome
+          ? [outcome.score, outcome.gradedAt ? `Graded ${formatRelativeStamp(outcome.gradedAt)}` : null, 'Preseason rehearsal'].filter(Boolean).join(' · ')
+          : [game.locked_at ? `Locked ${formatRelativeStamp(game.locked_at)}` : 'Locked before puck drop', 'Preseason rehearsal'].join(' · '),
+        outcome,
+        timestamp: latestTimestamp([game.graded_at, data.fetched_at, game.locked_at]),
+        href: SPORTS.nhl.href,
+        media: {
+          kind: 'team',
+          images: [],
+          alt: `${pickTeam || 'NHL'} team`,
+        },
+      };
+    });
+
+  return {
+    sport: 'nhl',
+    cards,
+    generatedAt: data?.fetched_at || null,
+    unavailable: data?.ok === false,
+    stateTitle: cards.length ? null : `No locked NHL preseason calls for ${date}`,
+    stateCopy: cards.length ? null : 'When the preseason model locks a real call, it appears here automatically.',
+  };
+}
+
+function nhlOutcome(result, { away, home, awayScore, homeScore, gradedAt } = {}) {
+  const value = String(result || '').toUpperCase();
+  if (!['WIN', 'LOSS', 'PUSH', 'VOID'].includes(value)) return null;
+  const labels = {
+    WIN: { label: 'HIT', headline: 'PBE ALGO CALLED IT', tone: 'hit' },
+    LOSS: { label: 'MISS', headline: 'PBE ALGO RESULT', tone: 'miss' },
+    PUSH: { label: 'PUSH', headline: 'PBE ALGO RESULT', tone: 'push' },
+    VOID: { label: 'VOID', headline: 'PBE ALGO RESULT', tone: 'void' },
+  };
+  const meta = labels[value];
+  const hasScore = Number.isFinite(Number(awayScore)) && Number.isFinite(Number(homeScore));
+  return {
+    result: value,
+    ...meta,
+    score: hasScore ? `${away} ${awayScore} · ${home} ${homeScore}` : null,
+    gradedAt: gradedAt || null,
   };
 }
 
@@ -462,7 +624,7 @@ function renderHero() {
         <span>🏈 NFL · game calls</span>
         <span>🥊 UFC · fight pick</span>
         <span>🏀 WNBA · game calls</span>
-        <span>🏒 NHL · wired</span>
+        <span>🏒 NHL · live algo calls + results</span>
         <span>🏀 NBA · next month</span>
       </div>
       <div class="odds-meta-row">
@@ -612,7 +774,14 @@ function renderCardAvatar(card) {
 }
 
 function renderFreeCard(card) {
-  const variantClass = card.variant === 'hr-spotlight' ? ' is-hr-spotlight' : card.variant === 'ufc-top-upset' ? ' is-ufc-top-upset' : '';
+  const variantClass = card.variant === 'hr-spotlight'
+    ? ' is-hr-spotlight'
+    : card.variant === 'ufc-top-upset'
+      ? ' is-ufc-top-upset'
+      : card.variant === 'nhl-preseason-call'
+        ? ' is-nhl-preseason-call'
+        : '';
+  const outcomeClass = card.outcome ? ` has-outcome is-${card.outcome.tone}` : '';
   const metrics = Array.isArray(card.metrics) && card.metrics.length
     ? card.metrics
     : [
@@ -622,8 +791,13 @@ function renderFreeCard(card) {
       ];
 
   return `
-    <article class="free-edge-card has-media${variantClass}" data-sport="${escapeHtml(card.sport)}">
+    <article class="free-edge-card has-media${variantClass}${outcomeClass}" data-sport="${escapeHtml(card.sport)}">
       <div class="free-edge-card-body">
+        ${card.outcome ? `<div class="free-edge-result free-edge-result--${escapeHtml(card.outcome.tone)}">
+          <span>${escapeHtml(card.outcome.label)}</span>
+          <strong>${escapeHtml(card.outcome.headline)}</strong>
+          ${card.outcome.score ? `<small>${escapeHtml(card.outcome.score)}</small>` : ''}
+        </div>` : ''}
         <div class="free-edge-compact-head">
           ${renderCardAvatar(card)}
           <div class="free-edge-identity">
