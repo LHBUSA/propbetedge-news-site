@@ -7135,6 +7135,95 @@ a.leaders-sport-tab.active,
 .free-edge-card[data-sport="wnba"] .free-edge-selection { color: #f7c46f; }
 .free-edge-card[data-sport="nhl"] .free-edge-selection { color: #bde8f7; }
 
+.free-edge-card.is-nhl-preseason-call {
+  border-color: rgba(159,217,239,.22);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(159,217,239,.08), transparent 34%),
+    linear-gradient(145deg, rgba(24,29,32,.98), rgba(12,15,17,.98));
+}
+
+.free-edge-result {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  align-items: center;
+  gap: 8px 12px;
+  margin: -4px -4px 0;
+  padding: 11px 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.free-edge-result > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  min-height: 28px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.free-edge-result strong {
+  font-size: 12px;
+  line-height: 1.25;
+  color: var(--paper);
+}
+
+.free-edge-result small {
+  font-size: 9px;
+  line-height: 1.25;
+  color: var(--paper-dim);
+}
+
+.free-edge-result--hit {
+  border-color: rgba(95,211,141,.38);
+  background: linear-gradient(90deg, rgba(95,211,141,.14), rgba(95,211,141,.035));
+}
+.free-edge-result--hit > span {
+  background: #5fd38d;
+  color: #09130d;
+}
+.free-edge-card.is-hit {
+  border-color: rgba(95,211,141,.34);
+  box-shadow: 0 0 0 1px rgba(95,211,141,.07), 0 18px 54px rgba(0,0,0,.28);
+}
+.free-edge-card.is-hit::before { background: #5fd38d; }
+
+.free-edge-result--miss {
+  border-color: rgba(255,107,107,.34);
+  background: linear-gradient(90deg, rgba(255,107,107,.11), rgba(255,107,107,.025));
+}
+.free-edge-result--miss > span {
+  background: rgba(255,107,107,.92);
+  color: #170808;
+}
+.free-edge-card.is-miss::before { background: #ff6b6b; }
+
+.free-edge-result--push,
+.free-edge-result--void {
+  border-color: rgba(212,175,55,.28);
+  background: linear-gradient(90deg, rgba(212,175,55,.10), rgba(212,175,55,.02));
+}
+.free-edge-result--push > span,
+.free-edge-result--void > span {
+  background: rgba(212,175,55,.9);
+  color: #171108;
+}
+
+@media (max-width: 640px) {
+  .free-edge-result {
+    grid-template-columns: auto minmax(0,1fr);
+  }
+  .free-edge-result small {
+    grid-column: 1 / -1;
+  }
+}
+
 .free-coming-panel {
   display: flex;
   align-items: baseline;
