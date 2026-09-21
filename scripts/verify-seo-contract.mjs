@@ -13,6 +13,21 @@ const robots = read('api/robots.js');
 const integrity = read('news-integrity.js');
 const standards = read('src/pages/editorial-standards.js');
 const router = read('src/router.js');
+const articlePage = read('src/pages/article.js');
+const schemaModule = read('src/entity-graph/article-seo.js');
+const linkify = read('src/entity-graph/linkify.js');
+const entities = read('src/entity-graph/entities.js');
+const shareImage = read('src/entity-graph/share-image.js');
+const socialCard = read('api/social-card.js');
+const teamPage = read('src/pages/team.js');
+
+/** The body of renderEntityAnchor, which is the markup entity links emit. */
+function anchorBody(source) {
+  const start = source.indexOf('export function renderEntityAnchor');
+  if (start === -1) return 'MISSING';
+  const end = source.indexOf('\n}', start);
+  return source.slice(start, end === -1 ? source.length : end);
+}
 
 const checks = [
   ['sitemap index is owned by the app', /"source": "\/sitemap\.xml"[\s\S]*?"destination": "\/api\/sitemap\?type=index"/.test(vercel)],
@@ -57,6 +72,43 @@ const checks = [
   ['integrity gate rejects duplicate summaries', integrity.includes("'duplicate_summary'")],
   ['retired contributor policy is centralized', integrity.includes("author === 'donneal green'")],
   ['reattribution policy is centralized', integrity.includes("author === 'eric esters'")],
+
+  // ── PropBetEdge content graph ──────────────────────────────────────────
+  ['article SEO has exactly one builder', schemaModule.includes('export function buildArticleSeo')],
+  ['middleware renders articles through the shared SEO builder', middleware.includes('buildArticleSeo(article, manifest)')],
+  ['the client renders articles through the same SEO builder', articlePage.includes('graph.buildArticleSeo(article, manifest)')],
+  ['middleware no longer carries a second article schema builder', !middleware.includes('function buildArticleSchema')],
+  ['the client never appends a competing NewsArticle node', articlePage.includes("getElementById('pbe-server-primary-schema')")],
+  ['entity manifests are built by the shared module on the server', middleware.includes("from './src/entity-graph/manifest.js'")],
+  ['entity manifests are built by the shared module on the client', articlePage.includes('graph.buildEntityManifest(article)')],
+  ['server and client linkify with the same function', middleware.includes('linkifyArticleHtml(') && articlePage.includes('graph.linkifyArticleHtml(')],
+  ['server and client build body markup with the same function', middleware.includes('articleBodyHtml(article)') && articlePage.includes('graph.articleBodyHtml(article)')],
+  ['body entity links are server-visible', middleware.includes('buildServerArticleHtml') && middleware.includes('linkifyArticleHtml')],
+  ['the In this story bar is server-visible', middleware.includes('renderInThisStory(manifest)')],
+  ['share controls are server-visible', middleware.includes('renderShareBar(')],
+  ['related coverage is entity-scored, not sport-only', middleware.includes('rankRelated(') && articlePage.includes('graph.rankRelated(')],
+  ['related coverage uses structured entity queries', middleware.includes('/news/by-player/') && middleware.includes('/news/by-team/')],
+  ['team pages use the structured team query, not text matching', teamPage.includes('api.byTeamEntity(') && !teamPage.includes('function articleMatchesTeam')],
+  ['team coverage asks for every tag spelling, not just ESPN\'s', entities.includes('export function teamQueryAbbreviations') && teamPage.includes('teamQueryAbbreviations(') && middleware.includes('teamQueryAbbreviations(')],
+  // Assert on the emitted anchor, not on the file text: the policy comment
+  // above renderEntityAnchor names both attributes on purpose.
+  ['entity links carry no rel attribute (no nofollow)', !anchorBody(linkify).includes('rel=')],
+  ['entity links never open in a new tab', !anchorBody(linkify).includes('target=')],
+  ['anchors cannot nest: anchors open a skip region', linkify.includes("SKIP_ELEMENTS") && linkify.includes("'a',")],
+  ['entity ids are never invented', entities.includes('reason: \'unknown\'') && entities.includes('reason: \'ambiguous\'')],
+  ['ambiguous namesakes are reported, not guessed', entities.includes("return { entity: null, reason: 'ambiguous'")],
+  ['common-word nicknames are excluded from link surfaces', entities.includes('RISKY_TEAM_NICKNAMES')],
+  ['a persisted manifest is preferred when present', read('src/entity-graph/manifest.js').includes('adoptPersistedManifest')],
+  ['the house logo is never an article social image', shareImage.includes('HOUSE_BRAND_MARKERS') && shareImage.includes("'/logo/'")],
+  ['share images are a stable PropBetEdge URL', shareImage.includes('/api/social-card?')],
+  ['the social card always answers with an image', socialCard.includes('res.status(200).send') && !socialCard.includes('res.status(404)')],
+  ['the social card runs where its WASM fits', !socialCard.includes("runtime: 'edge'")],
+  ['og image dimensions are declared', schemaModule.includes("'og:image:width'") && schemaModule.includes("'og:image:height'")],
+  ['og image alt text is declared', schemaModule.includes("'og:image:alt'")],
+  ['twitter uses a large summary card', schemaModule.includes("'twitter:card', 'summary_large_image'")],
+  ['schema connects real entities via about/mentions', schemaModule.includes('newsArticle.about') && schemaModule.includes('newsArticle.mentions')],
+  ['dateModified is never manufactured', schemaModule.includes('const modified = isoDate(article?.updated_at) || published')],
+  ['the news sitemap still publishes first-publication dates', sitemap.includes('<news:publication_date>${esc(article.published_at)}</news:publication_date>')],
 
   ['editorial policy dateModified is not generated at runtime', !standards.includes("dateModified: new Date()")],
   ['about page is routable', router.includes("path === '/about'")],

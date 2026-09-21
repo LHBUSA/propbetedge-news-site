@@ -2,8 +2,14 @@
  * src/pages/article.js
  * Editorial long-form article — magazine layout with in-content ads
  *
+ * v4.0: PropBetEdge content graph
+ *       Entity manifest, body entity links, "In this story", entity-aware
+ *       related coverage, share controls and article SEO all come from
+ *       src/entity-graph/*, the same modules Edge Middleware renders with.
+ *       There is no client-only copy of any of that logic to drift against.
+ *
  * v3.16: sport-native conversion CTAs at render source
- * v3.15: 🆕 Media embeds rendered after take callout (MLB.tv + YouTube)
+ * v3.15: Media embeds rendered after take callout (MLB.tv + YouTube)
  * v3.14: ESPN-pattern right rail
  */
 
@@ -14,13 +20,17 @@ import { renderArticleCard, escapeHtml, formatRelative } from '../components/art
 import { renderRailShell, mountArticleRail } from '../components/right-rail.js';
 import { renderNotFound } from './404.js';
 import { ad_in_article_after_take, ad_in_article_mid, ad_brand_family, proxyImage } from '../ads-config.js';
-import {
-  organizationSchema, websiteSchema, breadcrumbSchema,
-  newsArticleSchema, injectSchemas,
-} from '../schema.js';
 
 const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', nhl: 'NHL' };
 const SPORT_FALLBACK = { mlb: '⚾', nfl: '🏈', nba: '🏀', nhl: '🏒' };
+
+// The content graph ships as its own chunk (see src/entity-graph/index.js), so
+// pages that never render an article never download the entity dictionary.
+let graphPromise = null;
+function loadEntityGraph() {
+  if (!graphPromise) graphPromise = import('../entity-graph/index.js');
+  return graphPromise;
+}
 
 export async function renderArticle(root, sport, slug, setMeta) {
   // Skeleton
@@ -39,9 +49,12 @@ export async function renderArticle(root, sport, slug, setMeta) {
     </main>
   `;
 
+  // The story payload and the entity graph load together, so resolving
+  // entities never adds latency in front of the article itself.
   let resp;
+  let graph;
   try {
-    resp = await api.article(slug);
+    [resp, graph] = await Promise.all([api.article(slug), loadEntityGraph()]);
   } catch (e) {
     if (String(e.message).includes('404')) {
       renderNotFound(root);
@@ -58,43 +71,36 @@ export async function renderArticle(root, sport, slug, setMeta) {
   const article = resp.article;
   if (!article) { renderNotFound(root); return; }
 
+  const manifest = graph.buildEntityManifest(article);
+  const seo = graph.buildArticleSeo(article, manifest);
+
   if (setMeta) {
     setMeta({
-      title: `${article.title} — PropBetEdge`,
-      description: article.take?.summary || article.summary || `Latest ${article.sport.toUpperCase()} news with AI prop-bet impact analysis.`,
-      canonical: article.url || `https://propbetedge.ai/news/${article.sport}/${article.slug}`,
-      ogImage: article.image_url || null,
+      title: seo.title,
+      description: seo.description,
+      canonical: seo.canonical,
+      ogImage: seo.image.url,
     });
   }
-
-  const sportLabel = sport.toUpperCase();
-  injectSchemas([
-    organizationSchema(),
-    websiteSchema(),
-    newsArticleSchema(article, sport, slug),
-    breadcrumbSchema([
-      { name: 'Home', url: '/' },
-      { name: `${sportLabel} News`, url: `/news/${sport}` },
-      { name: article.title },
-    ]),
-  ], 'jsonld-article');
+  applySocialMeta(seo);
+  applyPrimarySchema(seo);
 
   const heroImage = article.image_url
     ? `<figure class="article-hero-image">
-         <img src="${escapeAttr(proxyImage(article.image_url))}" alt="${escapeAttr(article.title)}" class="hero-image-img" onerror="this.classList.add('img-broken')" />
+         <img src="${escapeAttr(proxyImage(article.image_url))}" alt="${escapeAttr(seo.image.alt || article.title)}" class="hero-image-img" width="1200" height="675" onerror="this.classList.add('img-broken')" />
          <div class="img-fallback">${SPORT_FALLBACK[article.sport] || '◆'}</div>
        </figure>`
     : '';
 
   const articleContext = { sport: article.sport };
-  const bodyHtml = renderBodyWithMidAd(article, articleContext);
+  const bodyHtml = renderBodyWithMidAd(article, articleContext, graph, manifest, seo);
 
   root.innerHTML = `
     ${renderHeader()}
     <main>
       <div class="article-with-rail">
         <article class="container-narrow article-page fade-in">
-          <a href="/news/${article.sport}" class="article-back">← ${SPORT_LABELS[article.sport] || article.sport.toUpperCase()}</a>
+          ${renderBreadcrumb(seo.breadcrumbs)}
 
           <header class="article-hero">
             <div class="article-meta">
@@ -114,8 +120,13 @@ export async function renderArticle(root, sport, slug, setMeta) {
               <span>By <a href="${escapeAttr(authorHref(article.author))}" class="byline-link"><strong>${escapeHtml(article.author || 'PropBetEdge Editorial Team')}</strong></a></span>
               <span style="color:var(--paper-subtle)">·</span>
               <span>${formatRelative(new Date(article.published_at))}</span>
+              ${renderUpdatedStamp(seo)}
             </div>
+
+            ${graph.renderShareBar(seo.canonical, article.title || '')}
           </header>
+
+          <div id="in-this-story-slot">${graph.renderInThisStory(manifest)}</div>
 
           ${heroImage}
 
@@ -140,15 +151,99 @@ export async function renderArticle(root, sport, slug, setMeta) {
     ${renderFooter()}
   `;
 
+  graph.mountShareBars(document);
+
   mountArticleRail({
     currentSlug: article.slug,
     currentSport: article.sport,
   });
 
-  loadRelated(article);
+  loadRelated(article, manifest, graph);
+  attachGameEntity(article, manifest, graph);
 }
 
-// 🆕 v3.15: Render legal video/social embeds (MLB.tv + YouTube official)
+/**
+ * Keep the document's social metadata in step with client-side navigation, so
+ * a share from the fifth story a reader opens never carries the first story's
+ * card. Same tag set Edge Middleware emits.
+ */
+function applySocialMeta(seo) {
+  for (const [name, content] of [...seo.openGraph, ...seo.twitter]) {
+    if (name === 'article:tag') continue; // repeatable — rebuilt below
+    const attr = name.startsWith('twitter:') ? 'name' : 'property';
+    let el = document.head.querySelector(`meta[${attr}="${name}"]`);
+    if (!el) {
+      el = document.createElement('meta');
+      el.setAttribute(attr, name);
+      document.head.appendChild(el);
+    }
+    el.setAttribute('content', content);
+  }
+
+  document.head.querySelectorAll('meta[property="article:tag"]').forEach((el) => el.remove());
+  for (const [name, content] of seo.openGraph) {
+    if (name !== 'article:tag') continue;
+    const el = document.createElement('meta');
+    el.setAttribute('property', 'article:tag');
+    el.setAttribute('content', content);
+    document.head.appendChild(el);
+  }
+}
+
+/**
+ * Exactly one NewsArticle node per page. The server already wrote this element;
+ * the client updates it in place instead of appending a second, competing copy.
+ */
+function applyPrimarySchema(seo) {
+  document
+    .querySelectorAll('script[type="application/ld+json"][data-managed="jsonld-article"]')
+    .forEach((el) => el.remove());
+
+  let script = document.getElementById('pbe-server-primary-schema');
+  if (!script) {
+    script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.id = 'pbe-server-primary-schema';
+    document.head.appendChild(script);
+  }
+  script.textContent = JSON.stringify(seo.jsonLd);
+}
+
+function renderBreadcrumb(crumbs) {
+  if (!Array.isArray(crumbs) || crumbs.length < 2) return '';
+  const items = crumbs.map((crumb, index) => {
+    const last = index === crumbs.length - 1;
+    const href = crumb.url ? (crumb.url.replace('https://propbetedge.ai', '') || '/') : null;
+    if (last || !href) return `<span aria-current="page">${escapeHtml(crumb.name)}</span>`;
+    return `<a href="${escapeAttr(href)}">${escapeHtml(crumb.name)}</a>`;
+  }).join('<span class="pbe-breadcrumb-sep" aria-hidden="true">›</span>');
+  return `<nav class="pbe-breadcrumb" aria-label="Breadcrumb">${items}</nav>`;
+}
+
+function renderUpdatedStamp(seo) {
+  if (!seo.modifiedTime || !seo.publishedTime || seo.modifiedTime === seo.publishedTime) return '';
+  const date = new Date(seo.modifiedTime);
+  if (!Number.isFinite(date.getTime())) return '';
+  const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return `<span style="color:var(--paper-subtle)">·</span>
+      <span class="article-updated">Updated <time datetime="${escapeAttr(seo.modifiedTime)}">${escapeHtml(label)}</time></span>`;
+}
+
+/**
+ * Attach the matchup entity once it resolves. Deliberately after paint: a game
+ * chip is worth one extra request, never a delay in front of the story.
+ */
+async function attachGameEntity(article, manifest, graph) {
+  try {
+    const enriched = await graph.enrichManifestWithGame(article, manifest, { timeoutMs: 2500 });
+    if (!enriched?.games?.length) return;
+    const slot = document.getElementById('in-this-story-slot');
+    if (!slot) return;
+    slot.innerHTML = graph.renderInThisStory(enriched);
+  } catch { /* a missing game chip is not a page error */ }
+}
+
+// v3.15: Render legal video/social embeds (MLB.tv + YouTube official)
 function renderMediaEmbeds(article) {
   const embeds = Array.isArray(article.media_embeds) ? article.media_embeds : [];
   if (!embeds.length) return '';
@@ -201,14 +296,12 @@ function renderMediaEmbeds(article) {
   `;
 }
 
-function renderBodyWithMidAd(article, ctx) {
-  const html = article.body_html
-    ? article.body_html
-    : article.body
-    ? renderBodyMarkdown(article.body)
-    : article.source_url
-    ? `<p>${article.summary ? escapeHtml(article.summary) : 'No summary available.'}</p>
-       <p><a href="${escapeAttr(article.source_url)}" target="_blank" rel="noopener nofollow">Read the full story at ${escapeHtml(extractDomain(article.source_url))} →</a></p>`
+function renderBodyWithMidAd(article, ctx, graph, manifest, seo) {
+  // Body markup and entity linking both come from the shared graph modules, so
+  // this is byte-identical to the markup the crawler already received.
+  const source = graph.articleBodyHtml(article);
+  const html = source
+    ? graph.linkifyArticleHtml(source, manifest, { excludeUrls: [seo.canonical] }).html
     : '';
 
   if (!html) return '';
@@ -323,23 +416,60 @@ function renderPicksCTA(article) {
   `;
 }
 
-async function loadRelated(article) {
+/**
+ * Related coverage, scored against the entity graph rather than "four more
+ * stories from this sport". Candidates come from structured entity queries
+ * first, with the league feed as a backstop.
+ */
+async function loadRelated(article, manifest, graph) {
   try {
-    const data = await api.newsBySport(article.sport, 4);
-    const related = (data.articles || [])
-      .filter((a) => a.slug !== article.slug)
-      .slice(0, 3);
-    if (!related.length) return;
+    const player = (manifest.players || []).find((p) => p.origin !== 'text') || (manifest.players || [])[0];
+    const team = (manifest.teams || []).find((t) => t.origin !== 'text') || (manifest.teams || [])[0];
+
+    const pools = await Promise.all([
+      player?.name ? api.byPlayerEntity(player.name).catch(() => null) : null,
+      team?.abbreviation
+        ? api.byTeamEntity(graph.teamQueryAbbreviations(article.sport, team.abbreviation)).catch(() => null)
+        : null,
+      api.newsBySport(article.sport, 12).catch(() => null),
+    ]);
+
+    const seen = new Set([article.slug]);
+    const candidates = [];
+    for (const pool of pools) {
+      for (const row of pool?.articles || []) {
+        if (!row?.slug || seen.has(row.slug)) continue;
+        seen.add(row.slug);
+        candidates.push(row);
+      }
+    }
+
+    const related = graph.rankRelated(article, manifest, candidates, { limit: 6 });
     const slot = document.getElementById('related-slot');
     if (!slot) return;
+
+    const explore = (related.explore || [])
+      .map((link) => `<a href="${escapeAttr(link.href)}" class="pbe-related-explore-link">${escapeHtml(link.label)}</a>`)
+      .join('');
+
+    if (!related.items.length) {
+      slot.innerHTML = explore
+        ? `<nav class="pbe-related-explore" aria-label="More coverage">${explore}</nav>`
+        : '';
+      return;
+    }
+
     slot.innerHTML = `
-      <div class="section-heading" style="margin-top:64px">
-        <h2>More ${article.sport.toUpperCase()}</h2>
-        <a href="/news/${article.sport}" class="more-link">All ${article.sport.toUpperCase()} →</a>
-      </div>
-      <div class="article-grid fade-stagger">
-        ${related.map((a) => renderArticleCard(a)).join('')}
-      </div>
+      <section class="pbe-related" aria-labelledby="pbe-related-heading">
+        <div class="section-heading" style="margin-top:64px">
+          <h2 id="pbe-related-heading">${escapeHtml(related.heading)}</h2>
+          <a href="/news/${article.sport}" class="more-link">All ${article.sport.toUpperCase()} →</a>
+        </div>
+        <div class="article-grid fade-stagger">
+          ${related.items.map(({ article: a }) => renderArticleCard(a)).join('')}
+        </div>
+        ${explore ? `<nav class="pbe-related-explore" aria-label="More coverage">${explore}</nav>` : ''}
+      </section>
     `;
   } catch (e) { /* silent */ }
 }
@@ -355,11 +485,6 @@ function formatDate(iso) {
     month: 'long', day: 'numeric', year: 'numeric',
     hour: 'numeric', minute: '2-digit',
   });
-}
-
-function extractDomain(url) {
-  try { return new URL(url).hostname.replace(/^www\./, ''); }
-  catch { return url; }
 }
 
 function formatPropType(p) {
@@ -402,24 +527,4 @@ function formatPropType(p) {
 function escapeAttr(s) {
   if (s == null) return '';
   return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-}
-
-function renderBodyMarkdown(md) {
-  if (!md) return '';
-  let h = String(md).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  h = h.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-  h = h.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-  h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  h = h.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '<em>$1</em>');
-  h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
-  h = h.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-  h = h.replace(/^- (.+)$/gm, '<li>$1</li>');
-  h = h.replace(/(<li>[\s\S]+?<\/li>)/g, (m) => `<ul>${m}</ul>`);
-  h = h.replace(/<\/ul>\s*<ul>/g, '');
-  h = h.split(/\n\n+/).map((p) => {
-    if (/^<(h\d|ul|ol|blockquote|pre)/i.test(p.trim())) return p;
-    if (!p.trim()) return '';
-    return `<p>${p.replace(/\n/g, '<br>')}</p>`;
-  }).join('\n');
-  return h;
 }

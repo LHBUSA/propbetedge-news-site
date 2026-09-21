@@ -1,0 +1,972 @@
+{
+  "started_at": "2026-09-21T21:00:04.040Z",
+  "scope": {
+    "sport": "all",
+    "limit": null
+  },
+  "totals": {
+    "articles_scanned": 11979,
+    "articles_withheld_by_integrity_gate": 3083,
+    "articles_with_player_entities": 8687,
+    "articles_with_team_entities": 8834,
+    "articles_with_game_entities": 0,
+    "articles_with_no_entities": 10,
+    "player_entities_resolved": 30378,
+    "team_entities_resolved": 13346,
+    "game_entities_resolved": 0,
+    "player_links_created": 27342,
+    "team_links_created": 10723,
+    "game_links_created": 0,
+    "body_links_created": 38065,
+    "share_images_assigned": 8896,
+    "share_image_tier_1_editorial_photo": 8865,
+    "share_image_tier_2_player_headshot": 28,
+    "share_image_tier_3_team_mark": 3,
+    "share_image_tier_4_league_card": 0,
+    "unresolved_mentions": 1507
+  },
+  "failures": {
+    "malformed_internal_links": 0,
+    "nested_anchors": 0,
+    "invalid_canonical_urls": 0,
+    "canonical_mismatches": 0,
+    "schema_serialization_errors": 0,
+    "publication_date_changes": 0,
+    "self_referencing_entity_links": 0,
+    "entity_links_404": 0,
+    "body_text_mutated": 0
+  },
+  "unresolved": {
+    "players": {
+      "nhl:Elias Pettersson": 41,
+      "nhl:Adam Fantilli": 16,
+      "nhl:Alexander Nikishin": 16,
+      "mlb:Justin Steele": 14,
+      "nhl:Simon Edvinsson": 12,
+      "nhl:Bruce Cassidy": 11,
+      "mlb:Spencer Schwellenbach": 10,
+      "nhl:John Chayka": 10,
+      "mlb:Joe Musgrove": 9,
+      "nhl:Mike Babcock": 9,
+      "mlb:Quinn Priester": 9,
+      "mlb:Aaron Boone": 7,
+      "nhl:Filip Gustavsson": 7,
+      "nhl:John Tortorella": 7,
+      "nhl:Max Domi": 6,
+      "nhl:Vladimir Tarasenko": 6,
+      "nfl:Darius Slayton": 6,
+      "nfl:JuJu Smith-Schuster": 6,
+      "mlb:Carlos Mendoza": 6,
+      "mlb:José Berríos": 6,
+      "nhl:Kris Knoblauch": 6,
+      "mlb:Chad Tracy": 5,
+      "nfl:Mike Williams": 5,
+      "nfl:Erik Ezekiel": 5,
+      "mlb:Tanner Houck": 5,
+      "nfl:Mike McCarthy": 5,
+      "nhl:Chris MacFarland": 5,
+      "mlb:Max Muncy": 5,
+      "nba:Steph Curry": 5,
+      "nfl:Alexander Mattison": 5,
+      "nhl:Connor Ingram": 5,
+      "nfl:Justin Jefferson": 5,
+      "nfl:Rob Brzezinski": 5,
+      "nhl:Jared Bednar": 5,
+      "mlb:Kiké Hernández": 5,
+      "nhl:Mats Sundin": 5,
+      "nhl:Stan Bowman": 4,
+      "nhl:Nick Blankenburg": 4,
+      "nba:Devin Carter": 4,
+      "nfl:Ben Johnson": 4,
+      "nfl:Robert Saleh": 4,
+      "mlb:Jesús Made": 4,
+      "mlb:Craig Stammen": 4,
+      "nhl:Patrik Laine": 4,
+      "nfl:Derek Carr": 4,
+      "nhl:Matt Savoie": 4,
+      "nfl:Will Levis": 4,
+      "nfl:Jake Browning": 4,
+      "nfl:Tyreek Hill": 4,
+      "nfl:Nazeeh Johnson": 4,
+      "nfl:Liam Coen": 4,
+      "mlb:Don Mattingly": 4,
+      "nhl:Manny Malhotra": 4,
+      "nfl:Diego Pavia": 4,
+      "nfl:Mike Vrabel": 4,
+      "mlb:Gavin Lux": 4,
+      "mlb:Carlos Lagrange": 4,
+      "mlb:Jordan Westburg": 4,
+      "nfl:Brendan Sorsby": 4,
+      "nhl:Craig Berube": 4,
+      "nfl:Kevin O'Connell": 4,
+      "nfl:Russell Wilson": 4,
+      "nba:Steve Ballmer": 3,
+      "nba:Drew Eubanks": 3,
+      "nhl:Shawn Horcoff": 3,
+      "mlb:Rob Zastryzny": 3,
+      "mlb:Shelby Miller": 3,
+      "mlb:Leo De Vries": 3,
+      "nhl:Phoenix Copley": 3,
+      "nfl:Josh Simmons": 3,
+      "mlb:Christian Bethancourt": 3,
+      "nhl:Evander Kane": 3,
+      "nfl:Justin Tucker": 3,
+      "mlb:Zach Morgan": 3,
+      "nfl:Kyle Trask": 3,
+      "nfl:Garrett Nussmeier": 3,
+      "mlb:Joe Espada": 3,
+      "mlb:Hayden Birdsong": 3,
+      "nfl:Deion Jones": 3,
+      "mlb:Nestor Cortes": 3,
+      "mlb:Eli Willits": 3,
+      "nhl:Michael Bunting": 3,
+      "nba:Dalen Terry": 3,
+      "mlb:Yimi Garcia": 3,
+      "nhl:Kent Hughes": 3,
+      "mlb:Roch Cholowsky": 3,
+      "nfl:Ogbonnia Okoronkwo": 3,
+      "mlb:Mike Elias": 3,
+      "mlb:Luis Peña": 3,
+      "mlb:Arjun Nimmala": 3,
+      "nfl:Darnell Savage": 3,
+      "nfl:Taysom Hill": 3,
+      "nfl:Klint Kubiak": 3,
+      "nfl:Frank Reich": 3,
+      "nhl:Jonathan Drouin": 3,
+      "mlb:Robert Hassell III": 3,
+      "nba:Malik Beasley": 3,
+      "mlb:Dom Keegan": 3,
+      "nhl:Jim Hiller": 3,
+      "mlb:Johan Rojas": 3,
+      "nhl:Rod Brind'Amour": 3,
+      "nhl:Peter Laviolette": 3,
+      "nhl:Patrick Roy": 3,
+      "nfl:Nolan Teasley": 3,
+      "mlb:Ethan Holliday": 3,
+      "mlb:Alex Cora": 3,
+      "nba:James Wiseman": 2,
+      "mlb:Michel Otañez": 2,
+      "nfl:Brandin Cooks": 2,
+      "nhl:Chris Driedger": 2,
+      "nhl:Luke Glendening": 2,
+      "nhl:Jessica Campbell": 2,
+      "nfl:Sean Payton": 2,
+      "mlb:Christian Cairo": 2,
+      "mlb:Dave Roberts": 2,
+      "nhl:Brooks Rogowski": 2,
+      "mlb:Kevin Cash": 2,
+      "nfl:Brian Daboll": 2,
+      "nfl:Aaron Glenn": 2,
+      "nfl:Joe Brady": 2,
+      "mlb:Anthony Santander": 2,
+      "nba:Taj Gibson": 2,
+      "nfl:Kyle Shanahan": 2,
+      "nfl:Zach Ertz": 2,
+      "nfl:Dean Lowry": 2,
+      "nfl:Elandon Roberts": 2,
+      "nfl:B.T. Potter": 2,
+      "mlb:Andy Green": 2,
+      "mlb:Yu Darvish": 2,
+      "nfl:Joe Mixon": 2,
+      "mlb:Dana Brown": 2,
+      "nfl:Johnny Newton": 2,
+      "mlb:Jefferson Rojas": 2,
+      "nfl:Arden Walker": 2,
+      "mlb:Grady Emerson": 2,
+      "nhl:Anton Silayev": 2,
+      "nfl:Jake Moody": 2,
+      "nhl:Michael Hage": 2,
+      "nfl:Adoree' Jackson": 2,
+      "nhl:James van Riemsdyk": 2,
+      "nhl:Sunny Mehta": 2,
+      "mlb:Michael Forret": 2,
+      "nfl:Sione Takitaki": 2,
+      "nfl:Ben Roethlisberger": 2,
+      "nfl:Jeadyn Lukus": 2,
+      "nfl:Demetrius Flannigan-Fowles": 2,
+      "nfl:Otis Reese": 2,
+      "nfl:Jalon Walker": 2,
+      "mlb:Zyhir Hope": 2,
+      "nfl:Ahkello Witherspoon": 2,
+      "nfl:Anthony Firkser": 2,
+      "mlb:Henry Lalane": 2,
+      "mlb:Sammy Stafura": 2,
+      "mlb:Colin Selby": 2,
+      "nfl:Lavonte David": 2,
+      "nfl:Teddy Bridgewater": 2,
+      "nfl:Shane Steichen": 2,
+      "nfl:Todd Monken": 2,
+      "nfl:Jeff Hafley": 2,
+      "nfl:Quinton Bell": 2,
+      "mlb:David Festa": 2,
+      "mlb:Luis Garcia": 2,
+      "mlb:Caleb Bonemer": 2,
+      "nhl:Caleb Malhotra": 2,
+      "mlb:Rintaro Sasaki": 2,
+      "nba:Arthur Kaluma": 2,
+      "nfl:Isaiah Iton": 2,
+      "mlb:Liam Hendriks": 2,
+      "nhl:Steve Yzerman": 2,
+      "nhl:Kyle Dubas": 2,
+      "nhl:Brandon Pridham": 2,
+      "mlb:Perry Minasian": 2,
+      "nhl:Jeff Skinner": 2,
+      "mlb:Craig Albernaz": 2,
+      "mlb:Dan Hammer": 2,
+      "nba:Mitch Johnson": 2,
+      "nhl:Cole Beaudoin": 2,
+      "nfl:Tyler Onyedim": 2,
+      "mlb:Ben Hansen": 2,
+      "mlb:Pat Murphy": 2,
+      "nhl:Kyle Masters": 2,
+      "mlb:Yosver Zulueta": 2,
+      "nhl:Jesse Puljujarvi": 2,
+      "mlb:Jhancarlos Lara": 2,
+      "nba:Dusty May": 2,
+      "nfl:Kenny Moore": 2,
+      "nba:Tiago Splitter": 2,
+      "nfl:Elijah Mitchell": 2,
+      "nhl:Shane Doan": 2,
+      "mlb:Rhylan Thomas": 2,
+      "nfl:Jamin Davis": 2,
+      "mlb:Christopher Sánchez": 2,
+      "mlb:Aidan Miller": 2,
+      "mlb:Brusdar Graterol": 2,
+      "nhl:David Carle": 2,
+      "nhl:Andersen": 2,
+      "mlb:Pablo López": 2,
+      "mlb:Blaine Crim": 2,
+      "mlb:Tayron Guerrero": 2,
+      "mlb:Robinson Ortiz": 2,
+      "nhl:Adam Foote": 2,
+      "mlb:Zach Thornton": 2,
+      "mlb:Ryan Pepiot": 2,
+      "nhl:Martin St. Louis": 2,
+      "nfl:Brenden Rice": 2,
+      "nba:Nick Nurse": 2,
+      "nfl:John Bullock": 2,
+      "nba:Steve Kerr": 2,
+      "mlb:Justyn-Henry Malloy": 2,
+      "mlb:Luis Peralta": 2,
+      "mlb:Ryan Harbin": 2,
+      "mlb:Rob Thomson": 2,
+      "nba:John Gibson": 1,
+      "nfl:Mike Edwards": 1,
+      "nfl:Baltimore Ravens defense": 1,
+      "nfl:New Orleans Saints offense": 1,
+      "nba:Mike Brown": 1,
+      "nba:Graham Ike": 1,
+      "nfl:Jalen Mills": 1,
+      "nfl:Jordan Fuller": 1,
+      "nba:Dwight Powell": 1,
+      "mlb:Torey Lovullo": 1,
+      "mlb:Caleb Killian": 1,
+      "nfl:Chris Stewart": 1,
+      "nfl:Mark Flowers": 1,
+      "nfl:Harrison Bowers": 1,
+      "nhl:Jakub Zacha": 1,
+      "nhl:Donovan Mantha": 1,
+      "nhl:Ben Hutson": 1,
+      "mlb:Skip Schumaker": 1,
+      "nba:Anton Watson": 1,
+      "nfl:Taylor Decker": 1,
+      "nba:Bruce Brown": 1,
+      "nba:Ochai Agbaji": 1,
+      "mlb:Braiden Ward": 1,
+      "nhl:Mat Barzal": 1,
+      "mlb:Drew Thorpe": 1,
+      "nhl:Bryan McCabe": 1,
+      "nba:Elfrid Payton": 1,
+      "mlb:Kaida Montero": 1,
+      "nfl:Unknown Backup QBs - Seattle Seahawks": 1,
+      "nfl:Unknown Backup QB - Minnesota Vikings": 1,
+      "nfl:Unknown Backup QB - Atlanta Falcons": 1,
+      "nba:Liam Robbins": 1,
+      "nba:Dawson Garcia": 1,
+      "nba:Basheer Jihad": 1,
+      "nhl:Nathan Bastian": 1,
+      "mlb:Christopher Sanchez": 1,
+      "nfl:Tyler Lockett": 1,
+      "nfl:Matt LaFleur": 1,
+      "nhl:Carson Soucy": 1,
+      "mlb:Mike Rizzo": 1,
+      "mlb:Billy Owens": 1,
+      "mlb:James Click": 1,
+      "nfl:Carl Jones Jr.": 1,
+      "nfl:Jayden Stone": 1,
+      "mlb:Joe Jimenez": 1,
+      "mlb:Joe Jiménez": 1,
+      "nfl:Jeremiah Love": 1,
+      "mlb:Andrew Fischer": 1,
+      "nfl:49ers QB": 1,
+      "mlb:Andrew Walters": 1,
+      "nhl:Matej Coronato": 1,
+      "nhl:Matthew Savoie": 1,
+      "mlb:Sammy Sosa": 1,
+      "mlb:Jamie Arnold": 1,
+      "nba:Gabe Vincent": 1,
+      "mlb:Luis Pena": 1,
+      "nfl:Shaq Mason": 1,
+      "mlb:Ky Bush": 1,
+      "mlb:Alex Santos II": 1,
+      "mlb:Gage Wood": 1,
+      "nfl:Zonovan Knight": 1,
+      "nfl:Michael Badgley": 1,
+      "nfl:Joshua Karty": 1,
+      "mlb:Hayden Harris": 1,
+      "nfl:Brian Flores": 1,
+      "nfl:Mark Gronowski": 1,
+      "mlb:Drew Waters": 1,
+      "nba:Saint Thomas": 1,
+      "mlb:Camilo Morejon": 1,
+      "mlb:Harrison Kyle Harrison": 1,
+      "mlb:Jake Cave": 1,
+      "nfl:Jack Pyburn": 1,
+      "nfl:Johnny Hekker": 1,
+      "nhl:Calle Järnkrok": 1,
+      "nhl:Kurtis Gabriel": 1,
+      "nfl:Dré Mont Jones": 1,
+      "nfl:OBJ": 1,
+      "nfl:Cooper": 1,
+      "nfl:Brosmer": 1,
+      "nfl:Ceyair Wright": 1,
+      "nfl:Devin Neal": 1,
+      "nfl:Mike Sainristol": 1,
+      "nfl:Mitch Trubisky": 1,
+      "mlb:Willson Contreres": 1,
+      "nfl:Adrian Martinez": 1,
+      "nfl:Mecole Hardman Jr.": 1,
+      "nfl:Mecole Hardman": 1,
+      "mlb:Salvador Caratini": 1,
+      "mlb:Kreidler": 1,
+      "mlb:Brent Strom": 1,
+      "nfl:Jayden Howell": 1,
+      "mlb:Benge": 1,
+      "mlb:McLean": 1,
+      "nfl:Tahj Washington": 1,
+      "nfl:Coleman Bennett": 1,
+      "nfl:DeVante Parker": 1,
+      "mlb:Yimi García": 1,
+      "nhl:Alex Nylander": 1,
+      "nfl:D.J. Humphries": 1,
+      "nfl:Will Harris": 1,
+      "nfl:Daronte Jones": 1,
+      "nfl:Noah Brown": 1,
+      "nfl:Cody Ford": 1,
+      "nhl:Yaroslav Korostelyov": 1,
+      "nhl:Patriks Plūminš": 1,
+      "nhl:Todd Crocker": 1,
+      "nhl:Joe Bowen": 1,
+      "mlb:Justin Lebron": 1,
+      "mlb:Seong-Jun Kim": 1,
+      "mlb:Seaver King": 1,
+      "mlb:Nestor Cortes Jr.": 1,
+      "mlb:Justin Gonzales": 1,
+      "nfl:David Sharpe": 1,
+      "nhl:Cayden Dobes": 1,
+      "nfl:Maurice Hurst Jr.": 1,
+      "nfl:Krys Barnes": 1,
+      "nfl:Matt Haack": 1,
+      "nfl:River Cracraft": 1,
+      "nfl:Maurice Hurst": 1,
+      "nfl:Tre McKitty": 1,
+      "nfl:Dante Miller": 1,
+      "nba:Jeanie Buss": 1,
+      "nhl:Stiven Sardarian": 1,
+      "nfl:DeVonta Smith": 1,
+      "nfl:Brandon Allen": 1,
+      "nfl:Christian Parker": 1,
+      "nhl:John Klingberg": 1,
+      "nhl:David Perron": 1,
+      "nfl:Baylon Spector": 1,
+      "nfl:Timothy McKay": 1,
+      "mlb:Dixon Williams": 1,
+      "mlb:Oliver Marmol": 1,
+      "mlb:Mitch Massey": 1,
+      "nfl:Jamaree Salyer": 1,
+      "mlb:Brent Honeywell Jr.": 1,
+      "nhl:John Hynes": 1,
+      "nfl:Connor Bazelak": 1,
+      "mlb:Tony Gonsolin": 1,
+      "nfl:Terrell Jennings": 1,
+      "nfl:JaMycal Hasty": 1,
+      "nhl:Steve Staios": 1,
+      "mlb:Scott Effross": 1,
+      "nfl:Braeden Daniels": 1,
+      "nhl:Jeff Greenberg": 1,
+      "mlb:Silas Ardoin": 1,
+      "nhl:Tristan Broz": 1,
+      "mlb:Anthony Eyanson": 1,
+      "mlb:Enddy Azocar": 1,
+      "nfl:Nick McCloud": 1,
+      "nfl:Zane Gonzalez": 1,
+      "nfl:Marco Wilson": 1,
+      "mlb:Wikelman González": 1,
+      "mlb:Willie MacIver": 1,
+      "nhl:Owen Pickering": 1,
+      "nfl:Adrian Peterson": 1,
+      "nfl:Rob Gronkowski": 1,
+      "nfl:Terrell Suggs": 1,
+      "nfl:Drew Brees": 1,
+      "nfl:Larry Fitzgerald": 1,
+      "nfl:Luke Kuechly": 1,
+      "nfl:Roger Craig": 1,
+      "nfl:Adam Vinatieri": 1,
+      "mlb:Anthony": 1,
+      "mlb:Crochet": 1,
+      "mlb:Ji Hwan Bae": 1,
+      "nfl:Brad Idzik": 1,
+      "mlb:Mike Clevinger": 1,
+      "nfl:Patrick Jenkins": 1,
+      "nfl:Jack Conley": 1,
+      "nfl:Reid Carrico": 1,
+      "nfl:Jamari Thrash": 1,
+      "nfl:Jashaun Corbin": 1,
+      "nfl:Dominic Richardson": 1,
+      "mlb:A.J. Puk": 1,
+      "nba:Alondes Williams": 1,
+      "nhl:Kevyn Adams": 1,
+      "nhl:Jarmo Kekalainen": 1,
+      "nfl:Ken Pickett": 1,
+      "mlb:Nolan Perry": 1,
+      "nba:Terrell Brown Jr.": 1,
+      "mlb:Franklin Arias": 1,
+      "nfl:Demetirus Flannigan-Fowles": 1,
+      "nhl:Lindy Ruff": 1,
+      "nhl:DJ Smith": 1,
+      "mlb:Jacob Berry": 1,
+      "nfl:Cameron Sample": 1,
+      "mlb:Andrew Friedman": 1,
+      "mlb:Christian Vasquez": 1
+    },
+    "teams": {
+      "mlb:OAK": 184,
+      "nfl:LA": 3,
+      "nhl:NAS": 2,
+      "nfl:NOS": 2,
+      "nfl:TTU": 2,
+      "nfl:GBP": 1,
+      "nba:MIS": 1,
+      "nhl:CBJS": 1,
+      "mlb:": 1,
+      "mlb:WSX": 1,
+      "nba:NYN": 1,
+      "nhl:UTH": 1,
+      "nhl:DEN": 1,
+      "mlb:SDN": 1,
+      "mlb:CUB": 1,
+      "nfl:LAS": 1,
+      "nhl:SUI": 1,
+      "nhl:CLE": 1
+    }
+  },
+  "samples": {
+    "failures": [],
+    "resolved": [
+      {
+        "url": "https://propbetedge.ai/news/mlb/alex-bregman-suffers-multiple-facial-fractures-2026-09-21",
+        "sport": "mlb",
+        "players": [
+          "https://propbetedge.ai/player/mlb/608324",
+          "https://propbetedge.ai/player/mlb/621550"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/mlb/chicago-cubs"
+        ],
+        "games": [],
+        "body_links": [
+          "Alex Bregman -> /player/mlb/608324",
+          "Cubs -> /team/mlb/chicago-cubs",
+          "Patrick Wisdom -> /player/mlb/621550"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nba/hawks-rookie-henri-veesaar-expected-to-miss-season-with-torn-acl-2026-09-21",
+        "sport": "nba",
+        "players": [
+          "https://propbetedge.ai/player/nba/5105571",
+          "https://propbetedge.ai/player/nba/4431680",
+          "https://propbetedge.ai/player/nba/3146557"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nba/atlanta-hawks"
+        ],
+        "games": [],
+        "body_links": [
+          "Henri Veesaar -> /player/nba/5105571",
+          "Hawks -> /team/nba/atlanta-hawks",
+          "Onyeka Okongwu -> /player/nba/4431680",
+          "Landale -> /player/nba/3146557"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nba/raptors-convert-jaden-bradley-to-four-year-standard-contract-2026-09-21",
+        "sport": "nba",
+        "players": [
+          "https://propbetedge.ai/player/nba/4432737"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nba/toronto-raptors"
+        ],
+        "games": [],
+        "body_links": [
+          "Raptors -> /team/nba/toronto-raptors",
+          "Jaden Bradley -> /player/nba/4432737"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/mlb/blue-jays-designate-joe-mantiply-for-assignment-2026-09-21",
+        "sport": "mlb",
+        "players": [
+          "https://propbetedge.ai/player/mlb/573009",
+          "https://propbetedge.ai/player/mlb/702056",
+          "https://propbetedge.ai/player/mlb/689149"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/mlb/toronto-blue-jays"
+        ],
+        "games": [],
+        "body_links": [
+          "Blue Jays -> /team/mlb/toronto-blue-jays",
+          "Joe Mantiply -> /player/mlb/573009",
+          "Trey Yesavage -> /player/mlb/702056",
+          "Chad Dallas -> /player/mlb/689149"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nhl/leafs-dakota-joshua-uncertain-for-opening-night-with-unspecified-injury-2026-09-21",
+        "sport": "nhl",
+        "players": [
+          "https://propbetedge.ai/player/nhl/8478057",
+          "https://propbetedge.ai/player/nhl/8479520",
+          "https://propbetedge.ai/player/nhl/8475683",
+          "https://propbetedge.ai/player/nhl/8476927"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nhl/toronto-maple-leafs",
+          "https://propbetedge.ai/team/nhl/montreal-canadiens"
+        ],
+        "games": [],
+        "body_links": [
+          "Dakota Joshua -> /player/nhl/8478057",
+          "Montreal Canadiens -> /team/nhl/montreal-canadiens",
+          "Teddy Blueger -> /player/nhl/8476927",
+          "Brandon Duhaime -> /player/nhl/8479520",
+          "Sergei Bobrovsky -> /player/nhl/8475683"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/mlb/twins-designate-alex-jackson-for-assignment-2026-09-21",
+        "sport": "mlb",
+        "players": [
+          "https://propbetedge.ai/player/mlb/656577",
+          "https://propbetedge.ai/player/mlb/693306"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/mlb/minnesota-twins"
+        ],
+        "games": [],
+        "body_links": [
+          "Twins -> /team/mlb/minnesota-twins",
+          "Alex Jackson -> /player/mlb/656577",
+          "Aaron Sabato -> /player/mlb/693306"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nhl/penguins-blaze-lizotte-week-to-week-with-upper-body-injury-2026-09-21",
+        "sport": "nhl",
+        "players": [
+          "https://propbetedge.ai/player/nhl/8481481",
+          "https://propbetedge.ai/player/nhl/8480980",
+          "https://propbetedge.ai/player/nhl/8478569",
+          "https://propbetedge.ai/player/nhl/8471675"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nhl/pittsburgh-penguins",
+          "https://propbetedge.ai/team/nhl/philadelphia-flyers"
+        ],
+        "games": [],
+        "body_links": [
+          "Pittsburgh Penguins -> /team/nhl/pittsburgh-penguins",
+          "Blake Lizotte -> /player/nhl/8481481",
+          "Connor Dewar -> /player/nhl/8480980",
+          "Noel Acciari -> /player/nhl/8478569",
+          "Philadelphia Flyers -> /team/nhl/philadelphia-flyers",
+          "Sidney Crosby -> /player/nhl/8471675"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nfl/lamar-jackson-ravens-face-questions-after-frustrating-loss-to-saints-2026-09-21",
+        "sport": "nfl",
+        "players": [
+          "https://propbetedge.ai/player/nfl/3916387",
+          "https://propbetedge.ai/player/nfl/3043078",
+          "https://propbetedge.ai/player/nfl/4360939",
+          "https://propbetedge.ai/player/nfl/2980153",
+          "https://propbetedge.ai/player/nfl/4429615",
+          "https://propbetedge.ai/player/nfl/2576581",
+          "https://propbetedge.ai/player/nfl/4035661"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nfl/baltimore-ravens"
+        ],
+        "games": [],
+        "body_links": [
+          "Ravens -> /team/nfl/baltimore-ravens",
+          "Lamar Jackson -> /player/nfl/3916387",
+          "Rashod Bateman -> /player/nfl/4360939",
+          "Julian Blackmon -> /player/nfl/4035661",
+          "Chris Moore -> /player/nfl/2576581",
+          "Derrick Henry -> /player/nfl/3043078",
+          "Ronnie Stanley -> /player/nfl/2980153"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nba/clippers-name-lawyer-john-gibson-interim-governor-source-says-2026-09-21",
+        "sport": "nba",
+        "players": [
+          "https://propbetedge.ai/player/nba/6450",
+          "https://propbetedge.ai/player/nba/4251",
+          "https://propbetedge.ai/player/nba/3992"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nba/la-clippers"
+        ],
+        "games": [],
+        "body_links": [
+          "LA Clippers -> /team/nba/la-clippers",
+          "Kawhi Leonard -> /player/nba/6450",
+          "Paul George -> /player/nba/4251",
+          "James Harden -> /player/nba/3992"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nhl/stars-colin-blackwell-day-to-day-with-lower-body-injury-2026-09-21",
+        "sport": "nhl",
+        "players": [
+          "https://propbetedge.ai/player/nhl/8476278"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nhl/dallas-stars"
+        ],
+        "games": [],
+        "body_links": [
+          "Colin Blackwell -> /player/nhl/8476278"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nfl/lions-avonte-maddox-to-undergo-season-ending-foot-surgery-2026-09-21",
+        "sport": "nfl",
+        "players": [
+          "https://propbetedge.ai/player/nfl/3123938",
+          "https://propbetedge.ai/player/nfl/4692025",
+          "https://propbetedge.ai/player/nfl/4360383"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nfl/detroit-lions"
+        ],
+        "games": [],
+        "body_links": [
+          "Avonte Maddox -> /player/nfl/3123938",
+          "Lions -> /team/nfl/detroit-lions",
+          "Brian Branch -> /player/nfl/4692025",
+          "Kerby Joseph -> /player/nfl/4360383"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/mlb/cavalli-in-nats-extend-their-ace-2026-09-21",
+        "sport": "mlb",
+        "players": [
+          "https://propbetedge.ai/player/mlb/676917"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/mlb/washington-nationals"
+        ],
+        "games": [],
+        "body_links": [
+          "Cade Cavalli -> /player/mlb/676917"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nhl/capitals-alex-ovechkin-out-day-to-day-with-lower-body-injury-2026-09-21",
+        "sport": "nhl",
+        "players": [
+          "https://propbetedge.ai/player/nhl/8471214"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nhl/washington-capitals"
+        ],
+        "games": [],
+        "body_links": [
+          "Alex Ovechkin -> /player/nhl/8471214",
+          "Washington Capitals -> /team/nhl/washington-capitals"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nfl/lions-s-avonte-maddox-out-for-season-with-foot-injury-2026-09-21",
+        "sport": "nfl",
+        "players": [
+          "https://propbetedge.ai/player/nfl/3123938"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nfl/minnesota-vikings",
+          "https://propbetedge.ai/team/nfl/green-bay-packers",
+          "https://propbetedge.ai/team/nfl/detroit-lions",
+          "https://propbetedge.ai/team/nfl/chicago-bears"
+        ],
+        "games": [],
+        "body_links": [
+          "Vikings -> /team/nfl/minnesota-vikings"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nfl/vikings-are-now-the-betting-favorites-to-win-the-nfc-north-2026-09-21",
+        "sport": "nfl",
+        "players": [],
+        "teams": [
+          "https://propbetedge.ai/team/nfl/minnesota-vikings",
+          "https://propbetedge.ai/team/nfl/green-bay-packers",
+          "https://propbetedge.ai/team/nfl/detroit-lions",
+          "https://propbetedge.ai/team/nfl/chicago-bears"
+        ],
+        "games": [],
+        "body_links": [
+          "Vikings -> /team/nfl/minnesota-vikings"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nhl/devils-news-rumors-lombardis-push-for-roster-spot-dawss-big-opportunity-more-2026-09-21",
+        "sport": "nhl",
+        "players": [
+          "https://propbetedge.ai/player/nhl/8482076",
+          "https://propbetedge.ai/player/nhl/8474596",
+          "https://propbetedge.ai/player/nhl/8483695",
+          "https://propbetedge.ai/player/nhl/8479496",
+          "https://propbetedge.ai/player/nhl/8474593",
+          "https://propbetedge.ai/player/nhl/8480192",
+          "https://propbetedge.ai/player/nhl/8475760"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nhl/new-jersey-devils"
+        ],
+        "games": [],
+        "body_links": [
+          "New Jersey Devils -> /team/nhl/new-jersey-devils",
+          "Jake Allen -> /player/nhl/8474596",
+          "Nico Daws -> /player/nhl/8482076",
+          "David Rittich -> /player/nhl/8479496",
+          "Jacob Markstrom -> /player/nhl/8474593",
+          "Johnathan Kovacevic -> /player/nhl/8480192",
+          "Nick Bjugstad -> /player/nhl/8475760",
+          "Amadeus Lombardi -> /player/nhl/8483695"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/mlb/bobby-witt-jr-and-the-off-peak-mvp-season-2026-09-21",
+        "sport": "mlb",
+        "players": [
+          "https://propbetedge.ai/player/mlb/677951",
+          "https://propbetedge.ai/player/mlb/693645",
+          "https://propbetedge.ai/player/mlb/805808",
+          "https://propbetedge.ai/player/mlb/670541"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/mlb/kansas-city-royals"
+        ],
+        "games": [],
+        "body_links": [
+          "Bobby Witt Jr. -> /player/mlb/677951",
+          "Yordan Alvarez -> /player/mlb/670541",
+          "Cam Schlittler -> /player/mlb/693645",
+          "Kevin McGonigle -> /player/mlb/805808",
+          "Royals -> /team/mlb/kansas-city-royals"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nhl/quick-hits-involving-marchenko-laine-montembeault-malkin-and-crosby-2026-09-21",
+        "sport": "nhl",
+        "players": [
+          "https://propbetedge.ai/player/nhl/8471675",
+          "https://propbetedge.ai/player/nhl/8478470",
+          "https://propbetedge.ai/player/nhl/8480893",
+          "https://propbetedge.ai/player/nhl/8471215"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nhl/pittsburgh-penguins",
+          "https://propbetedge.ai/team/nhl/montreal-canadiens",
+          "https://propbetedge.ai/team/nhl/columbus-blue-jackets"
+        ],
+        "games": [],
+        "body_links": [
+          "Sidney Crosby -> /player/nhl/8471675",
+          "Montembeault -> /player/nhl/8478470",
+          "Canadiens -> /team/nhl/montreal-canadiens",
+          "Kirill Marchenko -> /player/nhl/8480893",
+          "Blue Jackets -> /team/nhl/columbus-blue-jackets",
+          "Evgeni Malkin -> /player/nhl/8471215"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/mlb/twins-to-select-aaron-sabato-2026-09-21",
+        "sport": "mlb",
+        "players": [
+          "https://propbetedge.ai/player/mlb/693306",
+          "https://propbetedge.ai/player/mlb/621439"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/mlb/minnesota-twins"
+        ],
+        "games": [],
+        "body_links": [
+          "Aaron Sabato -> /player/mlb/693306",
+          "Minnesota Twins -> /team/mlb/minnesota-twins",
+          "Byron Buxton -> /player/mlb/621439"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nfl/lions-host-s-mike-edwards-2026-09-21",
+        "sport": "nfl",
+        "players": [
+          "https://propbetedge.ai/player/nfl/4692025",
+          "https://propbetedge.ai/player/nfl/4360383"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nfl/detroit-lions"
+        ],
+        "games": [],
+        "body_links": [
+          "Lions -> /team/nfl/detroit-lions",
+          "Brian Branch -> /player/nfl/4692025",
+          "Kerby Joseph -> /player/nfl/4360383"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/mlb/the-opener-red-sox-clinch-ryan-joining-tigers-yesavage-back-2026-09-21",
+        "sport": "mlb",
+        "players": [
+          "https://propbetedge.ai/player/mlb/689981"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/mlb/detroit-tigers"
+        ],
+        "games": [],
+        "body_links": [
+          "River Ryan -> /player/mlb/689981",
+          "Tigers -> /team/mlb/detroit-tigers"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/mlb/how-braves-could-set-up-postseason-staff-during-final-regular-season-stretch-2026-09-21",
+        "sport": "mlb",
+        "players": [
+          "https://propbetedge.ai/player/mlb/519242",
+          "https://propbetedge.ai/player/mlb/641816",
+          "https://propbetedge.ai/player/mlb/656550",
+          "https://propbetedge.ai/player/mlb/527048",
+          "https://propbetedge.ai/player/mlb/663158",
+          "https://propbetedge.ai/player/mlb/693821",
+          "https://propbetedge.ai/player/mlb/800311",
+          "https://propbetedge.ai/player/mlb/669276",
+          "https://propbetedge.ai/player/mlb/628452"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/mlb/atlanta-braves"
+        ],
+        "games": [],
+        "body_links": [
+          "Braves -> /team/mlb/atlanta-braves",
+          "Chris Sale -> /player/mlb/519242",
+          "Tyler Mahle -> /player/mlb/641816",
+          "Grant Holmes -> /player/mlb/656550",
+          "Martín Pérez -> /player/mlb/527048",
+          "Robert Suarez -> /player/mlb/663158",
+          "Didier Fuentes -> /player/mlb/800311",
+          "Raisel Iglesias -> /player/mlb/628452"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nfl/ravens-players-want-this-fourth-quarter-collapse-to-be-a-hiccup-not-a-way-of-lif-2026-09-21",
+        "sport": "nfl",
+        "players": [],
+        "teams": [
+          "https://propbetedge.ai/team/nfl/baltimore-ravens",
+          "https://propbetedge.ai/team/nfl/new-orleans-saints"
+        ],
+        "games": [],
+        "body_links": [
+          "Ravens -> /team/nfl/baltimore-ravens",
+          "Saints -> /team/nfl/new-orleans-saints"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/mlb/can-lopez-pull-off-miraculous-run-to-200-hits-nl-batting-title-2026-09-21",
+        "sport": "mlb",
+        "players": [
+          "https://propbetedge.ai/player/mlb/672640",
+          "https://propbetedge.ai/player/mlb/672515",
+          "https://propbetedge.ai/player/mlb/650333"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/mlb/miami-marlins"
+        ],
+        "games": [],
+        "body_links": [
+          "Otto Lopez -> /player/mlb/672640",
+          "Luis Arraez -> /player/mlb/650333",
+          "Gabriel Moreno -> /player/mlb/672515"
+        ],
+        "share_image_tier": 1
+      },
+      {
+        "url": "https://propbetedge.ai/news/nfl/lukas-van-ness-breakout-game-saves-packers-in-ot-win-vs-jets-2026-09-21",
+        "sport": "nfl",
+        "players": [
+          "https://propbetedge.ai/player/nfl/4686906",
+          "https://propbetedge.ai/player/nfl/4361423"
+        ],
+        "teams": [
+          "https://propbetedge.ai/team/nfl/green-bay-packers",
+          "https://propbetedge.ai/team/nfl/new-york-jets"
+        ],
+        "games": [],
+        "body_links": [
+          "Lukas Van Ness -> /player/nfl/4686906",
+          "Jets -> /team/nfl/new-york-jets",
+          "Packers -> /team/nfl/green-bay-packers",
+          "Micah Parsons -> /player/nfl/4361423"
+        ],
+        "share_image_tier": 1
+      }
+    ]
+  },
+  "entity_verification": {
+    "checked": 91,
+    "ok": 91,
+    "not_found": [],
+    "unverifiable": 0
+  },
+  "finished_at": "2026-09-21T21:02:02.721Z"
+}

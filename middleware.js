@@ -16,6 +16,15 @@
 
 import { next } from '@vercel/edge';
 import { assessArticleIntegrity, applyArticlePublicationPolicy, filterPublicArticles } from './news-integrity.js';
+import { buildEntityManifest } from './src/entity-graph/manifest.js';
+import { enrichManifestWithGame } from './src/entity-graph/games.js';
+import { buildArticleSeo } from './src/entity-graph/article-seo.js';
+import { articleBodyHtml } from './src/entity-graph/article-body.js';
+import { linkifyArticleHtml } from './src/entity-graph/linkify.js';
+import { renderInThisStory } from './src/entity-graph/in-this-story.js';
+import { renderShareBar } from './src/entity-graph/share-bar.js';
+import { rankRelated } from './src/entity-graph/related.js';
+import { teamQueryAbbreviations } from './src/entity-graph/entities.js';
 
 export const config = {
   matcher: [
@@ -140,19 +149,37 @@ async function resolveMeta(pathname) {
             console.warn('[seo middleware] withheld corrupt article', slug, integrity.reason);
             return notFoundMeta(pathname, 'Article unavailable');
           }
-          const canonical = `${SITE}/news/${sport}/${slug}`;
+
+          // The entity manifest is derived synchronously; the game lookup and
+          // the related-coverage pool run in parallel so the story's own
+          // markup never waits on either of them in series.
+          const baseManifest = buildEntityManifest(article);
+          const [manifest, relatedPool] = await Promise.all([
+            // Short budget on purpose: the lookup is cached for a day, so a warm hit
+            // costs milliseconds. A cold miss loses the game chip in the server
+            // render and the client fills it in after paint, which is a far better
+            // trade than holding up TTFB on every two-team story.
+            enrichManifestWithGame(article, baseManifest, { origin: SITE, timeoutMs: 900 })
+              .catch(() => baseManifest),
+            loadRelatedCandidates(article, baseManifest, pathname).catch(() => []),
+          ]);
+
+          const seo = buildArticleSeo(article, manifest);
+          const related = rankRelated(article, manifest, relatedPool, { limit: 6 });
+
           return {
-            canonical,
-            title: `${article.title} — PropBetEdge`,
-            description: article.take?.summary || article.summary || `Latest ${SPORT_LABELS[sport]} news.`,
-            image: article.image_url || `${SITE}/logo/pbe-full-600.png`,
+            canonical: seo.canonical,
+            title: seo.title,
+            description: seo.description,
+            image: seo.image.url,
             type: 'article',
-            robots: DEFAULT_ROBOTS,
-            publishedTime: article.published_at || null,
-            modifiedTime: article.updated_at || article.published_at || null,
-            section: SPORT_LABELS[sport],
-            jsonLd: buildArticleSchema(article, sport, canonical),
-            ssrHtml: buildServerArticleHtml(article, sport, canonical),
+            robots: seo.robots,
+            publishedTime: seo.publishedTime,
+            modifiedTime: seo.modifiedTime,
+            section: seo.section,
+            socialTags: [...seo.openGraph, ...seo.twitter],
+            jsonLd: seo.jsonLd,
+            ssrHtml: buildServerArticleHtml(article, sport, seo, manifest, related),
           };
         }
       }
@@ -397,52 +424,56 @@ function injectMeta(html, meta) {
     );
   }
 
-  // Replace OpenGraph tags
-  html = html.replace(
-    /<meta\s+property="og:url"[^>]*>/i,
-    `<meta property="og:url" content="${escapeAttr(meta.canonical)}" />`
-  );
-  html = html.replace(
-    /<meta\s+property="og:title"[^>]*>/i,
-    `<meta property="og:title" content="${escapeAttr(meta.title)}" />`
-  );
-  html = html.replace(
-    /<meta\s+property="og:description"[^>]*>/i,
-    `<meta property="og:description" content="${escapeAttr(meta.description)}" />`
-  );
-  html = html.replace(
-    /<meta\s+property="og:image"[^>]*>/i,
-    `<meta property="og:image" content="${escapeAttr(meta.image)}" />`
-  );
-  if (meta.type) {
+  // Social metadata. When a page supplies a complete tag set (articles do), the
+  // shipped defaults are stripped and replaced wholesale so no stale og:image
+  // or duplicate og:title can survive next to the real one.
+  if (Array.isArray(meta.socialTags) && meta.socialTags.length) {
+    html = applySocialTags(html, meta.socialTags);
+  } else {
     html = html.replace(
-      /<meta\s+property="og:type"[^>]*>/i,
-      `<meta property="og:type" content="${escapeAttr(meta.type)}" />`
+      /<meta\s+property="og:url"[^>]*>/i,
+      `<meta property="og:url" content="${escapeAttr(meta.canonical)}" />`
     );
-  }
+    html = html.replace(
+      /<meta\s+property="og:title"[^>]*>/i,
+      `<meta property="og:title" content="${escapeAttr(meta.title)}" />`
+    );
+    html = html.replace(
+      /<meta\s+property="og:description"[^>]*>/i,
+      `<meta property="og:description" content="${escapeAttr(meta.description)}" />`
+    );
+    html = html.replace(
+      /<meta\s+property="og:image"[^>]*>/i,
+      `<meta property="og:image" content="${escapeAttr(meta.image)}" />`
+    );
+    if (meta.type) {
+      html = html.replace(
+        /<meta\s+property="og:type"[^>]*>/i,
+        `<meta property="og:type" content="${escapeAttr(meta.type)}" />`
+      );
+    }
+    html = html.replace(
+      /<meta\s+name="twitter:title"[^>]*>/i,
+      `<meta name="twitter:title" content="${escapeAttr(meta.title)}" />`
+    );
+    html = html.replace(
+      /<meta\s+name="twitter:description"[^>]*>/i,
+      `<meta name="twitter:description" content="${escapeAttr(meta.description)}" />`
+    );
+    html = html.replace(
+      /<meta\s+name="twitter:image"[^>]*>/i,
+      `<meta name="twitter:image" content="${escapeAttr(meta.image)}" />`
+    );
 
-  // Twitter
-  html = html.replace(
-    /<meta\s+name="twitter:title"[^>]*>/i,
-    `<meta name="twitter:title" content="${escapeAttr(meta.title)}" />`
-  );
-  html = html.replace(
-    /<meta\s+name="twitter:description"[^>]*>/i,
-    `<meta name="twitter:description" content="${escapeAttr(meta.description)}" />`
-  );
-  html = html.replace(
-    /<meta\s+name="twitter:image"[^>]*>/i,
-    `<meta name="twitter:image" content="${escapeAttr(meta.image)}" />`
-  );
-
-  if (meta.publishedTime) {
-    html = upsertPropertyMeta(html, 'article:published_time', meta.publishedTime);
-  }
-  if (meta.modifiedTime) {
-    html = upsertPropertyMeta(html, 'article:modified_time', meta.modifiedTime);
-  }
-  if (meta.section) {
-    html = upsertPropertyMeta(html, 'article:section', meta.section);
+    if (meta.publishedTime) {
+      html = upsertPropertyMeta(html, 'article:published_time', meta.publishedTime);
+    }
+    if (meta.modifiedTime) {
+      html = upsertPropertyMeta(html, 'article:modified_time', meta.modifiedTime);
+    }
+    if (meta.section) {
+      html = upsertPropertyMeta(html, 'article:section', meta.section);
+    }
   }
   if (meta.jsonLd) {
     const serialized = JSON.stringify(meta.jsonLd).replace(/<\/script/gi, '<\\/script');
@@ -460,6 +491,73 @@ function injectMeta(html, meta) {
   }
 
   return html;
+}
+
+/**
+ * Replace the managed social tag set in one pass.
+ *
+ * `article:tag` is intentionally repeatable — every resolved player, team,
+ * league and category gets its own tag — so this clears the whole managed
+ * namespace first rather than trying to edit tags in place.
+ */
+function applySocialTags(html, pairs) {
+  const managed = new Set(pairs.map(([name]) => name));
+  let out = html;
+
+  for (const name of managed) {
+    const attribute = name.startsWith('twitter:') ? 'name' : 'property';
+    const pattern = new RegExp(
+      `[ \\t]*<meta\\s+${attribute}=["']${escapeRegex(name)}["'][^>]*>[ \\t]*\\n?`,
+      'gi',
+    );
+    out = out.replace(pattern, '');
+  }
+
+  const block = pairs
+    .map(([name, content]) => {
+      const attribute = name.startsWith('twitter:') ? 'name' : 'property';
+      return `  <meta ${attribute}="${name}" content="${escapeAttr(content)}" />`;
+    })
+    .join('\n');
+
+  return out.replace(/<\/head>/i, block + '\n</head>');
+}
+
+/**
+ * Candidate pool for entity-aware related coverage.
+ *
+ * Structured entity queries first — the news API can answer "stories tagged
+ * with this player" and "stories tagged with this team" directly — with the
+ * league feed as a backstop so the section is never empty. All three run in
+ * parallel and any of them may fail without affecting the page.
+ */
+async function loadRelatedCandidates(article, manifest, requestPath) {
+  const sport = String(article?.sport || '').toLowerCase();
+  const player = (manifest.players || []).find((p) => p.origin !== 'text') || (manifest.players || [])[0];
+  const team = (manifest.teams || []).find((t) => t.origin !== 'text') || (manifest.teams || [])[0];
+
+  const paths = [];
+  if (player?.name) paths.push(`/news/by-player/${encodeURIComponent(player.name)}`);
+  for (const abbreviation of teamQueryAbbreviations(sport, team?.abbreviation)) {
+    paths.push(`/news/by-team/${encodeURIComponent(abbreviation)}`);
+  }
+  if (sport) paths.push(`/news/by-sport/${encodeURIComponent(sport)}?limit=12&page=1`);
+  if (!paths.length) return [];
+
+  const responses = await Promise.all(paths.map((path) => fetchInternalNews(path, requestPath)
+    .then((res) => (res.ok ? res.json() : null))
+    .catch(() => null)));
+
+  const seen = new Set([article.slug]);
+  const pool = [];
+  for (const data of responses) {
+    for (const row of filterPublicArticles(data?.articles || [])) {
+      if (!row?.slug || seen.has(row.slug)) continue;
+      seen.add(row.slug);
+      pool.push(row);
+    }
+  }
+  return pool;
 }
 
 function escapeAttr(s) {
@@ -665,65 +763,6 @@ function serviceUnavailableMeta(pathname, label) {
   };
 }
 
-function buildArticleSchema(article, sport, canonical) {
-  const authorName = article.author || 'PropBetEdge Editorial Team';
-  const authorSlug = String(authorName)
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-');
-
-  const schema = {
-    '@context': 'https://schema.org',
-    '@type': 'NewsArticle',
-    '@id': `${canonical}#article`,
-    url: canonical,
-    mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
-    headline: article.title,
-    description: article.summary || article.take?.summary || article.title,
-    datePublished: article.published_at || undefined,
-    dateModified: article.updated_at || article.published_at || undefined,
-    articleSection: SPORT_LABELS[sport],
-    inLanguage: 'en-US',
-    isAccessibleForFree: true,
-    author: {
-      '@type': authorName === 'PropBetEdge Editorial Team' ? 'Organization' : 'Person',
-      name: authorName,
-      url: `${SITE}/authors/${authorSlug}`,
-    },
-    publisher: {
-      '@type': 'NewsMediaOrganization',
-      '@id': `${SITE}/#organization`,
-      name: 'PropBetEdge',
-      url: SITE,
-      logo: {
-        '@type': 'ImageObject',
-        url: `${SITE}/logo/pbe-full-400.png`,
-      },
-    },
-  };
-
-  if (article.image_url) {
-    schema.image = {
-      '@type': 'ImageObject',
-      url: article.image_url,
-      contentUrl: article.image_url,
-      caption: article.title,
-    };
-  }
-
-  const keywords = [
-    SPORT_LABELS[sport],
-    article.category,
-    ...(article.take?.teams || []),
-    ...(article.take?.players || []),
-    ...(article.take?.prop_types || []),
-  ].filter(Boolean);
-  if (keywords.length) schema.keywords = [...new Set(keywords)].join(', ');
-
-  return schema;
-}
-
 async function resolveTeamMeta(sport, slug) {
   if (!SPORT_API[sport]) return { notFound: true };
 
@@ -817,36 +856,99 @@ function titleFromSlug(value) {
     .join(' ');
 }
 
-function buildServerArticleHtml(article, sport, canonical) {
+/**
+ * Server-rendered article.
+ *
+ * This is what a crawler receives before a single byte of application
+ * JavaScript runs: the real headline, the real byline and publication time,
+ * the entity bar, the body with its internal entity links already in place,
+ * and entity-aware related coverage. The client renders the same graph from
+ * the same modules, so nothing here is a special crawler-only view.
+ */
+function buildServerArticleHtml(article, sport, seo, manifest, related) {
   const title = escapeHtml(article.title || `${SPORT_LABELS[sport]} News`);
   const summary = escapeHtml(article.summary || article.take?.summary || '');
   const author = escapeHtml(article.author || 'PropBetEdge Editorial Team');
-  const authorSlug = String(article.author || 'PropBetEdge Editorial Team')
+  const authorSlugValue = String(article.author || 'PropBetEdge Editorial Team')
     .toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
   const published = article.published_at ? String(article.published_at) : '';
-  const body = articlePlainText(article).slice(0, 30000);
-  const paragraphs = body
-    .split(/\n{2,}/)
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .slice(0, 80)
-    .map((part) => `<p>${escapeHtml(part)}</p>`)
-    .join('');
+  const updated = seo.modifiedTime && seo.publishedTime && seo.modifiedTime !== seo.publishedTime
+    ? seo.modifiedTime
+    : '';
+
+  const linked = linkifyArticleHtml(articleBodyHtml(article), manifest, {
+    excludeUrls: [seo.canonical],
+  });
+  const bodyHtml = linked.html || (summary ? `<p>${summary}</p>` : '');
+
+  const crumbs = seo.breadcrumbs.map((crumb, index) => (crumb.url && index < seo.breadcrumbs.length - 1
+    ? `<a href="${escapeAttr(relativeUrl(crumb.url))}">${escapeHtml(crumb.name)}</a>`
+    : `<span aria-current="page">${escapeHtml(crumb.name)}</span>`)).join(' &rsaquo; ');
+
+  const heroAlt = escapeAttr(seo.image.alt || article.title || '');
+  const hero = article.image_url
+    ? `<figure class="pbe-ssr-hero"><img src="${escapeAttr(article.image_url)}" alt="${heroAlt}" width="1200" height="675" loading="eager" decoding="async" /></figure>`
+    : '';
 
   return `<article class="pbe-ssr-article" data-server-rendered="1">
-    <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; <a href="/news/${sport}">${SPORT_LABELS[sport]} News</a></nav>
+    <nav class="pbe-breadcrumb" aria-label="Breadcrumb">${crumbs}</nav>
     <header>
+      <p class="pbe-ssr-eyebrow">${SPORT_LABELS[sport]}${article.category && article.category !== 'general' ? ` · ${escapeHtml(article.category)}` : ''}</p>
       <h1>${title}</h1>
-      <p>By <a href="/authors/${escapeAttr(authorSlug)}">${author}</a>${published ? ` · <time datetime="${escapeAttr(published)}">${escapeHtml(formatServerDate(published))}</time>` : ''}</p>
-      ${summary ? `<p>${summary}</p>` : ''}
-      ${article.image_url ? `<img src="${escapeAttr(article.image_url)}" alt="${title}" width="1200" loading="eager" />` : ''}
+      ${summary ? `<p class="pbe-ssr-dek">${summary}</p>` : ''}
+      <p class="pbe-ssr-byline">By <a href="/authors/${escapeAttr(authorSlugValue)}">${author}</a>${published ? ` · <time datetime="${escapeAttr(published)}">${escapeHtml(formatServerDate(published))}</time>` : ''}${updated ? ` · <span>Updated <time datetime="${escapeAttr(updated)}">${escapeHtml(formatServerDate(updated))}</time></span>` : ''}</p>
+      ${renderShareBar(seo.canonical, article.title || '')}
     </header>
-    <section>${paragraphs || (summary ? `<p>${summary}</p>` : '')}</section>
+    ${renderInThisStory(manifest)}
+    ${hero}
+    <section class="pbe-ssr-body">${bodyHtml}</section>
+    ${buildServerRelatedHtml(related, sport)}
     <footer>
-      <a href="${escapeAttr(canonical)}">Permalink</a>
+      <a href="${escapeAttr(seo.canonical)}">Permalink</a>
       ${safeHttpUrl(article.source_url) ? ` · <a href="${escapeAttr(article.source_url)}" rel="nofollow noopener">Original source</a>` : ''}
     </footer>
   </article>`;
+}
+
+/**
+ * Related coverage, server-side. Every row is a crawlable link into the same
+ * topical cluster, which is the point: the entity graph has to be navigable
+ * without JavaScript or it is not a graph.
+ */
+function buildServerRelatedHtml(related, sport) {
+  const items = related?.items || [];
+  const explore = (related?.explore || [])
+    .map((link) => `<a href="${escapeAttr(link.href)}">${escapeHtml(link.label)}</a>`)
+    .join(' · ');
+
+  if (!items.length) {
+    return explore ? `<nav class="pbe-ssr-explore" aria-label="More coverage">${explore}</nav>` : '';
+  }
+
+  const rows = items.map(({ article }) => {
+    const rowSport = String(article.sport || sport).toLowerCase();
+    if (!SPORT_LABELS[rowSport] || !article.slug) return '';
+    const href = `/news/${rowSport}/${article.slug}`;
+    const when = article.published_at ? formatServerDate(article.published_at) : '';
+    return `<li><article>
+      <p>${SPORT_LABELS[rowSport]}${when ? ` · ${escapeHtml(when)}` : ''}</p>
+      <h3><a href="${escapeAttr(href)}">${escapeHtml(article.title || 'PropBetEdge News')}</a></h3>
+    </article></li>`;
+  }).filter(Boolean).join('');
+
+  if (!rows) return explore ? `<nav class="pbe-ssr-explore" aria-label="More coverage">${explore}</nav>` : '';
+
+  return `<section class="pbe-ssr-related" aria-labelledby="pbe-ssr-related-heading">
+    <h2 id="pbe-ssr-related-heading">${escapeHtml(related.heading || 'Related coverage')}</h2>
+    <ol>${rows}</ol>
+    ${explore ? `<nav class="pbe-ssr-explore" aria-label="More coverage">${explore}</nav>` : ''}
+  </section>`;
+}
+
+/** Same-origin absolute URLs render as paths so SSR markup stays compact. */
+function relativeUrl(url) {
+  const value = String(url || '');
+  return value.startsWith(SITE) ? (value.slice(SITE.length) || '/') : value;
 }
 
 function buildServerEntityHtml({ kind, name, sport, canonical, image, description }) {

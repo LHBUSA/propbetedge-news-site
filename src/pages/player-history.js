@@ -1,5 +1,6 @@
 import { playerPageShell, renderPlayerHero, renderPlayerLoading, escapeHtml } from './player-shared.js';
 import { display, list, espnCategories, espnGameLog, nhlCategories, nhlGameLog, ledgerGameLog, defaultCategory, seasonOptions, ribbonFields, paginate } from './player-history-core.js';
+import { entityCoverageSlot, mountEntityCoverage } from '../entity-graph/entity-coverage.js';
 import '../styles/player-history.css';
 
 const SPORT_NAMES = { nfl:'NFL', nba:'NBA', wnba:'WNBA', nhl:'NHL' };
@@ -159,7 +160,11 @@ export async function renderPlayerHistory(root, sport, playerId, setMeta) {
     if (String(id)!==String(playerId)) throw new Error('Player identity mismatch');
     state.bio=payload.data; state.fetchedAt=payload.fetched_at; state.hero=heroFrom(sport,payload.data);
     setMeta?.({title:`${state.hero.name} Stats & Career History | PropBetEdge`, description:`${state.hero.name} ${SPORT_NAMES[sport]} statistics, season-by-season records and game logs. Regular season and playoff history.`,canonical:`https://propbetedge.ai/player/${sport}/${playerId}`,ogImage:state.hero.photo || undefined});
-    root.innerHTML=playerPageShell(`<div class="ph-profile" data-player-sport="${sport}">${renderPlayerHero(state.hero)}<div data-ph-content></div></div>`);
+    root.innerHTML=playerPageShell(`<div class="ph-profile" data-player-sport="${sport}">${renderPlayerHero(state.hero)}<div data-ph-content></div>${entityCoverageSlot('pbe-player-coverage')}</div>`);
+    // Reciprocal link: the stories the newsroom tagged to this player.
+    if (state.hero.name) {
+      mountEntityCoverage({ slotId:'pbe-player-coverage', sport, kind:'player', name:state.hero.name });
+    }
     await loadStats();
   } catch (_) {
     if (!current()) return;

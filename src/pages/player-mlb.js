@@ -15,6 +15,7 @@ import {
   renderRecentForm, renderSplits, renderGameLog, renderPlayerLoading,
   setPlayerMeta, fmt, escapeHtml,
 } from './player-shared.js';
+import { entityCoverageSlot, mountEntityCoverage } from '../entity-graph/entity-coverage.js';
 
 const MLB_TEAM_COLORS = {
   108:'#BA0021',109:'#A71930',110:'#DF4601',111:'#BD3039',112:'#0E3386',
@@ -110,6 +111,14 @@ export async function renderMlbPlayerPage(root, playerId, setMeta) {
       ${gameLog}
       ${newsTease}
     `);
+
+    // Reciprocal link: the stories tagged to this player.
+    mountEntityCoverage({
+      slotId: 'pbe-player-coverage',
+      sport: 'mlb',
+      kind: 'player',
+      name: person.fullName,
+    });
   } catch (e) {
     console.error('[player-mlb]', e);
     root.innerHTML = playerPageShell(renderPlayerError(e.message));
@@ -321,16 +330,16 @@ function renderPlayerError(msg) {
   `;
 }
 
+/**
+ * Real reciprocal coverage: the stories actually tagged to this player. The
+ * slot is filled after render by mountEntityCoverage so the profile paints
+ * without waiting on the newsroom.
+ */
 function renderNewsTease(name, sport) {
-  const slug = name.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/ /g, '-');
   return `
     <section class="player-section">
       <div class="player-section-kicker">RELATED NEWS</div>
-      <div class="player-news-tease">
-        <a href="/news/${sport}" class="player-news-link">
-          📰 Latest ${sport.toUpperCase()} news → see articles mentioning ${escapeHtml(name)} on the news beat
-        </a>
-      </div>
+      ${entityCoverageSlot('pbe-player-coverage')}
     </section>
   `;
 }

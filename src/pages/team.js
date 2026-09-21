@@ -3,6 +3,7 @@ import { renderFooter } from '../components/footer.js';
 import { renderArticleCard } from '../components/article-card.js';
 import { api } from '../api.js';
 import { getSportConfig, slugifyEntity } from '../sport-config.js';
+import { teamQueryAbbreviations } from '../entity-graph/entities.js';
 
 const FOLLOW_KEY = 'pbe_followed_teams_v1';
 
@@ -119,20 +120,17 @@ function renderSchedule(events, team, sport) {
   }).join('')}</div>`;
 }
 
-function articleMatchesTeam(article, team) {
-  const names = [team.displayName, team.shortDisplayName, team.name, team.location, team.abbreviation]
-    .filter(Boolean)
-    .map((value) => String(value).toLowerCase());
-  const explicit = (article?.take?.teams || []).map((value) => String(value).toLowerCase());
-  if (explicit.some((value) => names.some((name) => value.includes(name) || name.includes(value)))) return true;
-  const haystack = `${article?.title || ''} ${article?.summary || ''}`.toLowerCase();
-  return names.some((name) => name.length > 2 && haystack.includes(name));
-}
-
+/**
+ * Team coverage comes from the newsroom's own team tags via the news API's
+ * array-containment filter, so this is a real entity relationship rather than
+ * a substring match that would pull in any story containing the word "Toronto".
+ */
 async function loadTeamNews(sport, team) {
+  const keys = teamQueryAbbreviations(sport, team?.abbreviation);
+  if (!keys.length) return [];
   try {
-    const data = await api.newsBySport(sport, 60, 1);
-    return (data?.articles || []).filter((article) => articleMatchesTeam(article, team)).slice(0, 6);
+    const data = await api.byTeamEntity(keys);
+    return (data?.articles || []).filter((article) => article?.slug).slice(0, 6);
   } catch {
     return [];
   }

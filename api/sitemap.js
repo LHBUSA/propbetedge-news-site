@@ -1,4 +1,5 @@
 import { filterPublicArticles } from '../news-integrity.js';
+import { shareImageUrl } from '../src/entity-graph/share-image.js';
 
 const SITE = 'https://propbetedge.ai';
 const NEWS_API = 'https://propbet-news-api.sales-fd3.workers.dev';
@@ -309,7 +310,7 @@ async function newsSitemap() {
         <news:title>${esc(article.title)}</news:title>
         ${keywords ? `<news:keywords>${esc(keywords)}</news:keywords>` : ''}
       </news:news>
-      ${article.image_url ? `<image:image><image:loc>${esc(article.image_url)}</image:loc><image:title>${esc(article.title)}</image:title></image:image>` : ''}
+      ${`<image:image><image:loc>${esc(article.image_url || shareImageUrl(article))}</image:loc><image:title>${esc(article.title)}</image:title></image:image>`}
     </url>`;
   }).filter(Boolean).join('\n');
 

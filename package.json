@@ -1,16 +1,22 @@
 {
   "name": "propbetedge-news-site",
   "version": "2.0.0",
-  "description": "PropBetEdge.ai — Editorial sports journalism with AI prop-bet intelligence",
+  "description": "PropBetEdge.ai \u2014 Editorial sports journalism with AI prop-bet intelligence",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "node scripts/verify-retired-contributors.mjs && vite build",
     "preview": "vite preview",
-    "seo:verify": "node scripts/verify-seo-contract.mjs"
+    "seo:verify": "node scripts/verify-seo-contract.mjs",
+    "test": "node --test --test-concurrency=1 tests/entity-linking.test.mjs tests/player-history.test.mjs tests/seo-canaries.test.mjs",
+    "test:unit": "node --test tests/entity-linking.test.mjs tests/player-history.test.mjs",
+    "test:seo": "node --test --test-concurrency=1 tests/seo-canaries.test.mjs",
+    "entities:build": "node scripts/build-entity-dictionary.mjs",
+    "entities:backfill": "node scripts/entity-backfill.mjs"
   },
   "dependencies": {
-    "@vercel/edge": "^1.1.1"
+    "@vercel/edge": "^1.1.1",
+    "@vercel/og": "^0.6.8"
   },
   "devDependencies": {
     "vite": "^5.4.0"

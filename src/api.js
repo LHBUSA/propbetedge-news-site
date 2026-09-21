@@ -183,6 +183,37 @@ export const api = {
 
   sports: () => get('/news/sports'),
 
+  // Structured entity queries. These hit the news API's array-containment
+  // filters on the newsroom's own player/team tags, so "stories about this
+  // player" is a real relationship rather than a text search over headlines.
+  byPlayerEntity: async (playerName) => normalizeArticleList(
+    await get(`/news/by-player/${encodeURIComponent(playerName)}`)
+  ),
+
+  // Accepts one abbreviation or several spellings of the same team. The
+  // newsroom's tag spelling does not always match ESPN's, so callers pass the
+  // whole alias set and the results are merged.
+  byTeamEntity: async (teamAbbreviation) => {
+    const keys = (Array.isArray(teamAbbreviation) ? teamAbbreviation : [teamAbbreviation])
+      .map((value) => String(value || '').toUpperCase())
+      .filter(Boolean);
+    if (!keys.length) return { articles: [] };
+
+    const pages = await Promise.all(keys.map((key) => get(`/news/by-team/${encodeURIComponent(key)}`)
+      .catch(() => null)));
+
+    const seen = new Set();
+    const merged = [];
+    for (const page of pages) {
+      for (const article of page?.articles || []) {
+        if (!article?.slug || seen.has(article.slug)) continue;
+        seen.add(article.slug);
+        merged.push(article);
+      }
+    }
+    return normalizeArticleList({ articles: merged });
+  },
+
   // v3.9.4: client-side author filter (uses /news endpoint, filters in browser)
   byAuthor: async (authorName, limit = 20) => {
     const all = normalizeArticleList(await get(`/news?limit=100&page=1`));
