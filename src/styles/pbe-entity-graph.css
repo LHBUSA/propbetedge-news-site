@@ -78,11 +78,18 @@
   gap: 8px;
 }
 
+/*
+ * One control, one treatment. Brand colour is deliberately withheld: an
+ * editorial share row should read as part of the page, not as four logos
+ * competing with the headline. Recognition comes from the mark itself.
+ */
 .pbe-share-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
-  padding: 7px 13px;
+  height: 32px;
+  padding: 0 13px;
   border: 1px solid rgba(245, 241, 235, 0.14);
   border-radius: 999px;
   background: rgba(245, 241, 235, 0.03);
@@ -92,6 +99,7 @@
   font-weight: 600;
   line-height: 1;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
   transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
 }
@@ -113,9 +121,24 @@
   color: var(--gold, #d4af37);
 }
 
-.pbe-share-glyph {
-  font-size: 13px;
-  line-height: 1;
+/* The two primary actions carry a touch more weight than the networks. */
+.pbe-share-btn--native,
+.pbe-share-btn--copy {
+  background: rgba(245, 241, 235, 0.06);
+  border-color: rgba(245, 241, 235, 0.2);
+}
+
+.pbe-share-icon {
+  display: block;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  /* Optical centring: these marks sit a hair high against a 12.5px label. */
+  margin-top: -1px;
+}
+
+.pbe-share-label {
+  display: inline-block;
 }
 
 .pbe-visually-hidden {
@@ -129,6 +152,54 @@
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+/*
+ * Narrow screens: the row wraps, it never scrolls sideways. Share and Copy
+ * lead because they are what a reader on a phone actually reaches for, and
+ * the network labels shorten rather than the row overflowing.
+ */
+@media (max-width: 560px) {
+  .pbe-share-bar {
+    gap: 8px;
+  }
+
+  .pbe-share-actions {
+    gap: 6px;
+  }
+
+  .pbe-share-btn {
+    height: 34px;
+    padding: 0 11px;
+    font-size: 12px;
+  }
+
+  .pbe-share-btn--native,
+  .pbe-share-btn--copy {
+    /* Keep the primary actions on the first line together. */
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 380px) {
+  /*
+   * Last resort only, and only for the networks: the mark alone still carries
+   * an accessible name from its aria-label, so this hides text, not meaning.
+   */
+  .pbe-share-btn--x .pbe-share-label,
+  .pbe-share-btn--linkedin .pbe-share-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .pbe-share-btn--x,
+  .pbe-share-btn--linkedin {
+    padding: 0 11px;
+  }
 }
 
 /* ── In this story ────────────────────────────────────────────────────── */

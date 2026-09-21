@@ -18,6 +18,8 @@ import { linkifyArticleHtml } from '../src/entity-graph/linkify.js';
 import { buildArticleSeo } from '../src/entity-graph/article-seo.js';
 import { renderInThisStory } from '../src/entity-graph/in-this-story.js';
 import { rankRelated } from '../src/entity-graph/related.js';
+import { renderShareBar } from '../src/entity-graph/share-bar.js';
+import { readFileSync } from 'node:fs';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -398,6 +400,102 @@ test('the entity bar renders a clickable chip for every entity', () => {
 
 test('the entity bar is omitted entirely when nothing resolved', () => {
   assert.equal(renderInThisStory({ players: [], teams: [], games: [] }), '');
+});
+
+
+// ─── share controls ──────────────────────────────────────────────────────────
+
+const SHARE_URL = 'https://propbetedge.ai/news/nfl/a-real-story-2026-09-21';
+const SHARE_TITLE = "Ravens' Week 2 Collapse Against Saints";
+const shareBar = () => renderShareBar(SHARE_URL, SHARE_TITLE);
+
+test('the share row is exactly Share, Copy link, X and LinkedIn', () => {
+  const labels = [...shareBar().matchAll(/<span class="pbe-share-label"[^>]*>([^<]*)<\/span>/g)]
+    .map((m) => m[1]);
+  assert.deepEqual(labels, ['Share', 'Copy link', 'X', 'LinkedIn']);
+});
+
+test('platforms PropBetEdge does not maintain are absent from the markup and the CSS', () => {
+  // Facebook and Reddit were removed on request; Bluesky followed. A share row
+  // must not promote a surface we are not on.
+  const markup = shareBar().toLowerCase();
+  const css = readFileSync(new URL('../src/styles/pbe-entity-graph.css', import.meta.url), 'utf8').toLowerCase();
+  for (const banned of ['facebook', 'sharer.php', 'reddit', 'bluesky', 'bsky']) {
+    assert.ok(!markup.includes(banned), `${banned} is still in the share markup`);
+    assert.ok(!css.includes(banned), `${banned} is still in the share styles`);
+  }
+});
+
+test('no placeholder glyphs survive anywhere in the share UI', () => {
+  const html = shareBar();
+  for (const glyph of ['\u2197', '\u29c9', '\ud835\udd4f']) {
+    assert.ok(!html.includes(glyph), `placeholder glyph ${JSON.stringify(glyph)} still rendered`);
+  }
+  // A lone letter standing in for a brand mark is the same failure.
+  assert.ok(!/<span class="pbe-share-label"[^>]*>[a-z]<\/span>/.test(html));
+});
+
+test('every control carries a real inline SVG that is hidden from assistive tech', () => {
+  const html = shareBar();
+  const svgs = html.match(/<svg[^>]*>/g) || [];
+  assert.equal(svgs.length, 4, 'one icon per control');
+  for (const svg of svgs) {
+    assert.match(svg, /aria-hidden="true"/, 'icons are decorative; the label names the action');
+    assert.match(svg, /viewBox="0 0 24 24"/);
+    assert.match(svg, /width="16"/);
+  }
+  assert.ok(!/<link[^>]+font|fontawesome|cdn/i.test(html), 'no external icon font');
+});
+
+test('the share bar ships no element ids, so two bars cannot collide', () => {
+  // The server render and the client render can briefly coexist in one
+  // document; a duplicated id would be invalid DOM.
+  const html = shareBar();
+  assert.equal((html.match(/\sid=/g) || []).length, 0);
+  assert.ok(!html.includes('aria-labelledby'));
+  assert.match(html, /role="group" aria-label="Share this article"/);
+});
+
+test('each network target has a distinct accessible name', () => {
+  const names = [...shareBar().matchAll(/aria-label="([^"]+)"/g)].map((m) => m[1]);
+  assert.equal(new Set(names).size, names.length, 'accessible names must be unique');
+  assert.ok(names.some((n) => /on X \(opens in a new tab\)/.test(n)));
+  assert.ok(names.some((n) => /on LinkedIn \(opens in a new tab\)/.test(n)));
+});
+
+test('sharing uses the clean canonical URL with nothing appended', () => {
+  const html = shareBar();
+  const hrefs = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
+
+  assert.equal(hrefs.length, 2);
+  assert.ok(hrefs[0].startsWith('https://x.com/intent/tweet?'));
+  assert.ok(hrefs[1].startsWith('https://www.linkedin.com/sharing/share-offsite/?url='));
+
+  for (const href of hrefs) {
+    const shared = new URL(href).searchParams.get('url');
+    assert.equal(shared, SHARE_URL, 'the shared URL must be the canonical, untouched');
+  }
+  assert.ok(!/utm_|[?&]ref=/.test(html), 'no tracking parameters on our own URL');
+
+  assert.equal(html.match(/data-share-url="([^"]+)"/)[1], SHARE_URL);
+});
+
+test('network targets work without JavaScript and the JS-only ones are buttons', () => {
+  const html = shareBar();
+  // Anchors for the networks: they must function with scripting off.
+  assert.equal((html.match(/<a /g) || []).length, 2);
+  for (const anchor of html.match(/<a [^>]*>/g) || []) {
+    assert.match(anchor, /rel="noopener noreferrer nofollow"/);
+    assert.match(anchor, /target="_blank"/);
+  }
+  // Native share and copy cannot work without JS, so they are buttons, and
+  // native starts hidden until navigator.share is confirmed.
+  assert.equal((html.match(/<button/g) || []).length, 2);
+  assert.match(html, /data-pbe-share-native hidden/);
+});
+
+test('an empty canonical renders nothing rather than a broken row', () => {
+  assert.equal(renderShareBar('', SHARE_TITLE), '');
 });
 
 // ─── related coverage ────────────────────────────────────────────────────────
