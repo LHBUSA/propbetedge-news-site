@@ -192,8 +192,8 @@ function renderMediaEmbeds(article) {
   return `
     <section class="article-media">
       <div class="article-media-header">
-        <h3 class="article-media-heading">📺 Watch & Share</h3>
-        <span class="article-media-sub">Official highlights & live game access</span>
+        <h3 class="article-media-heading">Watch</h3>
+        <span class="article-media-sub">Official highlights & source video</span>
       </div>
       <div class="article-media-grid">${cards}</div>
       <div class="article-media-disclaimer">Videos hosted by official sources (MLB, YouTube). PropBetEdge does not own or distribute the underlying video content.</div>
