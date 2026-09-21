@@ -494,6 +494,14 @@ test('network targets work without JavaScript and the JS-only ones are buttons',
   assert.match(html, /data-pbe-share-native hidden/);
 });
 
+test('a hidden control is actually hidden, not just marked hidden', () => {
+  // .pbe-share-btn sets display:inline-flex, which overrides the user agent's
+  // [hidden] { display: none } - the native Share button rendered as a dead
+  // control on every platform without navigator.share until this rule existed.
+  const css = readFileSync(new URL('../src/styles/pbe-entity-graph.css', import.meta.url), 'utf8');
+  assert.match(css, /\.pbe-share-btn\[hidden\]\s*\{[^}]*display:\s*none/);
+});
+
 test('an empty canonical renders nothing rather than a broken row', () => {
   assert.equal(renderShareBar('', SHARE_TITLE), '');
 });

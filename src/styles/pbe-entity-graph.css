@@ -121,6 +121,15 @@
   color: var(--gold, #d4af37);
 }
 
+/*
+ * An explicit display rule beats the user agent's [hidden] { display: none },
+ * so the native Share button rendered as a dead control on every platform
+ * without navigator.share. Restore the semantics the attribute promises.
+ */
+.pbe-share-btn[hidden] {
+  display: none !important;
+}
+
 /* The two primary actions carry a touch more weight than the networks. */
 .pbe-share-btn--native,
 .pbe-share-btn--copy {
