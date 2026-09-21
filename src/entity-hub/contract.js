@@ -101,7 +101,7 @@ export function teamSnapshot({
   sport, team_id, slug, name, abbreviation, logo = null,
   league_context = {}, record = null, standings = null, recent_form = null,
   team_stats = null, roster = [], leaders = [], recent_games = [],
-  upcoming_games = [], injuries = [], source,
+  upcoming_games = [], injuries = [], schedule = null, source,
 }) {
   return {
     contract: CONTRACT_VERSION,
@@ -123,8 +123,13 @@ export function teamSnapshot({
     team_stats,
     roster: Array.isArray(roster) ? roster : [],
     leaders: Array.isArray(leaders) ? leaders : [],
-    recent_games: Array.isArray(recent_games) ? recent_games : [],
-    upcoming_games: Array.isArray(upcoming_games) ? upcoming_games : [],
+    schedule: {
+      recent: Array.isArray(schedule?.recent) ? schedule.recent : (Array.isArray(recent_games) ? recent_games : []),
+      upcoming: Array.isArray(schedule?.upcoming) ? schedule.upcoming : (Array.isArray(upcoming_games) ? upcoming_games : []),
+    },
+    // Kept as aliases so nothing that already reads these breaks.
+    recent_games: Array.isArray(schedule?.recent) ? schedule.recent : (Array.isArray(recent_games) ? recent_games : []),
+    upcoming_games: Array.isArray(schedule?.upcoming) ? schedule.upcoming : (Array.isArray(upcoming_games) ? upcoming_games : []),
     injuries: Array.isArray(injuries) ? injuries : [],
     source,
   };
@@ -139,6 +144,60 @@ export function rosterEntry({ sport, player_id, name, position = '', jersey = nu
     jersey: jersey == null ? null : String(jersey),
     photo: photo || null,
     path: `/player/${sport}/${player_id}`,
+  };
+}
+
+/**
+ * One scheduled or completed fixture.
+ *
+ * Carries the ids a page needs to link without another lookup: the event id
+ * the /games route resolves against, and the opponent's canonical slug from
+ * the dictionary. A fixture whose opponent cannot be resolved keeps the name
+ * and drops the link rather than guessing a slug.
+ */
+export function scheduledGame({
+  sport, game_id, date, home_away, opponent = null, status = null,
+  team_score = null, opponent_score = null, venue = null, is_final = false,
+}) {
+  return {
+    game_id: game_id == null ? null : String(game_id),
+    path: game_id != null ? `/games/${sport}/${game_id}` : null,
+    date: date || null,
+    home_away: home_away || null,
+    opponent: opponent
+      ? {
+        id: opponent.id ?? null,
+        name: opponent.name ?? null,
+        abbr: opponent.abbr ?? null,
+        slug: opponent.slug ?? null,
+        logo: opponent.logo ?? null,
+        path: opponent.slug ? `/team/${sport}/${opponent.slug}` : null,
+      }
+      : null,
+    status: status || null,
+    is_final: Boolean(is_final),
+    // Scores are null until they exist. A scheduled game has no 0-0 result.
+    team_score: team_score ?? null,
+    opponent_score: opponent_score ?? null,
+    venue: venue || null,
+  };
+}
+
+/** A team leader in one sport-native category, keyed on a real player id. */
+export function teamLeader({ sport, player_id, name, category, label, value, unit = null, rank = null, photo = null, derived = false }) {
+  return {
+    player_id: player_id == null ? null : String(player_id),
+    path: player_id != null ? `/player/${sport}/${player_id}` : null,
+    name,
+    category,
+    label,
+    value,
+    unit,
+    rank,
+    photo: photo || null,
+    // true when we computed it from stored snapshots rather than reading a
+    // leaders endpoint the product publishes.
+    derived,
   };
 }
 
@@ -174,6 +233,50 @@ export function validateTeamSnapshot(snapshot) {
     if (!/^\d+$/.test(String(entry.player_id || ''))) { problems.push('roster_entry_without_id'); break; }
   }
   return { ok: problems.length === 0, problems };
+}
+
+/**
+ * Team page readiness, field by field.
+ *
+ * Deliberately separate from completeness(). completeness() is an INGESTION
+ * state — did the adapter produce something usable — and it called a team
+ * "full" on roster + record alone. That is not the same question as "is there
+ * enough here to build the rich central team page", which also needs a
+ * schedule, leaders and team stats.
+ *
+ * Conflating the two is how a team layer with zero schedule coverage read as
+ * 30/30 full.
+ */
+export const TEAM_PROFILE_FIELDS = [
+  'identity', 'logo', 'roster', 'record', 'standings',
+  'recent_results', 'upcoming_schedule', 'recent_form', 'team_stats', 'leaders',
+];
+
+export function teamReadiness(snapshot) {
+  const fields = {
+    identity: Boolean(snapshot?.name && snapshot?.slug && snapshot?.abbreviation),
+    logo: Boolean(snapshot?.logo),
+    roster: (snapshot?.roster || []).length > 0,
+    record: Boolean(snapshot?.record?.summary),
+    standings: Boolean(snapshot?.standings),
+    recent_results: (snapshot?.schedule?.recent || []).length > 0,
+    upcoming_schedule: (snapshot?.schedule?.upcoming || []).length > 0,
+    recent_form: Boolean(snapshot?.recent_form),
+    team_stats: Boolean(snapshot?.team_stats && Object.keys(snapshot.team_stats).length),
+    leaders: (snapshot?.leaders || []).length > 0,
+  };
+
+  // Everything except recent_results, which is legitimately empty before a
+  // season starts and must not block a page the rest of the year.
+  const required = TEAM_PROFILE_FIELDS.filter((f) => f !== 'recent_results');
+  const missing = required.filter((f) => !fields[f]);
+
+  return {
+    fields,
+    missing,
+    page_ready: missing.length === 0,
+    version: 'team_profile_v1',
+  };
 }
 
 /**

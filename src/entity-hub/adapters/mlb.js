@@ -14,6 +14,7 @@
 
 import {
   playerSnapshot, teamSnapshot, rosterEntry, statGroup, provenance,
+  scheduledGame, teamLeader,
 } from '../contract.js';
 import { resolveTeam, allPlayers } from '../../entity-graph/entities.js';
 
@@ -42,6 +43,21 @@ export function standingsUrl(season) {
   // division and league come back as bare {id, link} without the hydrate, which
   // is how 'AL East' silently became null the first time this ran.
   return `${STATS_API}/standings?leagueId=103,104&season=${season}&hydrate=division,league`;
+}
+
+export function scheduleUrl(teamId, season, { from, to }) {
+  return `${STATS_API}/schedule?sportId=1&teamId=${teamId}&season=${season}`
+    + `&startDate=${from}&endDate=${to}&hydrate=team,linescore`;
+}
+
+export function leadersUrl(teamId, season) {
+  return `${STATS_API}/teams/${teamId}/leaders`
+    + `?leaderCategories=homeRuns,runsBattedIn,battingAverage,strikeouts,wins,earnedRunAverage`
+    + `&season=${season}&leaderGameTypes=R`;
+}
+
+export function teamStatsUrl(teamId, season) {
+  return `${STATS_API}/teams/${teamId}/stats?stats=season&group=hitting,pitching&season=${season}`;
 }
 
 export function rosterUrl(teamId, season) {
@@ -203,13 +219,115 @@ export function normalizeRoster(payload) {
     }));
 }
 
-export function buildTeam({ slug, rosterPayload, standingsPayload, statsApiTeamId, urls = [] }) {
+export function normalizeSchedule(payload, statsApiTeamId, { recent = 5, upcoming = 5 } = {}) {
+  const mine = String(statsApiTeamId);
+  const past = [];
+  const future = [];
+
+  for (const day of payload?.dates || []) {
+    for (const game of day?.games || []) {
+      const home = game?.teams?.home;
+      const away = game?.teams?.away;
+      if (!home?.team || !away?.team) continue;
+      const isHome = String(home.team.id) === mine;
+      const opponentRaw = (isHome ? away : home).team;
+      const opponentTeam = resolveTeam('mlb', opponentRaw.name);
+
+      const state = String(game?.status?.abstractGameState || '').toLowerCase();
+      const isFinal = state === 'final';
+      past.length; // keep shape obvious
+      const normalized = scheduledGame({
+        sport: 'mlb',
+        game_id: game.gamePk,
+        date: game.gameDate || null,
+        home_away: isHome ? 'home' : 'away',
+        status: game?.status?.detailedState || null,
+        is_final: isFinal,
+        venue: game?.venue?.name || null,
+        team_score: isFinal ? ((isHome ? home.score : away.score) ?? null) : null,
+        opponent_score: isFinal ? ((isHome ? away.score : home.score) ?? null) : null,
+        opponent: opponentTeam
+          ? { id: opponentTeam.abbr, name: opponentTeam.name, abbr: opponentTeam.abbr, slug: opponentTeam.slug, logo: opponentTeam.logo_url }
+          : { name: opponentRaw.name || null },
+      });
+      (isFinal ? past : future).push(normalized);
+    }
+  }
+
+  past.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  future.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+  return { recent: past.slice(0, recent), upcoming: future.slice(0, upcoming) };
+}
+
+const MLB_LEADER_LABELS = {
+  homeRuns: ['Home runs', 'HR'],
+  runsBattedIn: ['RBI', 'RBI'],
+  battingAverage: ['Batting average', 'AVG'],
+  strikeouts: ['Strikeouts', 'K'],
+  wins: ['Wins', 'W'],
+  earnedRunAverage: ['ERA', 'ERA'],
+};
+
+/** MLB publishes team leaders with a real person id — no name join needed. */
+export function normalizeLeaders(payload, { perCategory = 3 } = {}) {
+  const out = [];
+  for (const block of payload?.teamLeaders || []) {
+    const category = block.leaderCategory;
+    const [label, unit] = MLB_LEADER_LABELS[category] || [category, null];
+    for (const leader of (block.leaders || []).slice(0, perCategory)) {
+      if (!leader?.person?.id) continue;
+      const numeric = Number(leader.value);
+      out.push(teamLeader({
+        sport: 'mlb',
+        player_id: leader.person.id,
+        name: leader.person.fullName,
+        category,
+        label,
+        value: Number.isFinite(numeric) ? numeric : leader.value,
+        unit,
+        rank: leader.rank ?? null,
+        photo: `https://img.mlbstatic.com/mlb-photos/image/upload/w_240,q_90/v1/people/${leader.person.id}/headshot/67/current`,
+      }));
+    }
+  }
+  return out;
+}
+
+export function normalizeTeamStats(payload) {
+  const stats = {};
+  for (const block of payload?.stats || []) {
+    const group = block?.group?.displayName;
+    const split = block?.splits?.[0]?.stat;
+    if (!group || !split) continue;
+    if (group === 'hitting') {
+      stats.runs = split.runs ?? null;
+      stats.home_runs = split.homeRuns ?? null;
+      stats.batting_average = split.avg ?? null;
+      stats.on_base_percentage = split.obp ?? null;
+      stats.slugging = split.slg ?? null;
+    } else if (group === 'pitching') {
+      stats.era = split.era ?? null;
+      stats.runs_allowed = split.runs ?? null;
+      stats.strikeouts = split.strikeOuts ?? null;
+      stats.whip = split.whip ?? null;
+    }
+  }
+  return Object.keys(stats).length ? stats : null;
+}
+
+export function buildTeam({
+  slug, rosterPayload, standingsPayload, statsApiTeamId, urls = [],
+  schedulePayload = null, leadersPayload = null, teamStatsPayload = null,
+}) {
   const dictTeam = resolveTeam('mlb', slug);
   if (!dictTeam) return null;
 
   const standing = standingsPayload && statsApiTeamId
     ? normalizeStandingsRow(standingsPayload, statsApiTeamId)
     : null;
+  const schedule = schedulePayload ? normalizeSchedule(schedulePayload, statsApiTeamId) : null;
+  const leaders = leadersPayload ? normalizeLeaders(leadersPayload) : [];
+  const teamStats = teamStatsPayload ? normalizeTeamStats(teamStatsPayload) : null;
 
   return teamSnapshot({
     sport: 'mlb',
@@ -225,6 +343,9 @@ export function buildTeam({ slug, rosterPayload, standingsPayload, statsApiTeamI
     record: standing?.record ?? null,
     standings: standing?.standings ?? null,
     recent_form: standing?.recent_form ?? null,
+    team_stats: teamStats,
+    leaders,
+    schedule,
     roster: rosterPayload ? normalizeRoster(rosterPayload) : [],
     source: source(urls, null),
   });

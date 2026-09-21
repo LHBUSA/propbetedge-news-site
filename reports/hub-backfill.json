@@ -1,20 +1,9 @@
 {
   "hub": "https://pbe-entity-hub.sales-fd3.workers.dev",
-  "finished_at": "2026-09-21T22:57:29.810Z",
+  "finished_at": "2026-09-21T23:46:21.446Z",
   "totals": {
-    "nhl": {
+    "nfl": {
       "team": {
-        "attempted": 32,
-        "written": 5,
-        "unchanged": 27,
-        "invalid": 0,
-        "upstream_failed": 0,
-        "preserved_last_known_good": 0,
-        "full": 32,
-        "partial": 0,
-        "identity_only": 0
-      },
-      "player": {
         "attempted": 0,
         "written": 0,
         "unchanged": 0,
@@ -23,12 +12,25 @@
         "preserved_last_known_good": 0,
         "full": 0,
         "partial": 0,
-        "identity_only": 0
+        "identity_only": 0,
+        "unsupported": 0
+      },
+      "player": {
+        "attempted": 2488,
+        "written": 2488,
+        "unchanged": 0,
+        "invalid": 0,
+        "upstream_failed": 0,
+        "preserved_last_known_good": 0,
+        "full": 742,
+        "partial": 31,
+        "identity_only": 0,
+        "unsupported": 1715
       },
       "dictionary": {
-        "players": 1267,
+        "players": 2488,
         "teams": 32,
-        "player_batch_per_tick": 53,
+        "player_batch_per_tick": 104,
         "cycle_hours": 24
       }
     }

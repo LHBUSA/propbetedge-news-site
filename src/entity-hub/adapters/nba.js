@@ -19,6 +19,7 @@
 
 import {
   playerSnapshot, teamSnapshot, rosterEntry, statGroup, provenance,
+  scheduledGame, teamLeader,
 } from '../contract.js';
 import { resolveTeam } from '../../entity-graph/entities.js';
 
@@ -208,12 +209,135 @@ export function normalizeStandingsRow(payload, espnTeamId) {
   return null;
 }
 
-export function buildTeam({ slug, rosterPayload, standingsPayload, espnTeamId, urls = [] }) {
+/** ESPN team schedule -> recent results and upcoming fixtures. */
+export function normalizeSchedule(payload, espnTeamId, { recent = 5, upcoming = 5 } = {}) {
+  const mine = String(espnTeamId);
+  const past = [];
+  const future = [];
+
+  for (const event of payload?.events || []) {
+    const competition = event?.competitions?.[0];
+    const competitors = competition?.competitors || [];
+    if (competitors.length < 2) continue;
+
+    const self = competitors.find((c) => String(c?.team?.id) === mine);
+    const other = competitors.find((c) => String(c?.team?.id) !== mine);
+    if (!self || !other) continue;
+
+    const opponentTeam = resolveTeam('nba', other.team?.abbreviation || other.team?.displayName);
+    const isFinal = Boolean(competition?.status?.type?.completed);
+
+    const normalized = scheduledGame({
+      sport: 'nba',
+      game_id: event.id,
+      date: event.date || null,
+      home_away: self.homeAway === 'home' ? 'home' : 'away',
+      status: competition?.status?.type?.shortDetail || null,
+      is_final: isFinal,
+      venue: competition?.venue?.fullName || null,
+      // A scheduled game has no score. ESPN sends "0" for unplayed games, and
+      // storing that would put a 0-0 result on a fixture that has not happened.
+      team_score: isFinal ? numeric(self.score) : null,
+      opponent_score: isFinal ? numeric(other.score) : null,
+      opponent: opponentTeam
+        ? { id: opponentTeam.abbr, name: opponentTeam.name, abbr: opponentTeam.abbr, slug: opponentTeam.slug, logo: opponentTeam.logo_url }
+        : { name: other.team?.displayName || null, abbr: other.team?.abbreviation || null },
+    });
+
+    (isFinal ? past : future).push(normalized);
+  }
+
+  past.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  future.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+  return { recent: past.slice(0, recent), upcoming: future.slice(0, upcoming) };
+}
+
+function numeric(value) {
+  const raw = typeof value === 'object' ? value?.value ?? value?.displayValue : value;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+const NBA_LEADER_CATEGORIES = [
+  { category: 'points', label: 'Points', keys: ['PTS'], unit: 'PTS' },
+  { category: 'rebounds', label: 'Rebounds', keys: ['REB'], unit: 'REB' },
+  { category: 'assists', label: 'Assists', keys: ['AST'], unit: 'AST' },
+];
+
+/**
+ * NBA team leaders, derived from snapshots this service already stores.
+ *
+ * The relay exposes no leaders route, and asking for nineteen game logs per
+ * team would be nineteen upstream requests to rebuild numbers already sitting
+ * in KV. So the roster's own stored season lines are ranked instead — no extra
+ * upstream traffic, and every value is one already validated on the way in.
+ *
+ * Marked derived: true, because it is our arithmetic, not a figure the product
+ * published.
+ */
+export function deriveLeaders(rosterPlayerSnapshots, { perCategory = 3 } = {}) {
+  const out = [];
+  const rows = (rosterPlayerSnapshots || []).filter((p) => p?.player_id && p?.stats?.season?.stats);
+
+  for (const { category, label, keys, unit } of NBA_LEADER_CATEGORIES) {
+    const scored = [];
+    for (const player of rows) {
+      const stats = player.stats.season.stats;
+      const games = Number(stats.games) || 0;
+      const key = keys.find((k) => Number.isFinite(Number(stats[k])));
+      if (!key || games < 1) continue;
+      // Per game, because a season total rewards whoever played most.
+      const perGame = Number(stats[key]) / games;
+      if (!Number.isFinite(perGame)) continue;
+      scored.push({ player, value: Math.round(perGame * 10) / 10 });
+    }
+    scored.sort((a, b) => b.value - a.value);
+    scored.slice(0, perCategory).forEach((row, index) => out.push(teamLeader({
+      sport: 'nba',
+      player_id: row.player.player_id,
+      name: row.player.name,
+      category,
+      label: `${label} per game`,
+      value: row.value,
+      unit,
+      rank: index + 1,
+      photo: row.player.photo || null,
+      derived: true,
+    })));
+  }
+  return out;
+}
+
+/** Sport-native team stats from the standings row. */
+export function teamStatsFromStanding(standing) {
+  if (!standing?.record) return null;
+
+  // Before a game is played ESPN reports 0.0 points for and against. Storing
+  // that would put a real-looking 0.0 PPG on every team through the whole
+  // preseason. No games means no averages, not averages of zero.
+  const played = Number(standing.record.games_played) || 0;
+  if (played < 1) return null;
+
+  const stats = {
+    games_played: played,
+    points_per_game: numeric(standing.record.points_for),
+    points_allowed_per_game: numeric(standing.record.points_against),
+    win_percentage: standing.record.winning_percentage ?? null,
+  };
+  return Object.values(stats).some((v) => v !== null) ? stats : null;
+}
+
+export function buildTeam({
+  slug, rosterPayload, standingsPayload, espnTeamId, urls = [],
+  schedulePayload = null, rosterPlayerSnapshots = null,
+}) {
   const dictTeam = resolveTeam('nba', slug);
   if (!dictTeam) return null;
   const standing = standingsPayload && espnTeamId
     ? normalizeStandingsRow(standingsPayload, espnTeamId)
     : null;
+  const schedule = schedulePayload ? normalizeSchedule(schedulePayload, espnTeamId) : null;
+  const leaders = rosterPlayerSnapshots ? deriveLeaders(rosterPlayerSnapshots) : [];
 
   return teamSnapshot({
     sport: 'nba',
@@ -229,6 +353,9 @@ export function buildTeam({ slug, rosterPayload, standingsPayload, espnTeamId, u
     record: standing?.record ?? null,
     standings: standing?.standings ?? null,
     recent_form: standing?.recent_form ?? null,
+    team_stats: teamStatsFromStanding(standing),
+    leaders,
+    schedule,
     roster: rosterPayload ? normalizeRoster(rosterPayload) : [],
     source: source(urls, null),
   });

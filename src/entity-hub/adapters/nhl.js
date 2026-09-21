@@ -16,6 +16,7 @@
 
 import {
   playerSnapshot, teamSnapshot, rosterEntry, statGroup, provenance,
+  scheduledGame, teamLeader,
 } from '../contract.js';
 import { resolveTeam } from '../../entity-graph/entities.js';
 
@@ -163,13 +164,100 @@ export function normalizeStandingsRow(payload, abbrev) {
   };
 }
 
+/**
+ * Gateway schedule -> recent results and upcoming fixtures.
+ *
+ * The gateway returns the whole season in one payload, so the split is done
+ * here by game state rather than by making two requests.
+ */
+export function normalizeSchedule(payload, teamAbbrev, { recent = 5, upcoming = 5 } = {}) {
+  const games = Array.isArray(payload?.games) ? payload.games : [];
+  const mine = String(teamAbbrev || '').toUpperCase();
+  const past = [];
+  const future = [];
+
+  for (const game of games) {
+    const home = game?.teams?.home;
+    const away = game?.teams?.away;
+    if (!home || !away) continue;
+    const isHome = String(home.abbrev || '').toUpperCase() === mine;
+    const opponentRaw = isHome ? away : home;
+    const opponentTeam = resolveTeam('nhl', opponentRaw.abbrev);
+
+    const state = String(game?.status?.state || '').toUpperCase();
+    const isFinal = state === 'OFF' || state === 'FINAL';
+    const normalized = scheduledGame({
+      sport: 'nhl',
+      game_id: game.id,
+      date: game.start_time_utc || game.date || null,
+      home_away: isHome ? 'home' : 'away',
+      status: game?.status?.state || null,
+      is_final: isFinal,
+      venue: game.venue || null,
+      // Scores only exist once they exist. A scheduled game is not 0-0.
+      team_score: isFinal ? (isHome ? home.score ?? null : away.score ?? null) : null,
+      opponent_score: isFinal ? (isHome ? away.score ?? null : home.score ?? null) : null,
+      opponent: opponentTeam
+        ? { id: opponentTeam.abbr, name: opponentTeam.name, abbr: opponentTeam.abbr, slug: opponentTeam.slug, logo: opponentTeam.logo_url }
+        : { name: opponentRaw.name?.default || opponentRaw.name || null, abbr: opponentRaw.abbrev || null },
+    });
+
+    (isFinal ? past : future).push(normalized);
+  }
+
+  past.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+  future.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+  return { recent: past.slice(0, recent), upcoming: future.slice(0, upcoming) };
+}
+
+/** Club stats -> team leaders, keyed on real NHL player ids. */
+export function normalizeLeaders(clubStats, { perCategory = 3 } = {}) {
+  const skaters = Array.isArray(clubStats?.skaters) ? clubStats.skaters : [];
+  const goalies = Array.isArray(clubStats?.goalies) ? clubStats.goalies : [];
+  const out = [];
+
+  const skaterName = (p) => [p.firstName?.default, p.lastName?.default].filter(Boolean).join(' ');
+  const push = (rows, category, label, key, unit, nameOf, idOf, photoOf) => {
+    rows
+      .filter((r) => typeof (idOf(r)) !== 'undefined' && Number.isFinite(Number(r[key])))
+      .sort((a, b) => Number(b[key]) - Number(a[key]))
+      .slice(0, perCategory)
+      .forEach((r, index) => out.push(teamLeader({
+        sport: 'nhl', player_id: idOf(r), name: nameOf(r), category, label,
+        value: Number(r[key]), unit, rank: index + 1, photo: photoOf(r),
+      })));
+  };
+
+  push(skaters, 'points', 'Points', 'points', 'PTS', skaterName, (r) => r.playerId, (r) => r.headshot);
+  push(skaters, 'goals', 'Goals', 'goals', 'G', skaterName, (r) => r.playerId, (r) => r.headshot);
+  push(skaters, 'assists', 'Assists', 'assists', 'A', skaterName, (r) => r.playerId, (r) => r.headshot);
+  push(goalies, 'wins', 'Goalie wins', 'wins', 'W', (r) => r.name, (r) => r.id, () => null);
+  return out;
+}
+
+/** Sport-native team stats, straight from the standings row. */
+export function teamStatsFromStanding(standing) {
+  if (!standing?.record) return null;
+  const r = standing.record;
+  const stats = {
+    goals_for: r.goals_for ?? null,
+    goals_against: r.goals_against ?? null,
+    goal_differential: r.goal_diff ?? null,
+    points: r.points ?? null,
+    points_percentage: standing.standings?.points_percentage ?? null,
+  };
+  return Object.values(stats).some((v) => v !== null) ? stats : null;
+}
+
 /** Assemble a team snapshot from the gateway's roster + standings payloads. */
-export function buildTeam({ slug, rosterPayload, standingsPayload, abbrev }) {
+export function buildTeam({ slug, rosterPayload, standingsPayload, abbrev, schedulePayload = null, clubStatsPayload = null }) {
   const dictTeam = resolveTeam('nhl', abbrev || slug);
   if (!dictTeam) return null;
 
   const roster = normalizeRoster(rosterPayload);
   const standing = standingsPayload ? normalizeStandingsRow(standingsPayload, abbrev || dictTeam.abbr) : null;
+  const schedule = schedulePayload ? normalizeSchedule(schedulePayload, abbrev || dictTeam.abbr) : null;
+  const leaders = clubStatsPayload ? normalizeLeaders(clubStatsPayload) : [];
 
   return teamSnapshot({
     sport: 'nhl',
@@ -185,6 +273,9 @@ export function buildTeam({ slug, rosterPayload, standingsPayload, abbrev }) {
     record: standing?.record ?? null,
     standings: standing?.standings ?? null,
     recent_form: standing?.recent_form ?? null,
+    team_stats: teamStatsFromStanding(standing),
+    leaders,
+    schedule,
     roster: roster.roster,
     source: roster.source,
   });

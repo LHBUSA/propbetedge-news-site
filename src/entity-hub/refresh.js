@@ -42,6 +42,28 @@ export function teamRefreshTargets(sport) {
   return allTeams(sport).map((t) => ({ slug: t.slug, abbr: t.abbr, id: t.id, name: t.name }));
 }
 
+function isoDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Player snapshots this service already stores. Returns [] when there is no KV
+ * binding (the offline auditor), so a caller degrades to no leaders rather
+ * than failing.
+ */
+async function readStoredPlayers(env, sport, ids) {
+  if (!env?.ENTITY_KV || !ids?.length) return [];
+  const rows = await Promise.all(ids.map(async (id) => {
+    try {
+      const record = await env.ENTITY_KV.get(`player:${sport}:${id}`, 'json');
+      return record?.snapshot || null;
+    } catch {
+      return null;
+    }
+  }));
+  return rows.filter(Boolean);
+}
+
 async function getJson(url, { headers = { Accept: 'application/json' }, timeoutMs = TIMEOUT_MS } = {}) {
   const controller = typeof AbortController === 'function' ? new AbortController() : null;
   const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
@@ -152,7 +174,7 @@ async function refreshNflPlayer(id) {
 export async function refreshTeam(sport, target, { env = {} } = {}) {
   if (sport === 'nhl') return refreshNhlTeam(target);
   if (sport === 'mlb') return refreshMlbTeam(target);
-  if (sport === 'nba') return refreshNbaTeam(target);
+  if (sport === 'nba') return refreshNbaTeam(target, env);
   if (sport === 'nfl') return refreshNflTeam(target, env);
   return { snapshot: null, reason: 'unsupported_sport' };
 }
@@ -163,9 +185,14 @@ async function refreshNhlTeam(target) {
   const tricode = nhlTricode(target.abbr);
   const rosterUrl = `${nhl.NHL_GATEWAY}/nhl/team/${tricode}/roster`;
   const standingsUrl = `${nhl.NHL_GATEWAY}/nhl/standings`;
-  const [rosterRes, standingsRes] = await Promise.all([
+  const scheduleUrl = `${nhl.NHL_GATEWAY}/nhl/team/${tricode}/schedule`;
+  const clubStatsUrl = `${nhl.NHL_GATEWAY}/nhl/team/${tricode}/stats`;
+
+  const [rosterRes, standingsRes, scheduleRes, clubStatsRes] = await Promise.all([
     getJson(rosterUrl, { headers: nhl.gatewayHeaders() }),
     getJson(standingsUrl, { headers: nhl.gatewayHeaders() }),
+    getJson(scheduleUrl, { headers: nhl.gatewayHeaders() }),
+    getJson(clubStatsUrl, { headers: nhl.gatewayHeaders() }),
   ]);
   if (!rosterRes.ok) return { snapshot: null, reason: `upstream_${rosterRes.status}` };
 
@@ -178,6 +205,8 @@ async function refreshNhlTeam(target) {
     abbrev: tricode,
     rosterPayload: rosterRes.data,
     standingsPayload: standingsRes.ok ? standingsRes.data : null,
+    schedulePayload: scheduleRes.ok ? scheduleRes.data : null,
+    clubStatsPayload: clubStatsRes.ok ? clubStatsRes.data : null,
   });
   return snapshot
     ? { snapshot, route: '/nhl/team/:tricode/roster', sourceIds: [tricode] }
@@ -189,9 +218,18 @@ async function refreshMlbTeam(target) {
   const statsApiTeamId = MLB_TEAM_IDS[target.abbr];
   if (!statsApiTeamId) return { snapshot: null, reason: 'unmapped_team' };
 
-  const [rosterRes, standingsRes] = await Promise.all([
+  // A window either side of today, so one request answers both what just
+  // happened and what is next.
+  const now = new Date();
+  const from = isoDate(new Date(now.getTime() - 21 * 86400000));
+  const to = isoDate(new Date(now.getTime() + 21 * 86400000));
+
+  const [rosterRes, standingsRes, scheduleRes, leadersRes, statsRes] = await Promise.all([
     getJson(mlb.rosterUrl(statsApiTeamId, season)),
     getJson(mlb.standingsUrl(season)),
+    getJson(mlb.scheduleUrl(statsApiTeamId, season, { from, to })),
+    getJson(mlb.leadersUrl(statsApiTeamId, season)),
+    getJson(mlb.teamStatsUrl(statsApiTeamId, season)),
   ]);
   if (!rosterRes.ok) return { snapshot: null, reason: `upstream_${rosterRes.status}` };
 
@@ -199,28 +237,41 @@ async function refreshMlbTeam(target) {
     slug: target.slug,
     rosterPayload: rosterRes.data,
     standingsPayload: standingsRes.ok ? standingsRes.data : null,
+    schedulePayload: scheduleRes.ok ? scheduleRes.data : null,
+    leadersPayload: leadersRes.ok ? leadersRes.data : null,
+    teamStatsPayload: statsRes.ok ? statsRes.data : null,
     statsApiTeamId,
-    urls: [mlb.rosterUrl(statsApiTeamId, season), mlb.standingsUrl(season)],
+    urls: [mlb.rosterUrl(statsApiTeamId, season), mlb.standingsUrl(season),
+      mlb.scheduleUrl(statsApiTeamId, season, { from, to }), mlb.leadersUrl(statsApiTeamId, season)],
   });
   return snapshot
     ? { snapshot, route: '/teams/:id/roster/active', sourceIds: [String(statsApiTeamId)] }
     : { snapshot: null, reason: 'normalize_empty' };
 }
 
-async function refreshNbaTeam(target) {
+async function refreshNbaTeam(target, env) {
   const espnTeamId = target.id; // dictionary team ids ARE ESPN team ids for NBA
-  const [rosterRes, standingsRes] = await Promise.all([
+  const [rosterRes, standingsRes, scheduleRes] = await Promise.all([
     getJson(nba.relayUrl('roster', { team: espnTeamId }), { headers: nba.relayHeaders() }),
     getJson(nba.relayUrl('standings'), { headers: nba.relayHeaders() }),
+    getJson(nba.relayUrl('team-schedule', { team: espnTeamId }), { headers: nba.relayHeaders() }),
   ]);
   if (!rosterRes.ok) return { snapshot: null, reason: `upstream_${rosterRes.status}` };
+
+  // Leaders come from snapshots already stored, so this costs KV reads rather
+  // than nineteen more upstream requests per team.
+  const rosterEntries = nba.normalizeRoster(rosterRes.data);
+  const rosterPlayerSnapshots = await readStoredPlayers(env, 'nba', rosterEntries.map((r) => r.player_id));
 
   const snapshot = nba.buildTeam({
     slug: target.slug,
     rosterPayload: rosterRes.data,
     standingsPayload: standingsRes.ok ? standingsRes.data : null,
+    schedulePayload: scheduleRes.ok ? scheduleRes.data : null,
+    rosterPlayerSnapshots,
     espnTeamId,
-    urls: [nba.relayUrl('roster', { team: espnTeamId }), nba.relayUrl('standings')],
+    urls: [nba.relayUrl('roster', { team: espnTeamId }), nba.relayUrl('standings'),
+      nba.relayUrl('team-schedule', { team: espnTeamId })],
   });
   return snapshot
     ? { snapshot, route: 'nba-provider?r=roster', sourceIds: [String(espnTeamId)] }
