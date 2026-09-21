@@ -145,7 +145,11 @@ async function refreshNhlTeam(target) {
 
   const snapshot = nhl.buildTeam({
     slug: target.slug,
-    abbrev: target.abbr,
+    // The standings rows are keyed on the tricode too, not just the roster
+    // route - passing the ESPN abbreviation left those five clubs with a
+    // roster but no record. resolveTeam() indexes tricodes, so identity still
+    // lands on the same dictionary team.
+    abbrev: tricode,
     rosterPayload: rosterRes.data,
     standingsPayload: standingsRes.ok ? standingsRes.data : null,
   });

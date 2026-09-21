@@ -193,10 +193,14 @@ test('every NHL team addresses the gateway with a tricode it accepts', async () 
   assert.equal(nhlTricode('UTAH'), 'UTA');
   assert.equal(nhlTricode('PIT'), 'PIT');
 
+  // Roster AND standings are both keyed on the tricode. Asserting only a
+  // non-empty roster let five clubs keep a null record and pass as healthy.
   for (const target of teamRefreshTargets('nhl')) {
     const { snapshot, reason } = await refreshTeam('nhl', target);
     assert.ok(snapshot, `${target.slug} failed: ${reason}`);
     assert.ok(snapshot.roster.length > 0, `${target.slug} returned an empty roster`);
+    assert.ok(snapshot.record?.summary, `${target.slug} has a roster but no record`);
+    assert.equal(completeness(snapshot), 'full', `${target.slug} is not fully enriched`);
   }
 });
 

@@ -92,16 +92,31 @@ function withLiveFreshness(record) {
 
 // ─── HTTP ────────────────────────────────────────────────────────────────────
 
+/**
+ * CORS.
+ *
+ * A disallowed origin gets NO Access-Control-Allow-Origin header at all. The
+ * previous behaviour echoed https://propbetedge.ai back to every caller, which
+ * is ambiguous — it reads like an allow decision when it is actually a refusal,
+ * and it invites a cache to store one origin's answer for another.
+ *
+ * `Vary: Origin` is always set, on every response, because the header set
+ * genuinely differs by origin. Setting it only on allowed responses is the
+ * classic way to poison a shared cache.
+ */
+export function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  return HUB_ORIGINS.includes(origin) || PREVIEW_ORIGIN.test(origin);
+}
+
 function cors(origin) {
-  const allowed = origin && (HUB_ORIGINS.includes(origin) || PREVIEW_ORIGIN.test(origin))
-    ? origin
-    : HUB_ORIGINS[0];
-  return {
-    'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+  const headers = {
     Vary: 'Origin',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Hub-Admin-Token',
   };
+  if (isAllowedOrigin(origin)) headers['Access-Control-Allow-Origin'] = origin;
+  return headers;
 }
 
 function json(body, { status = 200, origin, maxAge = 60 } = {}) {
@@ -136,6 +151,8 @@ export default {
         dictionary: Object.fromEntries(SUPPORTED_SPORTS.map((s) => [s, {
           players: allPlayers(s).length,
           teams: allTeams(s).length,
+          player_batch_per_tick: playerBatchSize(s),
+          cycle_hours: expectedCycleHours(s),
         }])),
         nfl_team_data: env.PROPSPORTS_API_KEY ? 'enabled' : 'awaiting key',
       }, { origin, maxAge: 30 });
@@ -227,21 +244,72 @@ async function adminRefresh(request, env, ctx, origin) {
 
 const SPORT_BY_MINUTE = { 0: 'nhl', 15: 'mlb', 30: 'nba', 45: 'nfl' };
 
+/**
+ * Each sport gets one hourly tick, so a full player cycle has 24 ticks to
+ * complete. A flat batch of 60 meant NFL's 2,488 players needed ~41 hours —
+ * the cycle was not daily, whatever the comment said.
+ *
+ * Batch size is therefore derived from the dictionary rather than guessed:
+ *
+ *     ceil(player_count / TARGET_TICKS_PER_CYCLE)
+ *
+ * capped so one tick can never exceed the runtime's subrequest budget. The cap
+ * is the binding constraint to respect, not the cycle target: if a sport ever
+ * grows past CAP * TARGET_TICKS players, it cycles slower and says so via
+ * expectedCycleHours() instead of silently timing out mid-tick.
+ */
+export const TARGET_TICKS_PER_CYCLE = 24;   // one hourly tick per sport per day
+
+/**
+ * Upper bound per tick. Each player costs 1–2 subrequests (MLB and NBA fetch a
+ * game log as well), so 150 players is at most ~300 subrequests — comfortably
+ * inside the per-invocation budget, and measured at well under the CPU limit
+ * because the time is I/O wait, not compute.
+ */
+export const PLAYER_BATCH_CAP = 150;
+export const PLAYER_BATCH_FLOOR = 10;
+
+export function playerBatchSize(sport, total = allPlayers(sport).length) {
+  if (!total) return 0;
+  const ideal = Math.ceil(total / TARGET_TICKS_PER_CYCLE);
+  return Math.max(PLAYER_BATCH_FLOOR, Math.min(PLAYER_BATCH_CAP, ideal));
+}
+
+/** Hours for one complete pass at the configured batch size. */
+export function expectedCycleHours(sport, total = allPlayers(sport).length) {
+  const batch = playerBatchSize(sport, total);
+  return batch ? Math.ceil(total / batch) : 0;
+}
+
+/**
+ * Teams are few and change slowly. Refreshing all 32 every hour is 24x more
+ * upstream traffic than the data justifies, so they refresh four times a day —
+ * still well inside "rosters daily, standings daily or more frequently".
+ */
+const TEAM_REFRESH_EVERY_N_HOURS = 6;
+
 async function runScheduledRefresh(event, env) {
-  const minute = new Date(event.scheduledTime).getUTCMinutes();
+  const scheduled = new Date(event.scheduledTime);
+  const minute = scheduled.getUTCMinutes();
   const sport = SPORT_BY_MINUTE[minute] ?? SUPPORTED_SPORTS[minute % SUPPORTED_SPORTS.length];
 
-  // Teams are few and change slowly; refresh them all, then a player slice.
-  await refreshSlice(env, { sport, kind: 'team', limit: 40, offset: 0 });
-
-  const cursorRaw = await env.ENTITY_KV.get(cursorKey(sport, 'player'), 'json');
-  const offset = Number(cursorRaw?.offset) || 0;
-  const slice = await refreshSlice(env, { sport, kind: 'player', limit: 60, offset });
+  if (scheduled.getUTCHours() % TEAM_REFRESH_EVERY_N_HOURS === 0) {
+    await refreshSlice(env, { sport, kind: 'team', limit: 40, offset: 0 });
+  }
 
   const total = allPlayers(sport).length;
+  const limit = playerBatchSize(sport, total);
+  const cursorRaw = await env.ENTITY_KV.get(cursorKey(sport, 'player'), 'json');
+  const offset = Number(cursorRaw?.offset) || 0;
+  const slice = await refreshSlice(env, { sport, kind: 'player', limit, offset });
+
   const next = offset + slice.attempted >= total ? 0 : offset + slice.attempted;
   await env.ENTITY_KV.put(cursorKey(sport, 'player'), JSON.stringify({
-    offset: next, updated_at: new Date().toISOString(), last_run: slice,
+    offset: next,
+    batch: limit,
+    cycle_hours: expectedCycleHours(sport, total),
+    updated_at: new Date().toISOString(),
+    last_run: slice,
   }));
 }
 
