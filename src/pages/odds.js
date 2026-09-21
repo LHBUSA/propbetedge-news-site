@@ -3,7 +3,7 @@
  * Cross-sport public sampler for the PropBetEdge network.
  *
  * Contract:
- *   - MLB: exactly 2 free current HR model picks when two are published
+ *   - MLB: up to 2 free current HR model picks when qualified picks are published
  *   - NFL: up to 2 current PBE picks / validation signals
  *   - UFC: up to 2 current PBE Algo calls — Best Bet + Underdog Value
  *
@@ -50,8 +50,8 @@ const SPORTS = Object.freeze({
     emoji: '⚾',
     href: PROPBET_LINKS.picks_mlb,
     cta: 'Open MLB Intelligence',
-    deck: 'Two free home run props from the current MLB model.',
-    cadence: '2 free HR props · refreshed on the MLB publishing cadence',
+    deck: 'Up to 2 free home run props from the current MLB model.',
+    cadence: 'Up to 2 free HR props · refreshed on the MLB publishing cadence',
   },
   nfl: {
     label: 'NFL',
@@ -66,7 +66,7 @@ const SPORTS = Object.freeze({
     emoji: '🥊',
     href: PROPBET_LINKS.picks_ufc,
     cta: 'Open UFC Intelligence',
-    deck: 'Two free fight-model calls: Best Bet + Underdog Value.',
+    deck: 'Up to 2 free fight-model calls from the current PBE model.',
     cadence: 'Fight week · refreshed as the card and market move',
   },
   wnba: {
@@ -75,7 +75,7 @@ const SPORTS = Object.freeze({
     href: PROPBET_LINKS.picks_wnba,
     cta: 'Open WNBA Intelligence',
     deck: 'Current game-prediction calls from the WNBA model.',
-    cadence: '2 daily free picks · first published calls stay locked all day',
+    cadence: 'Up to 2 daily free picks · published calls stay locked all day',
   },
   nhl: {
     label: 'NHL',
@@ -743,7 +743,7 @@ function renderHero() {
         each published on the cadence that actually fits the sport.
       </p>
       <div class="free-board-pills" aria-label="Sports on the free board">
-        <span>⚾ MLB · 2 free HR props</span>
+        <span>⚾ MLB · up to 2 free HR props</span>
         <span>🏈 NFL · game calls</span>
         <span>🥊 UFC · fight pick</span>
         <span>🏀 WNBA · game calls</span>
