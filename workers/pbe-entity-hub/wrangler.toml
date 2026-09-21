@@ -19,8 +19,8 @@ workers_dev = true
 #   cursor:player:{sport}    report:{sport}:{kind}:{offset}
 [[kv_namespaces]]
 binding = "ENTITY_KV"
-id = "REPLACE_WITH_NAMESPACE_ID"
-preview_id = "REPLACE_WITH_PREVIEW_NAMESPACE_ID"
+id = "4e7b041a66e54e03b1eb6584f67b1cd1"
+preview_id = "427ba4e2ae5d4c6fa7c5bdce894fbfa1"
 
 # Staggered by minute so one sport's upstream having a bad hour cannot starve
 # the others, and so no single tick tries to walk 5,782 players.

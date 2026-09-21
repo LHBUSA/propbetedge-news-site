@@ -241,6 +241,18 @@ const TEAM_ABBR_ALIASES = {
 
 // ─── public resolution API ───────────────────────────────────────────────────
 
+/**
+ * ESPN abbreviation -> NHL api-web tricode.
+ *
+ * The dictionary is keyed on ESPN spellings, but NHL api-web routes want its
+ * own tricodes: TB/TBL, LA/LAK, NJ/NJD, SJ/SJS, UTAH/UTA. Calling the NHL
+ * gateway with the ESPN spelling 404s on exactly those five clubs.
+ */
+export function nhlTricode(abbr) {
+  const key = String(abbr || '').toUpperCase();
+  return ABBR_TO_TRICODE[key] || key;
+}
+
 /** Resolve a team from any spelling: abbreviation, slug, nickname, full name. */
 export function resolveTeam(sport, value) {
   const index = indexFor(sport);

@@ -21,7 +21,7 @@ import {
   FRESHNESS, CONTRACT_VERSION,
 } from '../src/entity-hub/contract.js';
 import { refreshPlayer, refreshTeam, teamRefreshTargets, currentSeason, MLB_TEAM_IDS } from '../src/entity-hub/refresh.js';
-import { allTeams, allPlayers } from '../src/entity-graph/entities.js';
+import { allTeams, allPlayers, nhlTricode } from '../src/entity-graph/entities.js';
 import * as nfl from '../src/entity-hub/adapters/nfl.js';
 import * as mlbAdapter from '../src/entity-hub/adapters/mlb.js';
 
@@ -180,6 +180,23 @@ test('refresh targets come from the dictionary, not from a feed', () => {
       assert.ok(target.slug && target.abbr, `incomplete target in ${sport}`);
     }
     assert.ok(allPlayers(sport).length > 0);
+  }
+});
+
+test('every NHL team addresses the gateway with a tricode it accepts', async () => {
+  // TB/TBL, LA/LAK, NJ/NJD, SJ/SJS and UTAH/UTA 404 on the ESPN spelling, which
+  // is how the first backfill lost exactly five clubs.
+  assert.equal(nhlTricode('TB'), 'TBL');
+  assert.equal(nhlTricode('LA'), 'LAK');
+  assert.equal(nhlTricode('NJ'), 'NJD');
+  assert.equal(nhlTricode('SJ'), 'SJS');
+  assert.equal(nhlTricode('UTAH'), 'UTA');
+  assert.equal(nhlTricode('PIT'), 'PIT');
+
+  for (const target of teamRefreshTargets('nhl')) {
+    const { snapshot, reason } = await refreshTeam('nhl', target);
+    assert.ok(snapshot, `${target.slug} failed: ${reason}`);
+    assert.ok(snapshot.roster.length > 0, `${target.slug} returned an empty roster`);
   }
 });
 

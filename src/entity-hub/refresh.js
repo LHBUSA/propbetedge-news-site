@@ -12,7 +12,7 @@
  * and the caller's rule is always the same — keep the last known good.
  */
 
-import { allTeams, teamByAbbreviation } from '../entity-graph/entities.js';
+import { allTeams, teamByAbbreviation, nhlTricode } from '../entity-graph/entities.js';
 import * as nhl from './adapters/nhl.js';
 import * as mlb from './adapters/mlb.js';
 import * as nba from './adapters/nba.js';
@@ -132,7 +132,10 @@ export async function refreshTeam(sport, target, { env = {} } = {}) {
 }
 
 async function refreshNhlTeam(target) {
-  const rosterUrl = `${nhl.NHL_GATEWAY}/nhl/team/${target.abbr}/roster`;
+  // NHL api-web wants its own tricode, not the ESPN abbreviation the
+  // dictionary is keyed on. Five clubs differ and 404 without this.
+  const tricode = nhlTricode(target.abbr);
+  const rosterUrl = `${nhl.NHL_GATEWAY}/nhl/team/${tricode}/roster`;
   const standingsUrl = `${nhl.NHL_GATEWAY}/nhl/standings`;
   const [rosterRes, standingsRes] = await Promise.all([
     getJson(rosterUrl, { headers: nhl.gatewayHeaders() }),
@@ -147,7 +150,7 @@ async function refreshNhlTeam(target) {
     standingsPayload: standingsRes.ok ? standingsRes.data : null,
   });
   return snapshot
-    ? { snapshot, route: '/nhl/team/:abbr/roster', sourceIds: [target.abbr] }
+    ? { snapshot, route: '/nhl/team/:tricode/roster', sourceIds: [tricode] }
     : { snapshot: null, reason: 'normalize_empty' };
 }
 
