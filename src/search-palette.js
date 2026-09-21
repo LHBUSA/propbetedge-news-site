@@ -346,7 +346,7 @@ function buildStaticRecords() {
     { type: 'home', eyebrow: 'PROPBETEDGE', title: 'PropBetEdge Home', subtitle: 'Your sports news and intelligence front page', href: '/', keywords: ['home', 'front page', 'my edge', 'propbetedge'] },
     { type: 'tool', eyebrow: 'PBE TOOL', title: 'PBEcast Live Games', subtitle: 'Live scores and game centers across every league', href: '/games', keywords: ['scores', 'live games', 'game center', 'pbecast'] },
     { type: 'tool', eyebrow: 'PBE TOOL', title: 'Stat Leaders', subtitle: 'League leaders, advanced stats and player intelligence', href: '/leaders', keywords: ['leaders', 'stats', 'players'] },
-    { type: 'tool', eyebrow: 'FREE PICKS', title: 'Free Picks', subtitle: 'Two free MLB home run props plus current NFL, UFC, WNBA and NHL picks', href: '/odds', keywords: ['odds', 'picks', 'mlb', 'home runs', 'hr props', 'nfl', 'ufc', 'model'] },
+    { type: 'tool', eyebrow: 'FREE PICKS', title: 'Free Picks', subtitle: 'Up to 2 free MLB home run props plus current NFL, UFC, WNBA and NHL picks', href: '/odds', keywords: ['odds', 'picks', 'mlb', 'home runs', 'hr props', 'nfl', 'ufc', 'model'] },
     { type: 'news', eyebrow: 'NEWSROOM', title: 'All News', subtitle: 'The complete PropBetEdge sports newsroom', href: '/news', keywords: ['news', 'stories', 'latest'] },
     { type: 'news', sport: 'ufc', eyebrow: 'UFC DESK', title: 'UFC News', subtitle: 'Fight-week coverage connected to UFC Intelligence', href: 'https://ufc.propbetedge.ai/news', external: true, keywords: ['ufc', 'mma', 'fight', 'news', 'fighters'] },
   ];
