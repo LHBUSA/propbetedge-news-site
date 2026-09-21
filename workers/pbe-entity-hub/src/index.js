@@ -138,7 +138,7 @@ export default {
     const path = url.pathname.replace(/\/+$/, '') || '/';
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(origin) });
-    if (request.method !== 'GET' && path !== '/v1/admin/refresh') {
+    if (request.method !== 'GET' && !path.startsWith('/v1/admin/')) {
       return json({ ok: false, error: 'method_not_allowed' }, { status: 405, origin });
     }
 
@@ -169,6 +169,7 @@ export default {
     if (indexMatch) return readIndex(env, indexMatch[1], url, origin);
 
     if (path === '/v1/admin/refresh') return adminRefresh(request, env, ctx, origin);
+    if (path === '/v1/admin/coverage') return adminCoverage(request, env, url, origin);
 
     return json({ ok: false, error: 'not_found' }, { status: 404, origin });
   },
@@ -238,6 +239,81 @@ async function adminRefresh(request, env, ctx, origin) {
 
   const report = await refreshSlice(env, { sport, kind, limit, offset });
   return json({ ok: true, ...report }, { origin, maxAge: 0 });
+}
+
+
+/**
+ * Read-only coverage census.
+ *
+ * Walks the stored snapshots and counts what is actually present, field by
+ * field, rather than inferring coverage from the refresh counters. Refresh
+ * counts say what a run did; this says what the store now holds — which is the
+ * number that matters when the question is "is this page worth shipping".
+ *
+ * Paginated by KV cursor so one invocation is always bounded.
+ */
+async function adminCoverage(request, env, url, origin) {
+  const provided = request.headers.get('X-Hub-Admin-Token') || '';
+  if (!env.HUB_ADMIN_TOKEN || !timingSafeEqual(provided, env.HUB_ADMIN_TOKEN)) {
+    return json({ ok: false, error: 'unauthorized' }, { status: 401, origin });
+  }
+
+  const sport = String(url.searchParams.get('sport') || '').toLowerCase();
+  const kind = url.searchParams.get('kind') === 'team' ? 'team' : 'player';
+  const limit = Math.min(1000, Math.max(1, Number(url.searchParams.get('limit')) || 400));
+  const cursor = url.searchParams.get('cursor') || undefined;
+  if (!SUPPORTED_SPORTS.includes(sport)) {
+    return json({ ok: false, error: 'unsupported_sport' }, { status: 400, origin });
+  }
+
+  const listing = await env.ENTITY_KV.list({ prefix: `${kind}:${sport}:`, limit, cursor });
+
+  const counts = {
+    stored: 0,
+    full: 0, partial: 0, identity_only: 0, unreadable: 0,
+    CURRENT: 0, STALE: 0, EXPIRED: 0,
+    // players
+    photo: 0, season_stats: 0, career_stats: 0, recent_games: 0, team_linked: 0,
+    // teams
+    roster: 0, record: 0, standings: 0, schedule: 0, recent_form: 0,
+  };
+
+  for (const key of listing.keys) {
+    const record = await env.ENTITY_KV.get(key.name, 'json');
+    const snap = record?.snapshot;
+    if (!snap) { counts.unreadable += 1; continue; }
+    counts.stored += 1;
+
+    const complete = record.completeness || completeness(snap);
+    if (complete in counts) counts[complete] += 1;
+
+    const freshness = freshnessOf(snap.source);
+    if (freshness in counts) counts[freshness] += 1;
+
+    if (snap.kind === 'player') {
+      if (snap.photo) counts.photo += 1;
+      if (snap.stats?.season) counts.season_stats += 1;
+      if (snap.stats?.career) counts.career_stats += 1;
+      if ((snap.stats?.games || []).length) counts.recent_games += 1;
+      if (snap.team?.slug) counts.team_linked += 1;
+    } else {
+      if ((snap.roster || []).length) counts.roster += 1;
+      if (snap.record) counts.record += 1;
+      if (snap.standings) counts.standings += 1;
+      if ((snap.recent_games || []).length || (snap.upcoming_games || []).length) counts.schedule += 1;
+      if (snap.recent_form) counts.recent_form += 1;
+    }
+  }
+
+  return json({
+    ok: true,
+    sport,
+    kind,
+    dictionary: kind === 'team' ? allTeams(sport).length : allPlayers(sport).length,
+    counts,
+    cursor: listing.list_complete ? null : listing.cursor,
+    list_complete: Boolean(listing.list_complete),
+  }, { origin, maxAge: 0 });
 }
 
 // ─── refresh ─────────────────────────────────────────────────────────────────
