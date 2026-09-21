@@ -60,7 +60,7 @@ export function provenance({ product, source, source_urls = [], observed_at, sch
  */
 export function playerSnapshot({
   sport, player_id, name, team = null, position = '', jersey = null, photo = null,
-  bio = {}, stats = {}, status = null, special_metrics = null, source,
+  bio = {}, stats = {}, status = null, special_metrics = null, coverage = null, source,
 }) {
   return {
     contract: CONTRACT_VERSION,
@@ -91,6 +91,7 @@ export function playerSnapshot({
     },
     status: status || null,
     special_metrics: special_metrics || null,
+    coverage: coverage || null,
     source,
   };
 }
@@ -180,8 +181,20 @@ export function validateTeamSnapshot(snapshot) {
  * and a photo but no stats is PARTIAL, not a failure — and the backfill report
  * says so per sport instead of averaging it away.
  */
+/**
+ * Coverage states. `unsupported` is deliberately distinct from `identity_only`:
+ * one means "this upstream does not cover this kind of entity at all", the
+ * other means "it does, and there is simply nothing yet". Collapsing them would
+ * make an NFL lineman look like a missing rookie.
+ */
+export const COVERAGE_STATES = ['full', 'partial', 'identity_only', 'unsupported', 'unresolved'];
+
 export function completeness(snapshot) {
   if (!snapshot) return 'unresolved';
+  // A snapshot may declare that its upstream does not cover this entity. That
+  // is a fact about the source, not a gap in the pipeline, and it outranks any
+  // inference from which fields happen to be populated.
+  if (snapshot.coverage?.supported === false) return 'unsupported';
   if (snapshot.kind === 'player') {
     const hasStats = Boolean(snapshot.stats?.season || snapshot.stats?.career);
     const hasTeam = Boolean(snapshot.team?.slug);

@@ -64,26 +64,28 @@ for (const sport of SPORTS) {
 
   const pd = players.dictionary;
   console.log(`  PLAYERS  dictionary ${pd}   stored ${players.stored}   missing ${pd - players.stored}`);
-  console.log(`    full ${players.full}  partial ${players.partial}  identity_only ${players.identity_only}  unreadable ${players.unreadable}`);
+  console.log(`    full ${players.full}  partial ${players.partial}  identity_only ${players.identity_only}  unsupported ${players.unsupported}  unreadable ${players.unreadable}`);
   console.log(`    photo          ${String(players.photo).padStart(5)}  ${pct(players.photo, players.stored)}`);
   console.log(`    season stats   ${String(players.season_stats).padStart(5)}  ${pct(players.season_stats, players.stored)}`);
   console.log(`    career stats   ${String(players.career_stats).padStart(5)}  ${pct(players.career_stats, players.stored)}`);
   console.log(`    recent games   ${String(players.recent_games).padStart(5)}  ${pct(players.recent_games, players.stored)}`);
   console.log(`    team linked    ${String(players.team_linked).padStart(5)}  ${pct(players.team_linked, players.stored)}`);
   console.log(`    freshness      CURRENT ${players.CURRENT}  STALE ${players.STALE}  EXPIRED ${players.EXPIRED}`);
-  const pAcc = players.full + players.partial + players.identity_only + players.unreadable;
-  console.log(`    ${pAcc === players.stored ? 'OK  ' : 'GAP '} stored ${players.stored} = full ${players.full} + partial ${players.partial} + identity_only ${players.identity_only} + unreadable ${players.unreadable} (${pAcc})`);
+  const pAcc = players.full + players.partial + players.identity_only + players.unsupported + players.unreadable;
+  console.log(`    ${pAcc === players.stored ? 'OK  ' : 'GAP '} stored ${players.stored} = full ${players.full} + partial ${players.partial} + identity_only ${players.identity_only} + unsupported ${players.unsupported} + unreadable ${players.unreadable} (${pAcc})`);
+  const missing = players.dictionary - players.stored;
+  console.log(`    ${missing === 0 ? 'OK  ' : 'GAP '} dictionary ${players.dictionary} = stored ${players.stored} + not stored ${missing}`);
 
   const td = teams.dictionary;
   console.log(`  TEAMS    dictionary ${td}   stored ${teams.stored}   missing ${td - teams.stored}`);
-  console.log(`    full ${teams.full}  partial ${teams.partial}  identity_only ${teams.identity_only}  unreadable ${teams.unreadable}`);
+  console.log(`    full ${teams.full}  partial ${teams.partial}  identity_only ${teams.identity_only}  unsupported ${teams.unsupported}  unreadable ${teams.unreadable}`);
   console.log(`    roster         ${String(teams.roster).padStart(5)}  ${pct(teams.roster, teams.stored)}`);
   console.log(`    record         ${String(teams.record).padStart(5)}  ${pct(teams.record, teams.stored)}`);
   console.log(`    standings      ${String(teams.standings).padStart(5)}  ${pct(teams.standings, teams.stored)}`);
   console.log(`    recent form    ${String(teams.recent_form).padStart(5)}  ${pct(teams.recent_form, teams.stored)}`);
   console.log(`    schedule       ${String(teams.schedule).padStart(5)}  ${pct(teams.schedule, teams.stored)}`);
-  const tAcc = teams.full + teams.partial + teams.identity_only + teams.unreadable;
-  console.log(`    ${tAcc === teams.stored ? 'OK  ' : 'GAP '} stored ${teams.stored} = full ${teams.full} + partial ${teams.partial} + identity_only ${teams.identity_only} + unreadable ${teams.unreadable} (${tAcc})`);
+  const tAcc = teams.full + teams.partial + teams.identity_only + teams.unsupported + teams.unreadable;
+  console.log(`    ${tAcc === teams.stored ? 'OK  ' : 'GAP '} stored ${teams.stored} = full ${teams.full} + partial ${teams.partial} + identity_only ${teams.identity_only} + unsupported ${teams.unsupported} + unreadable ${teams.unreadable} (${tAcc})`);
 }
 
 mkdirSync(resolve(ROOT, 'reports'), { recursive: true });

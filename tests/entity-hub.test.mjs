@@ -22,6 +22,7 @@ import {
 } from '../src/entity-hub/contract.js';
 import { refreshPlayer, refreshTeam, teamRefreshTargets, currentSeason, MLB_TEAM_IDS } from '../src/entity-hub/refresh.js';
 import { allTeams, allPlayers, nhlTricode } from '../src/entity-graph/entities.js';
+import { coversPosition } from '../src/entity-hub/adapters/nfl.js';
 import * as nfl from '../src/entity-hub/adapters/nfl.js';
 import * as mlbAdapter from '../src/entity-hub/adapters/mlb.js';
 import { pickSeasonType, normalizeGameLog } from '../src/entity-hub/adapters/nba.js';
@@ -218,6 +219,48 @@ test('nba: pickSeasonType prefers the regular season and names it', () => {
   assert.equal(picked.season, '2025-26');
   assert.equal(picked.label, 'Regular Season');
   assert.equal(pickSeasonType({ seasonTypes: [] }), null);
+});
+
+test('nfl: an uncovered position is classified unsupported, never dropped', async () => {
+  // player-career is a prop surface: it tracks passing, rushing and receiving.
+  // A lineman answering 404 is a scope fact about the product, not a failure,
+  // and it must still land in the reconciliation with a truthful state.
+  for (const id of ['16716', '4046707', '3686689']) {   // DT, OT, P
+    const { snapshot, route } = await refreshPlayer('nfl', id);
+    assert.ok(snapshot, 'an uncovered player must still produce an identity snapshot');
+    assert.deepEqual(validatePlayerSnapshot(snapshot).problems, []);
+    assert.equal(completeness(snapshot), 'unsupported');
+    assert.equal(snapshot.coverage.supported, false);
+    assert.equal(snapshot.coverage.reason, 'unsupported_position');
+    assert.match(route, /unsupported_position/);
+    // Identity is real; statistics are absent rather than zeroed.
+    assert.ok(snapshot.name && snapshot.photo);
+    assert.equal(snapshot.stats.season, null);
+    assert.equal(snapshot.stats.career, null);
+    assert.equal(snapshot.stats.games.length, 0);
+  }
+});
+
+test('nfl: a covered position still reports full coverage', async () => {
+  const { snapshot } = await refreshPlayer('nfl', '3916387');
+  assert.equal(completeness(snapshot), 'full');
+  assert.equal(snapshot.coverage, null, 'a covered player carries no coverage caveat');
+});
+
+test('nfl: the covered-position set matches the measured probe', () => {
+  for (const p of ['QB', 'RB', 'WR', 'TE', 'FB']) assert.ok(coversPosition(p), p);
+  for (const p of ['DT', 'OT', 'LB', 'CB', 'S', 'G', 'C', 'DE', 'P', 'PK', 'LS']) {
+    assert.ok(!coversPosition(p), p);
+  }
+});
+
+test('unsupported outranks any inference from populated fields', () => {
+  // The snapshot has a team, which would otherwise read as partial.
+  const snap = {
+    kind: 'player', team: { slug: 'x' }, stats: {},
+    coverage: { supported: false, reason: 'unsupported_position' },
+  };
+  assert.equal(completeness(snap), 'unsupported');
 });
 
 // ─── identity spine ──────────────────────────────────────────────────────────

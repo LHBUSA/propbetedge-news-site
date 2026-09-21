@@ -166,6 +166,53 @@ export function normalizePlayer(payload, { espnId, urls = [] } = {}) {
   });
 }
 
+/**
+ * Positions `player-career/v1` actually tracks.
+ *
+ * Measured, not assumed: a stratified probe resolved 25/25 skill players and
+ * 0/25 everyone else. It is a prop-betting surface, so it carries passing,
+ * rushing and receiving — there is no record for a guard or a punter, and that
+ * is a scope fact about the product, not a failure of this pipeline.
+ */
+export const COVERED_POSITIONS = new Set(['QB', 'RB', 'WR', 'TE', 'FB']);
+
+export function coversPosition(position) {
+  return COVERED_POSITIONS.has(String(position || '').toUpperCase());
+}
+
+/**
+ * Identity-only snapshot built from the dictionary, for a player the career
+ * product has no record of. The page still gets a real name, position, team and
+ * photo; what it does not get is invented statistics.
+ */
+export function identitySnapshot(dictionaryRow, { reason, supported }) {
+  if (!dictionaryRow?.id || !dictionaryRow?.name) return null;
+  const team = dictionaryRow.team_id ? resolveTeam('nfl', dictionaryRow.team_id) : null;
+
+  return playerSnapshot({
+    sport: 'nfl',
+    player_id: dictionaryRow.id,
+    name: dictionaryRow.name,
+    team: team ? {
+      id: team.abbr, slug: team.slug, name: team.name,
+      abbr: team.abbr, logo: team.logo_url, path: team.path,
+    } : null,
+    position: dictionaryRow.position || '',
+    photo: `https://a.espncdn.com/i/headshots/nfl/players/full/${dictionaryRow.id}.png`,
+    stats: {},
+    coverage: { supported, reason },
+    source: provenance({
+      product: PLAYER_PRODUCT,
+      source: 'PropBetEdge NFL career history',
+      source_urls: [playerUrl(dictionaryRow.id)],
+      schema: 'player-career/v1',
+      observed_at: new Date().toISOString(),
+      ttl_s: 1800,
+      stale_after_s: 86400,
+    }),
+  });
+}
+
 export function normalizeRoster(payload) {
   const rows = Array.isArray(payload?.roster) ? payload.roster
     : Array.isArray(payload?.athletes) ? payload.athletes

@@ -38,7 +38,7 @@ const SLICE = Number(args.slice) || 50;
 
 const COUNTERS = [
   'attempted', 'written', 'unchanged', 'invalid', 'upstream_failed',
-  'preserved_last_known_good', 'full', 'partial', 'identity_only',
+  'preserved_last_known_good', 'full', 'partial', 'identity_only', 'unsupported',
 ];
 
 async function health() {
@@ -104,7 +104,7 @@ async function main() {
 
 function report(totals, problems) {
   console.log('\n═══ pbe-entity-hub backfill coverage ═══\n');
-  const head = ['sport', 'kind', 'dict', 'attempt', 'written', 'unchg', 'full', 'partial', 'ident', 'invalid', 'upstream', 'kept'];
+  const head = ['sport', 'kind', 'dict', 'attempt', 'written', 'unchg', 'full', 'partial', 'ident', 'unsup', 'invalid', 'upstream', 'kept'];
   console.log(head.map((h, i) => h.padEnd(i < 2 ? 7 : 8)).join(''));
 
   for (const [sport, kinds] of Object.entries(totals)) {
@@ -114,7 +114,7 @@ function report(totals, problems) {
       const dict = kind === 'team' ? kinds.dictionary.teams : kinds.dictionary.players;
       console.log([
         sport, kind, dict, c.attempted, c.written, c.unchanged,
-        c.full, c.partial, c.identity_only, c.invalid, c.upstream_failed,
+        c.full, c.partial, c.identity_only, c.unsupported, c.invalid, c.upstream_failed,
         c.preserved_last_known_good,
       ].map((v, i) => String(v).padEnd(i < 2 ? 7 : 8)).join(''));
     }

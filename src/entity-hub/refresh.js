@@ -12,7 +12,7 @@
  * and the caller's rule is always the same — keep the last known good.
  */
 
-import { allTeams, teamByAbbreviation, nhlTricode } from '../entity-graph/entities.js';
+import { allTeams, allPlayers, teamByAbbreviation, nhlTricode } from '../entity-graph/entities.js';
 import * as nhl from './adapters/nhl.js';
 import * as mlb from './adapters/mlb.js';
 import * as nba from './adapters/nba.js';
@@ -114,11 +114,37 @@ async function refreshNbaPlayer(id) {
 async function refreshNflPlayer(id) {
   const url = nfl.playerUrl(id);
   const res = await getJson(url);
-  if (!res.ok) return { snapshot: null, reason: `upstream_${res.status}` };
-  const snapshot = nfl.normalizePlayer(res.data, { espnId: id, urls: [url] });
-  return snapshot
-    ? { snapshot, route: '/api/player-career', sourceIds: [String(id)] }
-    : { snapshot: null, reason: 'normalize_empty' };
+
+  if (res.ok) {
+    const snapshot = nfl.normalizePlayer(res.data, { espnId: id, urls: [url] });
+    if (snapshot) return { snapshot, route: '/api/player-career', sourceIds: [String(id)] };
+    return { snapshot: null, reason: 'normalize_empty' };
+  }
+
+  // A 404 here is usually not a failure. The career product covers offensive
+  // skill positions only, so every lineman, linebacker, defensive back, kicker
+  // and punter in the dictionary answers 404 by design. Rather than drop them
+  // out of the reconciliation, store a classified identity snapshot that says
+  // which of the two it is.
+  if (res.status === 404) {
+    const row = allPlayers('nfl').find((p) => p.id === String(id));
+    if (row) {
+      const supported = nfl.coversPosition(row.position);
+      const snapshot = nfl.identitySnapshot(row, {
+        supported,
+        reason: supported ? 'no_tracked_history' : 'unsupported_position',
+      });
+      if (snapshot) {
+        return {
+          snapshot,
+          route: supported ? 'identity_only(no_tracked_history)' : 'identity_only(unsupported_position)',
+          sourceIds: [String(id)],
+        };
+      }
+    }
+  }
+
+  return { snapshot: null, reason: `upstream_${res.status}` };
 }
 
 // ─── teams ───────────────────────────────────────────────────────────────────

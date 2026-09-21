@@ -297,7 +297,7 @@ async function adminCoverage(request, env, url, origin) {
 
   const counts = {
     stored: 0,
-    full: 0, partial: 0, identity_only: 0, unreadable: 0,
+    full: 0, partial: 0, identity_only: 0, unsupported: 0, unreadable: 0,
     CURRENT: 0, STALE: 0, EXPIRED: 0,
     // players
     photo: 0, season_stats: 0, career_stats: 0, recent_games: 0, team_linked: 0,
@@ -437,6 +437,7 @@ export async function refreshSlice(env, { sport, kind, limit, offset }) {
     full: 0,
     partial: 0,
     identity_only: 0,
+    unsupported: 0,
   };
   const problems = [];
 
