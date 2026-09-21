@@ -147,7 +147,7 @@ export async function renderEditorialStandards(root, setMeta) {
             <li><strong>Email:</strong> <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a> for editorial feedback, corrections, or tips.</li>
             <li><strong>Discord:</strong> Join our community to discuss picks, debate angles, and call us out in real time.</li>
             <li><strong>X / Twitter:</strong> <a href="https://x.com/MLBHRALERTSPBE" target="_blank" rel="noopener">@MLBHRALERTSPBE</a> for public discussion.</li>
-            <li><strong>Reddit:</strong> <a href="https://www.reddit.com/r/PropBetEdge/" target="_blank" rel="noopener">r/PropBetEdge</a> for longer-form community conversation.</li>
+            <li><strong>Bluesky:</strong> <a href="https://bsky.app/profile/propbetedge.bsky.social" target="_blank" rel="noopener">@propbetedge.bsky.social</a> for longer-form community conversation.</li>
           </ul>
           <p>
             We read everything. We don't promise to act on every suggestion, but we promise to

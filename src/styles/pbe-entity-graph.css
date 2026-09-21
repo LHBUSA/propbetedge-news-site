@@ -197,7 +197,8 @@
    * an accessible name from its aria-label, so this hides text, not meaning.
    */
   .pbe-share-btn--x .pbe-share-label,
-  .pbe-share-btn--linkedin .pbe-share-label {
+  .pbe-share-btn--linkedin .pbe-share-label,
+  .pbe-share-btn--bluesky .pbe-share-label {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -206,7 +207,8 @@
   }
 
   .pbe-share-btn--x,
-  .pbe-share-btn--linkedin {
+  .pbe-share-btn--linkedin,
+  .pbe-share-btn--bluesky {
     padding: 0 11px;
   }
 }

@@ -409,18 +409,20 @@ const SHARE_URL = 'https://propbetedge.ai/news/nfl/a-real-story-2026-09-21';
 const SHARE_TITLE = "Ravens' Week 2 Collapse Against Saints";
 const shareBar = () => renderShareBar(SHARE_URL, SHARE_TITLE);
 
-test('the share row is exactly Share, Copy link, X and LinkedIn', () => {
+test('the share row is exactly Share, Copy link, X, LinkedIn and Bluesky', () => {
   const labels = [...shareBar().matchAll(/<span class="pbe-share-label"[^>]*>([^<]*)<\/span>/g)]
     .map((m) => m[1]);
-  assert.deepEqual(labels, ['Share', 'Copy link', 'X', 'LinkedIn']);
+  assert.deepEqual(labels, ['Share', 'Copy link', 'X', 'LinkedIn', 'Bluesky']);
 });
 
 test('platforms PropBetEdge does not maintain are absent from the markup and the CSS', () => {
-  // Facebook and Reddit were removed on request; Bluesky followed. A share row
-  // must not promote a surface we are not on.
+  // Facebook and Reddit stay out: PropBetEdge maintains neither, and a share
+  // row must not promote a surface we are not on. Bluesky returned once the
+  // account existed, so it is asserted PRESENT below rather than banned.
   const markup = shareBar().toLowerCase();
   const css = readFileSync(new URL('../src/styles/pbe-entity-graph.css', import.meta.url), 'utf8').toLowerCase();
-  for (const banned of ['facebook', 'sharer.php', 'reddit', 'bluesky', 'bsky']) {
+  assert.ok(markup.includes('bsky.app/intent/compose'), 'Bluesky share intent is expected');
+  for (const banned of ['facebook', 'sharer.php', 'reddit']) {
     assert.ok(!markup.includes(banned), `${banned} is still in the share markup`);
     assert.ok(!css.includes(banned), `${banned} is still in the share styles`);
   }
@@ -438,7 +440,7 @@ test('no placeholder glyphs survive anywhere in the share UI', () => {
 test('every control carries a real inline SVG that is hidden from assistive tech', () => {
   const html = shareBar();
   const svgs = html.match(/<svg[^>]*>/g) || [];
-  assert.equal(svgs.length, 4, 'one icon per control');
+  assert.equal(svgs.length, 5, 'one icon per control');
   for (const svg of svgs) {
     assert.match(svg, /aria-hidden="true"/, 'icons are decorative; the label names the action');
     assert.match(svg, /viewBox="0 0 24 24"/);
@@ -467,14 +469,19 @@ test('sharing uses the clean canonical URL with nothing appended', () => {
   const html = shareBar();
   const hrefs = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
 
-  assert.equal(hrefs.length, 2);
+  assert.equal(hrefs.length, 3);
   assert.ok(hrefs[0].startsWith('https://x.com/intent/tweet?'));
   assert.ok(hrefs[1].startsWith('https://www.linkedin.com/sharing/share-offsite/?url='));
+  assert.ok(hrefs[2].startsWith('https://bsky.app/intent/compose?text='));
 
-  for (const href of hrefs) {
+  for (const href of hrefs.slice(0, 2)) {
     const shared = new URL(href).searchParams.get('url');
     assert.equal(shared, SHARE_URL, 'the shared URL must be the canonical, untouched');
   }
+  // Bluesky takes one free-text field; the canonical must appear in it verbatim.
+  const composed = new URL(hrefs[2]).searchParams.get('text');
+  assert.ok(composed.includes(SHARE_URL), 'Bluesky compose text must carry the canonical');
+  assert.ok(composed.includes(SHARE_TITLE), 'Bluesky compose text must carry the title');
   assert.ok(!/utm_|[?&]ref=/.test(html), 'no tracking parameters on our own URL');
 
   assert.equal(html.match(/data-share-url="([^"]+)"/)[1], SHARE_URL);
@@ -483,7 +490,7 @@ test('sharing uses the clean canonical URL with nothing appended', () => {
 test('network targets work without JavaScript and the JS-only ones are buttons', () => {
   const html = shareBar();
   // Anchors for the networks: they must function with scripting off.
-  assert.equal((html.match(/<a /g) || []).length, 2);
+  assert.equal((html.match(/<a /g) || []).length, 3);
   for (const anchor of html.match(/<a [^>]*>/g) || []) {
     assert.match(anchor, /rel="noopener noreferrer nofollow"/);
     assert.match(anchor, /target="_blank"/);

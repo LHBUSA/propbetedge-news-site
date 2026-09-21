@@ -1,6 +1,6 @@
 {
   "hub": "https://pbe-entity-hub.sales-fd3.workers.dev",
-  "finished_at": "2026-09-21T22:47:59.683Z",
+  "finished_at": "2026-09-21T22:57:29.810Z",
   "totals": {
     "nhl": {
       "team": {
@@ -10,89 +10,28 @@
         "invalid": 0,
         "upstream_failed": 0,
         "preserved_last_known_good": 0,
-        "full": 27,
-        "partial": 5,
+        "full": 32,
+        "partial": 0,
         "identity_only": 0
       },
       "player": {
-        "attempted": 1227,
-        "written": 1227,
+        "attempted": 0,
+        "written": 0,
         "unchanged": 0,
         "invalid": 0,
         "upstream_failed": 0,
         "preserved_last_known_good": 0,
-        "full": 960,
-        "partial": 267,
+        "full": 0,
+        "partial": 0,
         "identity_only": 0
       },
       "dictionary": {
         "players": 1267,
-        "teams": 32
-      }
-    },
-    "mlb": {
-      "team": {
-        "attempted": 30,
-        "written": 30,
-        "unchanged": 0,
-        "invalid": 0,
-        "upstream_failed": 0,
-        "preserved_last_known_good": 0,
-        "full": 30,
-        "partial": 0,
-        "identity_only": 0
-      },
-      "player": {
-        "attempted": 1466,
-        "written": 1466,
-        "unchanged": 0,
-        "invalid": 0,
-        "upstream_failed": 0,
-        "preserved_last_known_good": 0,
-        "full": 1055,
-        "partial": 411,
-        "identity_only": 0
-      },
-      "dictionary": {
-        "players": 1466,
-        "teams": 30
-      }
-    },
-    "nba": {
-      "team": {
-        "attempted": 30,
-        "written": 0,
-        "unchanged": 30,
-        "invalid": 0,
-        "upstream_failed": 0,
-        "preserved_last_known_good": 0,
-        "full": 30,
-        "partial": 0,
-        "identity_only": 0
-      },
-      "player": {
-        "attempted": 561,
-        "written": 501,
-        "unchanged": 60,
-        "invalid": 0,
-        "upstream_failed": 0,
-        "preserved_last_known_good": 0,
-        "full": 481,
-        "partial": 80,
-        "identity_only": 0
-      },
-      "dictionary": {
-        "players": 561,
-        "teams": 30
+        "teams": 32,
+        "player_batch_per_tick": 53,
+        "cycle_hours": 24
       }
     }
   },
-  "problems": [
-    {
-      "sport": "nhl",
-      "kind": "player",
-      "offset": 560,
-      "error": "fetch failed"
-    }
-  ]
+  "problems": []
 }

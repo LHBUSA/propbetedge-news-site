@@ -28,7 +28,7 @@ const SITE = {
   logoSquare: 'https://propbetedge.ai/favicon-192.png',
   twitter: 'https://x.com/MLBHRALERTSPBE',
   linkedin: 'https://www.linkedin.com/company/propbetedge-ai/',
-  reddit: 'https://www.reddit.com/r/PropBetEdge/',
+  bluesky: 'https://bsky.app/profile/propbetedge.bsky.social',
 };
 
 // ─── @id references — used to deduplicate the publisher across schemas ──
@@ -84,7 +84,7 @@ export function organizationSchema() {
     sameAs: [
       SITE.twitter,
       SITE.linkedin,
-      SITE.reddit,
+      SITE.bluesky,
     ].filter(Boolean),
     diversityPolicy: `${SITE.url}/editorial-standards`,
     ethicsPolicy: `${SITE.url}/editorial-standards`,

@@ -3,10 +3,10 @@
  *
  * Article share controls, rendered identically on the edge and in the browser.
  *
- * Set: Share (native) · Copy link · X · LinkedIn.
- * Facebook, Reddit and Bluesky are deliberately absent — PropBetEdge does not
- * maintain those surfaces, and a share row that promotes a platform we are not
- * on is an invitation to send readers somewhere we cannot follow.
+ * Set: Share (native) · Copy link · X · LinkedIn · Bluesky.
+ * Facebook and Reddit are deliberately absent — PropBetEdge does not maintain
+ * those surfaces, and a share row that promotes a platform we are not on is an
+ * invitation to send readers somewhere we cannot follow.
  *
  * Every target uses the canonical article URL. No campaign parameters, no
  * tracking suffixes: a shared link must never mint a query-string variant that
@@ -34,6 +34,9 @@ const ICONS = {
 
   // LinkedIn "in" mark.
   linkedin: '<path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>',
+
+  // Bluesky butterfly.
+  bluesky: '<path d="M5.769 3.13C8.42 5.117 11.27 9.147 12 11.31c.73-2.163 3.58-6.193 6.231-8.18C20.144 1.696 23 .59 23 3.816c0 .645-.37 5.414-.587 6.188-.756 2.69-3.5 3.377-5.942 2.961 4.268.727 5.353 3.133 3.008 5.539-4.453 4.57-6.4-1.146-6.899-2.61-.09-.267-.133-.393-.133-.287 0-.106-.042.02-.133.287-.499 1.464-2.446 7.18-6.9 2.61-2.344-2.406-1.259-4.812 3.01-5.54-2.443.417-5.187-.27-5.943-2.96C2.37 9.23 2 4.46 2 3.815 2 .59 4.856 1.696 5.769 3.13z"/>',
 };
 
 function icon(name) {
@@ -63,6 +66,15 @@ export function renderShareBar(canonicalUrl, title, options = {}) {
       label: 'LinkedIn',
       href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
       accessible: `Share this article on LinkedIn`,
+    },
+    {
+      key: 'bluesky',
+      label: 'Bluesky',
+      // Bluesky's composer takes one free-text field; the canonical URL inside
+      // it is what produces the link card, so the title and the URL travel
+      // together in `text` rather than as separate parameters.
+      href: `https://bsky.app/intent/compose?text=${encodeURIComponent(`${text} ${url}`.trim())}`,
+      accessible: `Share this article on Bluesky`,
     },
   ];
 
