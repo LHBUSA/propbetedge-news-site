@@ -1,0 +1,213 @@
+/* PropBetEdge article video treatment.
+   Keep official video embeds large, editorial and distraction-free. */
+
+.article-media {
+  margin: 34px 0 38px;
+  padding: 0;
+}
+
+.article-media-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.article-media-heading {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper);
+}
+
+.article-media-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-faint);
+}
+
+.article-media-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+
+.media-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: rgba(20, 17, 13, 0.76);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.28);
+}
+
+.media-youtube-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #080706;
+}
+
+.media-youtube-frame iframe {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.media-meta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 12px 14px 13px;
+  border-top: 1px solid var(--line);
+}
+
+.media-source {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 4px 8px;
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.07);
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.media-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--paper-2);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.article-media-disclaimer {
+  margin-top: 9px;
+  color: var(--paper-faint);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  line-height: 1.45;
+  letter-spacing: 0.035em;
+}
+
+/* MLB.tv stays compact beside the larger embedded-video treatment. */
+.media-mlbtv {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 15px 16px;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.16s ease, transform 0.16s ease, background 0.16s ease;
+}
+
+.media-mlbtv:hover {
+  transform: translateY(-1px);
+  border-color: rgba(212, 175, 55, 0.42);
+  background: rgba(29, 25, 20, 0.9);
+}
+
+.mlbtv-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(212, 175, 55, 0.08);
+  font-size: 20px;
+}
+
+.mlbtv-text {
+  min-width: 0;
+}
+
+.mlbtv-title {
+  color: var(--paper);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.mlbtv-cta {
+  margin-top: 4px;
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .article-media {
+    margin: 28px 0 32px;
+  }
+
+  .article-media-header {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  .article-media-sub {
+    font-size: 8.5px;
+  }
+
+  .media-card {
+    border-radius: 11px;
+  }
+
+  .media-meta {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    padding: 10px 11px 11px;
+  }
+
+  .media-source {
+    width: fit-content;
+  }
+
+  .media-title {
+    font-size: 11.5px;
+    white-space: normal;
+  }
+
+  .article-media-disclaimer {
+    font-size: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .media-mlbtv {
+    transition: none;
+  }
+}
