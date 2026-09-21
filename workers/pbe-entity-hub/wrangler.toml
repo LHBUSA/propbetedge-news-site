@@ -1,0 +1,35 @@
+# pbe-entity-hub — PropBetEdge cross-sport entity snapshot service.
+#
+# Deploy:  wrangler deploy      (from workers/pbe-entity-hub)
+# Secrets: wrangler secret put HUB_ADMIN_TOKEN
+#          wrangler secret put PROPSPORTS_API_KEY
+#
+# The secrets live HERE and only here. PROPSPORTS_API_KEY is never set on the
+# Vercel project and never reaches browser code: NFL ingestion runs inside this
+# Worker, so this is the single authoritative secret boundary.
+
+name = "pbe-entity-hub"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+account_id = "fd3a233edadd0a60916413c1199f71ee"
+workers_dev = true
+
+# Snapshot store. Keys:
+#   player:{sport}:{id}      team:{sport}:{slug}
+#   cursor:player:{sport}    report:{sport}:{kind}:{offset}
+[[kv_namespaces]]
+binding = "ENTITY_KV"
+id = "REPLACE_WITH_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_PREVIEW_NAMESPACE_ID"
+
+# Staggered by minute so one sport's upstream having a bad hour cannot starve
+# the others, and so no single tick tries to walk 5,782 players.
+#   :00 NHL   :15 MLB   :30 NBA   :45 NFL
+[triggers]
+crons = ["0 * * * *", "15 * * * *", "30 * * * *", "45 * * * *"]
+
+[observability]
+enabled = true
+
+[vars]
+HUB_SCHEMA_VERSION = "pbe-entity-hub/1"
