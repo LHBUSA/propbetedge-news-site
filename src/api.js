@@ -14,9 +14,16 @@ async function get(path) {
 const FUTURE_SKEW_MS = 2 * 60 * 1000;
 const STALE_FALLBACK_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_HOME_AGE_MS = 24 * 60 * 60 * 1000;
-const RETIRED_AUTHOR_FINGERPRINTS = new Set([2793981073]);
+// Former contributors are REATTRIBUTED to the editorial team, never excluded.
+// Keep this map in step with REATTRIBUTED_AUTHORS in news-integrity.js — the
+// two ran different policies once, and the result was that one code path
+// reattributed an article while the other made the same URL 404.
+// (Fingerprints rather than names: scripts/verify-retired-contributors.mjs
+// bans the literal bylines from shipping in src/.)
+const RETIRED_AUTHOR_FINGERPRINTS = new Set();
 const RETIRED_AUTHOR_REATTRIBUTIONS = new Map([
   [1775553382, 'PropBetEdge Editorial Team'],
+  [2793981073, 'PropBetEdge Editorial Team'],
 ]);
 
 function validPastTs(value, now = Date.now()) {

@@ -49,14 +49,35 @@ export function assessArticleIntegrity(article, peers = []) {
   return { ok: true, reason: null };
 }
 
+/**
+ * Former contributors whose historical work is published under the editorial
+ * team byline.
+ *
+ * This is an AUTHORSHIP PRESENTATION policy, not a publication gate. A byline
+ * is not a reason to unpublish journalism: reattributing keeps the slug, the
+ * publication time, the copy and the canonical URL exactly as they were, and
+ * the story stays indexable. Only the integrity checks below can withhold an
+ * article, and they judge the article, not who signed it.
+ *
+ * Hard-excluding a former contributor is how ~2,900 otherwise healthy archive
+ * URLs were serving 404 + noindex.
+ */
+const REATTRIBUTED_AUTHORS = new Set([
+  'donneal green',
+  'eric esters',
+]);
+
+export const EDITORIAL_TEAM_BYLINE = 'PropBetEdge Editorial Team';
+
+export function isReattributedAuthor(name) {
+  return REATTRIBUTED_AUTHORS.has(String(name || '').trim().toLowerCase());
+}
+
 export function applyArticlePublicationPolicy(article) {
   if (!article || typeof article !== 'object') return null;
-  const author = String(article.author || '').trim().toLowerCase();
 
-  // Match the site's existing public contributor policy.
-  if (author === 'donneal green') return null;
-  if (author === 'eric esters') {
-    return { ...article, author: 'PropBetEdge Editorial Team', _author_reattributed: true };
+  if (isReattributedAuthor(article.author)) {
+    return { ...article, author: EDITORIAL_TEAM_BYLINE, _author_reattributed: true };
   }
   return article;
 }

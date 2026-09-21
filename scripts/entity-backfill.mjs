@@ -26,7 +26,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { applyArticlePublicationPolicy, assessArticleIntegrity } from '../news-integrity.js';
+import { applyArticlePublicationPolicy, assessArticleIntegrity, isReattributedAuthor } from '../news-integrity.js';
 import { buildEntityManifest } from '../src/entity-graph/manifest.js';
 import { buildArticleSeo, articleCanonicalUrl } from '../src/entity-graph/article-seo.js';
 import { articleBodyHtml } from '../src/entity-graph/article-body.js';
@@ -64,6 +64,7 @@ const report = {
     share_image_tier_3_team_mark: 0,
     share_image_tier_4_league_card: 0,
     unresolved_mentions: 0,
+    reattributed_articles_served: 0,
   },
   failures: {
     malformed_internal_links: 0,
@@ -76,6 +77,8 @@ const report = {
     entity_links_404: 0,
     body_text_mutated: 0,
   },
+  withheld_reasons: {},
+  reattributed_authors: {},
   unresolved: { players: {}, teams: {} },
   samples: { failures: [], resolved: [] },
   entity_verification: null,
@@ -121,14 +124,28 @@ async function auditArticle(row) {
 
   // Mirror the live publication gate exactly, so the audit measures what the
   // site actually serves rather than what the database happens to contain.
+  const originalAuthor = String(row?.author || '').trim();
+  if (isReattributedAuthor(originalAuthor)) {
+    const key = originalAuthor || '(blank)';
+    report.reattributed_authors[key] = (report.reattributed_authors[key] || 0) + 1;
+  }
+
   const article = applyArticlePublicationPolicy(row);
   if (!article) {
     report.totals.articles_withheld_by_integrity_gate += 1;
+    bumpWithheld('author_policy', originalAuthor);
     return;
   }
-  if (!assessArticleIntegrity(article).ok) {
+
+  const integrity = assessArticleIntegrity(article);
+  if (!integrity.ok) {
     report.totals.articles_withheld_by_integrity_gate += 1;
+    bumpWithheld(integrity.reason || 'unknown', originalAuthor);
     return;
+  }
+
+  if (isReattributedAuthor(originalAuthor)) {
+    report.totals.reattributed_articles_served += 1;
   }
 
   const sport = String(article.sport || '').toLowerCase();
@@ -333,6 +350,10 @@ function emit() {
   console.log('\n═══ PropBetEdge entity backfill ═══');
   console.log(`articles scanned                 ${scanned}`);
   console.log(`  withheld by integrity gate     ${t.articles_withheld_by_integrity_gate}`);
+  for (const [reason, count] of Object.entries(report.withheld_reasons).sort((a, b) => b[1] - a[1])) {
+    console.log(`    ${reason.padEnd(29)}${String(count).padStart(6)}`);
+  }
+  console.log(`  reattributed but still served  ${t.reattributed_articles_served}`);
   console.log(`  eligible (what the site serves)${String(eligible).padStart(7)}`);
   console.log('');
   console.log(`articles with player entities    ${t.articles_with_player_entities} (${pct(t.articles_with_player_entities)})`);
@@ -372,6 +393,15 @@ function topEntries(map, limit) {
   return Object.fromEntries(
     Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, limit),
   );
+}
+
+/** Why an article is not being served, and whose byline it carried. */
+function bumpWithheld(reason, author) {
+  report.withheld_reasons[reason] = (report.withheld_reasons[reason] || 0) + 1;
+  if (reason === 'author_policy') {
+    const key = `author_policy:${author || '(blank)'}`;
+    report.withheld_reasons[key] = (report.withheld_reasons[key] || 0) + 1;
+  }
 }
 
 function pushFailure(article, kind, detail) {

@@ -21,6 +21,21 @@ const shareImage = read('src/entity-graph/share-image.js');
 const socialCard = read('api/social-card.js');
 const teamPage = read('src/pages/team.js');
 
+/**
+ * applyArticlePublicationPolicy may return null for exactly one reason: it was
+ * handed something that is not an article. A second `return null` means a
+ * byline is withholding a story again, which is the regression that put ~2,900
+ * archive URLs behind a 404.
+ */
+function policyReturnsNullOnlyForNonArticles(source) {
+  const start = source.indexOf('export function applyArticlePublicationPolicy');
+  if (start === -1) return false;
+  const end = source.indexOf('\n}', start);
+  const body = source.slice(start, end === -1 ? source.length : end);
+  return (body.match(/return null;/g) || []).length === 1
+    && /typeof article !== 'object'\) return null;/.test(body);
+}
+
 /** The body of renderEntityAnchor, which is the markup entity links emit. */
 function anchorBody(source) {
   const start = source.indexOf('export function renderEntityAnchor');
@@ -70,8 +85,9 @@ const checks = [
 
   ['integrity gate detects title/body mismatch', integrity.includes("'title_body_mismatch'")],
   ['integrity gate rejects duplicate summaries', integrity.includes("'duplicate_summary'")],
-  ['retired contributor policy is centralized', integrity.includes("author === 'donneal green'")],
-  ['reattribution policy is centralized', integrity.includes("author === 'eric esters'")],
+  ['former-contributor policy is centralized', integrity.includes('REATTRIBUTED_AUTHORS')],
+  ['a byline never withholds an article', integrity.includes('export function isReattributedAuthor') && policyReturnsNullOnlyForNonArticles(integrity)],
+  ['src/api.js holds no second exclusion path', /RETIRED_AUTHOR_FINGERPRINTS = new Set\(\s*\)/.test(read('src/api.js'))],
 
   // ── PropBetEdge content graph ──────────────────────────────────────────
   ['article SEO has exactly one builder', schemaModule.includes('export function buildArticleSeo')],

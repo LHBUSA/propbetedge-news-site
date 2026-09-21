@@ -25,6 +25,9 @@
  * than guessed, so a story can never be attached to the wrong game.
  */
 
+import { teamByAbbreviation } from '../src/entity-graph/entities.js';
+import { normalizeName } from '../src/entity-graph/text.js';
+
 const LEAGUES = {
   mlb: 'baseball/mlb',
   nfl: 'football/nfl',
@@ -56,6 +59,12 @@ export default async function handler(req, res) {
 
   try {
     const days = windowAround(date);
+
+    // MLB game pages resolve an MLB StatsAPI gamePk, every other league an ESPN
+    // event id. Returning an ESPN id for MLB produced a chip that linked to a
+    // 404, so each sport is resolved against the source its own route uses.
+    if (sport === 'mlb') return await resolveMlbGame(res, days, teams);
+
     const scoreboards = await Promise.all(days.map((day) => loadScoreboard(sport, day)));
 
     if (scoreboards.every((board) => board === null)) {
@@ -110,6 +119,89 @@ export default async function handler(req, res) {
     res.setHeader('Retry-After', '120');
     return res.status(503).json({ ok: false, error: 'source_unavailable' });
   }
+}
+
+
+/**
+ * MLB, resolved against MLB StatsAPI so the id we hand back is the gamePk that
+ * /games/mlb/:id actually looks up. Matching is on full team names rather than
+ * abbreviations: StatsAPI and ESPN disagree on several (CWS vs CHW, AZ vs ARI),
+ * and a name comparison cannot silently match the wrong club.
+ */
+async function resolveMlbGame(res, days, teams) {
+  const wanted = teams
+    .map((abbr) => teamByAbbreviation('mlb', abbr)?.name)
+    .filter(Boolean)
+    .map((name) => normalizeName(name));
+
+  if (wanted.length !== 2) {
+    res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    return res.status(200).json({ ok: false, reason: 'no_match', candidates: 0 });
+  }
+
+  const start = isoDay(days[1]);
+  const end = isoDay(days[2]);
+  const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=${start}&endDate=${end}&hydrate=team`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 6000);
+  let data;
+  try {
+    const upstream = await fetch(url, { headers: { accept: 'application/json' }, signal: controller.signal });
+    if (!upstream.ok) {
+      res.setHeader('Retry-After', '120');
+      return res.status(503).json({ ok: false, error: 'source_unavailable' });
+    }
+    data = await upstream.json();
+  } catch {
+    res.setHeader('Retry-After', '120');
+    return res.status(503).json({ ok: false, error: 'source_unavailable' });
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const games = (data?.dates || []).flatMap((row) => row?.games || []);
+  const matches = games.filter((game) => {
+    const home = normalizeName(game?.teams?.home?.team?.name);
+    const away = normalizeName(game?.teams?.away?.team?.name);
+    return wanted.includes(home) && wanted.includes(away) && home !== away;
+  });
+
+  const unique = [];
+  const seen = new Set();
+  for (const game of matches) {
+    const id = String(game?.gamePk || '');
+    if (id && !seen.has(id)) { seen.add(id); unique.push(game); }
+  }
+
+  if (unique.length !== 1) {
+    res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+    return res.status(200).json({
+      ok: false,
+      reason: unique.length === 0 ? 'no_match' : 'ambiguous',
+      candidates: unique.length,
+    });
+  }
+
+  const game = unique[0];
+  res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
+  return res.status(200).json({
+    ok: true,
+    game: {
+      sport: 'mlb',
+      id: String(game.gamePk),
+      name: `${game?.teams?.away?.team?.name} at ${game?.teams?.home?.team?.name}`,
+      start_date: game.gameDate || null,
+      status: game?.status?.detailedState || null,
+      home_abbr: teams.find((t) => normalizeName(teamByAbbreviation('mlb', t)?.name) === normalizeName(game?.teams?.home?.team?.name)) || null,
+      away_abbr: teams.find((t) => normalizeName(teamByAbbreviation('mlb', t)?.name) === normalizeName(game?.teams?.away?.team?.name)) || null,
+    },
+  });
+}
+
+/** YYYYMMDD -> YYYY-MM-DD */
+function isoDay(stamp) {
+  return `${stamp.slice(0, 4)}-${stamp.slice(4, 6)}-${stamp.slice(6, 8)}`;
 }
 
 /** The publication day and its neighbours: a story is about a game near it. */
