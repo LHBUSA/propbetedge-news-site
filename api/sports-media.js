@@ -13,6 +13,9 @@ export default async function handler(req, res) {
 
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
+  // Public editorial media lookup. Dedicated PropBetEdge products consume this
+  // read-only resolver cross-origin with credentials omitted.
+  res.setHeader('Access-Control-Allow-Origin', '*');
 
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
