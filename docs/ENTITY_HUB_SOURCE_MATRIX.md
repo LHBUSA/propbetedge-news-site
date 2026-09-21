@@ -1,6 +1,6 @@
 # PropBetEdge entity hub — source matrix
 
-**Status: AUDIT. Nothing has been built, stored or migrated.**
+**Status: AUDIT COMPLETE. Owner decisions recorded in §6. Build in progress; nothing stored or migrated yet.**
 
 Measured against production on 2026-09-21 by GET-only probes plus the route
 tables in `LHBUSA/propsports-api-worker`, `LHBUSA/nba-propbetedge` and
@@ -138,14 +138,84 @@ own change and should not ride along inside the player-page rebuild.
 
 ---
 
-## 6. What I need before building
+## 6. Owner decisions — recorded 2026-09-21
 
-1. **Rights posture** — A, B or C above. This decides the storage layer, so I
-   will not design it until it is answered.
-2. **NFL internal key** — for `propsports-api /v1/nfl/*` (roster, standings,
-   schedule). Without it the NFL **team** page stays thin while the NFL
-   **player** page can be built today.
-3. **WNBA scope** — in this piece of work, or a follow-up.
+These were put to the owner with the exposure in §3 stated plainly. The
+answers are recorded here so the choice is auditable rather than implicit.
 
-MLB, NBA and NHL player pages can be built the moment question 1 is answered.
-NHL is the most complete source in the network and is the natural first sport.
+| Question | Decision |
+|---|---|
+| Rights posture | **B — durable snapshots for all five sports** (not the recommended split) |
+| NFL `/v1/nfl/*` key | **Owner will issue an internal PropSports key** |
+| WNBA | **Follow-up release**, not this one |
+
+### What the rights decision means, stated once
+
+The owner chose option B after seeing §3. That is a deliberate acceptance of
+the exposure described there: NFL, NBA and WNBA snapshots are ESPN-derived, and
+durably storing them is the database storage ESPN's terms name. This is the
+owner's call to make and it has been made; it is written down here rather than
+buried in a commit so it can be revisited on purpose.
+
+Two things follow that are worth doing anyway, and cost nothing:
+
+- **Provenance is mandatory on every snapshot.** `source.product`,
+  `source.source_urls`, `observed_at`, `refreshed_at`, `ttl_s`,
+  `stale_after_s`. If the posture is ever revisited, the rows say exactly which
+  provider each one came from and can be dropped per-provider.
+- **NHL and MLB carry no such exposure** — NHL api-web and MLB StatsAPI are the
+  products' own declared sources. Building those two first is not a hedge, it
+  is simply where the data is cleanest.
+
+### NFL key — what the owner needs to set
+
+Provision a PropSports key with NFL scope and set it on the
+`propbetedge-news-site` Vercel project as:
+
+```
+PROPSPORTS_API_KEY = <key>        # Production + Preview
+```
+
+The NFL adapter reads it from the environment only, never from a committed
+file, and degrades to player-only enrichment while it is absent — so the NFL
+team hub is thin, not broken, until the key exists.
+
+---
+
+## 7. Storage: Cloudflare Worker + KV, no SQL migration
+
+Durable, and it needs no production database migration:
+
+- a `pbe-entity-hub` Worker owns the snapshot store in **KV**, keyed
+  `player:{sport}:{id}` and `team:{sport}:{slug}`
+- it writes `last-known-good` and never deletes on upstream failure, so a
+  league backend having a bad hour serves a **STALE** snapshot, not a 503
+- Vercel makes **one** request per page render to the hub, never to a league
+  backend, which is what keeps Googlebot off five sport APIs
+
+Why not Supabase: the brief says not to introduce another database without
+justification, and `tkmln` would need a production migration and owner approval
+for something KV already does. KV is the existing pattern across this network.
+
+**Egress constraint that decides where fetchers run:** ESPN answers Cloudflare
+egress with 403 on `site.api.espn.com` (§2.1). The NBA product measured that
+`site.web.api.espn.com` *does* answer Cloudflare. The hub Worker must therefore
+use `site.web.api.espn.com` for ESPN-derived sports, or those fetchers run on
+Vercel instead. This is verified before the NBA and NFL adapters ship, not
+assumed.
+
+**Deploying the Worker is an owner action** — CLI production deploys are
+blocked on this network. The Worker source and its `wrangler.toml` are prepared
+in-repo for review and deployed by the owner.
+
+---
+
+## 8. Build order
+
+1. **NHL** — done and verified live. Gateway already whitelists the hub origin;
+   `normalizePlayer` and `buildTeam` produce valid, `full`-completeness
+   snapshots with real stats, photos and provenance.
+2. **MLB** — StatsAPI, open, no rights exposure.
+3. **NBA** — via `nba-provider` relay; raw ESPN, so normalization is real work.
+4. **NFL** — player today; team when the key lands.
+5. **WNBA** — separate release.
