@@ -91,25 +91,34 @@ const SPORT_CAMPAIGNS = {
   nba: {
     key: 'propbetedge_nba',
     tone: 'gold',
-    eyebrow: '🏀 PROPBETEDGE NBA · COMING SOON',
-    headline: 'The PropBetEdge intelligence layer is coming to basketball.',
-    sub: 'News impact, player research, live context and prop intelligence are being built into the next sport-specific experience.',
-    cta: 'Follow NBA Coverage',
-    href: PROPBET_LINKS.news_nba,
+    eyebrow: '🏀 PROPBETEDGE NBA · LIVE',
+    headline: 'Take the basketball story into the full NBA intelligence layer.',
+    sub: 'Live basketball research, player context, game intelligence and connected PropBetEdge tools.',
+    cta: 'Open NBA Intelligence',
+    href: PROPBET_LINKS.picks_nba,
+  },
+  wnba: {
+    key: 'propbetedge_wnba',
+    tone: 'gold',
+    eyebrow: '🏀 PROPBETEDGE WNBA · LIVE',
+    headline: 'Women’s basketball intelligence built beyond the box score.',
+    sub: 'Live games, PBE Picks, player profiles, WNBACast and original metrics such as WinBA.',
+    cta: 'Open WNBA Intelligence',
+    href: PROPBET_LINKS.picks_wnba,
   },
   nhl: {
     key: 'propbetedge_nhl',
     tone: 'gold',
-    eyebrow: '🏒 PROPBETEDGE NHL · COMING SOON',
-    headline: 'Hockey is next on the PropBetEdge intelligence network.',
-    sub: 'Follow NHL coverage now as the full live-data, player-research and prop-intelligence product comes online.',
-    cta: 'Follow NHL Coverage',
-    href: PROPBET_LINKS.news_nhl,
+    eyebrow: '🏒 PROPBETEDGE NHL · LIVE',
+    headline: 'Hockey intelligence goes well beyond the scoreboard.',
+    sub: 'Ice Board, PBE Cast, PBE Picks, player research, documented fights and live hockey context.',
+    cta: 'Open NHL Intelligence',
+    href: PROPBET_LINKS.picks_nhl,
   },
 };
 
 // Products that should receive meaningful discovery inventory right now.
-const LIVE_SPORT_KEYS = ['mlb', 'nfl', 'ufc'];
+const LIVE_SPORT_KEYS = ['mlb', 'nfl', 'ufc', 'wnba', 'nba', 'nhl'];
 
 const PROPSPORTS_CAMPAIGN = {
   key: 'propsports',
@@ -131,14 +140,56 @@ const NEWS_API_CAMPAIGN = {
   href: PROPBET_LINKS.api_news,
 };
 
+const FREE_PICKS_CAMPAIGN = {
+  key: 'free_picks',
+  tone: 'gold',
+  eyebrow: '⚡ FREE PICKS · PUBLIC PROOF',
+  headline: 'Every public call stays on the board.',
+  sub: 'See today’s free picks, live grading and the immutable track record — wins and losses included.',
+  cta: 'Open Free Picks',
+  href: '/odds',
+};
+
+const FREE_HISTORY_CAMPAIGN = {
+  key: 'free_picks_history',
+  tone: 'gold',
+  eyebrow: '✓ FREE PICKS · FULL HISTORY',
+  headline: 'Don’t take the record on faith. Inspect every call.',
+  sub: 'The complete public ledger shows the pick, publication time, result and settlement proof with no historical backfill.',
+  cta: 'View Full History',
+  href: '/odds/history',
+};
+
+const PBECAST_CAMPAIGN = {
+  key: 'pbe_cast',
+  tone: 'gold',
+  eyebrow: '● PBE CAST · LIVE GAMES',
+  headline: 'Follow the game live, then go straight into the intelligence layer.',
+  sub: 'Live scores and game state across the network with direct paths into each sport-specific PropBetEdge product.',
+  cta: 'Open PBE Cast',
+  href: '/games',
+};
+
+const LEADERS_CAMPAIGN = {
+  key: 'live_leaders',
+  tone: 'gold',
+  eyebrow: '📊 LIVE LEADERS · CONNECTED PROFILES',
+  headline: 'See who is actually leading each league right now.',
+  sub: 'Live leaderboards connect directly into player and team intelligence across the PropBetEdge network.',
+  cta: 'Open League Leaders',
+  href: '/leaders',
+};
+
+// Compatibility key for older post-render code. It deliberately points deeper
+// into the product instead of linking the PropBetEdge homepage back to itself.
 const NETWORK_CAMPAIGN = {
   key: 'propbetedge_network',
   tone: 'gold',
   eyebrow: '⚡ THE PROPBETEDGE SPORTS NETWORK',
-  headline: 'News is the surface. The intelligence layer goes much deeper.',
-  sub: 'MLB, NFL and UFC now have dedicated intelligence products — purpose-built experiences connected by the same data-first PropBetEdge network.',
-  cta: 'Explore the Sports Network',
-  href: PROPBET_LINKS.network,
+  headline: 'News is the surface. Jump into the live intelligence layer.',
+  sub: 'Free Picks, PBE Cast, live league leaders and six sport-specific intelligence products are connected across one network.',
+  cta: 'Open Free Picks',
+  href: '/odds',
 };
 
 // Public compatibility export: sports-only inventory. No real-estate brands.
@@ -146,8 +197,12 @@ export const BRAND_FAMILY = [
   SPORT_CAMPAIGNS.mlb,
   SPORT_CAMPAIGNS.nfl,
   SPORT_CAMPAIGNS.ufc,
+  SPORT_CAMPAIGNS.wnba,
   SPORT_CAMPAIGNS.nba,
   SPORT_CAMPAIGNS.nhl,
+  FREE_PICKS_CAMPAIGN,
+  PBECAST_CAMPAIGN,
+  LEADERS_CAMPAIGN,
   PROPSPORTS_CAMPAIGN,
   NEWS_API_CAMPAIGN,
 ];
@@ -164,7 +219,7 @@ function inferredSport(ctx = {}) {
   const contextual = normalizeSport(ctx?.sport);
   if (contextual) return contextual;
   if (typeof window === 'undefined') return null;
-  const match = String(window.location.pathname || '').match(/\/(?:news|games|leaders)\/(mlb|nfl|ufc|mma|nba|nhl)(?:\/|$)/i);
+  const match = String(window.location.pathname || '').match(/\/(?:news|games|leaders|team|standings|player)\/(mlb|nfl|ufc|mma|wnba|nba|nhl)(?:\/|$)/i);
   return normalizeSport(match?.[1]);
 }
 
@@ -187,11 +242,33 @@ function withUtm(href, slot, brandKey, sport = null) {
   }
 }
 
+function canonicalDestination(href) {
+  try {
+    const base = typeof window !== 'undefined' ? window.location.origin : 'https://propbetedge.ai';
+    const url = new URL(href, base);
+    const path = (url.pathname.replace(/\/+$/, '') || '/');
+    return `${url.hostname.toLowerCase()}${path}${url.hash || ''}`;
+  } catch {
+    return String(href || '');
+  }
+}
+
+function currentDestination() {
+  if (typeof window === 'undefined') return null;
+  return canonicalDestination(`${window.location.pathname || '/'}${window.location.hash || ''}`);
+}
+
+function isSelfDestination(campaign) {
+  const current = currentDestination();
+  return Boolean(current && campaign?.href && canonicalDestination(campaign.href) === current);
+}
+
 function weightedPick(items) {
-  const filtered = items.filter((item) => item && item.campaign && item.weight > 0 && item.campaign.key !== _lastBrandKey);
-  const pool = filtered.length ? filtered : items.filter((item) => item && item.campaign && item.weight > 0);
+  const eligible = items.filter((item) => item && item.campaign && item.weight > 0 && !isSelfDestination(item.campaign));
+  const fresh = eligible.filter((item) => item.campaign.key !== _lastBrandKey);
+  const pool = fresh.length ? fresh : eligible;
   const total = pool.reduce((sum, item) => sum + item.weight, 0);
-  if (!pool.length || total <= 0) return NETWORK_CAMPAIGN;
+  if (!pool.length || total <= 0) return PROPSPORTS_CAMPAIGN;
   let roll = Math.random() * total;
   for (const item of pool) {
     roll -= item.weight;
@@ -205,6 +282,31 @@ function weightedPick(items) {
   return fallback;
 }
 
+function pagePath() {
+  return typeof window === 'undefined' ? '/' : (window.location.pathname || '/').replace(/\/+$/, '') || '/';
+}
+
+function headerCampaignForPage(ctx = {}) {
+  const sport = inferredSport(ctx);
+  if (sport) return SPORT_CAMPAIGNS[sport];
+
+  const path = pagePath();
+  if (path === '/') return FREE_PICKS_CAMPAIGN;
+  if (path === '/odds') return FREE_HISTORY_CAMPAIGN;
+  if (path === '/odds/history') return PBECAST_CAMPAIGN;
+  if (path === '/games' || path.startsWith('/games/')) return FREE_PICKS_CAMPAIGN;
+  if (path === '/leaders' || path.startsWith('/leaders/')) return FREE_PICKS_CAMPAIGN;
+  if (path === '/news' || path.startsWith('/news/page/')) return FREE_PICKS_CAMPAIGN;
+
+  return weightedPick([
+    { campaign: FREE_PICKS_CAMPAIGN, weight: 5 },
+    { campaign: PBECAST_CAMPAIGN, weight: 3 },
+    { campaign: LEADERS_CAMPAIGN, weight: 2 },
+    ...LIVE_SPORT_KEYS.map((key) => ({ campaign: SPORT_CAMPAIGNS[key], weight: 2 })),
+    { campaign: PROPSPORTS_CAMPAIGN, weight: 1 },
+  ]);
+}
+
 function liveSiblingInventory(currentSport, weight = 1) {
   return LIVE_SPORT_KEYS
     .filter((key) => key !== currentSport)
@@ -214,24 +316,26 @@ function liveSiblingInventory(currentSport, weight = 1) {
 function campaignForSlot(slotName, ctx = {}) {
   const sport = inferredSport(ctx);
   const primary = sport ? SPORT_CAMPAIGNS[sport] : null;
+  const productDepth = [
+    { campaign: FREE_PICKS_CAMPAIGN, weight: 4 },
+    { campaign: PBECAST_CAMPAIGN, weight: 3 },
+    { campaign: LEADERS_CAMPAIGN, weight: 2 },
+  ];
 
-  // On a sport-specific story the corresponding product dominates, but readers
-  // can still discover the other live PropBetEdge products. On generic news,
-  // MLB/NFL/UFC rotate as first-class destinations instead of defaulting to MLB.
   if (slotName === 'after_take' || slotName === 'end_of_article') {
     return weightedPick([
-      ...(primary ? [{ campaign: primary, weight: 8 }] : LIVE_SPORT_KEYS.map((key) => ({ campaign: SPORT_CAMPAIGNS[key], weight: 4 }))),
+      ...(primary ? [{ campaign: primary, weight: 10 }] : LIVE_SPORT_KEYS.map((key) => ({ campaign: SPORT_CAMPAIGNS[key], weight: 3 }))),
       ...(primary ? liveSiblingInventory(sport, 1) : []),
-      { campaign: NETWORK_CAMPAIGN, weight: 2 },
+      ...productDepth,
       { campaign: PROPSPORTS_CAMPAIGN, weight: 2 },
       { campaign: NEWS_API_CAMPAIGN, weight: 1 },
     ]);
   }
 
   return weightedPick([
-    ...(primary ? [{ campaign: primary, weight: 6 }] : LIVE_SPORT_KEYS.map((key) => ({ campaign: SPORT_CAMPAIGNS[key], weight: 3 }))),
+    ...(primary ? [{ campaign: primary, weight: 7 }] : LIVE_SPORT_KEYS.map((key) => ({ campaign: SPORT_CAMPAIGNS[key], weight: 2 }))),
     ...(primary ? liveSiblingInventory(sport, 1) : []),
-    { campaign: NETWORK_CAMPAIGN, weight: 2 },
+    ...productDepth,
     { campaign: PROPSPORTS_CAMPAIGN, weight: 3 },
     { campaign: NEWS_API_CAMPAIGN, weight: 1 },
   ]);
@@ -245,8 +349,11 @@ export function ad_brand_family(slotName = 'brand_slot', ctx = {}) {
   const sport = inferredSport(ctx);
   const campaign = campaignForSlot(slotName, ctx);
   const trackedHref = withUtm(campaign.href, slotName, campaign.key, sport);
+  const external = (() => {
+    try { return new URL(trackedHref, window.location.origin).hostname !== window.location.hostname; } catch { return false; }
+  })();
   return `
-    <a href="${trackedHref}" class="ad-block ad-brand-family ad-tone-${campaign.tone}" target="_blank" rel="noopener" data-ad-slot="${slotName}" data-ad-brand="${campaign.key}" data-ad-sport="${sport || 'network'}">
+    <a href="${trackedHref}" class="ad-block ad-brand-family ad-tone-${campaign.tone}" target="${external ? '_blank' : '_self'}" rel="noopener" data-ad-slot="${slotName}" data-ad-brand="${campaign.key}" data-ad-sport="${sport || 'network'}">
       <div class="ad-block-content">
         <span class="ad-block-eyebrow">${campaign.eyebrow}</span>
         <h3 class="ad-block-headline">${campaign.headline}</h3>
@@ -259,12 +366,7 @@ export function ad_brand_family(slotName = 'brand_slot', ctx = {}) {
 
 export function ad_header_banner(ctx = {}) {
   const sport = inferredSport(ctx);
-  const campaign = sport
-    ? SPORT_CAMPAIGNS[sport]
-    : weightedPick([
-        ...LIVE_SPORT_KEYS.map((key) => ({ campaign: SPORT_CAMPAIGNS[key], weight: 3 })),
-        { campaign: NETWORK_CAMPAIGN, weight: 2 },
-      ]);
+  const campaign = headerCampaignForPage(ctx);
   return renderAdBanner({
     ...campaign,
     href: withUtm(campaign.href, 'header_banner', campaign.key, sport),
@@ -286,9 +388,9 @@ export function ad_footer_banner() {
     <div class="footer-cta">
       <div class="container footer-cta-inner">
         <div class="footer-cta-text">
-          <span class="footer-cta-eyebrow">⚡ THE PROPBETEDGE SPORTS NETWORK</span>
-          <h3 class="footer-cta-headline">Read the news. Then go deeper.</h3>
-          <p class="footer-cta-sub">Move from headlines into live MLB, NFL and UFC intelligence — or build on the data infrastructure powering the network.</p>
+          <span class="footer-cta-eyebrow">⚡ CHOOSE YOUR NEXT INTELLIGENCE LAYER</span>
+          <h3 class="footer-cta-headline">Don’t dead-end at the article.</h3>
+          <p class="footer-cta-sub">Move into Free Picks, PBE Cast, six live sport-specific intelligence products or the PropSports data layer.</p>
         </div>
         <div class="footer-cta-buttons">
           <a href="${withUtm(PROPBET_LINKS.picks_mlb, 'footer_banner', 'mlb', 'mlb')}" class="footer-cta-btn footer-cta-btn-mlb" target="_blank" rel="noopener">
@@ -300,8 +402,11 @@ export function ad_footer_banner() {
           <a href="${withUtm(PROPBET_LINKS.picks_ufc, 'footer_banner', 'ufc', 'ufc')}" class="footer-cta-btn footer-cta-btn-ufc" target="_blank" rel="noopener">
             <span class="sport-emoji">🥊</span><span>UFC Fight Intelligence</span>
           </a>
-          <a href="${withUtm(PROPBET_LINKS.network, 'footer_banner', 'network')}" class="footer-cta-btn" target="_blank" rel="noopener">
-            <span class="sport-emoji">⚡</span><span>PropBetEdge Network</span>
+          <a href="${withUtm('/odds', 'footer_banner', 'free_picks')}" class="footer-cta-btn">
+            <span class="sport-emoji">⚡</span><span>Free Picks + Track Record</span>
+          </a>
+          <a href="${withUtm('/games', 'footer_banner', 'pbe_cast')}" class="footer-cta-btn">
+            <span class="sport-emoji">●</span><span>PBE Cast</span>
           </a>
           <a href="${withUtm(PROPBET_LINKS.propsports, 'footer_banner', 'propsports')}" class="footer-cta-btn" target="_blank" rel="noopener">
             <span class="sport-emoji">API</span><span>PropSports API</span>
@@ -313,7 +418,13 @@ export function ad_footer_banner() {
 }
 
 function renderAdBanner({ tone, eyebrow, headline, cta, href }) {
-  const isExternal = /^https?:\/\//i.test(href);
+  let isExternal = false;
+  try {
+    const base = typeof window !== 'undefined' ? window.location.origin : 'https://propbetedge.ai';
+    isExternal = new URL(href, base).hostname !== new URL(base).hostname;
+  } catch {
+    isExternal = /^https?:\/\//i.test(href);
+  }
   return `
     <a href="${href}" class="ad-banner ad-tone-${tone}" target="${isExternal ? '_blank' : '_self'}" rel="noopener">
       <div class="ad-banner-inner">
