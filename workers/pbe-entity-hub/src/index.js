@@ -48,8 +48,7 @@ export function reportKey(runId) { return `report:${runId}`; }
 export async function envelope(snapshot, { route, sourceIds = [] }) {
   const now = new Date();
   const observedAt = snapshot.source?.observed_at || now.toISOString();
-  const ttlS = snapshot.source?.ttl_s ?? 900;
-  const staleAfterS = snapshot.source?.stale_after_s ?? 86400;
+  const { ttlS, staleAfterS } = hubFreshnessWindow(snapshot.sport);
 
   return {
     schema_version: SCHEMA_VERSION,
@@ -83,10 +82,38 @@ async function hashSnapshot(snapshot) {
   return [...new Uint8Array(digest)].slice(0, 12).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** Freshness is recomputed on read; a stored row must never claim to be fresh. */
+/**
+ * Freshness is measured against THIS service's refresh cadence, not the
+ * upstream's.
+ *
+ * The league products publish a ttl tuned for a live surface — the NHL gateway
+ * says 900s because its own product re-polls every fifteen minutes. Inheriting
+ * that here labelled a snapshot STALE fifteen minutes after a successful
+ * refresh, on a hub that deliberately cycles once a day. Nearly every row would
+ * have read STALE forever and the word would have meant nothing.
+ *
+ * So: due for refresh after one cycle, genuinely stale after two missed ones.
+ * The upstream's own ttl/stale_after are preserved untouched inside
+ * snapshot.source as provenance.
+ */
+export function hubFreshnessWindow(sport) {
+  const cycleS = Math.max(1, expectedCycleHours(sport)) * 3600;
+  return { ttlS: cycleS, staleAfterS: cycleS * 2 };
+}
+
+/**
+ * Recomputed on read from observed_at, never trusted from the stored field.
+ * Reading it live also means a cadence change takes effect immediately instead
+ * of waiting for every row to be rewritten.
+ */
 function withLiveFreshness(record) {
   if (!record?.snapshot) return record;
-  const state = freshnessOf(record.snapshot.source);
+  const { ttlS, staleAfterS } = hubFreshnessWindow(record.sport || record.snapshot.sport);
+  const state = freshnessOf({
+    observed_at: record.observed_at || record.snapshot.source?.observed_at,
+    ttl_s: ttlS,
+    stale_after_s: staleAfterS,
+  });
   return { ...record, freshness_state: state };
 }
 

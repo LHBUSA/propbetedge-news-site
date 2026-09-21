@@ -15,7 +15,7 @@
 import {
   playerSnapshot, teamSnapshot, rosterEntry, statGroup, provenance,
 } from '../contract.js';
-import { resolveTeam } from '../../entity-graph/entities.js';
+import { resolveTeam, allPlayers } from '../../entity-graph/entities.js';
 
 export const STATS_API = 'https://statsapi.mlb.com/api/v1';
 export const PRODUCT = 'statsapi.mlb.com';
@@ -64,6 +64,25 @@ function source(urls, observedAt) {
  * @param {object} person   people[0] from the hydrated person call
  * @param {object} [gameLog] optional gameLog payload for recent games
  */
+/**
+ * The dictionary's team for a player id.
+ *
+ * StatsAPI's hydrated `currentTeam` is frequently a minor-league affiliate (or
+ * absent on an IL move), which resolves to no major-league club and left 28% of
+ * MLB snapshots with no team link at all. The dictionary is the identity spine
+ * and already holds the right club, keyed by the same person id — so it is the
+ * correct fallback, and it is an id join, not a name guess.
+ */
+const dictionaryTeamCache = new Map();
+function dictionaryTeamFor(playerId) {
+  const key = String(playerId);
+  if (dictionaryTeamCache.has(key)) return dictionaryTeamCache.get(key);
+  const row = allPlayers('mlb').find((p) => p.id === key) || null;
+  const team = row?.team_id ? resolveTeam('mlb', row.team_id) : null;
+  dictionaryTeamCache.set(key, team);
+  return team;
+}
+
 export function normalizePlayer(person, { gameLog = null, season, urls = [] } = {}) {
   if (!person?.id || !person?.fullName) return null;
 
@@ -111,7 +130,7 @@ export function normalizePlayer(person, { gameLog = null, season, urls = [] } = 
     sport: 'mlb',
     player_id: person.id,
     name: person.fullName,
-    team: teamRef(person.currentTeam),
+    team: teamRef(person.currentTeam) || teamRefFromDictionary(person.id),
     position: positionCode,
     jersey: person.primaryNumber ?? null,
     photo: `https://img.mlbstatic.com/mlb-photos/image/upload/w_426,q_90/v1/people/${person.id}/headshot/67/current`,
@@ -224,6 +243,23 @@ function pickSplit(statsArray, type, preferredGroups) {
     }
   }
   return null;
+}
+
+function teamRefFromDictionary(playerId) {
+  const team = dictionaryTeamFor(playerId);
+  if (!team) return null;
+  return {
+    id: team.abbr,
+    slug: team.slug,
+    name: team.name,
+    abbr: team.abbr,
+    logo: team.logo_url,
+    path: team.path,
+    statsapi_team_id: null,
+    // Said out loud: the club came from the roster snapshot, not from this
+    // player's live StatsAPI record.
+    from: 'dictionary',
+  };
 }
 
 function teamRef(currentTeam) {

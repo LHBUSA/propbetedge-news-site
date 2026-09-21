@@ -58,13 +58,15 @@ export function normalizePlayer(payload, { gameLog = null, urls = [] } = {}) {
       last5: statGroup({ label: 'Last 5 games', stats: aggregate(games.slice(0, 5)) }),
       last10: statGroup({ label: 'Last 10 games', stats: aggregate(games.slice(0, 10)) }),
     };
+    const picked = pickSeasonType(gameLog);
     stats.season = statGroup({
-      label: 'Season to date',
-      season: gameLog?.filters?.find?.((f) => f.name === 'season')?.value ?? null,
+      label: picked?.label || 'Regular season',
+      season: picked?.season || null,
       stats: aggregate(games),
       // Said out loud because the relay has no season-stats route: this is a
-      // sum of the game log, not a figure the provider published.
-      note: 'Derived by summing the game log; the NBA relay exposes no season-stats route.',
+      // sum of one season type's game log, not a figure the provider published.
+      note: `Derived by summing the ${picked?.season || ''} ${(picked?.label || 'game log').toLowerCase()} log;`
+        + ' the NBA relay exposes no season-stats route.',
     });
   }
 
@@ -92,36 +94,65 @@ export function normalizePlayer(payload, { gameLog = null, urls = [] } = {}) {
 
 /** ESPN game logs nest events under seasonTypes -> categories -> events. */
 export function normalizeGameLog(gameLog) {
-  if (!gameLog) return [];
+  const picked = pickSeasonType(gameLog);
+  if (!picked) return [];
+
   const labels = Array.isArray(gameLog.labels) ? gameLog.labels : [];
   const eventsById = gameLog.events && typeof gameLog.events === 'object' ? gameLog.events : {};
   const out = [];
 
-  for (const seasonType of gameLog.seasonTypes || []) {
-    for (const category of seasonType.categories || []) {
-      for (const event of category.events || []) {
-        const meta = eventsById[event.eventId] || {};
-        const values = Array.isArray(event.stats) ? event.stats : [];
-        const stats = {};
-        labels.forEach((label, index) => {
-          const raw = values[index];
-          if (raw == null || raw === '') return;
-          const numeric = Number(raw);
-          stats[label] = Number.isFinite(numeric) ? numeric : raw;
-        });
-        out.push({
-          date: meta.gameDate || null,
-          opponent: meta.opponent?.displayName || null,
-          home_road: meta.atVs === 'vs' ? 'home' : meta.atVs === '@' ? 'road' : null,
-          result: meta.gameResult || null,
-          score: meta.score || null,
-          stats,
-        });
-      }
+  for (const category of picked.seasonType.categories || []) {
+    for (const event of category.events || []) {
+      const meta = eventsById[event.eventId] || {};
+      const values = Array.isArray(event.stats) ? event.stats : [];
+      const stats = {};
+      labels.forEach((label, index) => {
+        const raw = values[index];
+        // A blank cell is a stat that was not recorded. Number('') is 0, and a
+        // fabricated zero in a stat line is worse than an absent one.
+        if (raw == null || raw === '' || raw === '-') return;
+        const numeric = Number(raw);
+        stats[label] = Number.isFinite(numeric) ? numeric : raw;
+      });
+      out.push({
+        date: meta.gameDate || null,
+        opponent: meta.opponent?.displayName || null,
+        home_road: meta.atVs === 'vs' ? 'home' : meta.atVs === '@' ? 'road' : null,
+        result: meta.gameResult || null,
+        score: meta.score || null,
+        season: picked.season,
+        season_type: picked.label,
+        stats,
+      });
     }
   }
-  // ESPN lists most recent first inside a category; keep that order.
+
+  // Newest first, by the date the provider gave us rather than by array order.
+  out.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
   return out;
+}
+
+/**
+ * Choose ONE season type and stay inside it.
+ *
+ * ESPN returns "2025-26 Regular Season" alongside "2025-26 Preseason" and,
+ * in season, the playoffs. Walking every seasonType and concatenating - which
+ * is what this did - silently summed preseason and playoff games into a single
+ * figure labelled "Season to date". Regular season is preferred; otherwise the
+ * first block with games, named honestly.
+ */
+export function pickSeasonType(gameLog) {
+  const types = Array.isArray(gameLog?.seasonTypes) ? gameLog.seasonTypes : [];
+  const withGames = types.filter((t) => (t.categories || []).some((c) => (c.events || []).length));
+  if (!withGames.length) return null;
+
+  const regular = withGames.find((t) => /regular season/i.test(t.displayName || ''));
+  const seasonType = regular || withGames[0];
+  const display = String(seasonType.displayName || '');
+  const season = (display.match(/^(\d{4}(?:-\d{2})?)/) || [])[1] || null;
+  const label = season ? display.slice(season.length).trim() : display;
+
+  return { seasonType, season, label: label || 'Games' };
 }
 
 export function normalizeRoster(payload) {

@@ -24,6 +24,7 @@ import { refreshPlayer, refreshTeam, teamRefreshTargets, currentSeason, MLB_TEAM
 import { allTeams, allPlayers, nhlTricode } from '../src/entity-graph/entities.js';
 import * as nfl from '../src/entity-hub/adapters/nfl.js';
 import * as mlbAdapter from '../src/entity-hub/adapters/mlb.js';
+import { pickSeasonType, normalizeGameLog } from '../src/entity-hub/adapters/nba.js';
 
 // ─── the canaries ────────────────────────────────────────────────────────────
 
@@ -163,6 +164,60 @@ test('nfl teams degrade to identity without the PropSports key, and never throw'
 test('the PropSports key is never defaulted or embedded', () => {
   assert.deepEqual(nfl.propsportsHeaders(undefined), { Accept: 'application/json' });
   assert.deepEqual(nfl.propsportsHeaders('abc'), { Accept: 'application/json', 'X-API-Key': 'abc' });
+});
+
+test('mlb: a player whose StatsAPI club does not resolve still links via the dictionary', async () => {
+  // StatsAPI currentTeam is often a minor-league affiliate or absent on an IL
+  // move, which left 28% of MLB snapshots with no team link at all.
+  const ids = ['670770', '676879', '621345', '640462', '605483'];
+  for (const id of ids) {
+    const { snapshot } = await refreshPlayer('mlb', id);
+    if (!snapshot) continue;
+    assert.ok(snapshot.team?.slug, `${snapshot.name} has no team link`);
+    assert.match(snapshot.team.path, /^\/team\/mlb\/[a-z0-9-]+$/);
+  }
+});
+
+test('nba: one season type only, never preseason or playoffs merged into it', async () => {
+  // ESPN returns 2025-26 Regular Season alongside 2025-26 Preseason. Walking
+  // every seasonType summed them into one figure labelled Season to date.
+  const { snapshot } = await refreshPlayer('nba', '3945274');
+  if (!snapshot?.stats?.games?.length) return;
+  const types = new Set(snapshot.stats.games.map((g) => g.season_type));
+  assert.equal(types.size, 1, `games span multiple season types: ${[...types]}`);
+  assert.ok(snapshot.stats.season.season, 'the season must be named, not implied');
+  assert.ok(!/season to date/i.test(snapshot.stats.season.label));
+});
+
+test('nba: recent games are newest-first by date', async () => {
+  const { snapshot } = await refreshPlayer('nba', '3945274');
+  const games = snapshot?.stats?.games || [];
+  for (let i = 1; i < games.length; i++) {
+    assert.ok(new Date(games[i - 1].date) >= new Date(games[i].date), 'game log out of order');
+  }
+});
+
+test('nba: a blank stat cell is omitted, never coerced to zero', () => {
+  const log = {
+    labels: ['PTS', 'REB', 'AST'],
+    events: { e1: { gameDate: '2026-01-02', opponent: { displayName: 'X' } } },
+    seasonTypes: [{ displayName: '2025-26 Regular Season', categories: [{ events: [{ eventId: 'e1', stats: ['21', '', '-'] }] }] }],
+  };
+  const [game] = normalizeGameLog(log);
+  assert.equal(game.stats.PTS, 21);
+  assert.ok(!('REB' in game.stats), 'an empty cell must be absent, not 0');
+  assert.ok(!('AST' in game.stats), 'a dash must be absent, not 0');
+});
+
+test('nba: pickSeasonType prefers the regular season and names it', () => {
+  const log = { seasonTypes: [
+    { displayName: '2025-26 Preseason', categories: [{ events: [{ eventId: 'p' }] }] },
+    { displayName: '2025-26 Regular Season', categories: [{ events: [{ eventId: 'r' }] }] },
+  ] };
+  const picked = pickSeasonType(log);
+  assert.equal(picked.season, '2025-26');
+  assert.equal(picked.label, 'Regular Season');
+  assert.equal(pickSeasonType({ seasonTypes: [] }), null);
 });
 
 // ─── identity spine ──────────────────────────────────────────────────────────
