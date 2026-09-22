@@ -8,14 +8,14 @@ import { teamQueryAbbreviations } from '../entity-graph/entities.js';
 const FOLLOW_KEY = 'pbe_followed_teams_v1';
 
 async function fetchJson(url) {
-  const response = await fetch(url, { credentials: 'omit' });
+  const response = await fetch(url, { cache: 'no-store', credentials: 'omit' });
   const payload = await response.json().catch(() => null);
   if (!response.ok || !payload) throw new Error(payload?.error || `Team API ${response.status}`);
   return payload;
 }
 
 async function loadTeamSnapshot(sport, slug) {
-  return fetchJson(`/api/team-intelligence?sport=${encodeURIComponent(sport)}&slug=${encodeURIComponent(slug)}`);
+  return fetchJson(`/api/team-intelligence?sport=${encodeURIComponent(sport)}&slug=${encodeURIComponent(slug)}&contract=team-profile-v2`);
 }
 
 async function loadTeamNews(sport, team) {
