@@ -113,8 +113,7 @@ export function renderHeader() {
         </div>
         <div class="masthead-right masthead-tools" aria-label="PropBetEdge tools">
           <a href="/games" class="nav-link live-link ${isLive ? 'active' : ''}">PBEcast</a>
-          <a href="/leaders" class="nav-link ${isLeaders ? 'active' : ''}">Leaders</a>
-          <a href="/standings" class="nav-link ${isStandings ? 'active' : ''}">Standings</a>
+          ${renderStatsSwitcher(isLeaders, isStandings)}
           <a href="/odds" class="nav-link edges-link ${isOdds ? 'active' : ''}">
             <span class="edges-bolt">⚡</span><span class="edges-label">Free Picks</span><span class="edges-count" id="edges-count" aria-live="polite"></span>
           </a>
@@ -141,6 +140,29 @@ function renderUfcFightWeekShell() {
         </span>
       </div>
     </a>
+  `;
+}
+
+function renderStatsSwitcher(isLeaders, isStandings) {
+  const active = isLeaders || isStandings;
+  return `
+    <details class="pbe-stats-switcher">
+      <summary class="nav-link pbe-stats-summary ${active ? 'active' : ''}" aria-label="Open PropBetEdge stats navigation">
+        <span>Stats</span><span class="pbe-stats-chevron" aria-hidden="true">⌄</span>
+      </summary>
+      <div class="pbe-stats-menu" role="menu" aria-label="PropBetEdge stats">
+        <a href="/leaders" role="menuitem" class="${isLeaders ? 'is-active' : ''}">
+          <span>LEADERS</span>
+          <strong>Stat Leaders</strong>
+          <small>Top performers across every covered league</small>
+        </a>
+        <a href="/standings" role="menuitem" class="${isStandings ? 'is-active' : ''}">
+          <span>STANDINGS</span>
+          <strong>League Standings</strong>
+          <small>MLB · NFL · NBA · WNBA · NHL · UFC rankings</small>
+        </a>
+      </div>
+    </details>
   `;
 }
 
