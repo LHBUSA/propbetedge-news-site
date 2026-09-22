@@ -61,6 +61,7 @@ export async function renderSport(root, sport, requestedPage = 1) {
           ${SECTIONS.map((s) => `
             <a href="/news/${s}" class="section-link ${s === sport ? 'active' : ''}">${s.toUpperCase()}</a>
           `).join('')}
+          <a href="/standings/${sport}" class="section-link">Standings</a>
         </div>
       </div>
 
