@@ -39,6 +39,13 @@ const STANDING_COLUMNS = Object.freeze({
     { label: 'GB', names: ['gamesBehind', 'GB'] },
     { label: 'SEED', names: ['playoffSeed', 'seed'] },
   ],
+  wnba: [
+    { label: 'W', names: ['wins', 'W'] },
+    { label: 'L', names: ['losses', 'L'] },
+    { label: 'PCT', names: ['winPercent', 'winPercentage', 'PCT'] },
+    { label: 'GB', names: ['gamesBehind', 'GB'] },
+    { label: 'SEED', names: ['playoffSeed', 'seed'] },
+  ],
   nhl: [
     { label: 'W', names: ['wins', 'W'] },
     { label: 'L', names: ['losses', 'L'] },
@@ -127,7 +134,7 @@ function renderStandingsTabs(activeSport) {
     <nav class="leaders-sport-tabs pbe-standings-tabs" aria-label="Choose standings or rankings">
       ${sports.map((key) => {
         const config = SPORT_CONFIG[key];
-        const href = config?.standingsUrl || `/standings/${key}`;
+        const href = key === 'wnba' ? '/standings/wnba' : (config?.standingsUrl || `/standings/${key}`);
         const label = key === 'ufc' ? '🥊 UFC Rankings' : `${config?.emoji || ''} ${config?.label || key.toUpperCase()}`;
         const external = /^https?:\/\//i.test(href);
         return `<a href="${escapeAttr(href)}" class="leaders-sport-tab ${key === activeSport ? 'active' : ''}"${external ? ' target="_blank" rel="noopener"' : ''}>${escapeHtml(label)}</a>`;
