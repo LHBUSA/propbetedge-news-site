@@ -17,6 +17,7 @@ import * as nhl from './adapters/nhl.js';
 import * as mlb from './adapters/mlb.js';
 import * as nba from './adapters/nba.js';
 import * as nfl from './adapters/nfl.js';
+import { enrichNflTeamSnapshot } from './nfl-team-readthrough.js';
 
 const TIMEOUT_MS = 9000;
 
@@ -321,32 +322,25 @@ async function refreshNbaTeam(target, env) {
  * completeness counter reports `identity_only` rather than pretending.
  */
 async function refreshNflTeam(target, env) {
-  const key = env?.PROPSPORTS_API_KEY;
-  const espnTeamId = target.id;
-
-  if (!key) {
-    const snapshot = nfl.buildTeam({ slug: target.slug });
-    return snapshot
-      ? { snapshot, route: 'identity_only(no_key)', sourceIds: [String(espnTeamId)] }
-      : { snapshot: null, reason: 'normalize_empty' };
+  // Team Snapshot V1 no longer depends on the legacy PropSports API key.
+  // The NFL product already publishes the canonical schedule, current-season
+  // standings, score ledger and box-score accumulator. Compose exactly those
+  // owned authorities so every one of the 32 dictionary teams follows the same
+  // refresh path as the public read-through.
+  try {
+    const built = await enrichNflTeamSnapshot(target.slug, null);
+    if (!built?.snapshot) return { snapshot: null, reason: 'normalize_empty' };
+    return {
+      snapshot: built.snapshot,
+      route: 'pbe_nfl_team_readthrough_v1',
+      sourceIds: [String(target.id)],
+    };
+  } catch (error) {
+    return {
+      snapshot: null,
+      reason: `nfl_team_readthrough_${String(error?.message || error).slice(0, 80)}`,
+    };
   }
-
-  const headers = nfl.propsportsHeaders(key);
-  const [rosterRes, standingsRes] = await Promise.all([
-    getJson(nfl.rosterUrl(espnTeamId), { headers }),
-    getJson(nfl.standingsUrl(), { headers }),
-  ]);
-
-  const snapshot = nfl.buildTeam({
-    slug: target.slug,
-    rosterPayload: rosterRes.ok ? rosterRes.data : null,
-    standingsPayload: standingsRes.ok ? standingsRes.data : null,
-    espnTeamId,
-    urls: [nfl.rosterUrl(espnTeamId), nfl.standingsUrl()],
-  });
-  return snapshot
-    ? { snapshot, route: '/v1/nfl/team/:id/roster', sourceIds: [String(espnTeamId)] }
-    : { snapshot: null, reason: 'normalize_empty' };
 }
 
 export { MLB_TEAM_IDS };
