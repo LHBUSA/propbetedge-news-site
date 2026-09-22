@@ -95,8 +95,14 @@ export async function renderGamesHub(root) {
             <a class="gh5-network-card mlb" href="https://mlb.propbetedge.ai" target="_blank" rel="noopener">
               <span>⚾ MLB · LIVE PRODUCT</span><strong>MLB Intelligence</strong><p>Player research, model analysis, live context and prop intelligence.</p><b>Open MLB →</b>
             </a>
-            <a class="gh5-network-card nfl" href="https://nfl.propbetedge.ai" target="_blank" rel="noopener">
-              <span>🏈 NFL · LIVE PRODUCT</span><strong>NFL Intelligence</strong><p>Model Lab, Market Watch, simulation, SGP research and football intelligence.</p><b>Open NFL →</b>
+            <a class="gh5-network-card nfl" href="https://nfl.propbetedge.ai/#pbecast" target="_blank" rel="noopener">
+              <span>🏈 NFL · LIVE PBECAST</span><strong>NFL PBEcast</strong><p>Live game state, play-by-play, game pulse, drives and replay inside the NFL intelligence product.</p><b>Open NFL PBEcast →</b>
+            </a>
+            <a class="gh5-network-card wnba" href="https://wnba.propbetedge.ai/cast" target="_blank" rel="noopener">
+              <span>🏀 WNBA · LIVE CAST</span><strong>WNBACast</strong><p>Live score, real play-by-play, published shot locations and persisted replay.</p><b>Open WNBACast →</b>
+            </a>
+            <a class="gh5-network-card nhl" href="https://nhl.propbetedge.ai/#/cast" target="_blank" rel="noopener">
+              <span>🏒 NHL · LIVE PBECAST</span><strong>NHL PBEcast</strong><p>Live play-by-play, rink intelligence, shots, special teams, fights and replay.</p><b>Open NHL PBEcast →</b>
             </a>
             <a class="gh5-network-card api" href="https://propsports.proptechusa.ai" target="_blank" rel="noopener">
               <span>⚡ FOR BUILDERS</span><strong>PropSports API</strong><p>The multi-sport data infrastructure behind the live experience.</p><b>Explore the API →</b>
