@@ -141,7 +141,7 @@ function startAutoRefresh() {
   }
 
   _refreshHandle = setInterval(async () => {
-    if (!document.getElementById('lead-slot')) {
+    if (window.location.pathname !== '/' || !document.getElementById('lead-slot')) {
       // We've navigated away — stop all homepage timers
       stopAutoRefresh();
       return;
@@ -375,6 +375,10 @@ function setLeadPool(newPool, opts = {}) {
 }
 
 function showLeadIndex(idx, opts = {}) {
+  if (window.location.pathname !== '/') {
+    stopLeadCycle();
+    return;
+  }
   const article = _leadPool[idx];
   if (!article) return;
   const slot = document.getElementById('lead-slot');
