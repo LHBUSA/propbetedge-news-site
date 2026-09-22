@@ -56,6 +56,12 @@ export default async function middleware(request) {
   const url = new URL(request.url);
   const pathname = url.pathname.replace(/\/+$/, '') || '/';
 
+  // Canonical standings entry point. Keep the redirect on the current host so
+  // preview stays in preview and production stays on production.
+  if (pathname === '/standings') {
+    return Response.redirect(new URL('/standings/mlb', request.url), 308);
+  }
+
   // NFL/NHL/WNBA already own richer, canonical live-game products. Legacy
   // main-site game detail URLs redirect at the edge so readers never land on
   // a weaker duplicate page or a route with no real play-by-play.
@@ -280,10 +286,6 @@ async function resolveMeta(pathname) {
       jsonLd: buildGameSchema(game, sport, canonical),
       ssrHtml: buildServerGameHtml(game, sport, canonical),
     };
-  }
-
-  if (pathname === '/standings') {
-    return Response.redirect(new URL('/standings/mlb', request.url), 308);
   }
 
   const standingsMatch = pathname.match(/^\/standings\/(mlb|nfl|nba|wnba|nhl)$/);
