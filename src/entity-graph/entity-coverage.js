@@ -45,7 +45,7 @@ export async function mountEntityCoverage(options) {
   let articles = [];
   try {
     const data = options.kind === 'team'
-      ? await api.byTeamEntity(teamQueryAbbreviations(sport, options.abbreviation || options.name))
+      ? await api.byTeamEntity(teamQueryAbbreviations(sport, options.abbreviation || options.name), sport)
       : await api.byPlayerEntity(options.name);
     articles = (data?.articles || []).filter((a) => a?.slug).slice(0, limit);
   } catch {
