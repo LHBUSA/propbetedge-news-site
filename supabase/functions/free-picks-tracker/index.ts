@@ -366,8 +366,13 @@ async function resolveMlb(entry:any) {
 
   const detailedState = String(game?.status?.detailedState || "");
   const abstractState = String(game?.status?.abstractGameState || "");
-  const final = abstractState === "Final" || /final|game over|completed/i.test(detailedState);
   const delayed = /postpon|delay|suspend|rain|weather/i.test(detailedState);
+  // MLB can report abstractGameState=Final for a postponed game. Detailed
+  // postponement/suspension/delay state always wins over the generic flag.
+  const final = !delayed && (
+    abstractState === "Final"
+    || /final|game over|completed/i.test(detailedState)
+  );
   const checkedAt = new Date().toISOString();
 
   const baseEvidence = {
