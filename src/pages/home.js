@@ -178,6 +178,11 @@ function stopAutoRefresh() {
   }
 }
 
+export function stopHomeLifecycle() {
+  stopAutoRefresh();
+  _currentRoot = null;
+}
+
 // Check refreshes against the same filtered/sorted pool the carousel uses.
 // This prevents raw API order from drifting out of sync with the visible hero.
 function hasFreshContent(data) {
