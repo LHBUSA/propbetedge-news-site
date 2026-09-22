@@ -131,7 +131,7 @@ export async function renderOdds(root) {
 
 async function loadAndRender() {
   const [mlbHr, nfl, ufc, wnba, nhl] = await Promise.allSettled([
-    fetchCachedSampleJson(MLB_HR_SAMPLE_URL),
+    fetchCachedSampleJson(`${MLB_HR_SAMPLE_URL}?date=${encodeURIComponent(todayEtDate())}`),
     fetchJson(NFL_SAMPLE_URL),
     fetchJson(UFC_SAMPLE_URL),
     fetchJson(WNBA_SAMPLE_URL),
@@ -223,7 +223,7 @@ async function fetchJson(url) {
 }
 
 async function fetchCachedSampleJson(url) {
-  const response = await fetch(url, { credentials: 'omit' });
+  const response = await fetch(url, { cache: 'no-store', credentials: 'omit' });
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
   return response.json();
 }
@@ -301,6 +301,9 @@ function normalizeMlbHrPick(pick, data, oddsSnapshot, index = 0) {
       ? `Free HR prop · live market matched${snapshotStamp ? ` · ${formatRelativeStamp(snapshotStamp)}` : ''}`
       : 'Free HR prop · live market pricing pending',
     timestamp: latestTimestamp([data?.generated_at, snapshotStamp]),
+    trackerPeriod: pick.game_date || data?.game_date || null,
+    trackerSourceRecordId: pick.id || null,
+    trackerPlayerId: pick.mlb_player_id ? String(pick.mlb_player_id) : null,
     href: data?.full_product_url || PROPBET_LINKS.hr_targets || SPORTS.mlb.href,
     media: pick.player_image ? {
       kind: 'portrait',
@@ -331,6 +334,7 @@ function normalizeNfl(data) {
       edge: probabilityPointEdge(pick.edge_pct),
       detail: [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.lifecycle].filter(Boolean).join(' · '),
       timestamp: data.generated_at || pick.issued_at || null,
+      trackerEventStartAt: pick.kickoff_ts || null,
       href: SPORTS.nfl.href,
       media: {
         kind: 'team',
@@ -387,6 +391,7 @@ function normalizeUfc(data) {
             pick.observed_at ? `Market ${formatRelativeStamp(pick.observed_at)}` : null,
           ].filter(Boolean).join(' · '),
       timestamp: data.generated_at || pick.observed_at || null,
+      trackerEventDate: pick.event_date || null,
       href: data.full_product_url || SPORTS.ufc.href,
       media: pick.media?.image_url ? {
         kind: 'portrait',
@@ -549,6 +554,7 @@ function normalizeWnba(data) {
       edge: pointEdge(pick.edge_pts),
       detail: [pick.confidence ? `Confidence ${pick.confidence}` : null, pick.phase].filter(Boolean).join(' · '),
       timestamp: body.generated_at || pick.locked_at || null,
+      gameId: pick.game_id || null,
       href: body.full_product_url || SPORTS.wnba.href,
       media: {
         kind: 'team',
@@ -836,12 +842,46 @@ function normTrackerText(value) {
 function trackerEntryMatchesCard(entry, card) {
   if (!entry || !card || String(entry.sport || '').toLowerCase() !== String(card.sport || '').toLowerCase()) return false;
   if (card.trackerKey && entry.public_key && String(card.trackerKey) === String(entry.public_key)) return true;
+
+  const sport = String(card.sport || '').toLowerCase();
+  const snap = entry.snapshot || {};
+
+  // Never let a historical settled result bleed onto a current card just because
+  // the player/team text happens to be the same.
+  if (sport === 'mlb') {
+    if (card.trackerSourceRecordId && entry.source_record_id) {
+      return String(card.trackerSourceRecordId) === String(entry.source_record_id);
+    }
+    const cardPeriod = String(card.trackerPeriod || '');
+    const entryPeriod = String(entry.period_start || snap.game_date || '');
+    if (!cardPeriod || !entryPeriod || cardPeriod !== entryPeriod) return false;
+
+    const cardPlayerId = String(card.trackerPlayerId || '');
+    const entryPlayerId = String(snap.mlb_player_id || '');
+    if (cardPlayerId && entryPlayerId) return cardPlayerId === entryPlayerId;
+
+    return normTrackerText(entry.selection) === normTrackerText(card.title);
+  }
+
+  if (sport === 'nfl' && card.trackerEventStartAt && entry.event_start_at) {
+    if (Date.parse(card.trackerEventStartAt) !== Date.parse(entry.event_start_at)) return false;
+  }
+
+  if (sport === 'ufc' && card.trackerEventDate && snap.event_date) {
+    if (String(card.trackerEventDate) !== String(snap.event_date)) return false;
+  }
+
+  if ((sport === 'nhl' || sport === 'wnba') && card.gameId && snap.game_id) {
+    if (String(card.gameId) !== String(snap.game_id)) return false;
+  }
+
   const pick = normTrackerText(entry.selection);
   const title = normTrackerText(card.title);
   if (pick && title && pick === title) return true;
 
-  // NHL cards often use abbreviations while the ledger uses full team names.
-  if (card.sport === 'nhl') {
+  // NHL cards often use abbreviations while the ledger uses full team names,
+  // but only after the game-id gate above when both sides expose one.
+  if (sport === 'nhl') {
     const matchup = normTrackerText(entry.matchup);
     const context = normTrackerText(card.context);
     return Boolean(matchup && context && (context.includes(matchup) || matchup.includes(context)));
@@ -851,8 +891,13 @@ function trackerEntryMatchesCard(entry, card) {
 
 function applyTrackerOutcomes(payload, tracker) {
   if (!tracker?.ok || !payload) return;
+  const today = todayEtDate();
   const settled = (Array.isArray(tracker.entries) ? tracker.entries : [])
-    .filter((entry) => ['WIN','LOSS','PUSH','VOID'].includes(String(entry.result || '').toUpperCase()));
+    .filter((entry) => {
+      if (!['WIN','LOSS','PUSH','VOID'].includes(String(entry.result || '').toUpperCase())) return false;
+      if (String(entry.sport || '').toUpperCase() === 'MLB' && String(entry.period_start || '') !== today) return false;
+      return entry?.evidence?.suppressed !== true;
+    });
 
   for (const source of Object.values(payload)) {
     for (const card of (source?.cards || [])) {
