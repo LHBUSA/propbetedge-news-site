@@ -239,6 +239,119 @@
 
 .pbe-intel-ribbon b { color: var(--gold-dark, #8a6b00); }
 
+
+.pbe-team-snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 20px;
+}
+.pbe-team-snapshot-stat {
+  min-width: 0;
+  padding: 18px 20px;
+  border: 1px solid rgba(20,17,13,.09);
+  border-radius: 14px;
+  background: rgba(255,255,255,.88);
+  box-shadow: 0 10px 28px rgba(20,17,13,.045);
+}
+.pbe-team-snapshot-stat span,
+.pbe-team-snapshot-stat small {
+  display: block;
+}
+.pbe-team-snapshot-stat span {
+  color: var(--gold-dark, #8a6b00);
+  font: 900 9px/1 'JetBrains Mono', monospace;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+.pbe-team-snapshot-stat strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--ink, #14110d);
+  font: 800 clamp(24px, 3vw, 34px)/1 'Playfair Display', Georgia, serif;
+}
+.pbe-team-snapshot-stat small {
+  margin-top: 7px;
+  color: rgba(20,17,13,.48);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.pbe-team-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: rgba(20,17,13,.06);
+}
+.pbe-team-metric {
+  min-width: 0;
+  padding: 18px 20px;
+  background: rgba(255,255,255,.96);
+}
+.pbe-team-metric span {
+  display: block;
+  color: rgba(20,17,13,.50);
+  font: 800 9px/1.2 'JetBrains Mono', monospace;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.pbe-team-metric strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--ink, #14110d);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.pbe-team-leaders {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: rgba(20,17,13,.06);
+}
+.pbe-team-leader {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  padding: 12px 14px;
+  background: rgba(255,255,255,.96);
+  color: var(--ink, #14110d);
+  text-decoration: none;
+  transition: background .15s ease;
+}
+.pbe-team-leader:hover { background: rgba(212,175,55,.07); }
+.pbe-team-leader img,
+.pbe-team-leader > .pbe-team-player-fallback {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 50%;
+  background: #f1f1f1;
+}
+.pbe-team-leader span { min-width: 0; }
+.pbe-team-leader small,
+.pbe-team-leader strong { display: block; }
+.pbe-team-leader small {
+  color: var(--gold-dark, #8a6b00);
+  font: 900 8px/1.15 'JetBrains Mono', monospace;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.pbe-team-leader strong {
+  overflow: hidden;
+  margin-top: 4px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.pbe-team-leader > b {
+  color: var(--ink, #14110d);
+  font: 900 15px/1 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
 .pbe-team-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.65fr) minmax(280px, .75fr);
@@ -314,6 +427,7 @@
   .pbe-standings-grid,
   .pbe-team-layout { grid-template-columns: 1fr; }
   .pbe-team-side { grid-template-columns: 1fr 1fr; }
+  .pbe-team-snapshot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 700px) {
@@ -324,7 +438,10 @@
   .pbe-team-identity > img { width: 78px; height: 78px; }
   .pbe-team-hero h1 { font-size: 38px; }
   .pbe-team-side { grid-template-columns: 1fr; }
-  .pbe-team-roster { grid-template-columns: 1fr; }
+  .pbe-team-roster,
+  .pbe-team-leaders,
+  .pbe-team-metric-grid,
+  .pbe-team-snapshot-grid { grid-template-columns: 1fr; }
   .pbe-team-game { grid-template-columns: 1fr auto; gap: 6px 12px; }
   .pbe-team-game-date { grid-column: 1 / -1; }
   .pbe-intel-ribbon { justify-content: flex-start; border-radius: 14px; }
