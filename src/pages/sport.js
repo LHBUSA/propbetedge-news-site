@@ -22,6 +22,7 @@ const SPORT_TAGLINES = {
 };
 const SECTIONS = ['mlb', 'nfl', 'nba', 'nhl'];
 const PAGE_SIZE = 20;
+const HIGHLIGHTS_LIMIT = 6;
 
 function queryPage() {
   const params = new URLSearchParams(window.location.search);
@@ -64,6 +65,7 @@ export async function renderSport(root, sport, requestedPage = 1) {
         </div>
 
         <div id="lead-slot">${cardSkeleton(1, true)}</div>
+        <div id="highlights-slot">${currentPage === 1 ? highlightsSkeleton() : ''}</div>
         <div id="rest-slot">${cardSkeleton(8)}</div>
         <div id="pagination" class="pagination"></div>
       </div>
@@ -71,9 +73,16 @@ export async function renderSport(root, sport, requestedPage = 1) {
     ${renderFooter()}
   `;
 
-  const data = await api.newsBySport(sport, PAGE_SIZE, currentPage).catch(() => ({ articles: [] }));
+  const [data, highlights] = await Promise.all([
+    api.newsBySport(sport, PAGE_SIZE, currentPage).catch(() => ({ articles: [] })),
+    currentPage === 1 ? fetchHighlights(sport).catch(() => null) : Promise.resolve(null),
+  ]);
   const articles = data.articles || [];
   const sportLabel = sport.toUpperCase();
+
+  if (currentPage === 1) {
+    renderHighlightsSlot(sport, highlights);
+  }
 
   injectSchemas([
     organizationSchema(),
@@ -142,6 +151,138 @@ export async function renderSport(root, sport, requestedPage = 1) {
   const total = data.total || articles.length;
   const totalPages = data.totalPages || (total ? Math.ceil(total / PAGE_SIZE) : Math.max(currentPage, 1));
   document.getElementById('pagination').innerHTML = renderPagination(currentPage, totalPages, `/news/${sport}`);
+}
+
+
+async function fetchHighlights(sport) {
+  const response = await fetch(
+    `/api/youtube-highlights?sport=${encodeURIComponent(sport)}&limit=${HIGHLIGHTS_LIMIT}`,
+    { cache: 'no-store', credentials: 'omit' }
+  );
+  if (!response.ok) throw new Error(`Highlights ${response.status}`);
+  const data = await response.json();
+  return data?.ok ? data : null;
+}
+
+function renderHighlightsSlot(sport, data) {
+  const slot = document.getElementById('highlights-slot');
+  if (!slot) return;
+
+  const videos = Array.isArray(data?.videos) ? data.videos.filter((video) => video?.videoId && video?.title) : [];
+  if (!videos.length) {
+    slot.innerHTML = '';
+    return;
+  }
+
+  const featured = videos[0];
+  const rail = videos.slice(1, HIGHLIGHTS_LIMIT);
+  const label = String(data?.league || sport || '').toUpperCase();
+
+  slot.innerHTML = `
+    <section class="sport-highlights" aria-labelledby="sport-highlights-heading">
+      <div class="sport-highlights-head">
+        <div>
+          <span class="kicker kicker-gold">▶ LATEST HIGHLIGHTS</span>
+          <h2 id="sport-highlights-heading">${escapeHtml(label)} Video Highlights</h2>
+          <p>Fresh clips from the official ${escapeHtml(label)} YouTube channel.</p>
+        </div>
+        <a href="${escapeAttr(data?.channel?.url || `https://www.youtube.com/@${label}`)}" target="_blank" rel="noopener">
+          Official YouTube →
+        </a>
+      </div>
+
+      <div class="sport-highlights-layout">
+        <article class="sport-highlight-featured">
+          <div class="sport-highlight-frame">
+            <iframe
+              src="${escapeAttr(featured.embedUrl || `https://www.youtube-nocookie.com/embed/${featured.videoId}?rel=0`)}"
+              title="${escapeAttr(featured.title)}"
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen
+            ></iframe>
+          </div>
+          <div class="sport-highlight-featured-copy">
+            <span>${escapeHtml(featured.channelName || `${label} Official`)} · ${escapeHtml(formatHighlightTime(featured.publishedAt))}</span>
+            <h3>${escapeHtml(featured.title)}</h3>
+          </div>
+        </article>
+
+        <div class="sport-highlight-rail">
+          ${rail.map((video) => renderHighlightCard(video, label)).join('')}
+        </div>
+      </div>
+    </section>
+  `;
+
+  injectSchemas(
+    videos.map((video) => videoObjectSchema(video, label)),
+    'jsonld-sport-video'
+  );
+}
+
+function renderHighlightCard(video, label) {
+  const thumbnail = video.thumbnail || `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`;
+  const url = video.url || `https://www.youtube.com/watch?v=${video.videoId}`;
+  return `
+    <a class="sport-highlight-card" href="${escapeAttr(url)}" target="_blank" rel="noopener">
+      <div class="sport-highlight-thumb">
+        <img src="${escapeAttr(thumbnail)}" alt="" loading="lazy" decoding="async">
+        <span class="sport-highlight-play" aria-hidden="true">▶</span>
+      </div>
+      <div class="sport-highlight-card-copy">
+        <span>${escapeHtml(video.channelName || `${label} Official`)} · ${escapeHtml(formatHighlightTime(video.publishedAt))}</span>
+        <strong>${escapeHtml(video.title)}</strong>
+      </div>
+    </a>
+  `;
+}
+
+function formatHighlightTime(value) {
+  const ms = Date.parse(value || '');
+  if (!Number.isFinite(ms)) return 'Latest';
+  const age = Math.max(0, Date.now() - ms);
+  const hours = Math.floor(age / 3600000);
+  if (hours < 1) return 'Just posted';
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return days === 1 ? '1d ago' : `${days}d ago`;
+}
+
+function videoObjectSchema(video, label) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: video.title,
+    description: `${label} highlight video surfaced by PropBetEdge from the official YouTube channel.`,
+    thumbnailUrl: video.thumbnail ? [video.thumbnail] : undefined,
+    uploadDate: video.publishedAt || undefined,
+    embedUrl: video.embedUrl || `https://www.youtube-nocookie.com/embed/${video.videoId}`,
+    contentUrl: video.url || `https://www.youtube.com/watch?v=${video.videoId}`,
+    isFamilyFriendly: true,
+  };
+}
+
+function highlightsSkeleton() {
+  return `
+    <section class="sport-highlights is-loading" aria-hidden="true">
+      <div class="sport-highlights-head">
+        <div>
+          <div class="skel skel-line" style="width:120px;height:10px"></div>
+          <div class="skel skel-line" style="width:260px;height:28px;margin-top:10px"></div>
+        </div>
+      </div>
+      <div class="sport-highlights-layout">
+        <div class="skel skel-card" style="aspect-ratio:16/9"></div>
+        <div class="sport-highlight-rail">
+          <div class="skel skel-card" style="height:96px"></div>
+          <div class="skel skel-card" style="height:96px"></div>
+          <div class="skel skel-card" style="height:96px"></div>
+        </div>
+      </div>
+    </section>
+  `;
 }
 
 function renderPagination(current, total, baseHref) {
