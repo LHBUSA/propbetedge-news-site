@@ -1,3 +1,6 @@
+import { completeness, teamReadiness } from '../src/entity-hub/contract.js';
+import { enrichNflTeamSnapshot } from '../src/entity-hub/nfl-team-readthrough.js';
+
 const DEFAULT_HUB = 'https://pbe-entity-hub.sales-fd3.workers.dev';
 const ALLOWED_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl', 'wnba']);
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -28,12 +31,63 @@ export default async function handler(req, res) {
     });
 
     const payload = await upstream.json().catch(() => null);
+    const hubSnapshot = upstream.ok && payload?.ok && payload?.snapshot ? payload.snapshot : null;
+
+    // NFL no longer depends on the legacy PropSports API-key enrichment path.
+    // Compose the current team page from the NFL product's own schedule,
+    // standings, score ledger and current-season stat authorities. This runs
+    // for every NFL slug, including a cold/missing hub row, so one canary team
+    // can never be the only team that works.
+    if (sport === 'nfl') {
+      try {
+        const enriched = await enrichNflTeamSnapshot(slug, hubSnapshot);
+        const snapshot = enriched.snapshot;
+        const readiness = teamReadiness(snapshot);
+        return res.status(200).json({
+          ok: true,
+          sport,
+          slug,
+          freshness_state: 'CURRENT',
+          completeness: completeness(snapshot),
+          readiness,
+          observed_at: snapshot?.source?.observed_at || new Date().toISOString(),
+          source_product: snapshot?.source?.product || 'PropBetEdge NFL',
+          readthrough: true,
+          readthrough_sources: enriched.sources,
+          snapshot,
+        });
+      } catch (error) {
+        console.error('[team-intelligence] nfl readthrough failed', {
+          sport,
+          slug,
+          error: error?.message || String(error),
+        });
+        // A healthy hub snapshot remains preferable to a 503 if one of the NFL
+        // public authorities has a transient outage.
+        if (hubSnapshot) {
+          return res.status(200).json({
+            ok: true,
+            sport,
+            slug,
+            freshness_state: payload.freshness_state || null,
+            completeness: payload.completeness || completeness(hubSnapshot),
+            readiness: payload.readiness || teamReadiness(hubSnapshot),
+            observed_at: payload.observed_at || hubSnapshot?.source?.observed_at || null,
+            source_product: payload.source_product || hubSnapshot?.source?.product || null,
+            readthrough: false,
+            snapshot: hubSnapshot,
+          });
+        }
+        res.setHeader('Retry-After', '60');
+        return res.status(502).json({ ok: false, error: 'team_snapshot_unavailable' });
+      }
+    }
 
     if (upstream.status === 404) {
       return res.status(404).json({ ok: false, error: 'team_snapshot_not_found', sport, slug });
     }
 
-    if (!upstream.ok || !payload?.ok || !payload?.snapshot) {
+    if (!upstream.ok || !hubSnapshot) {
       console.error('[team-intelligence] hub read failed', {
         sport,
         slug,
@@ -49,11 +103,11 @@ export default async function handler(req, res) {
       sport,
       slug,
       freshness_state: payload.freshness_state || null,
-      completeness: payload.completeness || null,
-      readiness: payload.readiness || null,
-      observed_at: payload.observed_at || payload.snapshot?.source?.observed_at || null,
-      source_product: payload.source_product || payload.snapshot?.source?.product || null,
-      snapshot: payload.snapshot,
+      completeness: payload.completeness || completeness(hubSnapshot),
+      readiness: payload.readiness || teamReadiness(hubSnapshot),
+      observed_at: payload.observed_at || hubSnapshot?.source?.observed_at || null,
+      source_product: payload.source_product || hubSnapshot?.source?.product || null,
+      snapshot: hubSnapshot,
     });
   } catch (error) {
     console.error('[team-intelligence] request failed', {
