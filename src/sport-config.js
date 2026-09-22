@@ -53,7 +53,7 @@ export const SPORT_CONFIG = Object.freeze({
     picksUrl: 'https://wnba.propbetedge.ai',
     primaryCta: 'Open WNBA Intelligence',
     standingsLabel: 'WNBA Standings',
-    standingsUrl: 'https://wnba.propbetedge.ai/standings',
+    standingsUrl: '/standings/wnba',
   }),
   ufc: Object.freeze({
     key: 'ufc',
