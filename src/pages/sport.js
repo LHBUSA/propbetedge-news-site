@@ -64,7 +64,7 @@ export async function renderSport(root, sport, requestedPage = 1) {
           <p style="font-family:var(--font-serif);font-style:italic;font-size:18px;color:var(--paper-dim);max-width:680px;margin:0">${escapeHtml(tagline)}</p>
         </div>
 
-        <div id="lead-slot">${cardSkeleton(1, true)}</div>
+        <div id="sport-lead-slot">${cardSkeleton(1, true)}</div>
         <div id="highlights-slot">${currentPage === 1 ? highlightsSkeleton() : ''}</div>
         <div id="rest-slot">${cardSkeleton(8)}</div>
         <div id="pagination" class="pagination"></div>
@@ -77,7 +77,11 @@ export async function renderSport(root, sport, requestedPage = 1) {
     api.newsBySport(sport, PAGE_SIZE, currentPage).catch(() => ({ articles: [] })),
     currentPage === 1 ? fetchHighlights(sport).catch(() => null) : Promise.resolve(null),
   ]);
-  const articles = data.articles || [];
+  // Defense in depth: a sport section may only render rows whose canonical
+  // sport matches the route, even if an upstream view/regression ever leaks.
+  const articles = (data.articles || []).filter(
+    (article) => String(article?.sport || '').toLowerCase() === sport
+  );
   const sportLabel = sport.toUpperCase();
 
   if (currentPage === 1) {
@@ -101,7 +105,7 @@ export async function renderSport(root, sport, requestedPage = 1) {
   ], 'jsonld-sport');
 
   if (!articles.length) {
-    document.getElementById('lead-slot').innerHTML = '';
+    document.getElementById('sport-lead-slot').innerHTML = '';
     document.getElementById('rest-slot').innerHTML = `
       <div class="empty" style="margin-top:32px">
         <h3>No ${sport.toUpperCase()} articles ${currentPage > 1 ? `on page ${currentPage}` : 'yet'}</h3>
@@ -116,7 +120,7 @@ export async function renderSport(root, sport, requestedPage = 1) {
     const lead = pickLead(articles);
     const rest = articles.filter((a) => a.id !== lead.id);
 
-    document.getElementById('lead-slot').innerHTML = `
+    document.getElementById('sport-lead-slot').innerHTML = `
       <div class="lead-grid" style="margin-bottom:48px">
         ${renderLeadStory(lead, sport)}
         <aside class="lead-sidebar">
@@ -136,7 +140,7 @@ export async function renderSport(root, sport, requestedPage = 1) {
       </div>
     ` : '';
   } else {
-    document.getElementById('lead-slot').innerHTML = '';
+    document.getElementById('sport-lead-slot').innerHTML = '';
     document.getElementById('rest-slot').innerHTML = `
       <div class="section-heading">
         <h2>${sportLabel} · Page ${currentPage}</h2>
@@ -193,16 +197,22 @@ function renderHighlightsSlot(sport, data) {
 
       <div class="sport-highlights-layout">
         <article class="sport-highlight-featured">
-          <div class="sport-highlight-frame">
-            <iframe
-              src="${escapeAttr(featured.embedUrl || `https://www.youtube-nocookie.com/embed/${featured.videoId}?rel=0`)}"
-              title="${escapeAttr(featured.title)}"
-              loading="lazy"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerpolicy="strict-origin-when-cross-origin"
-              allowfullscreen
-            ></iframe>
-          </div>
+          <a
+            class="sport-highlight-frame sport-highlight-featured-link"
+            href="${escapeAttr(featured.url || `https://www.youtube.com/watch?v=${featured.videoId}`)}"
+            target="_blank"
+            rel="noopener"
+            aria-label="Watch ${escapeAttr(featured.title)} on YouTube"
+          >
+            <img
+              src="${escapeAttr(featured.thumbnail || `https://i.ytimg.com/vi/${featured.videoId}/hqdefault.jpg`)}"
+              alt=""
+              loading="eager"
+              decoding="async"
+            >
+            <span class="sport-highlight-featured-play" aria-hidden="true">▶</span>
+            <span class="sport-highlight-watch-label">Watch on YouTube</span>
+          </a>
           <div class="sport-highlight-featured-copy">
             <span>${escapeHtml(featured.channelName || `${label} Official`)} · ${escapeHtml(formatHighlightTime(featured.publishedAt))}</span>
             <h3>${escapeHtml(featured.title)}</h3>
@@ -258,7 +268,6 @@ function videoObjectSchema(video, label) {
     description: `${label} highlight video surfaced by PropBetEdge from the official YouTube channel.`,
     thumbnailUrl: video.thumbnail ? [video.thumbnail] : undefined,
     uploadDate: video.publishedAt || undefined,
-    embedUrl: video.embedUrl || `https://www.youtube-nocookie.com/embed/${video.videoId}`,
     contentUrl: video.url || `https://www.youtube.com/watch?v=${video.videoId}`,
     isFamilyFriendly: true,
   };
