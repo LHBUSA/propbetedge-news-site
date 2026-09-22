@@ -364,6 +364,35 @@ async function resolveMlb(entry:any) {
   });
   if (!game?.gamePk) return;
 
+  const detailedState = String(game?.status?.detailedState || "");
+  const abstractState = String(game?.status?.abstractGameState || "");
+  const final = abstractState === "Final" || /final|game over|completed/i.test(detailedState);
+  const delayed = /postpon|delay|suspend|rain|weather/i.test(detailedState);
+  const checkedAt = new Date().toISOString();
+
+  const baseEvidence = {
+    provider:"MLB Stats API",
+    game_pk:game.gamePk,
+    player_id:playerId,
+    status:detailedState || null,
+    settlement_state:final ? "FINAL" : delayed ? "DELAYED" : "PENDING",
+    resolution:final ? "official_final" : delayed ? "game_delayed_or_postponed" : "waiting_for_official_final",
+    checked_at:checkedAt,
+  };
+
+  // Fail closed on settlement: a non-final game can never count as a win or loss.
+  // This also reopens any previously settled row if MLB later reports it postponed,
+  // suspended, delayed, or otherwise non-final.
+  if (!final) {
+    await patchEntry(entry.id,{
+      result:"PENDING",
+      result_at:null,
+      score:null,
+      evidence:baseEvidence,
+    });
+    return;
+  }
+
   const box:any = await json(`https://statsapi.mlb.com/api/v1/game/${game.gamePk}/boxscore`);
   const player = box?.teams?.away?.players?.[`ID${playerId}`] || box?.teams?.home?.players?.[`ID${playerId}`] || null;
   const hrs = Number(player?.stats?.batting?.homeRuns || 0);
@@ -375,21 +404,17 @@ async function resolveMlb(entry:any) {
     ? `${awayName} ${awayScore} · ${homeName} ${homeScore}`
     : null;
   const evidence = {
-    provider:"MLB Stats API",
-    game_pk:game.gamePk,
-    player_id:playerId,
+    ...baseEvidence,
     home_runs:hrs,
-    status:game?.status?.detailedState || null,
     boxscore_url:`https://statsapi.mlb.com/api/v1/game/${game.gamePk}/boxscore`,
-    checked_at:new Date().toISOString(),
   };
-  if (hrs > 0) {
-    await patchEntry(entry.id,{ result:"WIN", result_at:new Date().toISOString(), score, evidence });
-    return;
-  }
-  const final = game?.status?.abstractGameState === "Final" || /final/i.test(String(game?.status?.detailedState || ""));
-  if (final) await patchEntry(entry.id,{ result:"LOSS", result_at:new Date().toISOString(), score, evidence });
-  else await patchEntry(entry.id,{ evidence });
+
+  await patchEntry(entry.id,{
+    result:hrs > 0 ? "WIN" : "LOSS",
+    result_at:checkedAt,
+    score,
+    evidence,
+  });
 }
 
 async function resolveWnba(entry:any) {
@@ -770,6 +795,22 @@ async function resolvePending() {
       else await patchEntry(entry.id,{ evidence:{ ...(entry.evidence || {}), provider:"nba_free_picks_future_lane", checked_at:new Date().toISOString() } });
     } catch (error) {
       console.error("tracker resolve", entry.sport, entry.id, String(error));
+    }
+  }
+
+  // Self-heal recent MLB settlements. Provider status can change after an
+  // initial observation; postponed/suspended/delayed games must never remain
+  // in the public W/L record.
+  const recentStart = addDays(etDate(), -7);
+  const settledMlb = await sb(
+    `${TABLE}?sport=eq.MLB&period_start=gte.${recentStart}&result=in.(WIN,LOSS)&select=*`
+  );
+  for (const entry of settledMlb || []) {
+    if (entry?.evidence?.suppressed === true) continue;
+    try {
+      await resolveMlb(entry);
+    } catch (error) {
+      console.error("tracker MLB settlement recheck", entry.id, String(error));
     }
   }
 }
