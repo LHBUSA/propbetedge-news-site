@@ -387,7 +387,7 @@ async function resolveMeta(pathname) {
     return {
       canonical: `${SITE}/games`,
       title: 'Live Games — PropBetEdge',
-      description: 'Live scores across MLB, NBA, NHL, and NFL.',
+      description: 'Live scores across MLB, NFL, NBA, WNBA and NHL, with NFL, WNBA and NHL games connected to their live PBEcast experiences.',
       image: `${SITE}/logo/pbe-full-600.png`,
     };
   }
