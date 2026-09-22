@@ -539,7 +539,8 @@ async function loadRelatedCandidates(article, manifest, requestPath) {
   const paths = [];
   if (player?.name) paths.push(`/news/by-player/${encodeURIComponent(player.name)}`);
   for (const abbreviation of teamQueryAbbreviations(sport, team?.abbreviation)) {
-    paths.push(`/news/by-team/${encodeURIComponent(abbreviation)}`);
+    const sportQuery = sport ? `?sport=${encodeURIComponent(sport)}` : '';
+    paths.push(`/news/by-team/${encodeURIComponent(abbreviation)}${sportQuery}`);
   }
   if (sport) paths.push(`/news/by-sport/${encodeURIComponent(sport)}?limit=12&page=1`);
   if (!paths.length) return [];
@@ -553,6 +554,7 @@ async function loadRelatedCandidates(article, manifest, requestPath) {
   for (const data of responses) {
     for (const row of filterPublicArticles(data?.articles || [])) {
       if (!row?.slug || seen.has(row.slug)) continue;
+      if (sport && String(row.sport || '').toLowerCase() !== sport) continue;
       seen.add(row.slug);
       pool.push(row);
     }
