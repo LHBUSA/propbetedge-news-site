@@ -23,6 +23,10 @@ const SPORT_TAGLINES = {
 const SECTIONS = ['mlb', 'nfl', 'nba', 'nhl'];
 const PAGE_SIZE = 20;
 const HIGHLIGHTS_LIMIT = 6;
+const HIGHLIGHTS_REFRESH_MS = 15 * 60 * 1000;
+
+let _highlightsRefreshHandle = null;
+let _highlightsRefreshSport = null;
 
 function queryPage() {
   const params = new URLSearchParams(window.location.search);
@@ -42,6 +46,9 @@ function normalizePage(sport, requestedPage) {
 }
 
 export async function renderSport(root, sport, requestedPage = 1) {
+  // A sport route owns at most one highlights refresh loop.
+  stopSportLifecycle();
+
   const tagline = SPORT_TAGLINES[sport] || '';
   const currentPage = normalizePage(sport, requestedPage);
 
@@ -86,6 +93,7 @@ export async function renderSport(root, sport, requestedPage = 1) {
 
   if (currentPage === 1) {
     renderHighlightsSlot(sport, highlights);
+    startSportHighlightsRefresh(sport);
   }
 
   injectSchemas([
@@ -158,6 +166,55 @@ export async function renderSport(root, sport, requestedPage = 1) {
 }
 
 
+export function stopSportLifecycle() {
+  if (_highlightsRefreshHandle) {
+    clearInterval(_highlightsRefreshHandle);
+    _highlightsRefreshHandle = null;
+  }
+  _highlightsRefreshSport = null;
+}
+
+function startSportHighlightsRefresh(sport) {
+  stopSportLifecycle();
+  _highlightsRefreshSport = sport;
+
+  const expectedPath = `/news/${sport}`;
+  _highlightsRefreshHandle = setInterval(async () => {
+    const path = window.location.pathname.replace(/\/+$/, '') || '/';
+
+    // Never let a stale sport-page timer survive SPA navigation.
+    if (path !== expectedPath || _highlightsRefreshSport !== sport) {
+      stopSportLifecycle();
+      return;
+    }
+
+    if (document.hidden) return;
+
+    try {
+      const data = await fetchHighlights(sport);
+      const slot = document.getElementById('highlights-slot');
+      if (!slot || !data?.ok) return;
+
+      const nextSignature = highlightsSignature(data);
+      if (nextSignature && nextSignature !== slot.dataset.highlightSignature) {
+        renderHighlightsSlot(sport, data);
+      }
+    } catch (error) {
+      // Keep the current successful highlights visible if a refresh fails.
+      console.warn('[sport highlights refresh]', sport, error?.message || error);
+    }
+  }, HIGHLIGHTS_REFRESH_MS);
+}
+
+function highlightsSignature(data) {
+  const videos = Array.isArray(data?.videos) ? data.videos : [];
+  return videos
+    .filter((video) => video?.videoId)
+    .slice(0, HIGHLIGHTS_LIMIT)
+    .map((video) => `${video.videoId}:${video.publishedAt || ''}`)
+    .join('|');
+}
+
 async function fetchHighlights(sport) {
   const response = await fetch(
     `/api/youtube-highlights?sport=${encodeURIComponent(sport)}&limit=${HIGHLIGHTS_LIMIT}`,
@@ -181,6 +238,8 @@ function renderHighlightsSlot(sport, data) {
   const featured = videos[0];
   const rail = videos.slice(1, HIGHLIGHTS_LIMIT);
   const label = String(data?.league || sport || '').toUpperCase();
+  slot.dataset.highlightSignature = highlightsSignature(data);
+  slot.dataset.highlightSport = sport;
 
   slot.innerHTML = `
     <section class="sport-highlights" aria-labelledby="sport-highlights-heading">
