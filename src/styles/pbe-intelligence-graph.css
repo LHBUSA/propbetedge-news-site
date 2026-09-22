@@ -420,6 +420,64 @@
 .pbe-team-model-card p { margin: 0; color: rgba(255,255,255,.66); font-size: 13px; line-height: 1.6; }
 .pbe-team-model-card a { display: inline-block; margin-top: 18px; color: #d4af37; font-size: 12px; font-weight: 900; text-decoration: none; }
 
+
+/* Article cards are shared with the site's dark editorial surfaces. Team
+ * intelligence panels are light, so inherit a light-surface contrast contract
+ * here instead of changing the global card palette. */
+.pbe-intel-section .article-grid {
+  gap: 28px 20px;
+  padding: 20px;
+  margin: 0;
+}
+.pbe-intel-section .article-card {
+  overflow: hidden;
+  color: #14110d;
+  background: #fff;
+  border: 1px solid rgba(20,17,13,.10);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(20,17,13,.07);
+}
+.pbe-intel-section .article-card .card-image {
+  margin-bottom: 0;
+  box-shadow: none;
+}
+.pbe-intel-section .article-card .card-meta {
+  margin: 0;
+  padding: 14px 16px 0;
+}
+.pbe-intel-section .article-card .card-meta .sport-tag {
+  color: #705600;
+}
+.pbe-intel-section .article-card .card-meta .dot,
+.pbe-intel-section .article-card .card-meta .timestamp {
+  color: #655f58;
+}
+.pbe-intel-section .article-card .card-headline {
+  margin: 8px 16px 0;
+  color: #14110d;
+  opacity: 1;
+}
+.pbe-intel-section .article-card:hover .card-headline {
+  color: #705600;
+}
+.pbe-intel-section .article-card .card-dek {
+  margin: 8px 16px 0;
+  color: #4f4a44;
+  opacity: 1;
+}
+.pbe-intel-section .article-card .card-take {
+  margin: 12px 16px 16px;
+  padding-top: 11px;
+  border-top-color: rgba(20,17,13,.12);
+}
+.pbe-intel-section .article-card .card-take-text {
+  color: #3f3a35;
+  opacity: 1;
+}
+.pbe-intel-section .article-card .card-take-icon {
+  color: #fff;
+}
+
 .pbe-story-entity[href] { text-decoration: none; transition: transform .15s ease, box-shadow .15s ease; }
 .pbe-story-entity[href]:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(20,17,13,.08); }
 
