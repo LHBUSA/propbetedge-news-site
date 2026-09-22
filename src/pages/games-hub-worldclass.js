@@ -3,12 +3,14 @@ import { sports } from '../api-sports.js';
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { renderLeadersTeaserSlot, loadLeadersTeaser } from '../components/leaders-teaser.js';
+import { liveCastHome, liveCastLabel, liveCastUrl } from '../live-cast-routes.js';
 
 const SPORT = {
-  mlb: { label: 'MLB', emoji: '⚾', name: 'Baseball', product: 'https://mlb.propbetedge.ai', productLabel: 'MLB Intelligence' },
-  nfl: { label: 'NFL', emoji: '🏈', name: 'Football', product: 'https://nfl.propbetedge.ai', productLabel: 'NFL Intelligence' },
-  nba: { label: 'NBA', emoji: '🏀', name: 'Basketball', product: '/news/nba', productLabel: 'NBA Coverage' },
-  nhl: { label: 'NHL', emoji: '🏒', name: 'Hockey', product: '/news/nhl', productLabel: 'NHL Coverage' },
+  mlb: { label: 'MLB', emoji: '⚾', name: 'Baseball', product: 'https://mlb.propbetedge.ai', productLabel: 'MLB Intelligence', news: '/news/mlb' },
+  nfl: { label: 'NFL', emoji: '🏈', name: 'Football', product: 'https://nfl.propbetedge.ai', productLabel: 'NFL Intelligence', news: '/news/nfl', cast: true },
+  nba: { label: 'NBA', emoji: '🏀', name: 'Basketball', product: '/news/nba', productLabel: 'NBA Coverage', news: '/news/nba' },
+  wnba: { label: 'WNBA', emoji: '🏀', name: "Women's Basketball", product: 'https://wnba.propbetedge.ai', productLabel: 'WNBA Intelligence', news: 'https://wnba.propbetedge.ai/news', cast: true },
+  nhl: { label: 'NHL', emoji: '🏒', name: 'Hockey', product: 'https://nhl.propbetedge.ai', productLabel: 'NHL Intelligence', news: '/news/nhl', cast: true },
 };
 
 let pollHandle = null;
@@ -38,7 +40,7 @@ export async function renderGamesHub(root) {
           <div class="gh5-hero-grid">
             <div>
               <h1>Every game.<br><em>One intelligence layer.</em></h1>
-              <p>Live scores and schedule context across MLB, NFL, NBA and NHL — connected directly to the deeper PropBetEdge sports network.</p>
+              <p>Live scores and schedule context across MLB, NFL, NBA, WNBA and NHL — connected directly to each league's deeper PropBetEdge intelligence layer.</p>
               <div class="gh5-data-line">
                 <span class="gh5-data-dot"></span>
                 <span id="gh5-freshness">Loading live data…</span>
@@ -120,6 +122,7 @@ async function refreshScoreboards({ initial = false } = {}) {
       ...normalizeMLB(data.mlb?.games || []),
       ...normalizeNFL(data.nfl?.games || []),
       ...normalizeNBA(data.nba?.games || []),
+      ...normalizeWNBA(data.wnba?.games || []),
       ...normalizeNHL(data.nhl?.games || []),
     ].sort(sortGames);
 
@@ -180,7 +183,7 @@ function renderSummary() {
     <div class="gh5-summary-cell live"><span>LIVE NOW</span><strong>${live}</strong><small>${live === 1 ? 'game in progress' : 'games in progress'}</small></div>
     <div class="gh5-summary-cell"><span>UPCOMING</span><strong>${upcoming}</strong><small>still on today's board</small></div>
     <div class="gh5-summary-cell"><span>FINAL</span><strong>${final}</strong><small>completed today</small></div>
-    <div class="gh5-summary-cell"><span>TOTAL</span><strong>${gameStore.length}</strong><small>across four leagues</small></div>
+    <div class="gh5-summary-cell"><span>TOTAL</span><strong>${gameStore.length}</strong><small>across five leagues</small></div>
   `;
 }
 
