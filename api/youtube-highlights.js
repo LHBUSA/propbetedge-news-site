@@ -215,7 +215,7 @@ function tag(block, name) {
 }
 
 function attr(block, tagName, attrName) {
-  const match = block.match(new RegExp('<' + tagName + '[^>]*\\s' + attrName + '=["\\']([^"\\']+)["\\'][^>]*>', 'i'));
+  const match = block.match(new RegExp("<" + tagName + "[^>]*\\s" + attrName + "=[\"']([^\"']+)[\"'][^>]*>", "i"));
   return match?.[1] ? decodeXml(match[1]).trim() : '';
 }
 
