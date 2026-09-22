@@ -22,7 +22,7 @@ async function loadTeamNews(sport, team) {
   const keys = teamQueryAbbreviations(sport, team?.abbreviation);
   if (!keys.length) return [];
   try {
-    const data = await api.byTeamEntity(keys);
+    const data = await api.byTeamEntity(keys, sport);
     return (data?.articles || []).filter((article) => article?.slug).slice(0, 6);
   } catch {
     return [];
