@@ -144,6 +144,23 @@ function normalizeArticleList(data, { maxAgeMs = null, limit = null } = {}) {
   return { ...data, articles };
 }
 
+export function mergeTeamEntityPages(pages, sport = null) {
+  const sportKey = String(sport || '').toLowerCase();
+  const seen = new Set();
+  const merged = [];
+
+  for (const page of pages || []) {
+    for (const article of page?.articles || []) {
+      if (!article?.slug || seen.has(article.slug)) continue;
+      if (sportKey && String(article.sport || '').toLowerCase() !== sportKey) continue;
+      seen.add(article.slug);
+      merged.push(article);
+    }
+  }
+
+  return merged;
+}
+
 export const api = {
   // Homepage hero / Top Stories / Latest: never surface >24h-old stories.
   homepage: async () => normalizeArticleList(
@@ -213,17 +230,7 @@ export const api = {
     const pages = await Promise.all(keys.map((key) => get(`/news/by-team/${encodeURIComponent(key)}${sportQuery}`)
       .catch(() => null)));
 
-    const seen = new Set();
-    const merged = [];
-    for (const page of pages) {
-      for (const article of page?.articles || []) {
-        if (!article?.slug || seen.has(article.slug)) continue;
-        if (sportKey && String(article.sport || '').toLowerCase() !== sportKey) continue;
-        seen.add(article.slug);
-        merged.push(article);
-      }
-    }
-    return normalizeArticleList({ articles: merged });
+    return normalizeArticleList({ articles: mergeTeamEntityPages(pages, sportKey) });
   },
 
   // v3.9.4: client-side author filter (uses /news endpoint, filters in browser)
