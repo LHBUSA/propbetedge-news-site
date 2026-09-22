@@ -14,7 +14,7 @@
  *   Page 1 redirects to bare URL (canonicalization)
  */
 
-import { renderHome } from './pages/home.js';
+import { renderHome, stopHomeLifecycle } from './pages/home.js';
 import { renderNewsIndex } from './pages/news-index.js';
 import { renderSport } from './pages/sport.js';
 import { renderArticle } from './pages/article.js';
@@ -83,6 +83,11 @@ function setOrCreateMeta(attr, name, value) {
 }
 
 function clearAndRoute() {
+  // Tear down homepage timers before every SPA route render. This prevents the
+  // homepage carousel from writing into a later route that happens to reuse
+  // similar DOM ids.
+  stopHomeLifecycle();
+
   const path = window.location.pathname.replace(/\/+$/, '') || '/';
   const root = document.getElementById('app');
   window.scrollTo({ top: 0, behavior: 'instant' });
