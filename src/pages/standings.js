@@ -1,6 +1,6 @@
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
-import { getSportConfig, slugifyEntity } from '../sport-config.js';
+import { SPORT_CONFIG, getSportConfig, slugifyEntity } from '../sport-config.js';
 
 async function fetchJson(url) {
   const response = await fetch(url, { credentials: 'omit' });
@@ -121,6 +121,21 @@ function renderGroup(group, sport) {
   `;
 }
 
+function renderStandingsTabs(activeSport) {
+  const sports = ['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc'];
+  return `
+    <nav class="leaders-sport-tabs pbe-standings-tabs" aria-label="Choose standings or rankings">
+      ${sports.map((key) => {
+        const config = SPORT_CONFIG[key];
+        const href = config?.standingsUrl || `/standings/${key}`;
+        const label = key === 'ufc' ? '🥊 UFC Rankings' : `${config?.emoji || ''} ${config?.label || key.toUpperCase()}`;
+        const external = /^https?:\/\//i.test(href);
+        return `<a href="${escapeAttr(href)}" class="leaders-sport-tab ${key === activeSport ? 'active' : ''}"${external ? ' target="_blank" rel="noopener"' : ''}>${escapeHtml(label)}</a>`;
+      }).join('')}
+    </nav>
+  `;
+}
+
 export async function renderStandingsPage(root, sport, setMeta) {
   const config = getSportConfig(sport);
   if (!config) return;
@@ -135,6 +150,7 @@ export async function renderStandingsPage(root, sport, setMeta) {
     ${renderHeader()}
     <main class="pbe-intelligence-page">
       <div class="container">
+        ${renderStandingsTabs(sport)}
         <section class="pbe-intel-hero">
           <div class="pbe-intel-kicker">${config.emoji} ${config.label} INTELLIGENCE</div>
           <h1>${config.label} standings, connected to the story.</h1>
