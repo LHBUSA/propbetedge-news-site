@@ -40,6 +40,7 @@ import { renderOdds } from './pages/odds.js';
 import { renderFreePicksHistory } from './pages/free-picks-history.js';
 import { renderTeamPage } from './pages/team.js';
 import { renderStandingsPage } from './pages/standings.js';
+import { liveCastUrl } from './live-cast-routes.js';
 
 const VALID_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl']);
 const DEFAULT_OG_IMAGE = 'https://propbetedge.ai/logo/pbe-full-600.png';
@@ -178,6 +179,12 @@ function clearAndRoute() {
   if (gameMatch) {
     const sport = gameMatch[1].toLowerCase();
     const gameId = gameMatch[2];
+    if (['nfl', 'nhl', 'wnba'].includes(sport)) {
+      const cast = liveCastUrl(sport, gameId);
+      if (!cast) return renderNotFound(root);
+      window.location.replace(cast);
+      return;
+    }
     if (!VALID_SPORTS.has(sport)) return renderNotFound(root);
     return renderGameDetail(root, sport, gameId);
   }
