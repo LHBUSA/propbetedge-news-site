@@ -43,6 +43,7 @@ import { renderStandingsPage } from './pages/standings.js';
 import { liveCastUrl } from './live-cast-routes.js';
 
 const VALID_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl']);
+const STANDINGS_SPORTS = new Set(['mlb', 'nfl', 'nba', 'wnba', 'nhl']);
 const DEFAULT_OG_IMAGE = 'https://propbetedge.ai/logo/pbe-full-600.png';
 
 function setMeta({ title, description, canonical, ogImage }) {
@@ -153,6 +154,11 @@ function clearAndRoute() {
     return renderGamesHub(root);
   }
 
+  if (path === '/standings') {
+    window.history.replaceState({}, '', '/standings/mlb');
+    return renderStandingsPage(root, 'mlb', setMeta);
+  }
+
   if (path === '/leaders') {
     setMeta({
       title: 'Stat Leaders & UFC Champions — PropBetEdge',
@@ -230,7 +236,7 @@ function clearAndRoute() {
   const standingsMatch = path.match(/^\/standings\/([a-z]+)$/);
   if (standingsMatch) {
     const sport = standingsMatch[1].toLowerCase();
-    if (!VALID_SPORTS.has(sport)) return renderNotFound(root);
+    if (!STANDINGS_SPORTS.has(sport)) return renderNotFound(root);
     return renderStandingsPage(root, sport, setMeta);
   }
 
