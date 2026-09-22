@@ -183,7 +183,7 @@ function sportPathActive(path, sport) {
 }
 
 function inferSport(path) {
-  const match = String(path || '').match(/\/(?:news|games|leaders|team|standings|player)\/(mlb|nfl|ufc|nba|nhl)(?:\/|$)/i);
+  const match = String(path || '').match(/\/(?:news|games|leaders|team|standings|player)\/(mlb|nfl|ufc|nba|wnba|nhl)(?:\/|$)/i);
   return match?.[1]?.toLowerCase() || null;
 }
 
