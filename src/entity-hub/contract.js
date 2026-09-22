@@ -253,30 +253,38 @@ export const TEAM_PROFILE_FIELDS = [
 ];
 
 export function teamReadiness(snapshot) {
+  const recordSeason = recordSeasonState(snapshot);
+  const seasonNotStarted = recordSeason === 'no_games';
+  const hasRecentResults = (snapshot?.schedule?.recent || []).length > 0;
+  const hasTeamStats = Boolean(snapshot?.team_stats && Object.keys(snapshot.team_stats).length);
+
   const fields = {
     identity: Boolean(snapshot?.name && snapshot?.slug && snapshot?.abbreviation),
     logo: Boolean(snapshot?.logo),
     roster: (snapshot?.roster || []).length > 0,
     record: Boolean(snapshot?.record?.summary),
     standings: Boolean(snapshot?.standings),
-    recent_results: (snapshot?.schedule?.recent || []).length > 0,
+    // A zero-game season has no completed results or current-season production
+    // by definition. That is a valid state, not a pipeline failure.
+    recent_results: hasRecentResults || seasonNotStarted,
     upcoming_schedule: (snapshot?.schedule?.upcoming || []).length > 0,
     recent_form: Boolean(snapshot?.recent_form),
-    team_stats: Boolean(snapshot?.team_stats && Object.keys(snapshot.team_stats).length),
+    team_stats: hasTeamStats || seasonNotStarted,
     leaders: (snapshot?.leaders || []).length > 0,
   };
 
-  // Everything except recent_results, which is legitimately empty before a
-  // season starts and must not block a page the rest of the year.
-  const required = TEAM_PROFILE_FIELDS.filter((f) => f !== 'recent_results');
-  const missing = required.filter((f) => !fields[f]);
+  const missing = TEAM_PROFILE_FIELDS.filter((f) => !fields[f]);
 
   return {
     fields,
     missing,
     page_ready: missing.length === 0,
-    record_season: recordSeasonState(snapshot),
-    version: 'team_profile_v1',
+    record_season: recordSeason,
+    not_applicable: {
+      recent_results: seasonNotStarted && !hasRecentResults ? 'season_not_started' : null,
+      team_stats: seasonNotStarted && !hasTeamStats ? 'season_not_started' : null,
+    },
+    version: 'team_profile_v2',
   };
 }
 
