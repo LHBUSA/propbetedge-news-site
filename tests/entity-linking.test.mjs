@@ -20,6 +20,7 @@ import { renderInThisStory } from '../src/entity-graph/in-this-story.js';
 import { rankRelated } from '../src/entity-graph/related.js';
 import { renderShareBar } from '../src/entity-graph/share-bar.js';
 import { readFileSync } from 'node:fs';
+import { mergeTeamEntityPages } from '../src/api.js';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -124,6 +125,29 @@ test('an unknown name resolves to nothing rather than a nearby player', () => {
   const result = resolvePlayer('nfl', 'Notareal Personname');
   assert.equal(result.entity, null);
   assert.equal(result.reason, 'unknown');
+});
+
+test('team coverage cannot cross sports when abbreviations collide', () => {
+  const pages = [{
+    articles: [
+      { slug: 'rays-story', sport: 'mlb', title: 'Rays story' },
+      { slug: 'lightning-story', sport: 'nhl', title: 'Lightning story' },
+      { slug: 'bucs-story', sport: 'nfl', title: 'Buccaneers story' },
+    ],
+  }];
+
+  assert.deepEqual(
+    mergeTeamEntityPages(pages, 'mlb').map((article) => article.slug),
+    ['rays-story'],
+  );
+  assert.deepEqual(
+    mergeTeamEntityPages(pages, 'nhl').map((article) => article.slug),
+    ['lightning-story'],
+  );
+  assert.deepEqual(
+    mergeTeamEntityPages(pages, 'nfl').map((article) => article.slug),
+    ['bucs-story'],
+  );
 });
 
 test('team coverage queries every abbreviation the newsroom might have tagged', () => {
