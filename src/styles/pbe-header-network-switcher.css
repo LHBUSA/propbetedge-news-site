@@ -352,3 +352,125 @@
     display: none;
   }
 }
+
+
+/* Compact Stats nav: Leaders + Standings share one masthead slot. */
+.pbe-stats-switcher {
+  position: relative;
+  z-index: 91;
+  flex: 0 0 auto;
+}
+
+.pbe-stats-switcher > summary {
+  list-style: none;
+}
+
+.pbe-stats-switcher > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pbe-stats-summary {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.pbe-stats-summary.active {
+  color: var(--paper) !important;
+}
+
+.pbe-stats-summary.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: var(--gold);
+}
+
+.pbe-stats-chevron {
+  color: var(--gold);
+  font-size: 12px;
+  line-height: 1;
+  transition: transform .16s ease;
+}
+
+.pbe-stats-switcher[open] .pbe-stats-chevron {
+  transform: rotate(180deg);
+}
+
+.pbe-stats-menu {
+  position: absolute;
+  top: calc(100% + 11px);
+  right: 0;
+  width: 290px;
+  overflow: hidden;
+  border: 1px solid rgba(233,199,90,.24);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(212,175,55,.09), transparent 34%),
+    rgba(13,12,10,.992);
+  box-shadow: 0 20px 54px rgba(0,0,0,.52);
+}
+
+.pbe-stats-menu a {
+  display: grid;
+  gap: 4px;
+  padding: 13px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.055);
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.pbe-stats-menu a:last-child {
+  border-bottom: 0;
+}
+
+.pbe-stats-menu a:hover,
+.pbe-stats-menu a:focus-visible,
+.pbe-stats-menu a.is-active {
+  background: rgba(212,175,55,.075);
+  outline: none;
+}
+
+.pbe-stats-menu a.is-active {
+  box-shadow: inset 2px 0 0 var(--gold-bright);
+}
+
+.pbe-stats-menu a > span {
+  color: var(--gold-bright);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.pbe-stats-menu a > strong {
+  color: #f7f2e8;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.pbe-stats-menu a > small {
+  color: #aaa392;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+@media (max-width: 1320px) and (min-width: 881px) {
+  .pbe-stats-summary {
+    padding-inline: 9px !important;
+  }
+}
+
+@media (max-width: 880px) {
+  .pbe-stats-menu {
+    right: 50%;
+    transform: translateX(50%);
+    width: min(290px, calc(100vw - 28px));
+  }
+}
