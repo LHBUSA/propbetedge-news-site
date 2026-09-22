@@ -20,6 +20,7 @@ import { renderArticleCard, escapeHtml, formatRelative } from '../components/art
 import { renderRailShell, mountArticleRail } from '../components/right-rail.js';
 import { renderNotFound } from './404.js';
 import { ad_in_article_after_take, ad_in_article_mid, ad_brand_family, proxyImage } from '../ads-config.js';
+import { renderArticleVisuals, mountArticleVisuals } from '../article-visuals.js';
 
 const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', nhl: 'NHL' };
 const SPORT_FALLBACK = { mlb: '⚾', nfl: '🏈', nba: '🏀', nhl: '🏒' };
@@ -93,7 +94,8 @@ export async function renderArticle(root, sport, slug, setMeta) {
     : '';
 
   const articleContext = { sport: article.sport };
-  const bodyHtml = renderBodyWithMidAd(article, articleContext, graph, manifest, seo);
+  const visualHtml = renderArticleVisuals(article, manifest);
+  const bodyHtml = renderBodyWithMidAd(article, articleContext, graph, manifest, seo, visualHtml);
 
   root.innerHTML = `
     ${renderHeader()}
@@ -158,6 +160,7 @@ export async function renderArticle(root, sport, slug, setMeta) {
     currentSport: article.sport,
   });
 
+  mountArticleVisuals(article, manifest);
   loadRelated(article, manifest, graph);
   attachGameEntity(article, manifest, graph);
 }
@@ -296,7 +299,7 @@ function renderMediaEmbeds(article) {
   `;
 }
 
-function renderBodyWithMidAd(article, ctx, graph, manifest, seo) {
+function renderBodyWithMidAd(article, ctx, graph, manifest, seo, visualHtml = '') {
   // Body markup and entity linking both come from the shared graph modules, so
   // this is byte-identical to the markup the crawler already received.
   const source = graph.articleBodyHtml(article);
@@ -321,13 +324,14 @@ function renderBodyWithMidAd(article, ctx, graph, manifest, seo) {
 
   const totalParagraphs = (html.match(/<\/p>/g) || []).length;
   if (injectIdx === -1 || totalParagraphs < 5) {
-    return `<div class="article-body">${html}</div>`;
+    return `<div class="article-body">${html}</div>${visualHtml}`;
   }
 
   const before = paragraphs.slice(0, injectIdx).join('');
   const after = paragraphs.slice(injectIdx).join('');
   return `
     <div class="article-body">${before}</div>
+    ${visualHtml}
     ${ad_in_article_mid(ctx)}
     <div class="article-body">${after}</div>
   `;
