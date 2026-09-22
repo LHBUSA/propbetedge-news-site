@@ -817,6 +817,19 @@ function renderBoard(payload, tracker = _lastTracker) {
 
 function trackerOutcome(entry) {
   const result = String(entry?.result || '').toUpperCase();
+  if (result === 'PENDING') {
+    const status = String(entry?.evidence?.status || '');
+    if (/postpon/i.test(status)) {
+      return { result, label:'POSTPONED', headline:'GRADING PAUSED', tone:'push', score:null, gradedAt:null };
+    }
+    if (/suspend/i.test(status)) {
+      return { result, label:'SUSPENDED', headline:'GRADING PAUSED', tone:'push', score:null, gradedAt:null };
+    }
+    if (/delay|rain|weather/i.test(status)) {
+      return { result, label:'WEATHER DELAY', headline:'GRADING PAUSED', tone:'push', score:null, gradedAt:null };
+    }
+    return null;
+  }
   if (!['WIN','LOSS','PUSH','VOID'].includes(result)) return null;
   const labels = {
     WIN: { label:'HIT', headline:'PBE ALGO CALLED IT', tone:'hit' },
@@ -892,30 +905,42 @@ function trackerEntryMatchesCard(entry, card) {
 function applyTrackerOutcomes(payload, tracker) {
   if (!tracker?.ok || !payload) return;
   const today = todayEtDate();
-  const settled = (Array.isArray(tracker.entries) ? tracker.entries : [])
+  const trackable = (Array.isArray(tracker.entries) ? tracker.entries : [])
     .filter((entry) => {
-      if (!['WIN','LOSS','PUSH','VOID'].includes(String(entry.result || '').toUpperCase())) return false;
+      if (entry?.evidence?.suppressed === true) return false;
       if (String(entry.sport || '').toUpperCase() === 'MLB' && String(entry.period_start || '') !== today) return false;
-      return entry?.evidence?.suppressed !== true;
+      const result = String(entry.result || '').toUpperCase();
+      return ['WIN','LOSS','PUSH','VOID','PENDING'].includes(result);
     });
 
   for (const source of Object.values(payload)) {
     for (const card of (source?.cards || [])) {
-      const embedded = card.trackerEntry && ['WIN','LOSS','PUSH','VOID'].includes(String(card.trackerEntry.result || '').toUpperCase())
-        ? card.trackerEntry
-        : null;
-      const entry = embedded || settled.find((candidate) => trackerEntryMatchesCard(candidate, card));
+      const embedded = card.trackerEntry || null;
+      const entry = embedded || trackable.find((candidate) => trackerEntryMatchesCard(candidate, card));
       if (!entry) continue;
       const outcome = trackerOutcome(entry);
-      if (!outcome) continue;
+
+      // A previously-settled MLB card can be reopened if the official game
+      // state is corrected to postponed/suspended/delayed/non-final.
+      if (!outcome) {
+        if (String(entry.result || '').toUpperCase() === 'PENDING' && card.sport === 'mlb') {
+          card.outcome = null;
+        }
+        continue;
+      }
+
       card.outcome = outcome;
       if (outcome.result === 'WIN') {
         card.eyebrow = `${card.sport.toUpperCase()} · PBE ALGO HIT`;
+      } else if (outcome.result === 'PENDING') {
+        card.eyebrow = `${card.sport.toUpperCase()} · GAME STATUS`;
       }
-      card.detail = [
-        outcome.score,
-        outcome.gradedAt ? `Graded ${formatRelativeStamp(outcome.gradedAt)}` : null,
-      ].filter(Boolean).join(' · ') || card.detail;
+      card.detail = outcome.result === 'PENDING'
+        ? 'Not counted in the Free Picks record until the game is officially final'
+        : [
+            outcome.score,
+            outcome.gradedAt ? `Graded ${formatRelativeStamp(outcome.gradedAt)}` : null,
+          ].filter(Boolean).join(' · ') || card.detail;
     }
   }
 }
