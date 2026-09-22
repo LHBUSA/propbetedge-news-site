@@ -25,6 +25,7 @@ import { renderInThisStory } from './src/entity-graph/in-this-story.js';
 import { renderShareBar } from './src/entity-graph/share-bar.js';
 import { rankRelated } from './src/entity-graph/related.js';
 import { teamQueryAbbreviations } from './src/entity-graph/entities.js';
+import { liveCastUrl } from './src/live-cast-routes.js';
 
 export const config = {
   matcher: [
@@ -54,6 +55,15 @@ const AUTHOR_META = {
 export default async function middleware(request) {
   const url = new URL(request.url);
   const pathname = url.pathname.replace(/\/+$/, '') || '/';
+
+  // NFL/NHL/WNBA already own richer, canonical live-game products. Legacy
+  // main-site game detail URLs redirect at the edge so readers never land on
+  // a weaker duplicate page or a route with no real play-by-play.
+  const castMatch = pathname.match(/^\/games\/(nfl|nhl|wnba)\/(\d{6,12})$/);
+  if (castMatch) {
+    const target = liveCastUrl(castMatch[1], castMatch[2]);
+    if (target) return Response.redirect(target, 308);
+  }
 
   // Collapse duplicate page-1 archive URLs before any rendering work.
   const newsPageOne = pathname === '/news/page/1';
