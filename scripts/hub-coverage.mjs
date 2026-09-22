@@ -26,15 +26,27 @@ if (!TOKEN) { console.error('No admin token.'); process.exit(1); }
 
 const SPORTS = (args.sports || 'mlb,nba,nhl,nfl').split(',').map((s) => s.trim());
 
-async function page(sport, kind, cursor) {
+async function page(sport, kind, cursor, attempts = 4) {
   const url = new URL(`${HUB}/v1/admin/coverage`);
   url.searchParams.set('sport', sport);
   url.searchParams.set('kind', kind);
   url.searchParams.set('limit', '400');
   if (cursor) url.searchParams.set('cursor', cursor);
-  const res = await fetch(url, { method: 'POST', headers: { 'X-Hub-Admin-Token': TOKEN } });
-  if (!res.ok) throw new Error(`coverage ${res.status} ${(await res.text()).slice(0, 120)}`);
-  return res.json();
+
+  // A census walks thousands of keys over many requests; a single transient
+  // ECONNRESET should not discard the whole run.
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const res = await fetch(url, { method: 'POST', headers: { 'X-Hub-Admin-Token': TOKEN } });
+      if (!res.ok) throw new Error(`coverage ${res.status} ${(await res.text()).slice(0, 120)}`);
+      return await res.json();
+    } catch (error) {
+      lastError = error;
+      await new Promise((r) => setTimeout(r, 600 * attempt));
+    }
+  }
+  throw lastError;
 }
 
 async function census(sport, kind) {
@@ -50,6 +62,11 @@ async function census(sport, kind) {
   }
   return { dictionary, ...totals };
 }
+
+const TEAM_FIELDS = [
+  'identity', 'logo', 'roster', 'record', 'standings',
+  'recent_results', 'upcoming_schedule', 'recent_form', 'team_stats', 'leaders',
+];
 
 const pct = (n, d) => (d ? `${((n / d) * 100).toFixed(1)}%` : '—');
 
@@ -78,12 +95,13 @@ for (const sport of SPORTS) {
 
   const td = teams.dictionary;
   console.log(`  TEAMS    dictionary ${td}   stored ${teams.stored}   missing ${td - teams.stored}`);
-  console.log(`    full ${teams.full}  partial ${teams.partial}  identity_only ${teams.identity_only}  unsupported ${teams.unsupported}  unreadable ${teams.unreadable}`);
-  console.log(`    roster         ${String(teams.roster).padStart(5)}  ${pct(teams.roster, teams.stored)}`);
-  console.log(`    record         ${String(teams.record).padStart(5)}  ${pct(teams.record, teams.stored)}`);
-  console.log(`    standings      ${String(teams.standings).padStart(5)}  ${pct(teams.standings, teams.stored)}`);
-  console.log(`    recent form    ${String(teams.recent_form).padStart(5)}  ${pct(teams.recent_form, teams.stored)}`);
-  console.log(`    schedule       ${String(teams.schedule).padStart(5)}  ${pct(teams.schedule, teams.stored)}`);
+  console.log(`    ingestion state: full ${teams.full}  partial ${teams.partial}  identity_only ${teams.identity_only}  unsupported ${teams.unsupported}  unreadable ${teams.unreadable}`);
+  console.log('    ── Team Snapshot V1 fields ──');
+  for (const field of TEAM_FIELDS) {
+    const n = teams[field] ?? 0;
+    console.log(`    ${field.padEnd(18)} ${String(n).padStart(4)}/${teams.stored}  ${pct(n, teams.stored)}`);
+  }
+  console.log(`    ${'PAGE_READY'.padEnd(18)} ${String(teams.page_ready ?? 0).padStart(4)}/${teams.stored}  ${pct(teams.page_ready ?? 0, teams.stored)}`);
   const tAcc = teams.full + teams.partial + teams.identity_only + teams.unsupported + teams.unreadable;
   console.log(`    ${tAcc === teams.stored ? 'OK  ' : 'GAP '} stored ${teams.stored} = full ${teams.full} + partial ${teams.partial} + identity_only ${teams.identity_only} + unsupported ${teams.unsupported} + unreadable ${teams.unreadable} (${tAcc})`);
 }

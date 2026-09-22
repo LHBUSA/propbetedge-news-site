@@ -259,21 +259,32 @@ export function normalizeSchedule(payload, statsApiTeamId, { recent = 5, upcomin
   return { recent: past.slice(0, recent), upcoming: future.slice(0, upcoming) };
 }
 
+/**
+ * Keyed on statGroup AND leaderCategory, because StatsAPI reuses a category
+ * name across groups: a `homeRuns` block exists for hitting (hit), pitching
+ * (allowed) and catching (allowed while catching). Keying on the category
+ * alone ranked pitchers and catchers as home run hitters.
+ *
+ * An allowlist rather than a passthrough: a block we have not explicitly
+ * reasoned about is skipped, not published under a guessed label.
+ */
 const MLB_LEADER_LABELS = {
-  homeRuns: ['Home runs', 'HR'],
-  runsBattedIn: ['RBI', 'RBI'],
-  battingAverage: ['Batting average', 'AVG'],
-  strikeouts: ['Strikeouts', 'K'],
-  wins: ['Wins', 'W'],
-  earnedRunAverage: ['ERA', 'ERA'],
+  'hitting:homeRuns': ['Home runs', 'HR'],
+  'hitting:runsBattedIn': ['RBI', 'RBI'],
+  'hitting:battingAverage': ['Batting average', 'AVG'],
+  'pitching:earnedRunAverage': ['ERA', 'ERA'],
+  'pitching:strikeouts': ['Strikeouts', 'K'],
+  'pitching:wins': ['Wins', 'W'],
 };
 
 /** MLB publishes team leaders with a real person id — no name join needed. */
 export function normalizeLeaders(payload, { perCategory = 3 } = {}) {
   const out = [];
   for (const block of payload?.teamLeaders || []) {
-    const category = block.leaderCategory;
-    const [label, unit] = MLB_LEADER_LABELS[category] || [category, null];
+    const category = `${block.statGroup}:${block.leaderCategory}`;
+    const labels = MLB_LEADER_LABELS[category];
+    if (!labels) continue; // not an allowlisted (group, category) pair
+    const [label, unit] = labels;
     for (const leader of (block.leaders || []).slice(0, perCategory)) {
       if (!leader?.person?.id) continue;
       const numeric = Number(leader.value);

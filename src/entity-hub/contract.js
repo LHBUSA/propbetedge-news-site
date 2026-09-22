@@ -275,8 +275,50 @@ export function teamReadiness(snapshot) {
     fields,
     missing,
     page_ready: missing.length === 0,
+    record_season: recordSeasonState(snapshot),
     version: 'team_profile_v1',
   };
+}
+
+/**
+ * Which season the stored record actually describes.
+ *
+ * A record and a schedule can disagree about what "now" is. A club in
+ * preseason carries last season's completed record (82 games played, standings
+ * as of April) beside next season's fixtures — rendering that as "Record" with
+ * no season label states last year's result as though it were this year's.
+ *
+ *   current      played games, and the schedule shows completed games too
+ *   prior_season played games, but nothing has been completed this season
+ *   no_games     nothing played; there is no record to state yet
+ *
+ * Advisory, not part of the page gate: it tells a page how to LABEL the
+ * record, not whether the record may be shown.
+ */
+export function recordSeasonState(snapshot) {
+  const played = Number(snapshot?.record?.games_played) || 0;
+  if (played < 1) return 'no_games';
+
+  const recent = snapshot?.schedule?.recent || [];
+  // Nothing completed this season, yet a record exists: it describes a season
+  // that has already finished.
+  if (!recent.length) return 'prior_season';
+
+  // The decisive test is when the standings were computed, not how many games
+  // have been played. A single completed preseason game must not relabel an
+  // April record as current — an 82-game record beside a September fixture is
+  // last season's, and only the as_of date proves it.
+  const asOf = Date.parse(snapshot?.standings?.as_of || '');
+  if (!Number.isFinite(asOf)) return 'current';
+
+  const newestPlayed = recent.reduce((max, game) => {
+    const t = Date.parse(game?.date || '');
+    return Number.isFinite(t) && t > max ? t : max;
+  }, 0);
+  if (!newestPlayed) return 'current';
+
+  // One day of slack: standings publish on their own schedule.
+  return asOf + 86400000 < newestPlayed ? 'prior_season' : 'current';
 }
 
 /**

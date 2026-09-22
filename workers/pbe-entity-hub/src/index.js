@@ -22,6 +22,7 @@
 import { allPlayers, allTeams, SUPPORTED_SPORTS } from '../../../src/entity-graph/entities.js';
 import {
   validatePlayerSnapshot, validateTeamSnapshot, completeness, freshnessOf, FRESHNESS,
+  teamReadiness, TEAM_PROFILE_FIELDS,
 } from '../../../src/entity-hub/contract.js';
 import { refreshPlayer, refreshTeam, teamRefreshTargets } from '../../../src/entity-hub/refresh.js';
 
@@ -65,6 +66,11 @@ export async function envelope(snapshot, { route, sourceIds = [] }) {
     stale_at: new Date(now.getTime() + staleAfterS * 1000).toISOString(),
     freshness_state: FRESHNESS.CURRENT,
     completeness: completeness(snapshot),
+    // The page gate, alongside the ingestion state. completeness answers
+    // "did ingestion work"; readiness answers "is there enough here to
+    // publish a team page". They are not the same question and a team can
+    // pass the first while failing the second.
+    ...(snapshot.kind === 'team' ? { readiness: teamReadiness(snapshot) } : {}),
     // Lets a refresh detect a no-op and keep the original refreshed_at, so
     // "last changed" stays meaningful instead of resetting every cron tick.
     source_hash: await hashSnapshot(snapshot),
@@ -114,7 +120,13 @@ function withLiveFreshness(record) {
     ttl_s: ttlS,
     stale_after_s: staleAfterS,
   });
-  return { ...record, freshness_state: state };
+  // Readiness is recomputed here rather than trusted from the stored envelope,
+  // so tightening the gate takes effect on the next read instead of waiting
+  // for every team to be rewritten.
+  const readiness = record.snapshot.kind === 'team'
+    ? { readiness: teamReadiness(record.snapshot) }
+    : {};
+  return { ...record, ...readiness, freshness_state: state };
 }
 
 // ─── HTTP ────────────────────────────────────────────────────────────────────
@@ -301,8 +313,9 @@ async function adminCoverage(request, env, url, origin) {
     CURRENT: 0, STALE: 0, EXPIRED: 0,
     // players
     photo: 0, season_stats: 0, career_stats: 0, recent_games: 0, team_linked: 0,
-    // teams
-    roster: 0, record: 0, standings: 0, schedule: 0, recent_form: 0,
+    // teams — one counter per Team Snapshot V1 field, plus the gate itself
+    ...Object.fromEntries(TEAM_PROFILE_FIELDS.map((f) => [f, 0])),
+    page_ready: 0,
   };
 
   for (const key of listing.keys) {
@@ -314,7 +327,15 @@ async function adminCoverage(request, env, url, origin) {
     const complete = record.completeness || completeness(snap);
     if (complete in counts) counts[complete] += 1;
 
-    const freshness = freshnessOf(snap.source);
+    // Measured against the hub cadence, exactly as the read path does. Using
+    // snap.source here read every NHL row as EXPIRED after an hour, because
+    // that is the gateway's live-product TTL, not this service's.
+    const window = hubFreshnessWindow(record.sport || snap.sport);
+    const freshness = freshnessOf({
+      observed_at: record.observed_at || snap.source?.observed_at,
+      ttl_s: window.ttlS,
+      stale_after_s: window.staleAfterS,
+    });
     if (freshness in counts) counts[freshness] += 1;
 
     if (snap.kind === 'player') {
@@ -324,11 +345,9 @@ async function adminCoverage(request, env, url, origin) {
       if ((snap.stats?.games || []).length) counts.recent_games += 1;
       if (snap.team?.slug) counts.team_linked += 1;
     } else {
-      if ((snap.roster || []).length) counts.roster += 1;
-      if (snap.record) counts.record += 1;
-      if (snap.standings) counts.standings += 1;
-      if ((snap.recent_games || []).length || (snap.upcoming_games || []).length) counts.schedule += 1;
-      if (snap.recent_form) counts.recent_form += 1;
+      const readiness = teamReadiness(snap);
+      for (const field of TEAM_PROFILE_FIELDS) if (readiness.fields[field]) counts[field] += 1;
+      if (readiness.page_ready) counts.page_ready += 1;
     }
   }
 

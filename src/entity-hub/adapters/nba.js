@@ -180,14 +180,17 @@ export function normalizeStandingsRow(payload, espnTeamId) {
       const stat = (name) => entry.stats?.find((s) => s.name === name || s.shortDisplayName === name);
       const wins = stat('wins')?.value ?? null;
       const losses = stat('losses')?.value ?? null;
+      const played = wins != null && losses != null ? wins + losses : null;
       return {
         record: {
           wins,
           losses,
           winning_percentage: stat('winPercent')?.displayValue ?? null,
-          games_played: wins != null && losses != null ? wins + losses : null,
-          points_for: stat('avgPointsFor')?.displayValue ?? null,
-          points_against: stat('avgPointsAgainst')?.displayValue ?? null,
+          games_played: played,
+          // ESPN reports 0.0 for and against before a game is played. Storing
+          // that renders "0.0 PPG" as though it had been measured.
+          points_for: played > 0 ? stat('avgPointsFor')?.displayValue ?? null : null,
+          points_against: played > 0 ? stat('avgPointsAgainst')?.displayValue ?? null : null,
           summary: wins != null && losses != null ? `${wins}-${losses}` : null,
         },
         standings: {

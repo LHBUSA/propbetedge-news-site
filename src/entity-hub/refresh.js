@@ -172,11 +172,48 @@ async function refreshNflPlayer(id) {
 // ─── teams ───────────────────────────────────────────────────────────────────
 
 export async function refreshTeam(sport, target, { env = {} } = {}) {
-  if (sport === 'nhl') return refreshNhlTeam(target);
-  if (sport === 'mlb') return refreshMlbTeam(target);
-  if (sport === 'nba') return refreshNbaTeam(target, env);
-  if (sport === 'nfl') return refreshNflTeam(target, env);
-  return { snapshot: null, reason: 'unsupported_sport' };
+  let built;
+  if (sport === 'nhl') built = await refreshNhlTeam(target);
+  else if (sport === 'mlb') built = await refreshMlbTeam(target);
+  else if (sport === 'nba') built = await refreshNbaTeam(target, env);
+  else if (sport === 'nfl') built = await refreshNflTeam(target, env);
+  else return { snapshot: null, reason: 'unsupported_sport' };
+
+  if (built?.snapshot) built.snapshot = await dropDepartedLeaders(built.snapshot, env);
+  return built;
+}
+
+/**
+ * Remove leaders who now play for someone else.
+ *
+ * A leaders feed describes the season it covers, not today's roster. In
+ * preseason the NHL club-stats route still returns last season's team, so 12%
+ * of stored leaders were players who had since moved — publishing them under
+ * another club's "Team leaders" would be flatly false.
+ *
+ * Roster membership alone is too blunt a test: MLB's active roster excludes
+ * injured and optioned players who are still on the team. So a leader is
+ * dropped only when a stored player snapshot positively places them on a
+ * DIFFERENT team. Absent evidence, the leader is kept — this removes what we
+ * can prove wrong rather than everything we cannot prove right.
+ */
+async function dropDepartedLeaders(snapshot, env) {
+  const leaders = snapshot.leaders || [];
+  if (!leaders.length || !env?.ENTITY_KV) return snapshot;
+
+  const onRoster = new Set((snapshot.roster || []).map((r) => String(r.player_id)));
+  const suspects = leaders.filter((l) => !onRoster.has(String(l.player_id)));
+  if (!suspects.length) return snapshot;
+
+  const players = await readStoredPlayers(env, snapshot.sport, suspects.map((l) => l.player_id));
+  const elsewhere = new Set();
+  for (const player of players) {
+    const slug = player?.team?.slug;
+    if (slug && slug !== snapshot.slug) elsewhere.add(String(player.player_id));
+  }
+  if (!elsewhere.size) return snapshot;
+
+  return { ...snapshot, leaders: leaders.filter((l) => !elsewhere.has(String(l.player_id))) };
 }
 
 async function refreshNhlTeam(target) {
