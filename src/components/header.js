@@ -64,6 +64,7 @@ export function renderHeader() {
   const path = window.location.pathname;
   const isLive = path === '/games' || path.startsWith('/games/');
   const isLeaders = path === '/leaders' || path.startsWith('/leaders/');
+  const isStandings = path === '/standings' || path.startsWith('/standings/');
   const isOdds = path === '/odds';
   const sport = inferSport(path);
 
@@ -113,6 +114,7 @@ export function renderHeader() {
         <div class="masthead-right masthead-tools" aria-label="PropBetEdge tools">
           <a href="/games" class="nav-link live-link ${isLive ? 'active' : ''}">PBEcast</a>
           <a href="/leaders" class="nav-link ${isLeaders ? 'active' : ''}">Leaders</a>
+          <a href="/standings" class="nav-link ${isStandings ? 'active' : ''}">Standings</a>
           <a href="/odds" class="nav-link edges-link ${isOdds ? 'active' : ''}">
             <span class="edges-bolt">⚡</span><span class="edges-label">Free Picks</span><span class="edges-count" id="edges-count" aria-live="polite"></span>
           </a>
