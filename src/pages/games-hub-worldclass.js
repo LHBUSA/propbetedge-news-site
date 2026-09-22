@@ -210,6 +210,7 @@ function renderFeatured() {
   const meta = SPORT[game.sport];
   const gameHref = game.detailUrl || meta.product;
   const external = /^https?:\/\//.test(gameHref);
+  const newTab = external && !game.detailUrl;
   const statusClass = game.state === 'live' ? 'live' : game.state;
 
   target.innerHTML = `
@@ -223,8 +224,8 @@ function renderFeatured() {
         <h2>${escapeHtml(game.away.name || game.away.abbr)} <em>at</em> ${escapeHtml(game.home.name || game.home.abbr)}</h2>
         ${game.context ? `<p class="gh5-featured-context">${escapeHtml(game.context)}</p>` : '<p class="gh5-featured-context">Live game state connected to the PropBetEdge sports intelligence network.</p>'}
         <div class="gh5-featured-actions">
-          <a href="${escapeAttr(gameHref)}" class="gh5-primary-cta"${external ? ' target="_blank" rel="noopener"' : ''}>${game.detailUrl ? 'Open Game Center' : `Open ${meta.productLabel}`} →</a>
-          <a href="/news/${game.sport}" class="gh5-secondary-cta">Latest ${meta.label} News</a>
+          <a href="${escapeAttr(gameHref)}" class="gh5-primary-cta"${newTab ? ' target="_blank" rel="noopener"' : ''}>${game.detailUrl ? `Open ${liveCastLabel(game.sport)}` : `Open ${meta.productLabel}`} →</a>
+          <a href="${escapeAttr(meta.news)}" class="gh5-secondary-cta"${/^https?:\/\//.test(meta.news) ? ' target="_blank" rel="noopener"' : ''}>Latest ${meta.label} News</a>
         </div>
       </div>
       <div class="gh5-featured-matchup">
@@ -310,7 +311,7 @@ function renderGameCard(game) {
         ${cardTeam(game.home, homeWins, game.state)}
       </div>
       ${game.context ? `<div class="gh5-card-context">${escapeHtml(game.context)}</div>` : ''}
-      <div class="gh5-card-footer"><span>${game.detailUrl ? 'Game Center' : `${meta.label} Coverage`}</span><b>Open →</b></div>
+      <div class="gh5-card-footer"><span>${game.detailUrl ? liveCastLabel(game.sport) : `${meta.label} Coverage`}</span><b>Open →</b></div>
     </a>
   `;
 }
@@ -333,16 +334,18 @@ function renderIntelligence() {
   if (!sport) {
     target.innerHTML = `
       <div class="gh5-intel-copy"><span class="gh5-section-kicker">INTELLIGENCE LAYER</span><h2>Follow the game. Then understand what moves next.</h2><p>The live board connects into sport-specific research, news impact and model products across the PropBetEdge network.</p></div>
-      <div class="gh5-intel-actions"><a href="https://mlb.propbetedge.ai" target="_blank" rel="noopener">⚾ MLB Intelligence →</a><a href="https://nfl.propbetedge.ai" target="_blank" rel="noopener">🏈 NFL Intelligence →</a></div>
+      <div class="gh5-intel-actions"><a href="https://nfl.propbetedge.ai/#pbecast" target="_blank" rel="noopener">🏈 NFL PBEcast →</a><a href="https://wnba.propbetedge.ai/cast" target="_blank" rel="noopener">🏀 WNBACast →</a><a href="https://nhl.propbetedge.ai/#/cast" target="_blank" rel="noopener">🏒 NHL PBEcast →</a></div>
     `;
     return;
   }
 
   const meta = SPORT[sport];
-  const external = /^https?:\/\//.test(meta.product);
+  const primary = meta.cast ? liveCastHome(sport) : meta.product;
+  const external = /^https?:\/\//.test(primary || '');
+  const newsExternal = /^https?:\/\//.test(meta.news || '');
   target.innerHTML = `
     <div class="gh5-intel-copy"><span class="gh5-section-kicker">${meta.emoji} ${meta.label} INTELLIGENCE</span><h2>The game state is only the beginning.</h2><p>Move directly from today's ${meta.name.toLowerCase()} slate into the deeper PropBetEdge research and coverage layer.</p></div>
-    <div class="gh5-intel-actions"><a href="${meta.product}"${external ? ' target="_blank" rel="noopener"' : ''}>Open ${meta.productLabel} →</a><a href="/news/${sport}">Latest ${meta.label} News →</a></div>
+    <div class="gh5-intel-actions"><a href="${primary}"${external ? ' target="_blank" rel="noopener"' : ''}>Open ${meta.cast ? liveCastLabel(sport) : meta.productLabel} →</a><a href="${meta.news}"${newsExternal ? ' target="_blank" rel="noopener"' : ''}>Latest ${meta.label} News →</a></div>
   `;
 }
 
@@ -427,12 +430,25 @@ function normalizeNFL(games) {
       statusText: state === 'live' ? game.statusDetail || `${game.clock || ''} Q${game.period || ''}`.trim() || 'Live' : state === 'final' ? game.statusDetail || 'Final' : game.statusDetail || formatGameTime(game.date),
       away: { name: game.away || '', abbr: game.awayAbbr || shortAbbr(game.away), logo: game.awayLogo || null, score: game.awayScore ?? '', record: game.awayRecord || '' },
       home: { name: game.home || '', abbr: game.homeAbbr || shortAbbr(game.home), logo: game.homeLogo || null, score: game.homeScore ?? '', record: game.homeRecord || '' },
-      detailUrl: null,
-      context: state === 'pre' ? '2026 NFL schedule · follow roster and market movement in NFL Intelligence' : game.statusDetail || '',
+      detailUrl: liveCastUrl('nfl', game.id),
+      context: state === 'pre' ? '2026 NFL schedule · opens directly in NFL PBEcast' : game.statusDetail || '',
     };
   });
 }
 
+function normalizeWNBA(games) {
+  return games.map((game) => {
+    const state = game.statusState === 'in' ? 'live' : game.statusState === 'post' ? 'final' : 'pre';
+    return {
+      sport: 'wnba', gameId: game.id, state, gameDate: game.date,
+      statusText: state === 'live' ? game.statusDetail || `Q${game.period || ''} ${game.clock || ''}`.trim() || 'Live' : state === 'final' ? game.statusDetail || 'Final' : game.statusDetail || formatGameTime(game.date),
+      away: { name: game.away || '', abbr: game.awayAbbr || shortAbbr(game.away), logo: game.awayLogo || null, score: game.awayScore ?? '', record: game.awayRecord || '' },
+      home: { name: game.home || '', abbr: game.homeAbbr || shortAbbr(game.home), logo: game.homeLogo || null, score: game.homeScore ?? '', record: game.homeRecord || '' },
+      detailUrl: liveCastUrl('wnba', game.id),
+      context: state === 'pre' ? 'WNBA slate · opens directly in WNBACast' : game.statusDetail || '',
+    };
+  });
+}
 function normalizeNHL(games) {
   return games.map((game) => {
     const state = ['LIVE', 'CRIT'].includes(game.status) ? 'live' : ['OFF', 'FINAL'].includes(game.status) ? 'final' : 'pre';
@@ -441,8 +457,8 @@ function normalizeNHL(games) {
       statusText: state === 'live' ? 'Live' : state === 'final' ? 'Final' : formatGameTime(game.date),
       away: { name: game.away || '', abbr: game.awayAbbr || shortAbbr(game.away), logo: game.awayLogo || null, score: game.awayScore ?? '', record: '' },
       home: { name: game.home || '', abbr: game.homeAbbr || shortAbbr(game.home), logo: game.homeLogo || null, score: game.homeScore ?? '', record: '' },
-      detailUrl: null,
-      context: game.venue ? `${game.venue}` : '',
+      detailUrl: liveCastUrl('nhl', game.id),
+      context: game.venue ? `${game.venue} · opens in NHL PBEcast` : 'Opens directly in NHL PBEcast',
     };
   });
 }
