@@ -141,7 +141,7 @@ function clearAndRoute() {
   if (path === '/games') {
     setMeta({
       title: 'Live Games — PropBetEdge',
-      description: 'Live scores across MLB, NBA, NHL, and NFL. Powered by PropSports API.',
+      description: 'Live scores across MLB, NFL, NBA, WNBA and NHL, with NFL, WNBA and NHL games linked directly into their live PBEcast experiences. Powered by PropSports API.',
       canonical: 'https://propbetedge.ai/games',
     });
     return renderGamesHub(root);
