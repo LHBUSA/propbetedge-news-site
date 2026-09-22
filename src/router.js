@@ -16,7 +16,7 @@
 
 import { renderHome, stopHomeLifecycle } from './pages/home.js';
 import { renderNewsIndex } from './pages/news-index.js';
-import { renderSport } from './pages/sport.js';
+import { renderSport, stopSportLifecycle } from './pages/sport.js';
 import { renderArticle } from './pages/article.js';
 import { renderAuthor } from './pages/author.js';
 import { renderAuthorsIndex } from './pages/authors.js';
@@ -87,6 +87,7 @@ function clearAndRoute() {
   // homepage carousel from writing into a later route that happens to reuse
   // similar DOM ids.
   stopHomeLifecycle();
+  stopSportLifecycle();
 
   const path = window.location.pathname.replace(/\/+$/, '') || '/';
   const root = document.getElementById('app');
