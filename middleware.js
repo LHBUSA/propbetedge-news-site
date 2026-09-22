@@ -36,7 +36,7 @@ export const config = {
 const SITE = 'https://propbetedge.ai';
 const NEWS_API = 'https://propbet-news-api.sales-fd3.workers.dev';
 
-const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', nhl: 'NHL' };
+const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', wnba: 'WNBA', nhl: 'NHL' };
 const SPORT_API = {
   mlb: { category: 'baseball', league: 'mlb' },
   nfl: { category: 'football', league: 'nfl' },
@@ -282,7 +282,11 @@ async function resolveMeta(pathname) {
     };
   }
 
-  const standingsMatch = pathname.match(/^\/standings\/(mlb|nfl|nba|nhl)$/);
+  if (pathname === '/standings') {
+    return Response.redirect(`${SITE}/standings/mlb`, 308);
+  }
+
+  const standingsMatch = pathname.match(/^\/standings\/(mlb|nfl|nba|wnba|nhl)$/);
   if (standingsMatch) {
     const sport = standingsMatch[1];
     return {
