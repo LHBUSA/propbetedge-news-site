@@ -197,16 +197,20 @@ export const api = {
     await get(`/news/by-player/${encodeURIComponent(playerName)}`)
   ),
 
-  // Accepts one abbreviation or several spellings of the same team. The
-  // newsroom's tag spelling does not always match ESPN's, so callers pass the
-  // whole alias set and the results are merged.
-  byTeamEntity: async (teamAbbreviation) => {
+  // Accepts one abbreviation or several spellings of the same team. Team tags
+  // are NOT globally unique across sports (TB = Rays/Lightning/Buccaneers), so
+  // every team query may also carry a sport scope. The client-side sport check
+  // stays in place even when the upstream endpoint supports ?sport= so an
+  // upstream regression can never leak another league onto an entity page.
+  byTeamEntity: async (teamAbbreviation, sport = null) => {
     const keys = (Array.isArray(teamAbbreviation) ? teamAbbreviation : [teamAbbreviation])
       .map((value) => String(value || '').toUpperCase())
       .filter(Boolean);
+    const sportKey = String(sport || '').toLowerCase();
     if (!keys.length) return { articles: [] };
 
-    const pages = await Promise.all(keys.map((key) => get(`/news/by-team/${encodeURIComponent(key)}`)
+    const sportQuery = sportKey ? `?sport=${encodeURIComponent(sportKey)}` : '';
+    const pages = await Promise.all(keys.map((key) => get(`/news/by-team/${encodeURIComponent(key)}${sportQuery}`)
       .catch(() => null)));
 
     const seen = new Set();
@@ -214,6 +218,7 @@ export const api = {
     for (const page of pages) {
       for (const article of page?.articles || []) {
         if (!article?.slug || seen.has(article.slug)) continue;
+        if (sportKey && String(article.sport || '').toLowerCase() !== sportKey) continue;
         seen.add(article.slug);
         merged.push(article);
       }
