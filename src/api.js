@@ -182,14 +182,24 @@ export const api = {
   // one of the four slots, then restrict the rail to the last 24 hours.
   // Full sport pages retain their normal historical archive behavior.
   newsBySport: async (sport, limit = 20, page = 1) => {
+    const sportKey = String(sport || '').toLowerCase();
     const isHomeRail = limit === 4 && page === 1;
     const fetchLimit = isHomeRail ? 12 : limit;
-    const data = await get(`/news/by-sport/${encodeURIComponent(sport)}?limit=${fetchLimit}&page=${page}`);
+    const data = await get(`/news/by-sport/${encodeURIComponent(sportKey)}?limit=${fetchLimit}&page=${page}`);
 
-    return normalizeArticleList(data, isHomeRail
-      ? { maxAgeMs: MAX_HOME_AGE_MS, limit }
+    const normalized = normalizeArticleList(data, isHomeRail
+      ? { maxAgeMs: MAX_HOME_AGE_MS }
       : {}
     );
+    const articles = (normalized?.articles || []).filter(
+      (article) => String(article?.sport || '').toLowerCase() === sportKey
+    );
+
+    return {
+      ...normalized,
+      sport: sportKey,
+      articles: isHomeRail ? articles.slice(0, limit) : articles,
+    };
   },
 
   article: async (slug) => {
