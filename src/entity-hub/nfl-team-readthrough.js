@@ -29,6 +29,15 @@ const SCHEDULE_TEAM_CODE = Object.freeze({
   LAR: 'LA',
   WSH: 'WAS',
 });
+const DISPLAY_TEAM_CODE = Object.freeze({
+  LA: 'LAR',
+  WAS: 'WSH',
+});
+
+function displayTeamCode(value) {
+  const code = String(value || '').toUpperCase();
+  return DISPLAY_TEAM_CODE[code] || code;
+}
 
 export function currentNflSeason(now = new Date()) {
   const year = now.getUTCFullYear();
@@ -76,8 +85,9 @@ function venueOf(game) {
 }
 
 function sameTeam(value, abbr) {
-  const resolved = resolveTeam('nfl', value);
-  return resolved ? resolved.abbr === abbr : String(value || '').toUpperCase() === abbr;
+  const normalized = displayTeamCode(value);
+  const resolved = resolveTeam('nfl', normalized);
+  return resolved ? resolved.abbr === abbr : normalized === displayTeamCode(abbr);
 }
 
 function scoreKey(game) {
@@ -90,12 +100,12 @@ function findScore(game, scores) {
     const exact = scores.find((s) => String(s?.game_id || s?.id || '') === id);
     if (exact) return exact;
   }
-  const away = String(game?.away_team || game?.away || '').toUpperCase();
-  const home = String(game?.home_team || game?.home || '').toUpperCase();
+  const away = displayTeamCode(game?.away_team || game?.away);
+  const home = displayTeamCode(game?.home_team || game?.home);
   return scores.find((s) => {
     if (away && home
-      && String(s?.away_team || '').toUpperCase() === away
-      && String(s?.home_team || '').toUpperCase() === home) {
+      && displayTeamCode(s?.away_team) === away
+      && displayTeamCode(s?.home_team) === home) {
       if (game?.week == null || s?.week == null) return true;
       return Number(game.week) === Number(s.week);
     }
@@ -104,14 +114,15 @@ function findScore(game, scores) {
 }
 
 function opponentRef(abbr) {
-  const team = resolveTeam('nfl', abbr);
+  const code = displayTeamCode(abbr);
+  const team = resolveTeam('nfl', code);
   return team ? {
     id: team.abbr,
     name: team.name,
     abbr: team.abbr,
     slug: team.slug,
     logo: team.logo_url,
-  } : { id: abbr || null, name: abbr || null, abbr: abbr || null, slug: null, logo: null };
+  } : { id: code || null, name: code || null, abbr: code || null, slug: null, logo: null };
 }
 
 function normalizeTeamSchedule(schedulePayload, scorePayload, teamAbbr, now = Date.now()) {
@@ -121,8 +132,8 @@ function normalizeTeamSchedule(schedulePayload, scorePayload, teamAbbr, now = Da
   const upcoming = [];
 
   for (const raw of rows) {
-    const away = String(raw?.away_team || raw?.away || '').toUpperCase();
-    const home = String(raw?.home_team || raw?.home || '').toUpperCase();
+    const away = displayTeamCode(raw?.away_team || raw?.away);
+    const home = displayTeamCode(raw?.home_team || raw?.home);
     const isAway = sameTeam(away, teamAbbr);
     const isHome = sameTeam(home, teamAbbr);
     if (!isAway && !isHome) continue;
