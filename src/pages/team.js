@@ -152,8 +152,22 @@ function statLabel(key) {
   return String(key || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function renderTeamStats(stats) {
+function currentSeasonLabel(sport, now = new Date()) {
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth() + 1;
+  if (sport === 'nba' || sport === 'nhl') {
+    const start = month >= 7 ? year : year - 1;
+    return `${start}–${String(start + 1).slice(-2)}`;
+  }
+  return String(year);
+}
+
+function renderTeamStats(stats, team, sport) {
   const rows = Object.entries(stats || {}).filter(([, value]) => value !== null && value !== undefined && value !== '').slice(0, 9);
+  if (!rows.length && Number(team?.record?.games_played) === 0) {
+    const season = currentSeasonLabel(sport);
+    return `<div class="pbe-intel-empty compact"><strong>${escapeHtml(season)} team stats begin with the season</strong><span>No current-season team production sample exists yet. Roster, standings context, leaders and the upcoming schedule are already connected.</span></div>`;
+  }
   if (!rows.length) return '<div class="pbe-intel-empty compact"><strong>Team stats unavailable</strong><span>The current snapshot does not publish a team-stat block.</span></div>';
   return `<div class="pbe-team-metric-grid">${rows.map(([key, value]) => `
     <div class="pbe-team-metric"><span>${escapeHtml(statLabel(key))}</span><strong>${escapeHtml(value)}</strong></div>
@@ -263,12 +277,14 @@ export async function renderTeamPage(root, sport, teamSlug, setMeta) {
         <div class="pbe-team-main">
           <section class="pbe-intel-section">
             <div class="pbe-intel-section-head"><div><span>Team performance</span><h2>Season intelligence</h2></div><a href="/standings/${sport}">Standings →</a></div>
-            ${renderTeamStats(team.team_stats)}
+            ${renderTeamStats(team.team_stats, team, sport)}
           </section>
 
           <section class="pbe-intel-section">
             <div class="pbe-intel-section-head"><div><span>Recent results</span><h2>What just happened</h2></div><a href="/games">All games →</a></div>
-            ${renderSchedule(recent, sport, { emptyTitle: 'No completed games in this snapshot', emptyText: 'Recent results will populate from the normalized team schedule.' })}
+            ${renderSchedule(recent, sport, Number(team?.record?.games_played) === 0
+              ? { emptyTitle: `${currentSeasonLabel(sport)} results begin with the season`, emptyText: 'There are no completed current-season games yet. This is expected, not a missing feed.' }
+              : { emptyTitle: 'No completed games in this snapshot', emptyText: 'Recent results will populate from the normalized team schedule.' })}
           </section>
 
           <section class="pbe-intel-section">
