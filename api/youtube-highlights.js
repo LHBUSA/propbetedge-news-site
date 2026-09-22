@@ -1,7 +1,7 @@
 const SPORTS = Object.freeze({
   mlb: { label: 'MLB', handle: 'MLB', channelId: 'UCoLrcjPV5PbUrUyXq5mjc_A' },
   nfl: { label: 'NFL', handle: 'NFL', channelId: 'UCDVYQ4Zhbm3S2dlz7P1GBDg' },
-  nba: { label: 'NBA', handle: 'NBA', channelId: 'UCEjOSbbaOfgnfRODEEMYlCw' },
+  nba: { label: 'NBA', handle: 'NBA', channelId: null },
   nhl: { label: 'NHL', handle: 'NHL', channelId: 'UCqFMzb-4AUf6WAIbl132QKA' },
 });
 
