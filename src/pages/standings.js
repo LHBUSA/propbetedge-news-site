@@ -3,7 +3,7 @@ import { renderFooter } from '../components/footer.js';
 import { SPORT_CONFIG, getSportConfig, slugifyEntity } from '../sport-config.js';
 
 async function fetchJson(url) {
-  const response = await fetch(url, { credentials: 'omit' });
+  const response = await fetch(url, { credentials: 'omit', cache: 'no-store' });
   if (!response.ok) throw new Error(`Standings source returned ${response.status}`);
   return response.json();
 }
