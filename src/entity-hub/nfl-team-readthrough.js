@@ -23,6 +23,13 @@ const GATEWAY = 'https://nfl-api.propbetedge.ai';
 const LIVE_RELAY = 'https://nfl.propbetedge.ai/api/nfl-live';
 const TIMEOUT_MS = 7000;
 
+// nfl-schedule is keyed on the schedule authority's historical team codes.
+// ESPN identity uses LAR/WSH while that schedule uses LA/WAS.
+const SCHEDULE_TEAM_CODE = Object.freeze({
+  LAR: 'LA',
+  WSH: 'WAS',
+});
+
 export function currentNflSeason(now = new Date()) {
   const year = now.getUTCFullYear();
   const month = now.getUTCMonth();
@@ -333,7 +340,8 @@ export async function enrichNflTeamSnapshot(slug, baseSnapshot = null, { fetchIm
   if (!team) throw new Error('nfl_team_not_found');
 
   const season = currentNflSeason(now);
-  const scheduleUrl = `${GATEWAY}/api/schedule?season=${season}&team=${encodeURIComponent(team.abbr)}`;
+  const scheduleTeam = SCHEDULE_TEAM_CODE[team.abbr] || team.abbr;
+  const scheduleUrl = `${GATEWAY}/api/schedule?season=${season}&team=${encodeURIComponent(scheduleTeam)}`;
   const standingsUrl = `${GATEWAY}/api/standings?season=${season}`;
   const scoresUrl = `${GATEWAY}/api/scores?season=${season}`;
   const statsUrl = `${GATEWAY}/api/current-stats?season=${season}`;
