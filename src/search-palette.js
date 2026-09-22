@@ -353,7 +353,7 @@ function buildStaticRecords() {
 
   const leagues = Object.values(SPORT_CONFIG).flatMap((config) => [
     { type: 'news', sport: config.key, eyebrow: `${config.label} DESK`, title: `${config.label} News`, subtitle: `Latest ${config.label} reporting and betting impact`, href: `/news/${config.key}`, keywords: [config.label, config.name, 'news'] },
-    { type: 'standings', sport: config.key, eyebrow: `${config.label} INTELLIGENCE`, title: `${config.label} Standings`, subtitle: 'Live table connected to team intelligence hubs', href: `/standings/${config.key}`, keywords: [config.label, config.name, 'standings', 'records'] },
+    { type: 'standings', sport: config.key, eyebrow: `${config.label} INTELLIGENCE`, title: config.key === 'ufc' ? 'UFC Rankings' : `${config.label} Standings`, subtitle: config.key === 'ufc' ? 'Current UFC divisional rankings and championship context' : 'Live table connected to team intelligence hubs', href: config.standingsUrl || `/standings/${config.key}`, keywords: [config.label, config.name, config.key === 'ufc' ? 'rankings' : 'standings', 'records'] },
     { type: 'leaders', sport: config.key, eyebrow: `${config.label} INTELLIGENCE`, title: `${config.label} Leaders`, subtitle: 'Top performers and connected player context', href: `/leaders/${config.key}`, keywords: [config.label, config.name, 'leaders', 'stats'] },
   ]);
   return [...core, ...leagues];
