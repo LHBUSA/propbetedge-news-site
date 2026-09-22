@@ -196,10 +196,21 @@ function renderSportSummary(tracker, sport) {
   `;
 }
 
+function pendingStatusLabel(entry) {
+  const result = String(entry?.result || 'PENDING').toUpperCase();
+  if (result !== 'PENDING') return result;
+  const status = String(entry?.evidence?.status || '');
+  if (/postpon/i.test(status)) return 'POSTPONED';
+  if (/suspend/i.test(status)) return 'SUSPENDED';
+  if (/delay|rain|weather/i.test(status)) return 'WEATHER DELAY';
+  return 'PENDING';
+}
+
 function renderHistoryRow(entry) {
   const sport = String(entry.sport || '').toUpperCase();
   const meta = SPORTS[sport] || { emoji: '⚡', label: sport || 'PBE', cadence: String(entry.cadence || '').toUpperCase() };
   const result = String(entry.result || 'PENDING').toUpperCase();
+  const statusLabel = pendingStatusLabel(entry);
   const settled = result !== 'PENDING';
   const provider = proofLabel(entry);
   const published = formatEt(entry.published_at);
@@ -224,11 +235,11 @@ function renderHistoryRow(entry) {
 
       <div class="free-history-row-times">
         <span><b>Published</b>${escapeHtml(published)}</span>
-        <span><b>${settled ? 'Settled' : 'Status'}</b>${settled ? escapeHtml(settledAt) : 'Pending'}</span>
+        <span><b>${settled ? 'Settled' : 'Status'}</b>${settled ? escapeHtml(settledAt) : escapeHtml(statusLabel)}</span>
       </div>
 
       <div class="free-history-row-result">
-        <span class="free-history-result-badge is-${escapeHtml(result.toLowerCase())}">${escapeHtml(result === 'WIN' ? 'HIT' : result === 'LOSS' ? 'MISS' : result)}</span>
+        <span class="free-history-result-badge is-${escapeHtml(result.toLowerCase())}">${escapeHtml(result === 'WIN' ? 'HIT' : result === 'LOSS' ? 'MISS' : statusLabel)}</span>
         ${entry.score ? `<strong>${escapeHtml(entry.score)}</strong>` : ''}
         <small>${escapeHtml(provider)}</small>
       </div>
@@ -237,13 +248,16 @@ function renderHistoryRow(entry) {
 }
 
 function proofLabel(entry) {
+  const result = String(entry?.result || 'PENDING').toUpperCase();
+  const statusLabel = pendingStatusLabel(entry);
   const provider = String(entry?.evidence?.provider || entry?.evidence?.source || '').toLowerCase();
+  if (result === 'PENDING' && statusLabel !== 'PENDING') return 'Grading paused until the game is officially final';
   if (provider.includes('mlb')) return 'Verified from live MLB result data';
   if (provider.includes('nfl')) return 'Verified from NFL graded ledger';
   if (provider.includes('ufc')) return 'Verified from UFC bout result';
   if (provider.includes('wnba')) return 'Verified from WNBA graded ledger';
   if (provider.includes('nhl')) return 'Verified from NHL graded ledger';
-  return String(entry.result || '').toUpperCase() === 'PENDING'
+  return result === 'PENDING'
     ? 'Waiting for official settlement'
     : 'Verified public result';
 }
