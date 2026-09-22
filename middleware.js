@@ -283,7 +283,7 @@ async function resolveMeta(pathname) {
   }
 
   if (pathname === '/standings') {
-    return Response.redirect(`${SITE}/standings/mlb`, 308);
+    return Response.redirect(new URL('/standings/mlb', request.url), 308);
   }
 
   const standingsMatch = pathname.match(/^\/standings\/(mlb|nfl|nba|wnba|nhl)$/);
