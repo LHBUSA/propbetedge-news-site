@@ -397,3 +397,118 @@ test('player photo CSS gives MLB headshots a less aggressive crop', () => {
   assert.match(css, /\.pbe-av-player-id img\s*\{[\s\S]*width:\s*56px;[\s\S]*object-position:\s*center 24%/);
   assert.match(css, /\.pbe-av-player-card\.is-mlb \.pbe-av-player-photo\s*\{[\s\S]*object-fit:\s*contain;[\s\S]*object-position:\s*center 16%/);
 });
+
+
+test('NFL story evidence distinguishes rushing yards from receiving yards by sentence semantics', () => {
+  const article = {
+    id: 'aaron-jones-rushing',
+    sport: 'nfl',
+    title: "Vikings backfield chaos meets Tampa Bay's run defense",
+    summary: 'Aaron Jones is managing a knee injury after a heavy rushing workload.',
+    body: "Aaron Jones carried the Vikings' offense with 23 rushing attempts for 105 yards and finished the game in a brace.",
+    take: { impact_score: 3, prop_types: ['rushing_yards'] },
+  };
+  const manifest = {
+    players: [{ id: '3042519', name: 'Aaron Jones Sr.', team_id: 'MIN', position: 'RB', path: '/player/nfl/3042519' }],
+    teams: [{ id: 'MIN', abbreviation: 'MIN', name: 'Minnesota Vikings', path: '/team/nfl/minnesota-vikings' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.match(html, />105<\/strong>\s*<b>RUSH YDS<\/b>/);
+  assert.doesNotMatch(html, />105<\/strong>\s*<b>REC YDS<\/b>/);
+});
+
+test('NFL roster ripple keeps neighboring player clauses isolated and resolves healthy role beneficiaries', () => {
+  const article = {
+    id: 'vikings-backfield-status',
+    sport: 'nfl',
+    title: "Vikings backfield chaos meets Tampa Bay's run defense: opportunity in flux",
+    summary: "Aaron Jones limps into Sunday's matchup while Minnesota cycles through depth.",
+    body: [
+      'Aaron Jones is nursing a knee injury and his Sunday status is uncertain.',
+      'Jordan Mason remains sidelined from a thumb fracture, and rookie Demond Claiborne remains largely untested.',
+      'Minnesota will redistribute touches toward Claiborne in space if Jones cannot handle his normal load.',
+    ].join(' '),
+    take: { impact_score: 3, prop_types: ['rushing_yards'] },
+  };
+  const manifest = {
+    players: [
+      { id: '3042519', name: 'Aaron Jones Sr.', team_id: 'MIN', position: 'RB', path: '/player/nfl/3042519' },
+      { id: '4360569', name: 'Jordan Mason', team_id: 'MIN', position: 'RB', path: '/player/nfl/4360569' },
+      { id: '4832846', name: 'Demond Claiborne', team_id: 'MIN', position: 'RB', path: '/player/nfl/4832846' },
+    ],
+    teams: [{ id: 'MIN', abbreviation: 'MIN', name: 'Minnesota Vikings', path: '/team/nfl/minnesota-vikings' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.match(html, /Jordan Mason/);
+  assert.match(html, /OUT \/ IR/);
+  assert.match(html, /Demond Claiborne/);
+  assert.match(html, /ROLE UP/);
+  assert.doesNotMatch(html, /OUT \/ IR[\s\S]{0,220}Demond Claiborne/);
+  assert.doesNotMatch(html, /Role redistribution is described in the article text/);
+});
+
+test('multi-team NFL roster ripple groups player status under the correct team', () => {
+  const article = {
+    id: 'turner-van-ness',
+    sport: 'nfl',
+    title: 'The Two-Game Reset: How Turner and Van Ness Are Rewriting the Pass-Rush Narrative',
+    summary: 'Dallas Turner and Lukas Van Ness are reshaping Minnesota and Green Bay.',
+    body: [
+      'Jonathan Greenard is gone from Minnesota, dealt to Philadelphia.',
+      'Micah Parsons remains sidelined in Green Bay as his ACL heals.',
+      'Dallas Turner has emerged for Minnesota while Lukas Van Ness has surged for Green Bay.',
+      'Turner has 20 pressures and 11 quarterback hits through two games.',
+    ].join(' '),
+    take: { impact_score: 4, prop_types: ['sacks', 'passing_yards'] },
+  };
+  const manifest = {
+    players: [
+      { id: '3916409', name: 'Jonathan Greenard', team_id: 'PHI', position: 'LB', path: '/player/nfl/3916409' },
+      { id: '4361423', name: 'Micah Parsons', team_id: 'GB', position: 'DE', path: '/player/nfl/4361423' },
+      { id: '4429215', name: 'Dallas Turner', team_id: 'MIN', position: 'LB', path: '/player/nfl/4429215' },
+      { id: '4431317', name: 'Lukas Van Ness', team_id: 'GB', position: 'DE', path: '/player/nfl/4431317' },
+    ],
+    teams: [
+      { id: 'MIN', abbreviation: 'MIN', name: 'Minnesota Vikings', path: '/team/nfl/minnesota-vikings' },
+      { id: 'GB', abbreviation: 'GB', name: 'Green Bay Packers', path: '/team/nfl/green-bay-packers' },
+    ],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  const min = html.indexOf('Minnesota Vikings');
+  const greenard = html.indexOf('Jonathan Greenard');
+  const gb = html.indexOf('Green Bay Packers');
+  const parsons = html.indexOf('Micah Parsons');
+  assert.ok(min >= 0 && greenard > min, 'Greenard is grouped under Minnesota roster loss');
+  assert.ok(gb >= 0 && parsons > gb, 'Parsons is grouped under Green Bay availability');
+  assert.match(html, /DEPARTED/);
+  assert.match(html, /OUT \/ IR/);
+  assert.doesNotMatch(html, /Role redistribution is described in the article text/);
+});
+
+test('integer evidence labels pluralize quarterback hits', () => {
+  const article = {
+    id: 'qb-hits-plural',
+    sport: 'nfl',
+    title: 'Pressure surge',
+    body: 'Dallas Turner has 11 quarterback hits through two games.',
+    take: { impact_score: 3, prop_types: ['sacks'] },
+  };
+  const manifest = {
+    players: [{ id: '4429215', name: 'Dallas Turner', team_id: 'MIN', position: 'LB', path: '/player/nfl/4429215' }],
+    teams: [{ id: 'MIN', abbreviation: 'MIN', name: 'Minnesota Vikings', path: '/team/nfl/minnesota-vikings' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.match(html, />11<\/strong>\s*<b>QB HITS<\/b>/);
+  assert.doesNotMatch(html, />11<\/strong>\s*<b>QB HIT<\/b>/);
+});
+
+test('global background first paint is neutral rather than an MLB image', () => {
+  const css = fs.readFileSync(new URL('../src/styles/background-selector.css', import.meta.url), 'utf8');
+  const root = css.match(/:root\s*\{([\s\S]*?)\}/)?.[1] || '';
+  assert.match(root, /--pbe-scene-image:\s*none/);
+  assert.match(root, /--pbe-scene-opacity:\s*0/);
+});
