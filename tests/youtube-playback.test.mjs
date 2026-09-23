@@ -20,3 +20,12 @@ test('article YouTube media derives a privacy-enhanced on-site embed', () => {
   assert.match(article, /Plays on PropBetEdge/);
   assert.match(article, /picture-in-picture; web-share/);
 });
+
+
+test('NFL highlight source rejects rights-restricted full-game replay candidates', () => {
+  const source = readFileSync(new URL('../api/youtube-highlights.js', import.meta.url), 'utf8');
+  assert.match(source, /isOnsitePlaybackCandidate/);
+  assert.match(source, /\\bfull game\\b/);
+  assert.match(source, /\\bcondensed game\\b/);
+  assert.match(source, /sport !== 'nfl'/);
+});
