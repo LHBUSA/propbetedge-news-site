@@ -12,7 +12,7 @@ const LEGACY_BALLPARK = 'https://images.unsplash.com/photo-1778050203444-90920c7
 const SCENES = {
   wrigley: { label: 'MLB', name: 'Wrigley Field', note: 'The original Chicago backdrop', preview: ORIGINAL_WRIGLEY },
   mlb: { label: 'MLB', name: 'Wrigley Lights', note: 'Chicago baseball after dark', preview: `${ASSET_ROOT}wrigley-lights.webp` },
-  nfl: { label: 'NFL', name: 'Stadium Night', note: 'Sunday under the lights', preview: `${ASSET_ROOT}stadium-night.webp` },
+  nfl: { label: 'NFL', name: 'Gridiron Night', note: 'Football under the lights', preview: `${ASSET_ROOT}gridiron-gold.webp` },
   nba: { label: 'NBA', name: 'Arena Glow', note: 'Big-game hardwood atmosphere', preview: `${ASSET_ROOT}arena-glow.webp` },
   nhl: { label: 'NHL', name: 'Ice House', note: 'Cold rink intensity', preview: `${ASSET_ROOT}ice-house.webp` },
   'mlb-summer': { label: 'MLB', name: 'Summer Classic', note: 'Golden-hour ivy and baseball', preview: `${ASSET_ROOT}summer-classic.webp` },
