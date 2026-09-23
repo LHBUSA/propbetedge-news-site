@@ -739,17 +739,77 @@ async function mlbContext(player, article) {
   const key = metric?.[0] || (pitcher ? 'strikeOuts' : 'hits');
   const label = metric?.[1] || (pitcher ? 'Strikeouts' : 'Hits');
 
-  const rows = [...games].reverse().slice(0, 8).map((g) => ({
-    date: g.date || g.game?.gameDate || '',
-    opponent: g.opponent?.name || g.opponent?.abbreviation || '',
-    value: toNumber(g.stat?.[key]),
-  })).filter((x) => x.value != null);
+  const metricLive = metricSummary(
+    [...games].reverse().map((g) => ({
+      date: g.date || g.game?.gameDate || '',
+      opponent: g.opponent?.abbreviation || g.opponent?.name || '',
+      result: g.isWin === true ? 'W' : g.isWin === false ? 'L' : '',
+      stat: g.stat || {},
+    })),
+    (g) => g.stat?.[key],
+  );
+  const rows = metricLive.rows;
 
   const seasonStats = pitcher
     ? [['ERA', seasonRow?.era], ['WHIP', seasonRow?.whip], ['K', seasonRow?.strikeOuts], ['IP', seasonRow?.inningsPitched]]
     : [['AVG', seasonRow?.avg], ['HR', seasonRow?.homeRuns], ['RBI', seasonRow?.rbi], ['OPS', seasonRow?.ops]];
 
-  return { name: person.fullName || player.name, image: player.image_url, label, rows, seasonStats };
+  return { name: person.fullName || player.name, image: player.image_url, label, rows, seasonStats, metricLive };
+}
+
+export function metricSummary(sourceRows, valueFor, limit = 8) {
+  const all = (sourceRows || []).map((row) => {
+    const value = toNumber(valueFor(row));
+    return value == null ? null : {
+      date: row.date || row.gameDate || '',
+      opponent: row.opponent || '',
+      result: row.result || '',
+      value,
+    };
+  }).filter(Boolean);
+
+  const recentNewest = all.slice(0, limit);
+  const rows = [...recentNewest].reverse();
+  const average = (items) => items.length
+    ? items.reduce((sum, row) => sum + Number(row.value || 0), 0) / items.length
+    : null;
+  const recentAverage = average(recentNewest);
+  const seasonAverage = average(all);
+  const recentHigh = recentNewest.length
+    ? Math.max(...recentNewest.map((row) => Number(row.value) || 0))
+    : null;
+  const baselineAvailable = all.length > recentNewest.length && seasonAverage != null;
+  const deltaPct = baselineAvailable && seasonAverage !== 0 && recentAverage != null
+    ? ((recentAverage - seasonAverage) / Math.abs(seasonAverage)) * 100
+    : null;
+
+  return {
+    rows,
+    recentAverage,
+    seasonAverage,
+    recentHigh,
+    seasonGames: all.length,
+    baselineAvailable,
+    deltaPct,
+  };
+}
+
+function formatMetricNumber(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  const digits = Math.abs(n) >= 10 ? 1 : 2;
+  return n.toFixed(digits).replace(/\.00$/, '').replace(/\.0$/, '');
+}
+
+function compactOpponent(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '—';
+  const prefixed = /^(@|vs\.?)/i.test(raw);
+  const parts = raw.replace(/^vs\.?\s*/i, '').replace(/^@\s*/i, '').trim().split(/\s+/);
+  const team = parts.length === 1
+    ? parts[0]
+    : parts.map((part) => part[0]).join('').slice(0, 4).toUpperCase();
+  return `${raw.startsWith('@') ? '@ ' : prefixed ? 'vs ' : ''}${team}`;
 }
 
 function firstUsableCategory(categories, preferred) {
@@ -796,11 +856,10 @@ async function espnContext(player, article, sport) {
   const key = metric?.[0];
   const label = metric?.[1] || 'Recent form';
 
-  const rows = key ? (log.rows || []).slice(0, 8).reverse().map((g) => ({
-    date: g.date,
-    opponent: g.opponent,
-    value: toNumber(g.values?.[key]),
-  })).filter((x) => x.value != null) : [];
+  const metricLive = key
+    ? metricSummary(log.rows || [], (g) => g.values?.[key])
+    : metricSummary([], () => null);
+  const rows = metricLive.rows;
 
   const preferredKeys = sport === 'nba'
     ? ['avgPoints', 'avgRebounds', 'avgAssists', 'threePointFieldGoalPct']
@@ -815,7 +874,7 @@ async function espnContext(player, article, sport) {
     return idx >= 0 ? [cat.labels?.[idx] || keyName, seasonRow?.values?.[keyName]] : null;
   }).filter(Boolean).slice(0, 4);
 
-  return { name: player.name, image: player.image_url, label, rows, seasonStats };
+  return { name: player.name, image: player.image_url, label, rows, seasonStats, metricLive };
 }
 
 async function nhlContext(player, article) {
@@ -834,11 +893,8 @@ async function nhlContext(player, article) {
   const label = metric?.[1] || (bio?.position === 'G' ? 'Saves' : 'Shots on Goal');
   const log = logPayload ? nhlGameLog(logPayload, season, '2', bio?.position === 'G') : { rows: [] };
 
-  const rows = (log.rows || []).slice(0, 8).reverse().map((g) => ({
-    date: g.date,
-    opponent: g.opponent,
-    value: toNumber(g.values?.[key]),
-  })).filter((x) => x.value != null);
+  const metricLive = metricSummary(log.rows || [], (g) => g.values?.[key]);
+  const rows = metricLive.rows;
 
   const preferred = bio?.position === 'G'
     ? ['savePctg', 'goalsAgainstAvg', 'wins', 'shutouts']
@@ -849,7 +905,7 @@ async function nhlContext(player, article) {
     return idx >= 0 ? [cat.labels?.[idx] || keyName, seasonRow?.values?.[keyName]] : null;
   }).filter(Boolean).slice(0, 4);
 
-  return { name: player.name, image: player.image_url, label, rows, seasonStats };
+  return { name: player.name, image: player.image_url, label, rows, seasonStats, metricLive };
 }
 
 async function playerContext(player, article) {
@@ -868,16 +924,25 @@ function compactDate(value) {
     : '';
 }
 
-function renderPlayerContext(data) {
+export function renderPlayerContext(data) {
   if (!data) return '';
   const rows = (data.rows || []).filter((r) => r.value != null);
   const stats = (data.seasonStats || []).filter((x) => x?.[1] != null && x?.[1] !== '');
   if (!rows.length && !stats.length) return '';
 
-  const max = Math.max(1, ...rows.map((r) => Number(r.value) || 0));
-  const avg = rows.length
+  const live = data.metricLive || {};
+  const avg = live.recentAverage ?? (rows.length
     ? rows.reduce((sum, row) => sum + Number(row.value || 0), 0) / rows.length
-    : null;
+    : null);
+  const seasonAvg = live.seasonAverage ?? null;
+  const baselineAvailable = live.baselineAvailable === true && seasonAvg != null;
+  const max = Math.max(1, ...rows.map((r) => Number(r.value) || 0), baselineAvailable ? Number(seasonAvg) || 0 : 0);
+  const baselinePct = baselineAvailable ? Math.max(0, Math.min(100, Number(seasonAvg) / max * 100)) : null;
+  const deltaPct = Number.isFinite(Number(live.deltaPct)) ? Number(live.deltaPct) : null;
+  const trendTone = deltaPct == null ? 'sample' : deltaPct > 5 ? 'up' : deltaPct < -5 ? 'down' : 'steady';
+  const trendText = deltaPct == null
+    ? `${live.seasonGames || rows.length} GAME SAMPLE`
+    : `${deltaPct > 0 ? '+' : ''}${deltaPct.toFixed(0)}% VS SEASON`;
 
   return `<div class="pbe-av-player-card">
     <header class="pbe-av-player-head">
@@ -890,7 +955,7 @@ function renderPlayerContext(data) {
         </div>
       </div>
       ${avg != null ? `<div class="pbe-av-recent-avg">
-        <strong>${esc(avg.toFixed(avg >= 10 ? 1 : 2).replace(/\.00$/, '').replace(/\.0$/, ''))}</strong>
+        <strong>${esc(formatMetricNumber(avg))}</strong>
         <span>LAST ${rows.length} AVG</span>
         <small>${esc(data.label)}</small>
       </div>` : ''}
@@ -900,21 +965,31 @@ function renderPlayerContext(data) {
       ${stats.map(([label, value]) => `<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join('')}
     </div>` : ''}
 
-    ${rows.length ? `<div class="pbe-av-form">
+    ${rows.length ? `<div class="pbe-av-live-insights">
+      <div><span>RECENT HIGH</span><strong>${esc(formatMetricNumber(live.recentHigh))}</strong><small>${esc(data.label)}</small></div>
+      <div><span>${baselineAvailable ? 'SEASON AVG' : 'SEASON SAMPLE'}</span><strong>${esc(baselineAvailable ? formatMetricNumber(seasonAvg) : String(live.seasonGames || rows.length))}</strong><small>${baselineAvailable ? esc(data.label) : 'verified games'}</small></div>
+      <div class="is-${trendTone}"><span>FORM SIGNAL</span><strong>${esc(trendText)}</strong><small>${deltaPct == null ? 'Build the sample before calling a trend' : 'Recent average vs full-season game log'}</small></div>
+    </div>
+    <div class="pbe-av-form">
       <div class="pbe-av-form-head">
         <div><span>RECENT FORM</span><b>${esc(data.label)}</b></div>
-        <small>${rows.length} verified games</small>
+        <small>${rows.length} recent · ${live.seasonGames || rows.length} season games</small>
       </div>
       <div class="pbe-av-bars">
-        ${rows.map((row) => {
+        ${rows.map((row, idx) => {
           const height = Math.max(7, Math.min(100, Number(row.value) / max * 100));
-          return `<div class="pbe-av-bar-col" title="${esc(compactDate(row.date))} ${esc(row.opponent)} · ${esc(row.value)} ${esc(data.label)}">
+          const latest = idx === rows.length - 1;
+          return `<div class="pbe-av-bar-col${latest ? ' is-latest' : ''}" title="${esc(compactDate(row.date))} ${esc(row.opponent)} · ${esc(row.value)} ${esc(data.label)}">
             <span class="pbe-av-bar-value">${esc(row.value)}</span>
-            <div class="pbe-av-bar-track"><i style="height:${height.toFixed(1)}%"></i></div>
-            <small>${esc(compactDate(row.date))}</small>
+            <div class="pbe-av-bar-track">
+              ${baselinePct != null ? `<span class="pbe-av-baseline-tick" style="bottom:${baselinePct.toFixed(1)}%" aria-hidden="true"></span>` : ''}
+              <i style="height:${height.toFixed(1)}%"></i>
+            </div>
+            <span class="pbe-av-bar-meta"><b>${esc(compactOpponent(row.opponent))}</b><small>${esc(compactDate(row.date))}</small></span>
           </div>`;
         }).join('')}
       </div>
+      ${baselineAvailable ? `<div class="pbe-av-baseline-key"><i></i><span>Season average · ${esc(formatMetricNumber(seasonAvg))} ${esc(data.label)}</span></div>` : ''}
     </div>` : ''}
   </div>`;
 }
