@@ -140,15 +140,7 @@ function parseFeed(xml, sport) {
 }
 
 function selectHighlights(videos, sport, limit) {
-  // The NFL channel mixes normal clips with rights-restricted long-form uploads
-  // (notably full-game replays). Those entries can appear in the public Atom
-  // feed yet reject third-party iframe playback with YouTube error 101/150.
-  // Keep the on-site player sourced from clip-style uploads that are intended
-  // for distribution, rather than selecting a known blocked replay as featured.
-  const sourceSafeVideos = videos.filter((video) => isOnsitePlaybackCandidate(video, sport));
-  const candidates = sourceSafeVideos.length >= Math.min(3, limit) ? sourceSafeVideos : videos;
-
-  const ranked = candidates.map((video, index) => {
+  const ranked = videos.map((video, index) => {
     const actionScore = highlightScore(video.title, sport);
     const recencyBoost = Math.max(0, 15 - index);
     return { ...video, _score: actionScore + recencyBoost, _actionScore: actionScore };
@@ -163,20 +155,6 @@ function selectHighlights(videos, sport, limit) {
     .map(({ _score, _actionScore, rank, ...video }) => video);
 }
 
-function isOnsitePlaybackCandidate(video, sport) {
-  if (sport !== 'nfl') return true;
-
-  const text = String(video?.title || '').toLowerCase();
-
-  // NFL full-game / condensed-game inventory is frequently rights-restricted
-  // from third-party embeds even when it is visible on youtube.com.
-  if (/\bfull game\b/.test(text)) return false;
-  if (/\bcondensed game\b/.test(text)) return false;
-  if (/\bgame of the week\b/.test(text) && /\bfull\b/.test(text)) return false;
-
-  return true;
-}
-
 function highlightScore(title, sport) {
   const text = String(title || '').toLowerCase();
   let score = 0;
@@ -186,7 +164,7 @@ function highlightScore(title, sport) {
     [/top plays?/, 20],
     [/best plays?/, 18],
     [/game recap/, 18],
-    [/full game/, sport === 'nfl' ? -40 : 13],
+    [/full game/, 13],
     [/\bvs\.?\b/, 8],
     [/walk[- ]?off/, 10],
     [/overtime|\bot\b/, 8],
