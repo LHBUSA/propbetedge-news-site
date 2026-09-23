@@ -757,7 +757,7 @@ async function mlbContext(player, article) {
   return { name: person.fullName || player.name, image: player.image_url, label, rows, seasonStats, metricLive };
 }
 
-function metricSummary(sourceRows, valueFor, limit = 8) {
+export function metricSummary(sourceRows, valueFor, limit = 8) {
   const all = (sourceRows || []).map((row) => {
     const value = toNumber(valueFor(row));
     return value == null ? null : {
@@ -924,7 +924,7 @@ function compactDate(value) {
     : '';
 }
 
-function renderPlayerContext(data) {
+export function renderPlayerContext(data) {
   if (!data) return '';
   const rows = (data.rows || []).filter((r) => r.value != null);
   const stats = (data.seasonStats || []).filter((x) => x?.[1] != null && x?.[1] !== '');
