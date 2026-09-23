@@ -52,9 +52,21 @@ const AUTHOR_META = {
 };
 
 
+const LEGACY_ARTICLE_REDIRECTS = new Map([
+  [
+    '/news/nfl/lessons-learned-from-week-2-vikings-packers-have-breakout-stars-bengals-have-nfl-2026-09-22',
+    '/news/nfl/turner-van-ness-rewrite-pass-rush-narrative-2026-09-22',
+  ],
+]);
+
 export default async function middleware(request) {
   const url = new URL(request.url);
   const pathname = url.pathname.replace(/\/+$/, '') || '/';
+
+  const repairedArticlePath = LEGACY_ARTICLE_REDIRECTS.get(pathname);
+  if (repairedArticlePath) {
+    return Response.redirect(new URL(repairedArticlePath, request.url), 308);
+  }
 
   // Canonical standings entry point. Keep the redirect on the current host so
   // preview stays in preview and production stays on production.
