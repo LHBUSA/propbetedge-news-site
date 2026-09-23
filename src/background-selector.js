@@ -150,7 +150,19 @@ function ensureSelector() {
   syncControlState(control);
 }
 
+function articleDetailSport(pathname = window.location.pathname) {
+  const path = String(pathname || '');
+  const match = path.match(/^\/news\/(mlb|wnba|nfl|nba|nhl|ufc)\/[^/]+\/?$/i);
+  return match?.[1]?.toLowerCase() || null;
+}
+
 function currentScene() {
+  // Article detail pages are editorial surfaces, so the story's sport is the
+  // visual authority. A stale manual Wrigley preference must never make an NFL
+  // or NBA article look like baseball after hydration.
+  const articleSport = articleDetailSport();
+  if (articleSport) return FOLLOW_SCENE[articleSport] || 'network';
+
   if (!autoScene) return VALID_SCENES.has(manualScene) ? manualScene : 'network';
   const sport = viewedSport();
   return sport ? FOLLOW_SCENE[sport] : 'network';
@@ -215,9 +227,12 @@ function syncControlState(control) {
 
   const status = control.querySelector('.pbe-scene-follow-status');
   if (status) {
-    status.textContent = autoScene
-      ? `AUTO · Following ${sport ? sport.toUpperCase() : 'the PBE network'} · ${sceneMeta.name}`
-      : `MANUAL · ${sceneMeta.label} · ${sceneMeta.name}`;
+    const articleSport = articleDetailSport();
+    status.textContent = articleSport
+      ? `ARTICLE · ${articleSport.toUpperCase()} · ${sceneMeta.name}`
+      : autoScene
+        ? `AUTO · Following ${sport ? sport.toUpperCase() : 'the PBE network'} · ${sceneMeta.name}`
+        : `MANUAL · ${sceneMeta.label} · ${sceneMeta.name}`;
     status.classList.toggle('is-auto', autoScene);
   }
 }
