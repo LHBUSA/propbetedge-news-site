@@ -821,6 +821,24 @@ button { font-family: inherit; }
   color: var(--gold);
   margin-bottom: 4px;
 }
+
+.ai-take-advice--scenario {
+  background: rgba(255, 255, 255, 0.025);
+  border-left-color: rgba(212, 175, 55, 0.45);
+}
+.ai-take-advice--scenario .label {
+  color: var(--paper-dim);
+}
+.ai-take-advice-note {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-faint);
+}
 .ai-take-tags {
   display: flex; flex-wrap: wrap;
   gap: 6px; margin-top: 16px;
