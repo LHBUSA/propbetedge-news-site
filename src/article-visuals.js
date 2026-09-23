@@ -327,6 +327,56 @@ function evidenceContextIsSpeculative(context) {
   return false;
 }
 
+function evidenceContextKey(context) {
+  return String(context || '')
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const EVIDENCE_METRIC_PRIORITY = {
+  nhl: ['PTS', 'G', 'A', 'SOG', 'TOI', 'SV%', 'SV'],
+  nba: ['PTS', 'REB', 'AST', '3PM', 'USAGE', 'FG%', 'MIN'],
+  nfl: ['PASS YDS', 'RUSH YDS', 'REC YDS', 'TD', 'REC', 'TGT', 'SNAP SHARE', 'SNAPS', 'SACKS', 'PRESSURES', 'HURRIES', 'QB HIT'],
+  mlb: ['ERA', 'K/9', 'K', 'IP', 'HR', 'RBI', 'TB', 'H', 'OPS', 'CAREER K', 'OPP K%', 'VELOCITY'],
+};
+
+function editorializeEvidence(rows, sport) {
+  const groups = new Map();
+
+  for (const row of rows) {
+    const key = evidenceContextKey(row.context);
+    if (!key) continue;
+
+    let group = groups.get(key);
+    if (!group) {
+      group = { context: row.context, metrics: [] };
+      groups.set(key, group);
+    }
+
+    if (!group.metrics.some((metric) => metric.label === row.label && metric.value === row.value)) {
+      group.metrics.push({ label: row.label, value: row.value });
+    }
+  }
+
+  // One published thought should read as one editorial evidence unit. If a
+  // sentence contains a stat line (30 PTS, 5 G, 25 A), keep those numbers
+  // together and print the supporting sentence once instead of cloning the
+  // same paragraph under three separate cards.
+  const priority = EVIDENCE_METRIC_PRIORITY[sport] || [];
+  for (const group of groups.values()) {
+    group.metrics.sort((a, b) => {
+      const ai = priority.indexOf(a.label);
+      const bi = priority.indexOf(b.label);
+      return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
+    });
+  }
+
+  return [...groups.values()].slice(0, 4);
+}
+
 function keyNumbers(article) {
   const sport = String(article?.sport || '').toLowerCase();
   const patterns = METRIC_PATTERNS[sport] || [];
@@ -342,7 +392,7 @@ function keyNumbers(article) {
     const global = new RegExp(re.source, flags);
     let match;
 
-    while ((match = global.exec(text)) && found.length < 12) {
+    while ((match = global.exec(text)) && found.length < 16) {
       const raw = match[1];
       const numeric = evidenceNumber(raw);
       const context = evidenceSentenceAround(text, match.index);
@@ -360,7 +410,7 @@ function keyNumbers(article) {
     }
   }
 
-  return found.slice(0, 4);
+  return editorializeEvidence(found, sport);
 }
 
 function impactScore(article) {
@@ -529,13 +579,21 @@ function renderKeyNumbers(article) {
   if (!rows.length) return '';
 
   return `<div class="pbe-av-evidence">
-    <div class="pbe-av-minihead"><span>STORY EVIDENCE</span><small>Numbers stated in the published article</small></div>
-    <div class="pbe-av-evidence-grid">
-      ${rows.map((row, idx) => `<div class="pbe-av-evidence-card">
-        <span class="pbe-av-evidence-index">${String(idx + 1).padStart(2, '0')}</span>
-        <div><strong>${esc(row.value)}</strong><b>${esc(row.label)}</b></div>
-        <p>${esc(row.context)}</p>
-      </div>`).join('')}
+    <div class="pbe-av-minihead"><span>STORY EVIDENCE</span><small>Distinct facts from the published story</small></div>
+    <div class="pbe-av-evidence-grid" data-count="${Math.min(rows.length, 4)}">
+      ${rows.map((row, idx) => {
+        const statline = row.metrics.length > 1;
+        return `<div class="pbe-av-evidence-card${statline ? ' is-statline' : ''}">
+          <span class="pbe-av-evidence-index">${String(idx + 1).padStart(2, '0')}</span>
+          <div class="pbe-av-evidence-stats">
+            ${row.metrics.map((metric) => `<span class="pbe-av-evidence-stat">
+              <strong>${esc(metric.value)}</strong>
+              <b>${esc(metric.label)}</b>
+            </span>`).join('')}
+          </div>
+          <p>${esc(row.context)}</p>
+        </div>`;
+      }).join('')}
     </div>
   </div>`;
 }
