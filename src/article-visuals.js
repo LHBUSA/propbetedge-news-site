@@ -477,7 +477,6 @@ function contextsForName(text, name) {
       }
       from = idx + needle.length;
     }
-    if (contexts.length) break;
   }
 
   const fallback = contextForName(text, name);
