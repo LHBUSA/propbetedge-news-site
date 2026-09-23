@@ -521,7 +521,20 @@ function formatDate(iso) {
   });
 }
 
+function toTitleCase(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function formatPropType(p) {
+  const key = String(p || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
   const map = {
     k_prop: 'Strikeouts',
     hr: 'Home Runs',
@@ -540,6 +553,7 @@ function formatPropType(p) {
     passing_yards: 'Passing Yards',
     passing_tds: 'Passing TDs',
     rushing_yards: 'Rushing Yards',
+    rushing_attempts: 'Rushing Attempts',
     rushing_tds: 'Rushing TDs',
     receiving_yards: 'Receiving Yards',
     receptions: 'Receptions',
@@ -555,7 +569,7 @@ function formatPropType(p) {
     goals: 'Goals',
     saves: 'Saves',
   };
-  return map[p] || p.replace(/_/g, ' ');
+  return map[key] || toTitleCase(key.replace(/_/g, ' '));
 }
 
 function escapeAttr(s) {
