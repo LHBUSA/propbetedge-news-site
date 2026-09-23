@@ -187,6 +187,18 @@
   gap: 8px;
 }
 
+.pbe-av-evidence-grid[data-count="1"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pbe-av-evidence-grid[data-count="2"] {
+  grid-template-columns: repeat(2, minmax(0,1fr));
+}
+
+.pbe-av-evidence-grid[data-count="3"] {
+  grid-template-columns: repeat(3, minmax(0,1fr));
+}
+
 .pbe-av-evidence-card {
   min-width: 0;
   min-height: 142px;
@@ -219,6 +231,44 @@
 
 .pbe-av-evidence-card > div {
   margin-top: 13px;
+}
+
+.pbe-av-evidence-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 10px;
+}
+
+.pbe-av-evidence-stat {
+  min-width: 0;
+}
+
+.pbe-av-evidence-card.is-statline {
+  min-height: 156px;
+  padding: 15px 15px 14px;
+}
+
+.pbe-av-evidence-card.is-statline .pbe-av-evidence-stats {
+  padding: 2px 0 10px;
+  border-bottom: 1px solid rgba(255,255,255,.065);
+}
+
+.pbe-av-evidence-card.is-statline .pbe-av-evidence-stat + .pbe-av-evidence-stat {
+  padding-left: 10px;
+  border-left: 1px solid rgba(255,255,255,.065);
+}
+
+.pbe-av-evidence-card.is-statline .pbe-av-evidence-stat:first-child strong {
+  font-size: clamp(32px, 4vw, 42px);
+}
+
+.pbe-av-evidence-card.is-statline p {
+  margin-top: 12px !important;
+  padding-top: 0;
+  max-width: 76ch;
+  color: var(--av-dim) !important;
+  font-size: 9.2px !important;
+  line-height: 1.45 !important;
 }
 
 .pbe-av-evidence-card strong,
@@ -906,8 +956,14 @@
     height: 50px;
   }
 
-  .pbe-av-evidence-grid {
+  .pbe-av-evidence-grid,
+  .pbe-av-evidence-grid[data-count="3"],
+  .pbe-av-evidence-grid[data-count="4"] {
     grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+
+  .pbe-av-evidence-grid[data-count="1"] {
+    grid-template-columns: 1fr;
   }
 
   .pbe-av-ripple-grid,
@@ -974,6 +1030,21 @@
 
   .pbe-av-evidence-card strong {
     font-size: 29px;
+  }
+
+  .pbe-av-evidence-grid,
+  .pbe-av-evidence-grid[data-count="2"],
+  .pbe-av-evidence-grid[data-count="3"],
+  .pbe-av-evidence-grid[data-count="4"] {
+    grid-template-columns: 1fr;
+  }
+
+  .pbe-av-evidence-card.is-statline .pbe-av-evidence-stats {
+    grid-template-columns: repeat(3, minmax(0,1fr));
+  }
+
+  .pbe-av-evidence-card.is-statline .pbe-av-evidence-stat:first-child strong {
+    font-size: 31px;
   }
 
   .pbe-av-ripple-head,
