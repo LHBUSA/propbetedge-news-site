@@ -963,8 +963,8 @@ export function renderPlayerContext(data) {
       </div>
       ${avg != null ? `<div class="pbe-av-recent-avg" title="${esc(averageExplainer)}" aria-label="${esc(averageExplainer)}">
         <strong>${esc(formatMetricNumber(avg))}</strong>
-        <span>LAST ${rows.length} GAMES</span>
-        <small>${esc(data.label)} per game · average</small>
+        <span>LAST ${rows.length} GAME AVG</span>
+        <small>${esc(data.label)} per game</small>
       </div>` : ''}
     </header>
 
