@@ -109,9 +109,12 @@ const METRIC_PATTERNS = {
     ['HURRIES', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+hurries\b/i],
     ['QB HIT', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+quarterback hits?\b/i],
     ['SACKS', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+sacks?\b/i],
-    ['PASS YDS', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+passing yards?\b/i],
+    ['PASS YDS', /(?:\b(?:threw|passed|passing)\b[^.!?]{0,90}?)?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+passing yards?\b/i],
+    ['PASS YDS', /\b(?:threw|passed)\b[^.!?]{0,90}?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+yards?\b/i],
     ['RUSH YDS', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+rushing yards?\b/i],
-    ['REC YDS', /(-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+(?:receiving )?yards?\b/i],
+    ['RUSH YDS', /\b(?:rushed|rushing|carried|carries|carry)\b[^.!?]{0,110}?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+yards?\b/i],
+    ['REC YDS', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+receiving yards?\b/i],
+    ['REC YDS', /\b(?:caught|catch|catches|receptions?|receiving)\b[^.!?]{0,110}?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+yards?\b/i],
     ['REC', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+receptions?\b/i],
     ['TGT', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+targets?\b/i],
     ['TD', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+(?:touchdowns?|TDs?)\b/i],
@@ -225,14 +228,14 @@ export function nflRecentMetric(article, position) {
 const DEPARTURE_RULE = {
   kind: 'departed',
   label: 'DEPARTED',
-  re: /\bdepart(?:ed|ure)\b|\bleft\s+(?:for|to)\b|\bsigned\s+with\b|\bjoined\b|\btraded\s+to\b|\bsent\s+to\b|\bmoved\s+to\b|\breleased\s+by\b|\bwaived\s+by\b/i,
+  re: /\b(?:gone|departed)\s+from\b|\bdepart(?:ed|ure)\b|\bleft\s+(?:for|to)\b|\bsigned\s+with\b|\bjoined\b|\bdealt\s+to\b|\btraded\s+to\b|\bsent\s+to\b|\bmoved\s+to\b|\breleased\s+by\b|\bwaived\s+by\b/i,
 };
 
 const TRANSACTION_ACTION_RE = /\b(?:signed|signs|signing|acquired|claimed|traded|trade|waived|released|joined|left|departed|moved|sent)\b/i;
 
 const STATUS_RULES = [
   { kind: 'out', label: 'OUT / IR', re: /(?:placed|lands?|heads?|moved)\s+(?:on|to)\s+(?:injured reserve|IR)|\b(?:ruled|deemed)\s+out\b|\bwon't return\b|\bwill miss\b|\bsidelined\b|season-ending/i },
-  { kind: 'limited', label: 'LIMITED', re: /week-to-week|day-to-day|questionable|doubtful|limited participant|unclear status|return timeline/i },
+  { kind: 'limited', label: 'LIMITED', re: /week-to-week|day-to-day|questionable|doubtful|limited participant|unclear status|return timeline|held (?:him|her|them)?\s*out of (?:practice|training)|\bnursing\b[^.!?]{0,45}\binjur|\blimp(?:s|ing|ed)?\b|status[^.!?]{0,45}\buncertain\b/i },
   { kind: 'return', label: 'RETURNING', re: /activated|return(?:ing)? from|cleared to|back from|set to return/i },
   { kind: 'role', label: 'ROLE UP', re: /promoted|elevated|expanded duty|larger role|more snaps|absorb|shoulder(?:ing)?|will now fall to|behind (?:him|her|them) are|fill the roster gaps/i },
   { kind: 'added', label: 'ADDED', re: /\bsigned\b|\bacquired\b|\bclaimed\b|\btraded for\b|\badded to the roster\b|\bpractice squad\b/i },
@@ -482,62 +485,142 @@ function contextsForName(text, name) {
   return contexts;
 }
 
+
+function localContextForName(context, name) {
+  const text = String(context || '');
+  const lower = text.toLowerCase();
+  const needle = String(name || '').toLowerCase();
+  let idx = lower.indexOf(needle);
+  if (idx < 0) {
+    const last = needle.split(/\s+/).pop();
+    idx = last?.length > 3 ? lower.indexOf(last) : -1;
+  }
+  if (idx < 0) return text;
+
+  const leftBreaks = [
+    text.lastIndexOf(';', idx),
+    text.lastIndexOf('. ', idx),
+    text.lastIndexOf('! ', idx),
+    text.lastIndexOf('? ', idx),
+  ];
+  let left = Math.max(...leftBreaks);
+  left = left < 0 ? 0 : left + 1;
+
+  const tail = text.slice(idx);
+  const candidates = ['; ', '. ', '! ', '? ']
+    .map((token) => tail.indexOf(token))
+    .filter((pos) => pos >= 0);
+  const right = candidates.length ? idx + Math.min(...candidates) + 1 : text.length;
+
+  // Keep the named player's own clause and immediate predicate. This prevents
+  // "Jordan Mason remains sidelined ..., and Demond Claiborne remains healthy"
+  // from assigning Mason's status to Claiborne.
+  let local = text.slice(left, right).trim();
+  const namePos = local.toLowerCase().indexOf(needle);
+  if (namePos >= 0) {
+    const before = local.slice(0, namePos);
+    const conjunction = Math.max(before.lastIndexOf(', and '), before.lastIndexOf(', while '), before.lastIndexOf(', but '));
+    if (conjunction >= 0) local = local.slice(conjunction + 2).trim();
+  }
+  return local;
+}
+
+function teamAliases(team) {
+  return [
+    team?.name,
+    team?.location,
+    team?.nickname,
+    team?.abbreviation,
+    ...(Array.isArray(team?.aliases) ? team.aliases : []),
+  ].map((v) => String(v || '').trim()).filter((v) => v.length >= 2);
+}
+
+function teamMentionedInContext(context, team) {
+  const text = String(context || '').toLowerCase();
+  return teamAliases(team).some((alias) => {
+    const normalized = alias.toLowerCase();
+    return normalized && text.includes(normalized);
+  });
+}
+
+function statusTeamId(rule, player, context, manifest) {
+  const current = String(player?.team_id || '').toUpperCase();
+  const teams = manifest?.teams || [];
+
+  if (rule?.kind === 'departed') {
+    // A departure is attributed to the team being left, not the player's new
+    // current team. Prefer an explicitly named story team.
+    const sourceTeam = teams.find((team) => teamMentionedInContext(context, team)
+      && String(team?.id || team?.abbreviation || '').toUpperCase() !== current);
+    if (sourceTeam) return String(sourceTeam.id || sourceTeam.abbreviation || '').toUpperCase();
+
+    const primary = teams[0];
+    if (primary && String(primary?.id || primary?.abbreviation || '').toUpperCase() !== current) {
+      return String(primary.id || primary.abbreviation || '').toUpperCase();
+    }
+  }
+
+  return current || String(teams[0]?.id || teams[0]?.abbreviation || '').toUpperCase() || null;
+}
+
+function teamForStatus(teamId, manifest) {
+  const wanted = String(teamId || '').toUpperCase();
+  return (manifest?.teams || []).find((team) =>
+    String(team?.id || team?.abbreviation || '').toUpperCase() === wanted
+  ) || null;
+}
+
 function classifyPlayers(article, manifest, storyType = null) {
   const text = fullStoryText(article);
   const type = storyType || detectStoryType(article);
-  const primaryTeam = manifest?.teams?.[0] || null;
-  const primaryTeamId = String(primaryTeam?.id || primaryTeam?.abbreviation || '').toUpperCase();
   const out = [];
 
   for (const player of manifest?.players || []) {
     const contexts = contextsForName(text, player.name);
     if (!contexts.length) continue;
 
-    const playerTeamId = String(player?.team_id || '').toUpperCase();
-    const isOnAnotherTeam = Boolean(primaryTeamId && playerTeamId && playerTeamId !== primaryTeamId);
     let rule = null;
     let matchedContext = '';
 
-    // Transaction direction is not a bag-of-words problem. The entity graph
-    // already knows current team membership, so use it as a deterministic
-    // direction guard. "Robinson signed with Boston" in a Knicks story is a
-    // departure from New York, never an addition to New York.
-    if (type === 'transaction' && isOnAnotherTeam) {
-      matchedContext = contexts.find((context) => DEPARTURE_RULE.re.test(context))
-        || contexts.find((context) => TRANSACTION_ACTION_RE.test(context))
-        || '';
-      if (matchedContext) rule = DEPARTURE_RULE;
-    }
+    for (const context of contexts) {
+      const local = localContextForName(context, player.name);
 
-    if (!rule) {
-      for (const context of contexts) {
-        const candidate = STATUS_RULES.find((status) => status.re.test(context));
-        if (!candidate) continue;
-
-        // A generic "signed" token can only be an addition when the resolved
-        // player currently belongs to the story's primary team. If the player
-        // is resolved to another club, fail toward DEPARTED rather than
-        // reversing the transaction direction.
-        if (type === 'transaction' && candidate.kind === 'added' && isOnAnotherTeam) {
-          rule = DEPARTURE_RULE;
-        } else {
-          rule = candidate;
-        }
-        matchedContext = context;
+      // Departure language wins in every story archetype. A player being
+      // traded/released is a roster state, never a medical absence.
+      if (DEPARTURE_RULE.re.test(local)) {
+        rule = DEPARTURE_RULE;
+        matchedContext = local;
         break;
       }
+
+      const candidate = STATUS_RULES.find((status) => status.re.test(local));
+      if (!candidate) continue;
+
+      // Ignore historical availability statements when the same clause makes
+      // clear the player has already returned/emerged. Do not turn last year's
+      // injury history into today's OUT badge.
+      if (
+        ['out','limited'].includes(candidate.kind)
+        && /\b(?:last season|in 20\d{2}|had limited|previously|earlier this year)\b/i.test(local)
+        && /\b(?:returned|emerged|back|healthy|erased that doubt)\b/i.test(context)
+      ) {
+        continue;
+      }
+
+      rule = candidate;
+      matchedContext = local;
+      break;
     }
 
     if (!rule) continue;
+
+    const teamId = statusTeamId(rule, player, matchedContext, manifest);
     out.push({
       player,
       kind: rule.kind,
       label: rule.label,
-      context: sentenceAround(
-        text,
-        Math.max(0, text.toLowerCase().indexOf(String(player.name || '').toLowerCase())),
-        105,
-      ),
+      teamId,
+      context: matchedContext,
       evidence: matchedContext,
     });
   }
@@ -580,45 +663,49 @@ function marketWatch(article) {
 function renderRosterMap(article, manifest, statuses, type) {
   if (!statuses.length) return '';
 
-  const isTransaction = type === 'transaction';
-  const affected = statuses.filter((x) => ['departed', 'out', 'limited'].includes(x.kind)).slice(0, 4);
-  const roleUp = statuses.filter((x) => ['role', 'added', 'return'].includes(x.kind)).slice(0, 4);
-  const team = manifest?.teams?.[0];
+  const grouped = new Map();
+  for (const row of statuses) {
+    const key = String(row.teamId || row.player?.team_id || 'unknown').toUpperCase();
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(row);
+  }
 
-  const movementLabel = isTransaction ? 'ROSTER LOSS' : 'AVAILABILITY HIT';
-  const responseLabel = isTransaction ? 'DEPTH RESPONSE' : 'ROLE SHIFT';
-  const movementNote = isTransaction ? 'Roster movement → role redistribution' : 'Availability → role redistribution';
-  const emptyLoss = isTransaction
-    ? 'No explicit outgoing player resolved.'
-    : 'No explicit unavailable player resolved.';
+  const cards = [];
+  for (const [teamId, rows] of grouped) {
+    const team = teamForStatus(teamId, manifest);
+    const affected = rows.filter((x) => ['departed', 'out', 'limited'].includes(x.kind)).slice(0, 4);
+    const roleUp = rows.filter((x) => ['role', 'added', 'return'].includes(x.kind)).slice(0, 4);
+    if (!affected.length && !roleUp.length) continue;
 
-  return `<div class="pbe-av-ripple-grid">
-    <div class="pbe-av-ripple">
+    const hasDeparture = affected.some((x) => x.kind === 'departed');
+    const movementLabel = hasDeparture ? 'ROSTER LOSS' : 'AVAILABILITY HIT';
+    const responseLabel = hasDeparture ? 'DEPTH RESPONSE' : 'ROLE SHIFT';
+    const movementNote = hasDeparture ? 'Roster movement → role redistribution' : 'Availability → role redistribution';
+
+    cards.push(`<div class="pbe-av-ripple">
       <div class="pbe-av-ripple-head">
         <div class="pbe-av-team-lockup">
           ${team?.logo_url ? `<img src="${esc(team.logo_url)}" alt="" loading="lazy" />` : ''}
-          <div><span>ROSTER RIPPLE</span><b>${esc(team?.name || article?.sport?.toUpperCase() || 'Team impact')}</b></div>
+          <div><span>ROSTER RIPPLE</span><b>${esc(team?.name || teamId || article?.sport?.toUpperCase() || 'Team impact')}</b></div>
         </div>
         <small>${movementNote}</small>
       </div>
-      <div class="pbe-av-ripple-body">
-        <div class="pbe-av-ripple-side is-loss">
+      <div class="pbe-av-ripple-body${!affected.length || !roleUp.length ? ' is-single' : ''}">
+        ${affected.length ? `<div class="pbe-av-ripple-side is-loss">
           <div class="pbe-av-ripple-label"><i></i><span>${movementLabel}</span></div>
-          <div class="pbe-av-people">
-            ${affected.length ? affected.map(playerChip).join('') : `<div class="pbe-av-empty">${emptyLoss}</div>`}
-          </div>
-        </div>
-        <div class="pbe-av-ripple-arrow" aria-hidden="true"><span>→</span></div>
-        <div class="pbe-av-ripple-side is-gain">
+          <div class="pbe-av-people">${affected.map(playerChip).join('')}</div>
+        </div>` : ''}
+        ${affected.length && roleUp.length ? '<div class="pbe-av-ripple-arrow" aria-hidden="true"><span>→</span></div>' : ''}
+        ${roleUp.length ? `<div class="pbe-av-ripple-side is-gain">
           <div class="pbe-av-ripple-label"><i></i><span>${responseLabel}</span></div>
-          <div class="pbe-av-people">
-            ${roleUp.length ? roleUp.map(playerChip).join('') : '<div class="pbe-av-empty">Role redistribution is described in the article text.</div>'}
-          </div>
-        </div>
+          <div class="pbe-av-people">${roleUp.map(playerChip).join('')}</div>
+        </div>` : ''}
       </div>
-    </div>
-    ${marketWatch(article)}
-  </div>`;
+    </div>`);
+  }
+
+  if (!cards.length) return '';
+  return `<div class="pbe-av-ripple-grid">${cards.join('')}${marketWatch(article)}</div>`;
 }
 
 function primaryStoryPlayers(article, manifest, limit = 3) {
@@ -664,6 +751,13 @@ function renderSignalGrid(article, manifest) {
   </div>`;
 }
 
+
+function evidenceLabel(label, value) {
+  const numeric = evidenceNumber(value);
+  if (label === 'QB HIT') return numeric === 1 ? 'QB HIT' : 'QB HITS';
+  return label;
+}
+
 function renderKeyNumbers(article) {
   const rows = keyNumbers(article);
   if (!rows.length) return '';
@@ -678,7 +772,7 @@ function renderKeyNumbers(article) {
           <div class="pbe-av-evidence-stats">
             ${row.metrics.map((metric) => `<span class="pbe-av-evidence-stat">
               <strong>${esc(metric.value)}</strong>
-              <b>${esc(metric.label)}</b>
+              <b>${esc(evidenceLabel(metric.label, metric.value))}</b>
             </span>`).join('')}
           </div>
           <p>${esc(row.context)}</p>
