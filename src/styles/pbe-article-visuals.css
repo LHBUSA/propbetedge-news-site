@@ -371,6 +371,10 @@
   padding: 12px;
 }
 
+.pbe-av-ripple-body.is-single {
+  grid-template-columns: minmax(0,1fr);
+}
+
 .pbe-av-ripple-side {
   min-width: 0;
 }
@@ -450,7 +454,8 @@
   background: var(--av-faint);
 }
 
-.pbe-av-person.is-out .pbe-av-person-photo i { background: var(--av-red); }
+.pbe-av-person.is-out .pbe-av-person-photo i,
+.pbe-av-person.is-departed .pbe-av-person-photo i { background: var(--av-red); }
 .pbe-av-person.is-limited .pbe-av-person-photo i { background: #f3bd55; }
 .pbe-av-person.is-role .pbe-av-person-photo i,
 .pbe-av-person.is-added .pbe-av-person-photo i,
