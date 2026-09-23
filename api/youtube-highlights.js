@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
   try {
     const { xml, channelId } = await fetchOfficialFeed(meta);
-    const videos = await selectEmbeddableHighlights(parseFeed(xml, sport), sport, limit);
+    const videos = selectHighlights(parseFeed(xml, sport), sport, limit);
 
     return res.status(200).json({
       ok: true,
@@ -139,79 +139,8 @@ function parseFeed(xml, sport) {
   return entries;
 }
 
-async function selectEmbeddableHighlights(videos, sport, limit) {
-  const ranked = selectHighlights(videos, sport, Math.max(limit * 2, limit));
-
-  // YouTube's Atom feed tells us what exists, not whether the owner allows
-  // third-party playback. Verify the actual embed page server-side before the
-  // browser ever receives the playlist. This avoids client-side IFrame API
-  // races/postMessage origin errors and prevents known-unplayable videos from
-  // being selected as the featured card.
-  const checks = await Promise.all(
-    ranked.map(async (video) => ({
-      video,
-      embeddable: await verifyYouTubeEmbed(video.videoId),
-    }))
-  );
-
-  const playable = checks.filter((row) => row.embeddable === true).map((row) => ({
-    ...row.video,
-    embeddable: true,
-  }));
-
-  // If YouTube changes its embed HTML and none can be positively verified,
-  // fail closed for the on-site player instead of shipping a broken iframe.
-  return playable.slice(0, limit);
-}
-
-async function verifyYouTubeEmbed(videoId) {
-  if (!videoId) return false;
-
-  const url = new URL(`https://www.youtube.com/embed/${encodeURIComponent(videoId)}`);
-  url.searchParams.set('hl', 'en');
-  url.searchParams.set('origin', 'https://propbetedge.ai');
-
-  try {
-    const response = await fetch(url, {
-      headers: {
-        accept: 'text/html,application/xhtml+xml',
-        'user-agent': USER_AGENT,
-        referer: 'https://propbetedge.ai/',
-      },
-      redirect: 'follow',
-    });
-
-    if (!response.ok) return false;
-    const html = await response.text();
-
-    // Current YouTube embed responses expose either playableInEmbed or a
-    // playabilityStatus object. Require positive evidence of embed playback.
-    if (/["']playableInEmbed["']\s*:\s*true/i.test(html)) return true;
-
-    const statusMatch = html.match(/["']playabilityStatus["']\s*:\s*\{[^{}]*["']status["']\s*:\s*["']([A-Z_]+)["']/i);
-    if (statusMatch?.[1] === 'OK') {
-      if (/["']playableInEmbed["']\s*:\s*false/i.test(html)) return false;
-      if (/embedding disabled|not available on this app|watch on youtube/i.test(html)) return false;
-      return true;
-    }
-
-    return false;
-  } catch (error) {
-    console.warn('[youtube-highlights] embed verification failed', videoId, error?.message || error);
-    return false;
-  }
-}
-
 function selectHighlights(videos, sport, limit) {
-  // The NFL channel mixes normal clips with rights-restricted long-form uploads
-  // (notably full-game replays). Those entries can appear in the public Atom
-  // feed yet reject third-party iframe playback with YouTube error 101/150.
-  // Keep the on-site player sourced from clip-style uploads that are intended
-  // for distribution, rather than selecting a known blocked replay as featured.
-  const sourceSafeVideos = videos.filter((video) => isOnsitePlaybackCandidate(video, sport));
-  const candidates = sourceSafeVideos.length >= Math.min(3, limit) ? sourceSafeVideos : videos;
-
-  const ranked = candidates.map((video, index) => {
+  const ranked = videos.map((video, index) => {
     const actionScore = highlightScore(video.title, sport);
     const recencyBoost = Math.max(0, 15 - index);
     return { ...video, _score: actionScore + recencyBoost, _actionScore: actionScore };
@@ -226,20 +155,6 @@ function selectHighlights(videos, sport, limit) {
     .map(({ _score, _actionScore, rank, ...video }) => video);
 }
 
-function isOnsitePlaybackCandidate(video, sport) {
-  if (sport !== 'nfl') return true;
-
-  const text = String(video?.title || '').toLowerCase();
-
-  // NFL full-game / condensed-game inventory is frequently rights-restricted
-  // from third-party embeds even when it is visible on youtube.com.
-  if (/\bfull game\b/.test(text)) return false;
-  if (/\bcondensed game\b/.test(text)) return false;
-  if (/\bgame of the week\b/.test(text) && /\bfull\b/.test(text)) return false;
-
-  return true;
-}
-
 function highlightScore(title, sport) {
   const text = String(title || '').toLowerCase();
   let score = 0;
@@ -249,7 +164,7 @@ function highlightScore(title, sport) {
     [/top plays?/, 20],
     [/best plays?/, 18],
     [/game recap/, 18],
-    [/full game/, sport === 'nfl' ? -40 : 13],
+    [/full game/, 13],
     [/\bvs\.?\b/, 8],
     [/walk[- ]?off/, 10],
     [/overtime|\bot\b/, 8],
