@@ -356,3 +356,44 @@ test('early-season live-form cards call out sample size instead of manufacturing
   assert.doesNotMatch(html, /Season average ·/);
   assert.doesNotMatch(html, /VS SEASON/);
 });
+
+
+test('recent-form average says exactly what the number means', () => {
+  const html = renderPlayerContext({
+    sport: 'mlb',
+    name: 'Example Hitter',
+    image: '/hitter.png',
+    label: 'Hits',
+    seasonStats: [['AVG', '.281'], ['HR', 22], ['RBI', 71], ['OPS', '.812']],
+    rows: [
+      { date: '2026-09-01', opponent: 'vs CHC', value: 1 },
+      { date: '2026-09-03', opponent: '@ STL', value: 1 },
+      { date: '2026-09-05', opponent: 'vs MIL', value: 0 },
+      { date: '2026-09-07', opponent: '@ CIN', value: 1 },
+      { date: '2026-09-09', opponent: 'vs PIT', value: 0 },
+      { date: '2026-09-11', opponent: '@ ARI', value: 1 },
+      { date: '2026-09-13', opponent: 'vs LAD', value: 1 },
+      { date: '2026-09-15', opponent: '@ SD', value: 1 },
+    ],
+    metricLive: {
+      recentAverage: 0.75,
+      seasonAverage: 0.82,
+      recentHigh: 1,
+      seasonGames: 144,
+      baselineAvailable: true,
+      deltaPct: -8.5,
+    },
+  });
+
+  assert.match(html, /class="pbe-av-player-card is-mlb"/);
+  assert.match(html, />0\.75<\/strong>/);
+  assert.match(html, /LAST 8 GAME AVG/);
+  assert.match(html, /Hits per game/);
+  assert.match(html, /Average Hits per game over the last 8 verified games/);
+});
+
+test('player photo CSS gives MLB headshots a less aggressive crop', () => {
+  const css = fs.readFileSync(new URL('../src/styles/pbe-article-visuals.css', import.meta.url), 'utf8');
+  assert.match(css, /\.pbe-av-player-id img\s*\{[\s\S]*width:\s*56px;[\s\S]*object-position:\s*center 24%/);
+  assert.match(css, /\.pbe-av-player-card\.is-mlb \.pbe-av-player-photo\s*\{[\s\S]*object-fit:\s*contain;[\s\S]*object-position:\s*center 16%/);
+});
