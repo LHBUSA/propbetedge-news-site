@@ -42,17 +42,18 @@ test('highlight API keeps official-channel videos visible instead of pre-filteri
 });
 
 
-test('NFL embed policy is annotated per video without deleting or reordering the feed', () => {
+test('NFL feed remains complete and is not pre-filtered by embed heuristics', () => {
   const source = readFileSync(new URL('../api/youtube-highlights.js', import.meta.url), 'utf8');
-  assert.match(source, /sport === 'nfl'\s*\? await annotateNflEmbeddability\(selectedVideos\)\s*:\s*selectedVideos/);
-  assert.match(source, /youtube\.com\/oembed/);
-  assert.match(source, /return checks\.map/);
-  assert.doesNotMatch(source, /filter\([^\n]*embeddable/);
+  assert.match(source, /const videos = selectHighlights\(parseFeed\(xml, sport\), sport, limit\)/);
+  assert.doesNotMatch(source, /annotateNflEmbeddability/);
+  assert.doesNotMatch(source, /youtube\.com\/oembed/);
 });
 
-test('NFL alone gets restricted-video handling while other sport rendering stays on the existing path', () => {
+test('NFL alone detects embed failures at runtime while other sport rendering stays on the existing path', () => {
   assert.match(sport, /if \(sport === 'nfl'\) \{\s*renderNflHighlightsSlot\(data\);\s*return;\s*\}/);
-  assert.match(sport, /videos\.find\(\(video\) => video\.embeddable === true\)/);
+  assert.match(sport, /new YT\.Player\(host/);
+  assert.match(sport, /\[5, 100, 101, 150, 153\]/);
+  assert.match(sport, /rememberNflExternalVideo/);
   assert.match(sport, /Watch on YouTube/);
   assert.match(sport, /renderNflHighlightCard/);
   assert.match(sport, /function renderHighlightCard\(video, label\)/);
