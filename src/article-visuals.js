@@ -89,6 +89,7 @@ const METRIC_PATTERNS = {
     ['K/9', /(?:fanned|struck out)[^.!?]{0,40}?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+per nine\b/i],
     ['OPP K%', /strike out at\s+((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)%\s+clip\b/i],
     ['VELOCITY', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s*mph\b/i],
+    ['K', /\bstruck out\s+((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\b/i],
     ['K', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+(?:strikeouts?|Ks?)\b/i],
     ['IP', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+innings?(?: pitched)?\b/i],
     ['HR', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+(?:home runs?|HRs?)\b/i],
