@@ -31,17 +31,21 @@ test('NFL highlight source rejects rights-restricted full-game replay candidates
 });
 
 
-test('sport highlights detect YouTube embed-policy failures and advance', () => {
-  assert.match(sport, /youtube\.com\/iframe_api/);
-  assert.match(sport, /onYouTubeIframeAPIReady/);
-  assert.match(sport, /\[5, 100, 101, 150, 153\]/);
-  assert.match(sport, /blocked embed; advancing/);
+
+
+test('sport highlights use plain standard YouTube embeds without the fragile IFrame API wrapper', () => {
+  assert.match(sport, /youtube\\.com\\/embed/);
+  assert.doesNotMatch(sport, /youtube\.com\/iframe_api/);
+  assert.doesNotMatch(sport, /onYouTubeIframeAPIReady/);
+  assert.doesNotMatch(sport, /new YT\.Player/);
   assert.match(sport, /params\.set\('origin', window\.location\.origin\)/);
 });
 
-
-test('YouTube error 153 is retried as a client identity problem, not mislabeled as rights restriction', () => {
-  assert.match(sport, /errorCode === 153/);
-  assert.match(sport, /pbeRetried153/);
-  assert.match(sport, /youtubeEmbedUrl\(failedId/);
+test('highlight API verifies actual YouTube embed playability before returning videos', () => {
+  const source = readFileSync(new URL('../api/youtube-highlights.js', import.meta.url), 'utf8');
+  assert.match(source, /selectEmbeddableHighlights/);
+  assert.match(source, /verifyYouTubeEmbed/);
+  assert.match(source, /playableInEmbed/);
+  assert.match(source, /playabilityStatus/);
+  assert.match(source, /referer: 'https:\/\/propbetedge\.ai\/'/);
 });
