@@ -198,6 +198,8 @@ function startSportHighlightsRefresh(sport) {
 
       const nextSignature = highlightsSignature(data);
       if (nextSignature && nextSignature !== slot.dataset.highlightSignature) {
+        // Never interrupt an inline video while the reader is watching it.
+        if (slot.dataset.videoPlaying === '1') return;
         renderHighlightsSlot(sport, data);
       }
     } catch (error) {
@@ -226,6 +228,33 @@ async function fetchHighlights(sport) {
   return data?.ok ? data : null;
 }
 
+function youtubeEmbedUrl(videoId, { autoplay = false } = {}) {
+  if (!videoId) return '';
+  const params = new URLSearchParams({
+    rel: '0',
+    playsinline: '1',
+    modestbranding: '1',
+    enablejsapi: '1',
+  });
+  if (autoplay) params.set('autoplay', '1');
+  return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
+}
+
+function renderInlineHighlightPlayer(video, label, { autoplay = false } = {}) {
+  const videoId = String(video?.videoId || '');
+  if (!videoId) return '';
+  return `
+    <iframe
+      src="${escapeAttr(youtubeEmbedUrl(videoId, { autoplay }))}"
+      title="${escapeAttr(video.title || `${label} video`)}"
+      loading="lazy"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowfullscreen
+    ></iframe>
+  `;
+}
+
 function renderHighlightsSlot(sport, data) {
   const slot = document.getElementById('highlights-slot');
   if (!slot) return;
@@ -236,11 +265,15 @@ function renderHighlightsSlot(sport, data) {
     return;
   }
 
-  const featured = videos[0];
-  const rail = videos.slice(1, HIGHLIGHTS_LIMIT);
+  const existingSelected = String(slot.dataset.selectedVideoId || '');
+  const featured = videos.find((video) => String(video.videoId) === existingSelected) || videos[0];
+  const rail = videos.filter((video) => String(video.videoId) !== String(featured.videoId)).slice(0, HIGHLIGHTS_LIMIT - 1);
   const label = String(data?.league || sport || '').toUpperCase();
+
   slot.dataset.highlightSignature = highlightsSignature(data);
   slot.dataset.highlightSport = sport;
+  slot.dataset.selectedVideoId = String(featured.videoId);
+  slot.dataset.videoPlaying = '0';
 
   slot.innerHTML = `
     <section class="sport-highlights" aria-labelledby="sport-highlights-heading">
@@ -248,43 +281,66 @@ function renderHighlightsSlot(sport, data) {
         <div>
           <span class="kicker kicker-gold">▶ LATEST HIGHLIGHTS</span>
           <h2 id="sport-highlights-heading">${escapeHtml(label)} Video Highlights</h2>
-          <p>Fresh clips from the official ${escapeHtml(label)} YouTube channel.</p>
+          <p>Watch fresh clips from the official ${escapeHtml(label)} YouTube channel without leaving PropBetEdge.</p>
         </div>
         <a href="${escapeAttr(data?.channel?.url || `https://www.youtube.com/@${label}`)}" target="_blank" rel="noopener">
-          Official YouTube →
+          Official channel ↗
         </a>
       </div>
 
       <div class="sport-highlights-layout">
         <article class="sport-highlight-featured">
-          <a
-            class="sport-highlight-frame sport-highlight-featured-link"
-            href="${escapeAttr(featured.url || `https://www.youtube.com/watch?v=${featured.videoId}`)}"
-            target="_blank"
-            rel="noopener"
-            aria-label="Watch ${escapeAttr(featured.title)} on YouTube"
-          >
-            <img
-              src="${escapeAttr(featured.thumbnail || `https://i.ytimg.com/vi/${featured.videoId}/hqdefault.jpg`)}"
-              alt=""
-              loading="eager"
-              decoding="async"
-            >
-            <span class="sport-highlight-featured-play" aria-hidden="true">▶</span>
-            <span class="sport-highlight-watch-label">Watch on YouTube</span>
-          </a>
+          <div class="sport-highlight-frame" data-highlight-player>
+            ${renderInlineHighlightPlayer(featured, label)}
+          </div>
           <div class="sport-highlight-featured-copy">
-            <span>${escapeHtml(featured.channelName || `${label} Official`)} · ${escapeHtml(formatHighlightTime(featured.publishedAt))}</span>
-            <h3>${escapeHtml(featured.title)}</h3>
+            <span data-highlight-featured-meta>${escapeHtml(featured.channelName || `${label} Official`)} · ${escapeHtml(formatHighlightTime(featured.publishedAt))}</span>
+            <h3 data-highlight-featured-title>${escapeHtml(featured.title)}</h3>
+            <small class="sport-highlight-onsite-label">Playing on PropBetEdge · YouTube player</small>
           </div>
         </article>
 
-        <div class="sport-highlight-rail">
+        <div class="sport-highlight-rail" role="list" aria-label="${escapeAttr(label)} video playlist">
           ${rail.map((video) => renderHighlightCard(video, label)).join('')}
         </div>
       </div>
     </section>
   `;
+
+  const player = slot.querySelector('[data-highlight-player]');
+  const title = slot.querySelector('[data-highlight-featured-title]');
+  const meta = slot.querySelector('[data-highlight-featured-meta]');
+  const buttons = [...slot.querySelectorAll('[data-highlight-video-id]')];
+
+  const selectVideo = (videoId, { autoplay = true } = {}) => {
+    const video = videos.find((item) => String(item.videoId) === String(videoId));
+    if (!video || !player) return;
+
+    player.innerHTML = renderInlineHighlightPlayer(video, label, { autoplay });
+    if (title) title.textContent = video.title || '';
+    if (meta) meta.textContent = `${video.channelName || `${label} Official`} · ${formatHighlightTime(video.publishedAt)}`;
+    slot.dataset.selectedVideoId = String(video.videoId);
+    slot.dataset.videoPlaying = '1';
+
+    for (const button of buttons) {
+      const active = String(button.dataset.highlightVideoId) === String(video.videoId);
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    }
+  };
+
+  // The featured video is already playable on-site. Mark the session active
+  // after the reader interacts with the player so refreshes never interrupt it.
+  player?.addEventListener('pointerdown', () => {
+    slot.dataset.videoPlaying = '1';
+  }, { passive: true });
+
+  for (const button of buttons) {
+    button.addEventListener('click', () => {
+      selectVideo(button.dataset.highlightVideoId, { autoplay: true });
+      player?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
 
   injectSchemas(
     videos.map((video) => videoObjectSchema(video, label)),
@@ -294,9 +350,14 @@ function renderHighlightsSlot(sport, data) {
 
 function renderHighlightCard(video, label) {
   const thumbnail = video.thumbnail || `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`;
-  const url = video.url || `https://www.youtube.com/watch?v=${video.videoId}`;
   return `
-    <a class="sport-highlight-card" href="${escapeAttr(url)}" target="_blank" rel="noopener">
+    <button
+      type="button"
+      class="sport-highlight-card"
+      data-highlight-video-id="${escapeAttr(video.videoId)}"
+      aria-pressed="false"
+      aria-label="Play ${escapeAttr(video.title)} on PropBetEdge"
+    >
       <div class="sport-highlight-thumb">
         <img src="${escapeAttr(thumbnail)}" alt="" loading="lazy" decoding="async">
         <span class="sport-highlight-play" aria-hidden="true">▶</span>
@@ -304,8 +365,9 @@ function renderHighlightCard(video, label) {
       <div class="sport-highlight-card-copy">
         <span>${escapeHtml(video.channelName || `${label} Official`)} · ${escapeHtml(formatHighlightTime(video.publishedAt))}</span>
         <strong>${escapeHtml(video.title)}</strong>
+        <small>Play here</small>
       </div>
-    </a>
+    </button>
   `;
 }
 
@@ -329,6 +391,7 @@ function videoObjectSchema(video, label) {
     thumbnailUrl: video.thumbnail ? [video.thumbnail] : undefined,
     uploadDate: video.publishedAt || undefined,
     contentUrl: video.url || `https://www.youtube.com/watch?v=${video.videoId}`,
+    embedUrl: youtubeEmbedUrl(video.videoId),
     isFamilyFriendly: true,
   };
 }
