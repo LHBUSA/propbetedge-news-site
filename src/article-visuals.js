@@ -754,7 +754,7 @@ async function mlbContext(player, article) {
     ? [['ERA', seasonRow?.era], ['WHIP', seasonRow?.whip], ['K', seasonRow?.strikeOuts], ['IP', seasonRow?.inningsPitched]]
     : [['AVG', seasonRow?.avg], ['HR', seasonRow?.homeRuns], ['RBI', seasonRow?.rbi], ['OPS', seasonRow?.ops]];
 
-  return { name: person.fullName || player.name, image: player.image_url, label, rows, seasonStats, metricLive };
+  return { sport: 'mlb', name: person.fullName || player.name, image: player.image_url, label, rows, seasonStats, metricLive };
 }
 
 export function metricSummary(sourceRows, valueFor, limit = 8) {
@@ -874,7 +874,7 @@ async function espnContext(player, article, sport) {
     return idx >= 0 ? [cat.labels?.[idx] || keyName, seasonRow?.values?.[keyName]] : null;
   }).filter(Boolean).slice(0, 4);
 
-  return { name: player.name, image: player.image_url, label, rows, seasonStats, metricLive };
+  return { sport, name: player.name, image: player.image_url, label, rows, seasonStats, metricLive };
 }
 
 async function nhlContext(player, article) {
@@ -905,7 +905,7 @@ async function nhlContext(player, article) {
     return idx >= 0 ? [cat.labels?.[idx] || keyName, seasonRow?.values?.[keyName]] : null;
   }).filter(Boolean).slice(0, 4);
 
-  return { name: player.name, image: player.image_url, label, rows, seasonStats, metricLive };
+  return { sport: 'nhl', name: player.name, image: player.image_url, label, rows, seasonStats, metricLive };
 }
 
 async function playerContext(player, article) {
@@ -944,20 +944,27 @@ export function renderPlayerContext(data) {
     ? `${live.seasonGames || rows.length} GAME SAMPLE`
     : `${deltaPct > 0 ? '+' : ''}${deltaPct.toFixed(0)}% VS SEASON`;
 
-  return `<div class="pbe-av-player-card">
+  const sportClass = ['mlb', 'nfl', 'nba', 'nhl'].includes(String(data.sport || '').toLowerCase())
+    ? ` is-${String(data.sport).toLowerCase()}`
+    : '';
+  const averageExplainer = avg != null
+    ? `Average ${data.label} per game over the last ${rows.length} verified game${rows.length === 1 ? '' : 's'}`
+    : '';
+
+  return `<div class="pbe-av-player-card${sportClass}">
     <header class="pbe-av-player-head">
       <div class="pbe-av-player-id">
-        ${data.image ? `<img src="${esc(data.image)}" alt="" loading="lazy" />` : ''}
+        ${data.image ? `<img class="pbe-av-player-photo" src="${esc(data.image)}" alt="" loading="lazy" />` : ''}
         <div>
           <span>VERIFIED CURRENT FORM</span>
           <h3>${esc(data.name)}</h3>
           <small>Live context · separate from the frozen article record</small>
         </div>
       </div>
-      ${avg != null ? `<div class="pbe-av-recent-avg">
+      ${avg != null ? `<div class="pbe-av-recent-avg" title="${esc(averageExplainer)}" aria-label="${esc(averageExplainer)}">
         <strong>${esc(formatMetricNumber(avg))}</strong>
-        <span>LAST ${rows.length} AVG</span>
-        <small>${esc(data.label)}</small>
+        <span>LAST ${rows.length} GAMES</span>
+        <small>${esc(data.label)} per game · average</small>
       </div>` : ''}
     </header>
 
