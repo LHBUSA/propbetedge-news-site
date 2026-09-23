@@ -27,6 +27,7 @@ const HIGHLIGHTS_REFRESH_MS = 15 * 60 * 1000;
 
 let _highlightsRefreshHandle = null;
 let _highlightsRefreshSport = null;
+let _youtubeIframeApiPromise = null;
 
 function queryPage() {
   const params = new URLSearchParams(window.location.search);
@@ -236,6 +237,9 @@ function youtubeEmbedUrl(videoId, { autoplay = false } = {}) {
     modestbranding: '1',
     enablejsapi: '1',
   });
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    params.set('origin', window.location.origin);
+  }
   if (autoplay) params.set('autoplay', '1');
   return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
 }
@@ -247,12 +251,79 @@ function renderInlineHighlightPlayer(video, label, { autoplay = false } = {}) {
     <iframe
       src="${escapeAttr(youtubeEmbedUrl(videoId, { autoplay }))}"
       title="${escapeAttr(video.title || `${label} video`)}"
+      data-highlight-youtube-player
       loading="lazy"
       referrerpolicy="strict-origin-when-cross-origin"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
       allowfullscreen
     ></iframe>
   `;
+}
+
+function loadYouTubeIframeApi() {
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (_youtubeIframeApiPromise) return _youtubeIframeApiPromise;
+
+  _youtubeIframeApiPromise = new Promise((resolve, reject) => {
+    const previousReady = window.onYouTubeIframeAPIReady;
+    const timeout = window.setTimeout(() => {
+      reject(new Error('YouTube iframe API timed out'));
+    }, 8000);
+
+    window.onYouTubeIframeAPIReady = () => {
+      window.clearTimeout(timeout);
+      try {
+        if (typeof previousReady === 'function') previousReady();
+      } catch {
+        // Another consumer's callback must not block the highlights player.
+      }
+      if (window.YT?.Player) resolve(window.YT);
+      else reject(new Error('YouTube iframe API loaded without YT.Player'));
+    };
+
+    const existing = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
+    if (existing) return;
+
+    const script = document.createElement('script');
+    script.src = 'https://www.youtube.com/iframe_api';
+    script.async = true;
+    script.addEventListener('error', () => {
+      window.clearTimeout(timeout);
+      reject(new Error('YouTube iframe API failed to load'));
+    }, { once: true });
+    document.head.appendChild(script);
+  }).catch((error) => {
+    _youtubeIframeApiPromise = null;
+    throw error;
+  });
+
+  return _youtubeIframeApiPromise;
+}
+
+async function watchHighlightPlayerErrors(frame, onBlocked) {
+  if (!frame) return null;
+
+  try {
+    const YT = await loadYouTubeIframeApi();
+    if (!frame.isConnected) return null;
+
+    return new YT.Player(frame, {
+      events: {
+        onError(event) {
+          const code = Number(event?.data);
+          // 101/150 = owner blocked embeds. 153 = missing client identity/referrer.
+          // 100/5 are also dead-end playback errors. In every case we keep the
+          // reader on PropBetEdge and advance to the next official upload.
+          if ([5, 100, 101, 150, 153].includes(code)) {
+            onBlocked?.(code);
+          }
+        },
+      },
+    });
+  } catch (error) {
+    console.warn('[sport highlights player api]', error?.message || error);
+    return null;
+  }
 }
 
 function renderHighlightsSlot(sport, data) {
@@ -311,8 +382,53 @@ function renderHighlightsSlot(sport, data) {
   const title = slot.querySelector('[data-highlight-featured-title]');
   const meta = slot.querySelector('[data-highlight-featured-meta]');
   const buttons = [...slot.querySelectorAll('[data-highlight-video-id]')];
+  const failedVideoIds = new Set();
+  let youtubePlayer = null;
 
-  const selectVideo = (videoId, { autoplay = true } = {}) => {
+  const attachPlaybackGuard = async (video) => {
+    const frame = player?.querySelector('[data-highlight-youtube-player]');
+    if (!frame || !video) return;
+
+    try {
+      youtubePlayer?.destroy?.();
+    } catch {
+      // A failed/half-created player can safely be discarded.
+    }
+
+    youtubePlayer = await watchHighlightPlayerErrors(frame, (errorCode) => {
+      const failedId = String(video.videoId);
+      if (slot.dataset.selectedVideoId !== failedId) return;
+      failedVideoIds.add(failedId);
+
+      const replacement = videos.find((candidate) => !failedVideoIds.has(String(candidate.videoId)));
+      if (replacement) {
+        console.warn('[sport highlights] YouTube blocked embed; advancing', {
+          sport,
+          videoId: failedId,
+          errorCode,
+          replacement: replacement.videoId,
+        });
+        selectVideo(replacement.videoId, { autoplay: false, markPlaying: false });
+        return;
+      }
+
+      // If YouTube reports every current upload as restricted, replace the raw
+      // player error with a controlled first-party state instead of leaving a
+      // broken iframe on the page.
+      if (player) {
+        player.innerHTML = `
+          <div class="sport-highlight-unavailable">
+            <span>Official ${escapeHtml(label)} video</span>
+            <strong>This upload is restricted from embedded playback.</strong>
+            <a href="${escapeAttr(video.url || `https://www.youtube.com/watch?v=${video.videoId}`)}" target="_blank" rel="noopener">Watch this upload on YouTube ↗</a>
+          </div>
+        `;
+      }
+      slot.dataset.videoPlaying = '0';
+    });
+  };
+
+  const selectVideo = (videoId, { autoplay = true, markPlaying = true } = {}) => {
     const video = videos.find((item) => String(item.videoId) === String(videoId));
     if (!video || !player) return;
 
@@ -320,24 +436,30 @@ function renderHighlightsSlot(sport, data) {
     if (title) title.textContent = video.title || '';
     if (meta) meta.textContent = `${video.channelName || `${label} Official`} · ${formatHighlightTime(video.publishedAt)}`;
     slot.dataset.selectedVideoId = String(video.videoId);
-    slot.dataset.videoPlaying = '1';
+    slot.dataset.videoPlaying = markPlaying ? '1' : '0';
 
     for (const button of buttons) {
       const active = String(button.dataset.highlightVideoId) === String(video.videoId);
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     }
+
+    attachPlaybackGuard(video);
   };
 
-  // The featured video is already playable on-site. Mark the session active
-  // after the reader interacts with the player so refreshes never interrupt it.
+  // Attach the IFrame Player API to the initially featured upload so YouTube's
+  // 101/150 embed-policy errors can be detected and skipped automatically.
+  attachPlaybackGuard(featured);
+
+  // Mark the session active after the reader interacts with the player so
+  // refreshes never interrupt successful playback.
   player?.addEventListener('pointerdown', () => {
     slot.dataset.videoPlaying = '1';
   }, { passive: true });
 
   for (const button of buttons) {
     button.addEventListener('click', () => {
-      selectVideo(button.dataset.highlightVideoId, { autoplay: true });
+      selectVideo(button.dataset.highlightVideoId, { autoplay: true, markPlaying: true });
       player?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   }
