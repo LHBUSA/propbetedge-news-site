@@ -111,6 +111,47 @@ export function renderHeader() {
           />
           <span class="tagline">Sports News &middot; Prop-Bet Intelligence</span>
         </div>
+        <nav class="pbe-mobile-nav" aria-label="PropBetEdge mobile navigation">
+          <a href="/news" class="pbe-mobile-nav-link ${path === '/news' ? 'active' : ''}">News</a>
+          <a href="/games" class="pbe-mobile-nav-link ${isLive ? 'active' : ''}">Scores</a>
+          <a href="/odds" class="pbe-mobile-nav-link ${isOdds ? 'active' : ''}">Picks</a>
+          <a href="/leaders" class="pbe-mobile-nav-link ${isLeaders || isStandings ? 'active' : ''}">Stats</a>
+          <button type="button" class="pbe-mobile-nav-link pbe-mobile-search" data-pbe-search-open aria-label="Search PropBetEdge">Search</button>
+          <details class="pbe-mobile-more">
+            <summary class="pbe-mobile-nav-link">More</summary>
+            <div class="pbe-mobile-more-panel">
+              <div class="pbe-mobile-more-group">
+                <span class="pbe-mobile-more-label">News</span>
+                <div class="pbe-mobile-more-links">
+                  <a href="/news/mlb">MLB</a>
+                  <a href="/news/nfl">NFL</a>
+                  <a href="${PROPBET_LINKS.news_ufc}" target="_blank" rel="noopener">UFC</a>
+                  <a href="/news/nba">NBA</a>
+                  <a href="https://wnba.propbetedge.ai" target="_blank" rel="noopener">WNBA</a>
+                  <a href="/news/nhl">NHL</a>
+                </div>
+              </div>
+              <div class="pbe-mobile-more-group">
+                <span class="pbe-mobile-more-label">Tools</span>
+                <div class="pbe-mobile-more-links">
+                  <a href="/standings">Standings</a>
+                  <a href="/leaders">Leaders</a>
+                </div>
+              </div>
+              <div class="pbe-mobile-more-group">
+                <span class="pbe-mobile-more-label">Intelligence</span>
+                <div class="pbe-mobile-more-links">
+                  <a href="${PROPBET_LINKS.picks_mlb}" target="_blank" rel="noopener">MLB</a>
+                  <a href="${PROPBET_LINKS.picks_nfl}" target="_blank" rel="noopener">NFL</a>
+                  <a href="${PROPBET_LINKS.picks_ufc}" target="_blank" rel="noopener">UFC</a>
+                  <a href="${PROPBET_LINKS.picks_wnba}" target="_blank" rel="noopener">WNBA</a>
+                  <a href="${PROPBET_LINKS.picks_nba}" target="_blank" rel="noopener">NBA</a>
+                  <a href="${PROPBET_LINKS.picks_nhl}" target="_blank" rel="noopener">NHL</a>
+                </div>
+              </div>
+            </div>
+          </details>
+        </nav>
         <div class="masthead-right masthead-tools" aria-label="PropBetEdge tools">
           <a href="/games" class="nav-link live-link ${isLive ? 'active' : ''}">PBEcast</a>
           ${renderStatsSwitcher(isLeaders, isStandings)}

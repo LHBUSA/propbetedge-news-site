@@ -16,6 +16,7 @@ import './styles/pbe-header-network-switcher.css';
 import './styles/pbe-search-network-upgrade.css';
 import './styles/pbe-board-author.css';
 import './styles/pbe-entity-graph.css';
+import './styles/pbe-mobile-cleanup.css';
 import { initBackgroundSelector } from './background-selector.js';
 import { initNflLaunchPriority } from './nfl-launch-priority.js';
 import { initSiteEnhancements } from './site-enhancements.js';
