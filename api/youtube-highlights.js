@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
   try {
     const { xml, channelId } = await fetchOfficialFeed(meta);
-    const videos = await selectEmbeddableHighlights(parseFeed(xml, sport), sport, limit);
+    const videos = selectHighlights(parseFeed(xml, sport), sport, limit);
 
     return res.status(200).json({
       ok: true,
@@ -137,69 +137,6 @@ function parseFeed(xml, sport) {
   }).filter(Boolean);
 
   return entries;
-}
-
-async function selectEmbeddableHighlights(videos, sport, limit) {
-  const ranked = selectHighlights(videos, sport, Math.max(limit * 2, limit));
-
-  // YouTube's Atom feed tells us what exists, not whether the owner allows
-  // third-party playback. Verify the actual embed page server-side before the
-  // browser ever receives the playlist. This avoids client-side IFrame API
-  // races/postMessage origin errors and prevents known-unplayable videos from
-  // being selected as the featured card.
-  const checks = await Promise.all(
-    ranked.map(async (video) => ({
-      video,
-      embeddable: await verifyYouTubeEmbed(video.videoId),
-    }))
-  );
-
-  const playable = checks.filter((row) => row.embeddable === true).map((row) => ({
-    ...row.video,
-    embeddable: true,
-  }));
-
-  // If YouTube changes its embed HTML and none can be positively verified,
-  // fail closed for the on-site player instead of shipping a broken iframe.
-  return playable.slice(0, limit);
-}
-
-async function verifyYouTubeEmbed(videoId) {
-  if (!videoId) return false;
-
-  const url = new URL(`https://www.youtube.com/embed/${encodeURIComponent(videoId)}`);
-  url.searchParams.set('hl', 'en');
-  url.searchParams.set('origin', 'https://propbetedge.ai');
-
-  try {
-    const response = await fetch(url, {
-      headers: {
-        accept: 'text/html,application/xhtml+xml',
-        'user-agent': USER_AGENT,
-        referer: 'https://propbetedge.ai/',
-      },
-      redirect: 'follow',
-    });
-
-    if (!response.ok) return false;
-    const html = await response.text();
-
-    // Current YouTube embed responses expose either playableInEmbed or a
-    // playabilityStatus object. Require positive evidence of embed playback.
-    if (/["']playableInEmbed["']\s*:\s*true/i.test(html)) return true;
-
-    const statusMatch = html.match(/["']playabilityStatus["']\s*:\s*\{[^{}]*["']status["']\s*:\s*["']([A-Z_]+)["']/i);
-    if (statusMatch?.[1] === 'OK') {
-      if (/["']playableInEmbed["']\s*:\s*false/i.test(html)) return false;
-      if (/embedding disabled|not available on this app|watch on youtube/i.test(html)) return false;
-      return true;
-    }
-
-    return false;
-  } catch (error) {
-    console.warn('[youtube-highlights] embed verification failed', videoId, error?.message || error);
-    return false;
-  }
 }
 
 function selectHighlights(videos, sport, limit) {
