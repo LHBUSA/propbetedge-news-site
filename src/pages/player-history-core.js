@@ -52,6 +52,15 @@ export function nhlEntryStatus(data, now = new Date()) {
     title: rookieEligible ? 'NHL debut pending' : 'No NHL regular-season games yet',
   };
 }
+export function nhlCurrentSeasonOption(now = new Date()) {
+  const current = now instanceof Date ? now : new Date(now);
+  if (!Number.isFinite(current.getTime())) return ['', ''];
+  const start = current.getUTCMonth() + 1 >= 7
+    ? current.getUTCFullYear()
+    : current.getUTCFullYear() - 1;
+  return [`${start}${start + 1}`, `${start}-${String(start + 1).slice(-2)}`];
+}
+
 export function sourcePhase(data) {
   const f = list(data?.filters).find(x => /^(seasontype|seasonType)$/i.test(x?.name || ''));
   return f?.value == null ? null : String(f.value);
