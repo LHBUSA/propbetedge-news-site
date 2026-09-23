@@ -22,16 +22,6 @@ test('article YouTube media derives a privacy-enhanced on-site embed', () => {
 });
 
 
-test('NFL highlight source rejects rights-restricted full-game replay candidates', () => {
-  const source = readFileSync(new URL('../api/youtube-highlights.js', import.meta.url), 'utf8');
-  assert.match(source, /isOnsitePlaybackCandidate/);
-  assert.match(source, /\\bfull game\\b/);
-  assert.match(source, /\\bcondensed game\\b/);
-  assert.match(source, /sport !== 'nfl'/);
-});
-
-
-
 
 test('sport highlights use plain standard YouTube embeds without the fragile IFrame API wrapper', () => {
   assert.match(sport, /youtube\\.com\\/embed/);
@@ -41,11 +31,12 @@ test('sport highlights use plain standard YouTube embeds without the fragile IFr
   assert.match(sport, /params\.set\('origin', window\.location\.origin\)/);
 });
 
-test('highlight API verifies actual YouTube embed playability before returning videos', () => {
+
+
+test('highlight API keeps official-channel videos visible instead of pre-filtering the rail away', () => {
   const source = readFileSync(new URL('../api/youtube-highlights.js', import.meta.url), 'utf8');
-  assert.match(source, /selectEmbeddableHighlights/);
-  assert.match(source, /verifyYouTubeEmbed/);
-  assert.match(source, /playableInEmbed/);
-  assert.match(source, /playabilityStatus/);
-  assert.match(source, /referer: 'https:\/\/propbetedge\.ai\/'/);
+  assert.match(source, /selectHighlights\(parseFeed\(xml, sport\), sport, limit\)/);
+  assert.doesNotMatch(source, /selectEmbeddableHighlights/);
+  assert.doesNotMatch(source, /verifyYouTubeEmbed/);
+  assert.doesNotMatch(source, /isOnsitePlaybackCandidate/);
 });
