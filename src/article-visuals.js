@@ -31,6 +31,9 @@ const PROP_LABELS = {
   nrfi: 'NRFI',
   passing_yards: 'Passing Yards',
   passing_tds: 'Passing TDs',
+  passing_completions: 'Passing Completions',
+  passing_attempts: 'Passing Attempts',
+  completion_pct: 'Completion %',
   rushing_yards: 'Rushing Yards',
   rushing_tds: 'Rushing TDs',
   receiving_yards: 'Receiving Yards',
@@ -144,6 +147,9 @@ const RECENT_METRIC = {
   nfl: {
     passing_yards: ['passingYards', 'Passing Yards'],
     passing_tds: ['passingTouchdowns', 'Passing TDs'],
+    passing_completions: ['completions', 'Completions'],
+    passing_attempts: ['passingAttempts', 'Passing Attempts'],
+    completion_pct: ['completionPct', 'Completion %'],
     rushing_yards: ['rushingYards', 'Rushing Yards'],
     rushing_tds: ['rushingTouchdowns', 'Rushing TDs'],
     receiving_yards: ['receivingYards', 'Receiving Yards'],
@@ -211,12 +217,20 @@ function fullStoryText(article) {
 }
 
 function detectStoryType(article) {
+  // Story type must come from the editorial subject, not incidental context.
+  // A performance story can mention three injured teammates without becoming
+  // an injury story. Headline + dek therefore own availability/transaction
+  // classification; the body only helps with analytical story shapes.
+  const headline = [article?.title, article?.summary].filter(Boolean).join(' ');
   const text = fullStoryText(article);
-  if (/injur|injured reserve|\bIR\b|ruled out|season-ending|week-to-week|day-to-day|surgery|sidelined/i.test(text)) return 'availability';
-  if (/\btrade(?:d)?\b|\bsign(?:ed|ing)?\b|waiv|claim(?:ed)?|promot(?:ed|ion)|practice squad|acquir(?:ed|es)|extension|release(?:d)?/i.test(text)) return 'transaction';
-  if (/last\s+\d+|streak|\bover\b|\bunder\b|trend|average|rate|percentage|\bpct\b|\d+(?:\.\d+)?%/i.test(text)) return 'trend';
-  if (/\bfinal\b|\bwin\b|\bloss\b|beat(?:s|en)?|defeat(?:s|ed)?|overtime|\bOT\b|recap/i.test(text)) return 'recap';
-  if (/\bvs\.?\b|against|matchup|preview|tonight|week\s+\d+/i.test(text)) return 'preview';
+
+  if (/injur|injured reserve|\bIR\b|ruled out|season-ending|week-to-week|day-to-day|surgery|sidelined/i.test(headline)) return 'availability';
+  if (/\btrade(?:d)?\b|\bsign(?:ed|ing)?\b|waiv|claim(?:ed)?|promot(?:ed|ion)|practice squad|acquir(?:ed|es)|extension|release(?:d)?/i.test(headline)) return 'transaction';
+  if (/\bfinal\b|\bwin\b|\bloss\b|beat(?:s|en)?|defeat(?:s|ed)?|overtime|\bOT\b|recap/i.test(headline)) return 'recap';
+  if (/\bvs\.?\b|matchup|preview|tonight|week\s+\d+/i.test(headline)) return 'preview';
+  if (/last\s+\d+|streak|trend|average|rate|percentage|\bpct\b|form|on a roll|efficien|volume|trajectory|improv|best season|\d+(?:\.\d+)?%/i.test(headline)) return 'trend';
+
+  if (/last\s+\d+|streak|\bover\b|\bunder\b|trend|average|rate|percentage|\bpct\b|efficien|trajectory|\d+(?:\.\d+)?%/i.test(text)) return 'trend';
   return 'analysis';
 }
 
@@ -408,9 +422,26 @@ function renderRosterMap(article, manifest, statuses) {
   </div>`;
 }
 
+function primaryStoryPlayers(article, manifest, limit = 3) {
+  const players = manifest?.players || [];
+  if (!players.length) return [];
+
+  const title = String(article?.title || '').toLowerCase();
+  const summary = String(article?.summary || '').toLowerCase();
+  const primary = players.filter((player) => {
+    const name = String(player?.name || '').toLowerCase();
+    if (!name) return false;
+    const last = name.split(/\s+/).pop();
+    return title.includes(name) || summary.includes(name)
+      || (last?.length > 3 && (title.includes(last) || summary.includes(last)));
+  });
+
+  return (primary.length ? primary : players).slice(0, limit);
+}
+
 function renderSignalGrid(article, manifest) {
   const props = [...new Set((article?.take?.prop_types || []).map((x) => String(x || '').trim()).filter(Boolean))].slice(0, 4);
-  const players = (manifest?.players || []).slice(0, 3);
+  const players = primaryStoryPlayers(article, manifest, 3);
   const team = manifest?.teams?.[0];
   if (!props.length && !players.length && !team) return '';
 
@@ -489,8 +520,11 @@ function chartPlayerFor(article, manifest, statuses, type) {
       const hit = players.find((p) => affectedIds.has(p.id) && skill(p));
       if (hit) return hit;
     }
-    if (props.some((p) => String(p).startsWith('passing_'))) {
-      const qb = players.find((p) => String(p.position || '').toUpperCase() === 'QB');
+
+    const primary = primaryStoryPlayers(article, manifest, players.length);
+    if (props.some((p) => String(p).startsWith('passing_') || p === 'completion_pct')) {
+      const qb = primary.find((p) => String(p.position || '').toUpperCase() === 'QB')
+        || players.find((p) => String(p.position || '').toUpperCase() === 'QB');
       if (qb) return qb;
     }
     if (props.some((p) => String(p).startsWith('receiving_') || p === 'receptions')) {
@@ -615,24 +649,38 @@ async function espnContext(player, article, sport) {
   ]);
 
   const categories = espnCategories(statsPayload, '2');
-  const metric = chooseMetric(article, sport);
+  const requestedMetric = chooseMetric(article, sport);
+  const position = String(player?.position || '').toUpperCase();
+  const props = article?.take?.prop_types || [];
   const preferred = sport === 'nfl'
-    ? ((article?.take?.prop_types || []).some((p) => String(p).startsWith('passing_')) ? 'passing'
-      : (article?.take?.prop_types || []).some((p) => String(p).startsWith('rushing_')) ? 'rushing'
-        : 'receiving')
+    ? (position === 'QB' ? 'passing'
+      : ['RB', 'FB'].includes(position)
+        ? (props.some((p) => String(p).startsWith('receiving_') || p === 'receptions') ? 'receiving' : 'rushing')
+        : ['WR', 'TE'].includes(position) ? 'receiving'
+          : 'defensive')
     : 'averages';
 
   const cat = firstUsableCategory(categories, preferred);
   const seasonRow = cat?.rows?.[0] || null;
   const log = logPayload ? espnGameLog(logPayload, season, '2') : { rows: [] };
-  const key = metric?.[0] || (sport === 'nba' ? 'points' : 'receivingYards');
-  const label = metric?.[1] || (sport === 'nba' ? 'Points' : 'Receiving Yards');
 
-  const rows = (log.rows || []).slice(0, 8).reverse().map((g) => ({
+  const fallbackMetric = sport === 'nba'
+    ? ['points', 'Points']
+    : cat?.key === 'passing' ? ['completions', 'Completions']
+      : cat?.key === 'rushing' ? ['rushingYards', 'Rushing Yards']
+        : cat?.key === 'receiving' ? ['receivingYards', 'Receiving Yards']
+          : null;
+  const metric = requestedMetric && (log.names || []).includes(requestedMetric[0])
+    ? requestedMetric
+    : fallbackMetric;
+  const key = metric?.[0];
+  const label = metric?.[1] || 'Recent form';
+
+  const rows = key ? (log.rows || []).slice(0, 8).reverse().map((g) => ({
     date: g.date,
     opponent: g.opponent,
     value: toNumber(g.values?.[key]),
-  })).filter((x) => x.value != null);
+  })).filter((x) => x.value != null) : [];
 
   const preferredKeys = sport === 'nba'
     ? ['avgPoints', 'avgRebounds', 'avgAssists', 'threePointFieldGoalPct']

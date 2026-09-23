@@ -103,3 +103,38 @@ test('MLB evidence preserves comma milestones and rejects speculative prop range
   assert.doesNotMatch(html, /PBE READ/);
   assert.doesNotMatch(html, /Lean over on Wheeler/);
 });
+
+
+test('NFL QB performance stories are not reclassified as injury stories by body context', () => {
+  const article = {
+    id: 'purdy-performance',
+    sport: 'nfl',
+    title: "Purdy's Fundamental Overhaul Sets Up Cleaner Passing Volume in 2026",
+    summary: 'The 49ers QB has improved his completion efficiency through two games and is sustaining cleaner passing volume.',
+    body: [
+      'Brock Purdy has completed 80.4% of his passes through two games.',
+      'Christian Kirk, De\'Zhaun Stribling, and Demarcus Robinson are all sidelined or limited.',
+      'The injury toll at receiver is real, but Purdy\'s processing gains are the center of the story.',
+    ].join(' '),
+    take: {
+      impact_score: 3,
+      prop_types: ['passing_completions'],
+    },
+  };
+  const manifest = {
+    players: [
+      { id: '4361741', name: 'Brock Purdy', position: 'QB', path: '/player/nfl/4361741', image_url: '/purdy.png' },
+      { id: '3895856', name: 'Christian Kirk', position: 'WR', path: '/player/nfl/3895856', image_url: '/kirk.png' },
+      { id: '999', name: "De'Zhaun Stribling", position: 'WR', path: '/player/nfl/999', image_url: '/stribling.png' },
+    ],
+    teams: [{ name: 'San Francisco 49ers', abbreviation: 'SF', path: '/team/nfl/san-francisco-49ers', logo_url: '/sf.png' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.match(html, /data-archetype="trend"/);
+  assert.match(html, /data-player-id="4361741"/);
+  assert.match(html, /Passing Completions/);
+  assert.match(html, /Brock Purdy/);
+  assert.doesNotMatch(html, /ROSTER RIPPLE/);
+  assert.doesNotMatch(html, /Christian Kirk/);
+});
