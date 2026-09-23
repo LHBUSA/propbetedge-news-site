@@ -35,6 +35,7 @@ const PROP_LABELS = {
   passing_attempts: 'Passing Attempts',
   completion_pct: 'Completion %',
   rushing_yards: 'Rushing Yards',
+  rushing_attempts: 'Rushing Attempts',
   rushing_tds: 'Rushing TDs',
   receiving_yards: 'Receiving Yards',
   receptions: 'Receptions',
@@ -567,14 +568,32 @@ const RELATION_TEAM_ALIASES = {
   nfl: { WAS: 'WSH', LA: 'LAR' },
 };
 
+const PRACTICE_DNP_RE = /\b(?:did not practice|didn't practice|did not participate|non[- ]participant|missed practice|DNP)\b/i;
+const GAME_ABSENCE_RE = /\b(?:ruled out|inactive|will miss|won't play|will not play|not expected to play|out for (?:the )?(?:game|season)|out (?:through|until)\b|injured reserve|\bIR\b|\bPUP\b|season[- ]ending|out indefinitely|remains sidelined)\b/i;
+
 const RELATION_STATE = {
   medical_absence: { kind: 'out', label: 'OUT / IR' },
+  practice_dnp: { kind: 'limited', label: 'DNP' },
   medical_limited: { kind: 'limited', label: 'LIMITED' },
   returning: { kind: 'return', label: 'RETURNING' },
   role_increase: { kind: 'role', label: 'ROLE UP' },
   added: { kind: 'added', label: 'ADDED' },
   departed: { kind: 'departed', label: 'DEPARTED' },
 };
+
+function relationPresentation(state, evidence = '') {
+  const key = String(state || '').toLowerCase();
+  const text = String(evidence || '');
+
+  // Defensive presentation guard for 3.18.0 rows produced before the
+  // practice_dnp state existed. A Wednesday DNP is a practice designation,
+  // not a claim that the player is ruled out or on IR.
+  if (key === 'medical_absence' && PRACTICE_DNP_RE.test(text) && !GAME_ABSENCE_RE.test(text)) {
+    return RELATION_STATE.practice_dnp;
+  }
+
+  return RELATION_STATE[key] || null;
+}
 
 function relationTeamCode(sport, value) {
   const code = String(value || '').trim().toUpperCase();
@@ -639,7 +658,7 @@ function classifyStructuredRelations(article, manifest) {
     if (!relation || typeof relation !== 'object') continue;
     const state = String(relation.state || '').toLowerCase();
     if (state === 'neutral') continue;
-    const rule = RELATION_STATE[state];
+    const rule = relationPresentation(state, relation.evidence);
     if (!rule) continue;
 
     const wanted = relationPersonName(relation.player);
@@ -743,6 +762,14 @@ function playerChip(row) {
   </a>`;
 }
 
+function marketLabel(value) {
+  const key = String(value || '').trim();
+  if (PROP_LABELS[key]) return PROP_LABELS[key];
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function marketWatch(article) {
   const props = [...new Set((article?.take?.prop_types || []).map((x) => String(x || '').trim()).filter(Boolean))].slice(0, 4);
   if (!props.length) return '';
@@ -751,7 +778,7 @@ function marketWatch(article) {
     <div class="pbe-av-market-list">
       ${props.map((prop, idx) => `<div class="pbe-av-market-row">
         <span>${String(idx + 1).padStart(2, '0')}</span>
-        <b>${esc(PROP_LABELS[prop] || prop.replace(/_/g, ' '))}</b>
+        <b>${esc(marketLabel(prop))}</b>
         <i>→</i>
       </div>`).join('')}
     </div>
