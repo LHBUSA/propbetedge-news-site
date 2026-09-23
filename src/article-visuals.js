@@ -598,14 +598,38 @@ function teamForStatus(teamId, manifest, sport = '') {
   ) || null;
 }
 
+const CONTRACT_MIN_PROMPT = [3, 18, 0];
+
+function promptVersionTuple(value) {
+  const m = String(value || '').match(/^(\d+)\.(\d+)\.(\d+)/);
+  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
+}
+
+/**
+ * Prompt >= 3.18.0 articles were written under Publication Contract V2: their
+ * relation array is the only roster truth. They must never drop into the
+ * legacy heuristic classification, even if the array is missing.
+ */
+export function isStrictContractArticle(article) {
+  const v = promptVersionTuple(article?.take?.prompt_version);
+  if (!v) return false;
+  for (let i = 0; i < 3; i++) {
+    if (v[i] > CONTRACT_MIN_PROMPT[i]) return true;
+    if (v[i] < CONTRACT_MIN_PROMPT[i]) return false;
+  }
+  return true;
+}
+
 /**
  * Relation arrays are the authoritative v2 contract. null means a legacy
  * article whose writer pre-dates the contract; [] means the writer explicitly
- * found no roster relation and the UI must render no roster ripple.
+ * found no roster relation and the UI must render no roster ripple. A strict
+ * (3.18+) article without an array is an invalid payload: no ripple, no
+ * heuristics.
  */
 function classifyStructuredRelations(article, manifest) {
   const relations = article?.take?.relations;
-  if (!Array.isArray(relations)) return null;
+  if (!Array.isArray(relations)) return isStrictContractArticle(article) ? [] : null;
 
   const sport = String(article?.sport || '').toLowerCase();
   const players = manifest?.players || [];
@@ -859,7 +883,10 @@ function renderKeyNumbers(article) {
 function archetypeShell(article, manifest, type) {
   const labels = STORY_LABELS[type] || STORY_LABELS.analysis;
   const statuses = classifyPlayers(article, manifest, type);
-  const roster = (type === 'availability' || type === 'transaction') ? renderRosterMap(article, manifest, statuses, type) : '';
+  // Authoritative relations always earn the roster ripple; the headline
+  // archetype only gates the heuristic (legacy) classification.
+  const authoritative = statuses.some((status) => status?.authoritative);
+  const roster = (authoritative || type === 'availability' || type === 'transaction') ? renderRosterMap(article, manifest, statuses, type) : '';
   const signal = roster ? '' : renderSignalGrid(article, manifest);
 
   return {

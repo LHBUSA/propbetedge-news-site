@@ -259,9 +259,9 @@ test('editorial evidence groups one stat line into one non-repetitive story card
   const goals = html.indexOf('<b>G</b>');
   const assists = html.indexOf('<b>A</b>');
   assert.ok(pts >= 0 && goals > pts && assists > goals, 'editorial total appears before component stats');
-  assert.match(html, /<strong>30</strong>s*<b>PTS</b>/);
-  assert.match(html, /<strong>5</strong>s*<b>G</b>/);
-  assert.match(html, /<strong>25</strong>s*<b>A</b>/);
+  assert.match(html, /<strong>30<\/strong>\s*<b>PTS<\/b>/);
+  assert.match(html, /<strong>5<\/strong>\s*<b>G<\/b>/);
+  assert.match(html, /<strong>25<\/strong>\s*<b>A<\/b>/);
 });
 
 test('evidence grid expands distinct thoughts rather than leaving quarter-width orphan cards', () => {
@@ -422,7 +422,7 @@ test('NFL roster ripple keeps neighboring player clauses isolated and resolves h
   const article = {
     id: 'vikings-backfield-status',
     sport: 'nfl',
-    title: "Vikings backfield chaos meets Tampa Bay's run defense: opportunity in flux",
+    title: "Vikings backfield injury chaos meets Tampa Bay's run defense: opportunity in flux",
     summary: "Aaron Jones limps into Sunday's matchup while Minnesota cycles through depth.",
     body: [
       'Aaron Jones is nursing a knee injury and his Sunday status is uncertain.',
@@ -454,7 +454,7 @@ test('multi-team NFL roster ripple groups player status under the correct team',
     id: 'turner-van-ness',
     sport: 'nfl',
     title: 'The Two-Game Reset: How Turner and Van Ness Are Rewriting the Pass-Rush Narrative',
-    summary: 'Dallas Turner and Lukas Van Ness are reshaping Minnesota and Green Bay.',
+    summary: 'With Greenard traded and Parsons sidelined, Dallas Turner and Lukas Van Ness are reshaping Minnesota and Green Bay.',
     body: [
       'Jonathan Greenard is gone from Minnesota, dealt to Philadelphia.',
       'Micah Parsons remains sidelined in Green Bay as his ACL heals.',
@@ -614,6 +614,94 @@ test('v2 NBA relation aliases NYK to the entity graph Knicks code and never flip
   const html = renderArticleVisuals(article, manifest);
   assert.match(html, /New York Knicks/);
   assert.match(html, /Mitchell Robinson/);
+  assert.match(html, /DEPARTED/);
+  assert.doesNotMatch(html, />ADDED</);
+});
+
+test('an explicit empty relation array suppresses the roster ripple even when the prose says signed, injured, out and promoted', () => {
+  const article = {
+    id: 'relation-empty-loud-prose',
+    sport: 'nfl',
+    title: 'Vikings depth chart notes',
+    summary: 'A busy week of roster chatter in Minnesota.',
+    body: 'Jordan Mason was injured and is out. DeeJay Dallas signed and was promoted to the active roster. Demond Claiborne absorbs touches.',
+    take: {
+      impact_score: 3,
+      prop_types: ['rushing_yards'],
+      prompt_version: '3.18.0',
+      relations: [],
+    },
+  };
+  const manifest = {
+    players: [
+      { id: '4360569', name: 'Jordan Mason', team_id: 'MIN', position: 'RB', path: '/player/nfl/4360569' },
+      { id: '4832846', name: 'Demond Claiborne', team_id: 'MIN', position: 'RB', path: '/player/nfl/4832846' },
+      { id: '3916945', name: 'DeeJay Dallas', team_id: 'MIN', position: 'RB', path: '/player/nfl/3916945' },
+    ],
+    teams: [{ id: 'MIN', abbreviation: 'MIN', name: 'Minnesota Vikings', path: '/team/nfl/minnesota-vikings' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.doesNotMatch(html, /ROSTER RIPPLE/);
+  assert.doesNotMatch(html, /OUT \/ IR|ADDED|ROLE UP|DEPARTED/);
+});
+
+test('a prompt 3.18 article without a relation array never falls back to heuristic roster classification', () => {
+  const article = {
+    id: 'strict-without-relations',
+    sport: 'nfl',
+    title: 'Vikings injury update: Mason sidelined',
+    summary: 'Jordan Mason is out with a thumb fracture.',
+    body: 'Jordan Mason remains sidelined from a thumb fracture. Demond Claiborne absorbs touches.',
+    take: {
+      impact_score: 3,
+      prop_types: ['rushing_yards'],
+      prompt_version: '3.18.0',
+    },
+  };
+  const manifest = {
+    players: [
+      { id: '4360569', name: 'Jordan Mason', team_id: 'MIN', position: 'RB', path: '/player/nfl/4360569' },
+      { id: '4832846', name: 'Demond Claiborne', team_id: 'MIN', position: 'RB', path: '/player/nfl/4832846' },
+    ],
+    teams: [{ id: 'MIN', abbreviation: 'MIN', name: 'Minnesota Vikings', path: '/team/nfl/minnesota-vikings' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.doesNotMatch(html, /ROSTER RIPPLE/);
+  assert.doesNotMatch(html, /OUT \/ IR/);
+
+  const legacy = renderArticleVisuals({ ...article, take: { impact_score: 3, prop_types: ['rushing_yards'], prompt_version: '3.17.0' } }, manifest);
+  assert.match(legacy, /ROSTER RIPPLE/, 'legacy 3.17 articles still use the hardened heuristic path');
+});
+
+test('structured relations render the roster ripple regardless of the headline archetype', () => {
+  const article = {
+    id: 'structured-analysis-archetype',
+    sport: 'nba',
+    title: 'Sources: extension talks between Knicks, Towns at standstill',
+    summary: 'New York is balancing its second-apron roster decisions.',
+    body: 'That mandate already cost the Knicks Mitchell Robinson, a valuable backup center who signed with Boston this offseason rather than take a pay cut to stay under the threshold.',
+    take: {
+      impact_score: 3,
+      prop_types: ['team_total'],
+      prompt_version: '3.18.0',
+      relations: [{
+        player: 'Mitchell Robinson',
+        team: 'NYK',
+        state: 'departed',
+        destination_team: 'BOS',
+        evidence: 'That mandate already cost the Knicks Mitchell Robinson, a valuable backup center who signed with Boston this offseason rather than take a pay cut to stay under the threshold.',
+      }],
+    },
+  };
+  const manifest = {
+    players: [{ id: '4351852', name: 'Mitchell Robinson', team_id: 'BOS', position: 'C', path: '/player/nba/4351852' }],
+    teams: [{ id: 'NY', abbreviation: 'NY', name: 'New York Knicks', path: '/team/nba/new-york-knicks' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.match(html, /ROSTER RIPPLE/);
   assert.match(html, /DEPARTED/);
   assert.doesNotMatch(html, />ADDED</);
 });
