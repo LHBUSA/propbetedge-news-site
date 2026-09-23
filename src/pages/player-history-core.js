@@ -11,6 +11,47 @@ export function paginate(rows, requested = 1, size = 20) {
   return { rows: rows.slice((page - 1) * pageSize, page * pageSize), page, pages, total: rows.length };
 }
 export const nhlSeasonLabel = year => /^\d{8}$/.test(String(year)) ? `${String(year).slice(0, 4)}-${String(year).slice(6)}` : String(year);
+export function nhlEntryStatus(data, now = new Date()) {
+  const regularRows = list(data?.seasonTotals).filter(
+    (row) => row?.leagueAbbrev === 'NHL' && String(row?.gameTypeId) === '2'
+  );
+  const careerGames = number(data?.careerTotals?.regularSeason?.gamesPlayed);
+  const hasRegularSeasonGame = (careerGames != null && careerGames > 0)
+    || regularRows.some((row) => {
+      const gp = number(row?.gamesPlayed);
+      return gp != null && gp > 0;
+    });
+  if (hasRegularSeasonGame) return null;
+
+  const birth = /^\d{4}-\d{2}-\d{2}$/.test(String(data?.birthDate || ''))
+    ? new Date(`${data.birthDate}T00:00:00Z`)
+    : null;
+  const current = now instanceof Date ? now : new Date(now);
+  if (!Number.isFinite(current.getTime())) return null;
+
+  const seasonStartYear = current.getUTCMonth() + 1 >= 7
+    ? current.getUTCFullYear()
+    : current.getUTCFullYear() - 1;
+  const cutoff = new Date(Date.UTC(seasonStartYear, 8, 15));
+  let ageAtCutoff = null;
+
+  if (birth && Number.isFinite(birth.getTime())) {
+    ageAtCutoff = cutoff.getUTCFullYear() - birth.getUTCFullYear();
+    if (
+      cutoff.getUTCMonth() < birth.getUTCMonth()
+      || (cutoff.getUTCMonth() === birth.getUTCMonth() && cutoff.getUTCDate() < birth.getUTCDate())
+    ) ageAtCutoff--;
+  }
+
+  const rookieEligible = ageAtCutoff != null && ageAtCutoff < 26;
+  return {
+    noNhlRegularSeasonGames: true,
+    rookieEligible,
+    ageAtCutoff,
+    label: rookieEligible ? 'ROOKIE ELIGIBLE' : 'NHL DEBUT PENDING',
+    title: rookieEligible ? 'NHL debut pending' : 'No NHL regular-season games yet',
+  };
+}
 export function sourcePhase(data) {
   const f = list(data?.filters).find(x => /^(seasontype|seasonType)$/i.test(x?.name || ''));
   return f?.value == null ? null : String(f.value);
