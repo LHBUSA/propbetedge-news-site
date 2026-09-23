@@ -237,7 +237,7 @@ const STATUS_RULES = [
   { kind: 'out', label: 'OUT / IR', re: /(?:placed|lands?|heads?|moved)\s+(?:on|to)\s+(?:injured reserve|IR)|\b(?:ruled|deemed)\s+out\b|\bwon't return\b|\bwill miss\b|\bsidelined\b|season-ending/i },
   { kind: 'limited', label: 'LIMITED', re: /week-to-week|day-to-day|questionable|doubtful|limited participant|unclear status|return timeline|held (?:him|her|them)?\s*out of (?:practice|training)|\bnursing\b[^.!?]{0,45}\binjur|\blimp(?:s|ing|ed)?\b|status[^.!?]{0,45}\buncertain\b/i },
   { kind: 'return', label: 'RETURNING', re: /activated|return(?:ing)? from|cleared to|back from|set to return/i },
-  { kind: 'role', label: 'ROLE UP', re: /promoted|elevated|expanded duty|larger role|more snaps|absorb|shoulder(?:ing)?|will now fall to|behind (?:him|her|them) are|fill the roster gaps/i },
+  { kind: 'role', label: 'ROLE UP', re: /promoted|elevated|expanded duty|larger role|more snaps|absorb|shoulder(?:ing)?|will now fall to|behind (?:him|her|them) are|fill the roster gaps|redistribut(?:e|ed|ing)[^.!?]{0,55}\btouches?\b|\btouches?\b[^.!?]{0,55}\bshift(?:ing|ed)?\b/i },
   { kind: 'added', label: 'ADDED', re: /\bsigned\b|\bacquired\b|\bclaimed\b|\btraded for\b|\badded to the roster\b|\bpractice squad\b/i },
 ];
 
