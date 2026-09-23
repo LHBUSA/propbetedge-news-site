@@ -200,8 +200,10 @@ test('story evidence cards preserve the full published sentence instead of cutti
 
 test('evidence explainers never apply a character cap across sports', () => {
   const longContext = [
-    'His defensive workload has been steady—62 snaps across both games—suggesting the Jaguars were testing his availability and conditioning post-injury before committing him to a heavy role.',
-    'That workload matters because the staff also moved him across multiple alignments, asked him to handle motion adjustments, and kept him on the field in high-leverage third-down situations while the offense changed personnel groupings repeatedly, which is exactly the kind of context that should stay attached to the published 62-snap evidence instead of being cut off simply because the sentence is long.'
+    'His defensive workload has been steady—62 snaps across both games—suggesting the Jaguars were testing his availability and conditioning post-injury before committing him to a heavy role',
+    'while also moving him across multiple alignments and asking him to handle motion adjustments in high-leverage situations',
+    'with the offense changing personnel groupings repeatedly and the coaching staff continuing to test how much two-way volume he can carry',
+    'this intentionally long source passage has no sentence terminator after the metric and must remain intact all the way through END OF CONTEXT'
   ].join(' ');
   const article = {
     id: 'hunter-snaps',
@@ -217,8 +219,9 @@ test('evidence explainers never apply a character cap across sports', () => {
 
   const html = renderArticleVisuals(article, manifest);
   assert.match(html, /62<\/strong>\s*<b>SNAPS<\/b>/);
-  assert.match(html, /before committing him to a heavy role\./);
-  assert.doesNotMatch(html, /before committing him to a heavy…/);
+  assert.match(html, /END OF CONTEXT/);
+  assert.doesNotMatch(html, /heavy role…/);
+  assert.doesNotMatch(html, /CONTEXT…/);
 });
 
 test('evidence card CSS explicitly forbids line-clamp and overflow clipping', () => {
