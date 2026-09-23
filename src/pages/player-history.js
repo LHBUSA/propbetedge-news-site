@@ -1,5 +1,5 @@
 import { playerPageShell, renderPlayerHero, renderPlayerLoading, escapeHtml } from './player-shared.js';
-import { display, list, espnCategories, espnGameLog, nhlCategories, nhlGameLog, ledgerGameLog, defaultCategory, seasonOptions, ribbonFields, paginate } from './player-history-core.js';
+import { display, list, espnCategories, espnGameLog, nhlCategories, nhlGameLog, nhlEntryStatus, nhlCurrentSeasonOption, ledgerGameLog, defaultCategory, seasonOptions, ribbonFields, paginate } from './player-history-core.js';
 import { entityCoverageSlot, mountEntityCoverage } from '../entity-graph/entity-coverage.js';
 import '../styles/player-history.css';
 
@@ -68,7 +68,10 @@ export async function renderPlayerHistory(root, sport, playerId, setMeta) {
     if (!current()) return;
     const mount = root.querySelector('[data-ph-content]');
     if (!mount) return;
-    const cat = state.categories.find(c=>c.key===state.category), options = seasonOptions(state.categories);
+    const cat = state.categories.find(c=>c.key===state.category);
+    const entryStatus = sport === 'nhl' && state.phase === '2' ? nhlEntryStatus(state.bio) : null;
+    const sourceOptions = seasonOptions(state.categories);
+    const options = entryStatus && !sourceOptions.length ? [nhlCurrentSeasonOption()] : sourceOptions;
     const season = options.find(([id])=>id===state.year)?.[1] || state.year;
     const selectedRows = cat?.rows.filter(r=>r.year===state.year) || [], selectedRow=selectedRows.find(r=>r.total) || selectedRows[0];
     const ribbon = cat && selectedRow ? `<section class="ph-section ph-summary"><div class="ph-section-head"><h2>${e(season)} \u00b7 ${e(phaseLabel(state.phase))}</h2><p>${e(cat.title)}${selectedRows.length>1?` \u00b7 ${e(selectedRow.team)} (team stints listed below)`:''}</p></div><div class="ph-ribbon">${ribbonFields(sport,state.hero.position,cat).map(f=>`<div><span>${e(f.label)}</span><strong>${e(selectedRow.values[f.key])}</strong></div>`).join('')}</div></section>` : '';
@@ -77,7 +80,18 @@ export async function renderPlayerHistory(root, sport, playerId, setMeta) {
     let content = `${controls}<p class="ph-source">Powered by <a href="https://propsports.proptechusa.ai/" target="_blank" rel="noopener noreferrer">PropSports.PropTechUSA.ai</a> \u00b7 Season and competition shown explicitly. ${state.fetchedAt?`Source read ${e(new Date(state.fetchedAt).toLocaleString('en-US'))}.`:''}</p>`;
     if (state.loading) content += '<p class="ph-status" role="status">Loading recorded statistics\u2026</p>';
     if (state.error) content += `<p class="ph-status ph-error" role="status">${e(state.error)} Use Refresh stats to retry. A source failure is not an offseason or a zero-stat season.</p>`;
-    if (!state.loading && !state.error && !selectedRow) content += '<p class="ph-status">No season statistics were returned for this selection. Choose another season or competition.</p>';
+    if (!state.loading && !state.error && !selectedRow) {
+      if (entryStatus) {
+        content += `<section class="ph-entry-state" aria-label="NHL rookie status">
+          <span class="ph-entry-badge">${e(entryStatus.rookieEligible ? 'NHL ROOKIE · DEBUT PENDING' : entryStatus.label)}</span>
+          <h2>${e(entryStatus.title)}</h2>
+          <p><strong>${e(state.hero?.name || 'This player')}</strong> has no NHL regular-season games recorded yet. This profile is waiting for an NHL regular-season appearance, not displaying a zero-stat season.</p>
+          <small>Preseason and minor-league games stay separate from NHL regular-season totals. Once the NHL source records a regular-season appearance, this page will populate automatically.</small>
+        </section>`;
+      } else {
+        content += '<p class="ph-status">No season statistics were returned for this selection. Choose another season or competition.</p>';
+      }
+    }
     content += ribbon;
     if (cat?.skipped) content += `<p class="ph-status">${cat.skipped} source season rows lacked complete column metadata and were not displayed.</p>`;
     if (cat?.career) content += section('Career statistics', table(cat.labels,[cat.names.map(n=>cat.career[n])],`${phaseLabel(state.phase)} \u00b7 ${cat.title}`),'Source-reported career values. Regular season and playoffs are separate.');
@@ -127,7 +141,9 @@ export async function renderPlayerHistory(root, sport, playerId, setMeta) {
       state.categories=sport==='nhl'?nhlCategories(payload.data,phase):espnCategories(payload.data,phase);
       state.fetchedAt=payload.fetched_at;
       if (!state.categories.some(c=>c.key===state.category)) state.category=defaultCategory(state.categories,sport,state.hero.position);
-      const options=seasonOptions(state.categories);
+      const sourceOptions=seasonOptions(state.categories);
+      const entryStatus=sport==='nhl' && state.phase==='2' ? nhlEntryStatus(state.bio) : null;
+      const options=entryStatus && !sourceOptions.length ? [nhlCurrentSeasonOption()] : sourceOptions;
       if (!options.some(([y])=>y===state.year)) state.year=options[0]?.[0] || '';
       state.historyPage=1;
       if (!state.categories.length) state.error='The source returned no supported statistics categories.';
