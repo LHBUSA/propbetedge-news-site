@@ -27,6 +27,7 @@ const HIGHLIGHTS_REFRESH_MS = 15 * 60 * 1000;
 
 let _highlightsRefreshHandle = null;
 let _highlightsRefreshSport = null;
+let _nflYouTubeApiPromise = null;
 
 function queryPage() {
   const params = new URLSearchParams(window.location.search);
@@ -352,6 +353,73 @@ function renderHighlightsSlot(sport, data) {
   );
 }
 
+function loadNflYouTubeApi() {
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (_nflYouTubeApiPromise) return _nflYouTubeApiPromise;
+
+  _nflYouTubeApiPromise = new Promise((resolve, reject) => {
+    const timeoutAt = Date.now() + 8000;
+    const previousReady = window.onYouTubeIframeAPIReady;
+
+    const finish = () => {
+      if (window.YT?.Player) {
+        resolve(window.YT);
+        return true;
+      }
+      return false;
+    };
+
+    window.onYouTubeIframeAPIReady = () => {
+      try {
+        if (typeof previousReady === 'function') previousReady();
+      } catch {
+        // Another consumer must not block the NFL player.
+      }
+      finish();
+    };
+
+    const poll = window.setInterval(() => {
+      if (finish()) {
+        window.clearInterval(poll);
+      } else if (Date.now() >= timeoutAt) {
+        window.clearInterval(poll);
+        reject(new Error('YouTube IFrame API timed out'));
+      }
+    }, 100);
+
+    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://www.youtube.com/iframe_api';
+      script.async = true;
+      script.addEventListener('error', () => {
+        window.clearInterval(poll);
+        reject(new Error('YouTube IFrame API failed to load'));
+      }, { once: true });
+      document.head.appendChild(script);
+    }
+  }).catch((error) => {
+    _nflYouTubeApiPromise = null;
+    throw error;
+  });
+
+  return _nflYouTubeApiPromise;
+}
+
+function nflExternalVideoIds(slot) {
+  return new Set(
+    String(slot?.dataset?.nflExternalVideoIds || '')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)
+  );
+}
+
+function rememberNflExternalVideo(slot, videoId) {
+  const ids = nflExternalVideoIds(slot);
+  ids.add(String(videoId));
+  slot.dataset.nflExternalVideoIds = [...ids].join(',');
+}
+
 function renderNflHighlightsSlot(data) {
   const slot = document.getElementById('highlights-slot');
   if (!slot) return;
@@ -365,14 +433,15 @@ function renderNflHighlightsSlot(data) {
   }
 
   const label = String(data?.league || 'NFL').toUpperCase();
+  const externalIds = nflExternalVideoIds(slot);
   const existingSelected = String(slot.dataset.selectedVideoId || '');
   const existing = videos.find((video) =>
-    String(video.videoId) === existingSelected && video.embeddable !== false
+    String(video.videoId) === existingSelected && !externalIds.has(String(video.videoId))
   );
   const featured = existing
-    || videos.find((video) => video.embeddable === true)
-    || videos.find((video) => video.embeddable !== false)
+    || videos.find((video) => !externalIds.has(String(video.videoId)))
     || videos[0];
+  const featuredExternal = externalIds.has(String(featured.videoId));
   const rail = videos
     .filter((video) => String(video.videoId) !== String(featured.videoId))
     .slice(0, HIGHLIGHTS_LIMIT - 1);
@@ -382,20 +451,13 @@ function renderNflHighlightsSlot(data) {
   slot.dataset.selectedVideoId = String(featured.videoId);
   slot.dataset.videoPlaying = '0';
 
-  const featuredMedia = featured.embeddable === false
-    ? renderNflRestrictedFeatured(featured, label)
-    : renderInlineHighlightPlayer(featured, label);
-  const featuredStatus = featured.embeddable === false
-    ? 'Available on YouTube · External playback'
-    : 'Playing on PropBetEdge · YouTube player';
-
   slot.innerHTML = `
     <section class="sport-highlights" aria-labelledby="sport-highlights-heading">
       <div class="sport-highlights-head">
         <div>
           <span class="kicker kicker-gold">▶ LATEST HIGHLIGHTS</span>
           <h2 id="sport-highlights-heading">${escapeHtml(label)} Video Highlights</h2>
-          <p>Official NFL videos stay visible here. Embeddable uploads play on PropBetEdge; restricted uploads open on YouTube.</p>
+          <p>Official NFL videos stay visible. If YouTube blocks an inline player, PropBetEdge keeps the video and opens that upload on YouTube.</p>
         </div>
         <a href="${escapeAttr(data?.channel?.url || 'https://www.youtube.com/@NFL')}" target="_blank" rel="noopener">
           Official channel ↗
@@ -405,54 +467,107 @@ function renderNflHighlightsSlot(data) {
       <div class="sport-highlights-layout">
         <article class="sport-highlight-featured">
           <div class="sport-highlight-frame" data-highlight-player>
-            ${featuredMedia}
+            ${featuredExternal ? renderNflRestrictedFeatured(featured, label) : '<div data-nfl-player-host></div>'}
           </div>
           <div class="sport-highlight-featured-copy">
             <span data-highlight-featured-meta>${escapeHtml(featured.channelName || 'NFL Official')} · ${escapeHtml(formatHighlightTime(featured.publishedAt))}</span>
             <h3 data-highlight-featured-title>${escapeHtml(featured.title)}</h3>
-            <small class="sport-highlight-onsite-label" data-highlight-featured-status>${escapeHtml(featuredStatus)}</small>
+            <small class="sport-highlight-onsite-label" data-highlight-featured-status>${featuredExternal ? 'Watch on YouTube · Inline playback unavailable' : 'Loading official YouTube player…'}</small>
           </div>
         </article>
 
         <div class="sport-highlight-rail" role="list" aria-label="NFL video playlist">
-          ${rail.map((video) => renderNflHighlightCard(video, label)).join('')}
+          ${rail.map((video) => renderNflHighlightCard(video, label, externalIds)).join('')}
         </div>
       </div>
     </section>
   `;
 
-  const player = slot.querySelector('[data-highlight-player]');
+  const playerShell = slot.querySelector('[data-highlight-player]');
   const title = slot.querySelector('[data-highlight-featured-title]');
   const meta = slot.querySelector('[data-highlight-featured-meta]');
   const status = slot.querySelector('[data-highlight-featured-status]');
   const buttons = [...slot.querySelectorAll('[data-highlight-video-id]')];
+  let playerInstance = null;
 
-  const selectVideo = (videoId, { autoplay = true } = {}) => {
-    const video = videos.find((item) => String(item.videoId) === String(videoId));
-    if (!video || !player || video.embeddable === false) return;
+  const mountVideo = async (video, { autoplay = false } = {}) => {
+    if (!video || !playerShell) return;
+    const videoId = String(video.videoId);
+    if (nflExternalVideoIds(slot).has(videoId)) return;
 
-    player.innerHTML = renderInlineHighlightPlayer(video, label, { autoplay });
+    slot.dataset.selectedVideoId = videoId;
+    slot.dataset.videoPlaying = autoplay ? '1' : '0';
+    playerShell.innerHTML = '<div data-nfl-player-host></div>';
+    const host = playerShell.querySelector('[data-nfl-player-host]');
+
     if (title) title.textContent = video.title || '';
     if (meta) meta.textContent = `${video.channelName || 'NFL Official'} · ${formatHighlightTime(video.publishedAt)}`;
-    if (status) status.textContent = 'Playing on PropBetEdge · YouTube player';
-    slot.dataset.selectedVideoId = String(video.videoId);
-    slot.dataset.videoPlaying = '1';
+    if (status) status.textContent = 'Loading official YouTube player…';
 
     for (const button of buttons) {
-      const active = String(button.dataset.highlightVideoId) === String(video.videoId);
+      const active = String(button.dataset.highlightVideoId) === videoId;
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     }
+
+    try {
+      const YT = await loadNflYouTubeApi();
+      if (!host?.isConnected || slot.dataset.selectedVideoId !== videoId) return;
+
+      playerInstance?.destroy?.();
+      playerInstance = new YT.Player(host, {
+        videoId,
+        playerVars: {
+          autoplay: autoplay ? 1 : 0,
+          playsinline: 1,
+          rel: 0,
+          origin: window.location.origin,
+          widget_referrer: window.location.href,
+        },
+        events: {
+          onReady() {
+            if (status && slot.dataset.selectedVideoId === videoId) {
+              status.textContent = 'Playing on PropBetEdge · YouTube player';
+            }
+          },
+          onError(event) {
+            const code = Number(event?.data);
+            if (![5, 100, 101, 150, 153].includes(code)) return;
+            if (slot.dataset.selectedVideoId !== videoId) return;
+
+            console.warn('[sport highlights] NFL YouTube playback unavailable', {
+              videoId,
+              errorCode: code,
+            });
+
+            rememberNflExternalVideo(slot, videoId);
+            slot.dataset.videoPlaying = '0';
+            try {
+              playerInstance?.destroy?.();
+            } catch {
+              // Ignore teardown errors from an already-failed player.
+            }
+            renderNflHighlightsSlot(data);
+          },
+        },
+      });
+    } catch (error) {
+      console.warn('[sport highlights] NFL YouTube player failed to initialize', error?.message || error);
+      rememberNflExternalVideo(slot, videoId);
+      renderNflHighlightsSlot(data);
+    }
   };
 
-  player?.addEventListener('pointerdown', () => {
-    if (featured.embeddable !== false) slot.dataset.videoPlaying = '1';
-  }, { passive: true });
+  if (!featuredExternal) {
+    mountVideo(featured, { autoplay: false });
+  }
 
   for (const button of buttons) {
     button.addEventListener('click', () => {
-      selectVideo(button.dataset.highlightVideoId, { autoplay: true });
-      player?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const video = videos.find((item) => String(item.videoId) === String(button.dataset.highlightVideoId));
+      if (!video) return;
+      mountVideo(video, { autoplay: true });
+      playerShell?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   }
 
@@ -483,11 +598,12 @@ function renderNflRestrictedFeatured(video, label) {
   `;
 }
 
-function renderNflHighlightCard(video, label) {
+function renderNflHighlightCard(video, label, externalIds) {
   const thumbnail = video.thumbnail || `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`;
   const meta = `${video.channelName || `${label} Official`} · ${formatHighlightTime(video.publishedAt)}`;
+  const external = externalIds?.has(String(video.videoId));
 
-  if (video.embeddable === false) {
+  if (external) {
     const href = video.url || `https://www.youtube.com/watch?v=${video.videoId}`;
     return `
       <a
