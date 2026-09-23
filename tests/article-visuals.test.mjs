@@ -173,3 +173,25 @@ test('NFL WR/TE and QB form charts remain position appropriate', () => {
   assert.deepEqual(nflRecentMetric(wr, 'WR'), ['receivingYards', 'Receiving Yards']);
   assert.deepEqual(nflRecentMetric(qb, 'QB'), ['passingYards', 'Passing Yards']);
 });
+
+
+test('story evidence cards preserve the full published sentence instead of cutting explainers mid-thought', () => {
+  const article = {
+    id: 'cubs-weather',
+    sport: 'mlb',
+    title: 'Cubs add Kevin Gausman before a windy matchup',
+    body: "Wind gusts of 10-20 mph out of the northeast, consistent with Tuesday's conditions, will suppress fly-ball carry — a modest tailwind for Chicago's offense against a pitcher whose game is built around limiting hard airborne contact.",
+    take: {
+      impact_score: 4,
+      prop_types: ['k_prop', 'team_total', 'moneyline'],
+    },
+  };
+  const manifest = {
+    players: [{ id: '592332', name: 'Kevin Gausman', position: 'P', path: '/player/mlb/592332' }],
+    teams: [{ name: 'Chicago Cubs', abbreviation: 'CHC', path: '/team/mlb/chicago-cubs' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.match(html, /modest tailwind for Chicago's offense against a pitcher whose game is built around limiting hard airborne contact\./);
+  assert.doesNotMatch(html, /Chicago's offense against a pitcher whose game is built…/);
+});

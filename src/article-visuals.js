@@ -288,6 +288,23 @@ function sentenceAround(text, index, max = 128) {
   return value.length > max ? value.slice(0, max - 1).trim() + '…' : value;
 }
 
+function evidenceSentenceAround(text, index) {
+  const left = Math.max(text.lastIndexOf('. ', index), text.lastIndexOf('! ', index), text.lastIndexOf('? ', index));
+  const rest = text.slice(index);
+  const ends = ['. ', '! ', '? '].map((x) => rest.indexOf(x)).filter((x) => x >= 0);
+  const right = ends.length ? index + Math.min(...ends) + 1 : Math.min(text.length, index + 420);
+  const value = text.slice(left >= 0 ? left + 2 : Math.max(0, index - 90), right).trim();
+
+  // Evidence cards should preserve a complete published sentence. The former
+  // 180-character hard cut produced misleading half-explainers such as the
+  // weather/velocity card ending in the middle of "Chicago's offense…".
+  if (ends.length || value.length <= 420) return value;
+
+  const clipped = value.slice(0, 419);
+  const boundary = clipped.lastIndexOf(' ');
+  return `${clipped.slice(0, boundary > 280 ? boundary : clipped.length).trim()}…`;
+}
+
 const PERCENT_EVIDENCE_LABELS = new Set(['SNAP SHARE', 'USAGE', 'FG%', 'OPP K%']);
 
 function evidenceNumber(raw) {
@@ -331,7 +348,7 @@ function keyNumbers(article) {
     while ((match = global.exec(text)) && found.length < 12) {
       const raw = match[1];
       const numeric = evidenceNumber(raw);
-      const context = sentenceAround(text, match.index, 180);
+      const context = evidenceSentenceAround(text, match.index);
 
       if (evidenceContextIsSpeculative(context)) continue;
       if (label === 'K' && numeric != null && numeric > 30) continue;
