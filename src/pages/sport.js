@@ -237,6 +237,9 @@ function youtubeEmbedUrl(videoId, { autoplay = false } = {}) {
     modestbranding: '1',
     enablejsapi: '1',
   });
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    params.set('origin', window.location.origin);
+  }
   if (autoplay) params.set('autoplay', '1');
   return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
 }
