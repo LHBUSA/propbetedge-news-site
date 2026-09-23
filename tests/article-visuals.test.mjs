@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { renderArticleVisuals } from '../src/article-visuals.js';
+import { nflRecentMetric, renderArticleVisuals } from '../src/article-visuals.js';
 
 test('article visuals render only article facts and tagged entities', () => {
   const article = {
@@ -137,4 +137,39 @@ test('NFL QB performance stories are not reclassified as injury stories by body 
   assert.match(html, /Brock Purdy/);
   assert.doesNotMatch(html, /ROSTER RIPPLE/);
   assert.doesNotMatch(html, /Christian Kirk/);
+});
+
+
+test('NFL RB current-form charts default to rushing even when receiving props are tagged first', () => {
+  const article = {
+    sport: 'nfl',
+    title: 'Aaron Jones Sr. enters a short-term lead role against San Francisco',
+    summary: 'Carolina adjusts its backfield usage for the matchup.',
+    take: {
+      prop_types: ['receiving_yards', 'receiving_tds', 'anytime_td', 'rushing_yards'],
+    },
+  };
+
+  assert.deepEqual(nflRecentMetric(article, 'RB'), ['rushingYards', 'Rushing Yards']);
+});
+
+test('NFL RB current-form charts may use receiving when the story itself is explicitly about receiving work', () => {
+  const article = {
+    sport: 'nfl',
+    title: 'Aaron Jones receiving role expands as Panthers lean on him in the passing game',
+    summary: 'Targets and receptions are the focus of the matchup.',
+    take: {
+      prop_types: ['receiving_yards', 'rushing_yards'],
+    },
+  };
+
+  assert.deepEqual(nflRecentMetric(article, 'RB'), ['receivingYards', 'Receiving Yards']);
+});
+
+test('NFL WR/TE and QB form charts remain position appropriate', () => {
+  const wr = { sport: 'nfl', take: { prop_types: ['rushing_yards', 'receiving_yards'] } };
+  const qb = { sport: 'nfl', take: { prop_types: ['receiving_yards', 'passing_yards'] } };
+
+  assert.deepEqual(nflRecentMetric(wr, 'WR'), ['receivingYards', 'Receiving Yards']);
+  assert.deepEqual(nflRecentMetric(qb, 'QB'), ['passingYards', 'Passing Yards']);
 });
