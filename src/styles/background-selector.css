@@ -8,10 +8,12 @@
  */
 
 :root {
-  --pbe-scene-image: url('https://images.unsplash.com/photo-1778050203444-90920c7a5652?auto=format&fit=crop&w=2200&q=74');
+  /* Neutral network first paint. Sport photography is opt-in through an
+     explicit data-pbe-scene value, never an MLB fallback. */
+  --pbe-scene-image: none;
   --pbe-scene-position: center 46%;
-  --pbe-scene-opacity: .29;
-  --pbe-scene-filter: grayscale(16%) saturate(82%) brightness(.92) contrast(1.05);
+  --pbe-scene-opacity: 0;
+  --pbe-scene-filter: none;
   --pbe-scene-orb-one: rgba(212,175,55,.09);
   --pbe-scene-orb-two: rgba(193,39,61,.055);
 }
