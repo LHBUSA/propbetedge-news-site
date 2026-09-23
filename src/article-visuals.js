@@ -83,46 +83,52 @@ const STORY_LABELS = {
 
 const METRIC_PATTERNS = {
   mlb: [
-    ['VELOCITY', /(\d+(?:\.\d+)?)\s*mph\b/i],
-    ['K', /(\d+(?:\.\d+)?)\s+(?:strikeouts?|Ks?)\b/i],
-    ['IP', /(\d+(?:\.\d+)?)\s+innings?(?: pitched)?\b/i],
-    ['HR', /(\d+(?:\.\d+)?)\s+(?:home runs?|HRs?)\b/i],
-    ['H', /(\d+(?:\.\d+)?)\s+hits?\b/i],
-    ['RBI', /(\d+(?:\.\d+)?)\s+RBIs?\b/i],
-    ['TB', /(\d+(?:\.\d+)?)\s+total bases?\b/i],
+    ['CAREER K', /((?:\d{1,3}(?:,\d{3})+|\d+))(?:st|nd|rd|th)?\s+career\s+strikeouts?\b/i],
+    ['ERA', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+ERA\b/i],
+    ['K/9', /strikeout rate[^.!?]{0,40}?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+per nine\b/i],
+    ['K/9', /(?:fanned|struck out)[^.!?]{0,40}?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+per nine\b/i],
+    ['OPP K%', /strike out at\s+(?:a\s+)?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)%\s+clip\b/i],
+    ['VELOCITY', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s*mph\b/i],
+    ['K', /\bstruck out\s+((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\b/i],
+    ['K', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+(?:strikeouts?|Ks?)\b/i],
+    ['IP', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+innings?(?: pitched)?\b/i],
+    ['HR', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+(?:home runs?|HRs?)\b/i],
+    ['H', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+hits?\b/i],
+    ['RBI', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+RBIs?\b/i],
+    ['TB', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+total bases?\b/i],
     ['OPS', /(?:OPS(?:\s+(?:of|at|was|is))?\s*)(\d?\.\d{3})\b/i],
-    ['ERA', /(?:ERA(?:\s+(?:of|at|was|is))?\s*)(\d+(?:\.\d+)?)\b/i],
+    ['ERA', /(?:ERA(?:\s+(?:of|at|was|is))?\s*)((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\b/i],
   ],
   nfl: [
-    ['SNAP SHARE', /snap share(?:\s+\w+){0,4}\s+(?:at|of)\s+(\d+(?:\.\d+)?)%/i],
-    ['SNAPS', /(\d+(?:\.\d+)?)\s+snaps?\b/i],
-    ['PRESSURES', /(\d+(?:\.\d+)?)\s+pressures?\b/i],
-    ['HURRIES', /(\d+(?:\.\d+)?)\s+hurries\b/i],
-    ['QB HIT', /(\d+(?:\.\d+)?)\s+quarterback hits?\b/i],
-    ['SACKS', /(\d+(?:\.\d+)?)\s+sacks?\b/i],
-    ['PASS YDS', /(\d+(?:\.\d+)?)\s+passing yards?\b/i],
-    ['RUSH YDS', /(\d+(?:\.\d+)?)\s+rushing yards?\b/i],
-    ['REC YDS', /(-?\d+(?:\.\d+)?)\s+(?:receiving )?yards?\b/i],
-    ['REC', /(\d+(?:\.\d+)?)\s+receptions?\b/i],
-    ['TGT', /(\d+(?:\.\d+)?)\s+targets?\b/i],
-    ['TD', /(\d+(?:\.\d+)?)\s+(?:touchdowns?|TDs?)\b/i],
+    ['SNAP SHARE', /snap share(?:\s+\w+){0,4}\s+(?:at|of)\s+((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)%/i],
+    ['SNAPS', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+snaps?\b/i],
+    ['PRESSURES', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+pressures?\b/i],
+    ['HURRIES', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+hurries\b/i],
+    ['QB HIT', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+quarterback hits?\b/i],
+    ['SACKS', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+sacks?\b/i],
+    ['PASS YDS', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+passing yards?\b/i],
+    ['RUSH YDS', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+rushing yards?\b/i],
+    ['REC YDS', /(-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+(?:receiving )?yards?\b/i],
+    ['REC', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+receptions?\b/i],
+    ['TGT', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+targets?\b/i],
+    ['TD', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+(?:touchdowns?|TDs?)\b/i],
   ],
   nba: [
-    ['MIN', /(\d+(?:\.\d+)?)\s+minutes?\b/i],
-    ['PTS', /(\d+(?:\.\d+)?)\s+points?\b/i],
-    ['REB', /(\d+(?:\.\d+)?)\s+rebounds?\b/i],
-    ['AST', /(\d+(?:\.\d+)?)\s+assists?\b/i],
-    ['3PM', /(\d+(?:\.\d+)?)\s+(?:three-pointers?|3-pointers?|threes?)\b/i],
-    ['USAGE', /(?:usage(?: rate)?(?:\s+(?:of|at|was|is))?\s*)(\d+(?:\.\d+)?)%/i],
-    ['FG%', /(?:field[- ]goal(?: percentage| pct)?(?:\s+(?:of|at|was|is))?\s*)(\d+(?:\.\d+)?)%/i],
+    ['MIN', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+minutes?\b/i],
+    ['PTS', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+points?\b/i],
+    ['REB', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+rebounds?\b/i],
+    ['AST', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+assists?\b/i],
+    ['3PM', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+(?:three-pointers?|3-pointers?|threes?)\b/i],
+    ['USAGE', /(?:usage(?: rate)?(?:\s+(?:of|at|was|is))?\s*)((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)%/i],
+    ['FG%', /(?:field[- ]goal(?: percentage| pct)?(?:\s+(?:of|at|was|is))?\s*)((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)%/i],
   ],
   nhl: [
-    ['TOI', /(\d+(?:\.\d+)?)\s+minutes?(?: of ice time| TOI)?\b/i],
-    ['SOG', /(\d+(?:\.\d+)?)\s+shots?(?: on goal)?\b/i],
-    ['G', /(\d+(?:\.\d+)?)\s+goals?\b/i],
-    ['A', /(\d+(?:\.\d+)?)\s+assists?\b/i],
-    ['PTS', /(\d+(?:\.\d+)?)\s+points?\b/i],
-    ['SV', /(\d+(?:\.\d+)?)\s+saves?\b/i],
+    ['TOI', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+minutes?(?: of ice time| TOI)?\b/i],
+    ['SOG', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+shots?(?: on goal)?\b/i],
+    ['G', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+goals?\b/i],
+    ['A', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+assists?\b/i],
+    ['PTS', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+points?\b/i],
+    ['SV', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+saves?\b/i],
     ['SV%', /(?:save percentage|SV%)(?:\s+(?:of|at|was|is))?\s*(\.\d{3})\b/i],
   ],
 };
@@ -223,28 +229,61 @@ function sentenceAround(text, index, max = 128) {
   return value.length > max ? value.slice(0, max - 1).trim() + '…' : value;
 }
 
+const PERCENT_EVIDENCE_LABELS = new Set(['SNAP SHARE', 'USAGE', 'FG%', 'OPP K%']);
+
+function evidenceNumber(raw) {
+  const normalized = String(raw || '').replace(/,/g, '');
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : null;
+}
+
+function formatEvidenceValue(label, raw) {
+  const numeric = evidenceNumber(raw);
+  if (numeric == null) return String(raw || '');
+  if (PERCENT_EVIDENCE_LABELS.has(label)) return `${numeric}%`;
+  if (Number.isInteger(numeric) && Math.abs(numeric) >= 1000) return numeric.toLocaleString('en-US');
+  if (/^\.\d+/.test(String(raw || ''))) return String(raw);
+  return String(numeric);
+}
+
+function evidenceContextIsSpeculative(context) {
+  const text = String(context || '');
+  if (/\b(?:typically|expected?|project(?:ed|ion)?|forecast|estimated?|likely)\b/i.test(text)) return true;
+  if (/\b(?:could|may|might|would|should)\b/i.test(text) && /\b(?:line|market|price|prop|range|threshold)\b/i.test(text)) return true;
+  if (/\d+(?:\.\d+)?\s*(?:to|[-–—])\s*\d+(?:\.\d+)?\s+(?:strikeouts?|points?|yards?|rebounds?|assists?|saves?|shots?)/i.test(text)) return true;
+  return false;
+}
+
 function keyNumbers(article) {
   const sport = String(article?.sport || '').toLowerCase();
   const patterns = METRIC_PATTERNS[sport] || [];
   const text = articleText(article);
   if (!text) return [];
+
   const found = [];
-  const seen = new Set();
+  const seenLabels = new Set();
 
   for (const [label, re] of patterns) {
+    if (seenLabels.has(label)) continue;
     const flags = re.flags.includes('g') ? re.flags : re.flags + 'g';
     const global = new RegExp(re.source, flags);
     let match;
+
     while ((match = global.exec(text)) && found.length < 12) {
-      const value = match[1];
-      const key = `${label}:${value}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
+      const raw = match[1];
+      const numeric = evidenceNumber(raw);
+      const context = sentenceAround(text, match.index, 180);
+
+      if (evidenceContextIsSpeculative(context)) continue;
+      if (label === 'K' && numeric != null && numeric > 30) continue;
+
       found.push({
         label,
-        value: label === 'SNAP SHARE' || label === 'USAGE' || label === 'FG%' ? `${value}%` : value,
-        context: sentenceAround(text, match.index),
+        value: formatEvidenceValue(label, raw),
+        context,
       });
+      seenLabels.add(label);
+      break;
     }
   }
 
@@ -411,15 +450,6 @@ function renderKeyNumbers(article) {
   </div>`;
 }
 
-function renderPbeRead(article) {
-  const value = String(article?.take?.advice || article?.take?.summary || '').trim();
-  if (!value) return '';
-  return `<blockquote class="pbe-av-read">
-    <span>PBE READ</span>
-    <p>${esc(value)}</p>
-  </blockquote>`;
-}
-
 function archetypeShell(article, manifest, type) {
   const labels = STORY_LABELS[type] || STORY_LABELS.analysis;
   const statuses = classifyPlayers(article, manifest);
@@ -442,7 +472,6 @@ function archetypeShell(article, manifest, type) {
       ${renderKeyNumbers(article)}
       ${roster}
       ${signal}
-      ${renderPbeRead(article)}
     `,
   };
 }
@@ -694,7 +723,7 @@ function renderPlayerContext(data) {
       </div>
       ${avg != null ? `<div class="pbe-av-recent-avg">
         <strong>${esc(avg.toFixed(avg >= 10 ? 1 : 2).replace(/\.00$/, '').replace(/\.0$/, ''))}</strong>
-        <span>RECENT AVG</span>
+        <span>LAST ${rows.length} AVG</span>
         <small>${esc(data.label)}</small>
       </div>` : ''}
     </header>

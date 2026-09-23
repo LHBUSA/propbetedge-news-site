@@ -68,3 +68,38 @@ test('availability stories become a roster ripple, not a generic entity box', ()
   assert.match(html, /Passing Yards/);
   assert.doesNotMatch(html, /MARKET FOOTPRINT/);
 });
+
+
+test('MLB evidence preserves comma milestones and rejects speculative prop ranges', () => {
+  const article = {
+    id: 'wheeler-2000',
+    sport: 'mlb',
+    title: "Wheeler's 2,000th K Marks Peak Form Heading Into October",
+    body: [
+      "Zack Wheeler reached his 2,000th career strikeout Tuesday night against Milwaukee.",
+      "Wheeler entered Tuesday at 13-5 with a 2.99 ERA.",
+      "Wheeler's strikeout rate sits at 11.2 per nine innings for the season.",
+      "The Rays strike out at a 23.8% clip this season.",
+      "The market will likely price Wheeler's K line conservatively given the postseason context (typically 5.5 to 6.5 strikeouts for five-inning samples).",
+    ].join(' '),
+    take: {
+      impact_score: 4,
+      prop_types: ['k_prop'],
+      advice: "Lean over on Wheeler's strikeout prop if the market posts 5.5 to 6.5.",
+    },
+  };
+  const manifest = {
+    players: [{ id: '554430', name: 'Zack Wheeler', position: 'P', path: '/player/mlb/554430' }],
+    teams: [{ name: 'Philadelphia Phillies', abbreviation: 'PHI', path: '/team/mlb/philadelphia-phillies' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.match(html, />2,000<\/strong>\s*<b>CAREER K<\/b>/);
+  assert.match(html, />2\.99<\/strong>\s*<b>ERA<\/b>/);
+  assert.match(html, />11\.2<\/strong>\s*<b>K\/9<\/b>/);
+  assert.match(html, />23\.8%<\/strong>\s*<b>OPP K%<\/b>/);
+  assert.doesNotMatch(html, />000<\/strong>/);
+  assert.doesNotMatch(html, />6\.5<\/strong>\s*<b>K<\/b>/);
+  assert.doesNotMatch(html, /PBE READ/);
+  assert.doesNotMatch(html, /Lean over on Wheeler/);
+});
