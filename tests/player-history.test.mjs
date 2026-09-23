@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {display,fields,paginate,espnCategories,espnGameLog,nhlCategories,nhlGameLog,ledgerGameLog,seasonOptions,defaultCategory,ribbonFields} from '../src/pages/player-history-core.js';
+import {display,fields,paginate,espnCategories,espnGameLog,nhlCategories,nhlGameLog,nhlEntryStatus,nhlCurrentSeasonOption,ledgerGameLog,seasonOptions,defaultCategory,ribbonFields} from '../src/pages/player-history-core.js';
 const season={year:2026,displayName:'2026'};
 const nfl={filters:[{name:'seasontype',value:'2'}],teams:{'detroit-lions':{abbreviation:'DET'}},categories:[{name:'passing',displayName:'Passing',names:['passingYards','interceptions','QBRating','gamesPlayed'],labels:['YDS','INT','RTG','GP'],statistics:[{season,teamSlug:'detroit-lions',stats:['533','0','113.2','2']}],totals:['40,155','102','97.0','153']}]};
 test('real zero is displayed and unknown is not zero',()=>{assert.equal(display(0),'0');assert.equal(display('0'),'0');assert.equal(display(null),'\u2014');assert.equal(display(NaN),'\u2014');});
@@ -30,3 +30,42 @@ test('no hardcoded offseason note or direct third-party stats in hub controller'
 test('malformed annual stats and career totals are not shifted into fields',()=>{const d=structuredClone(nfl);d.categories[0].statistics.push({season,stats:['1']});d.categories[0].totals=['1'];const [c]=espnCategories(d);assert.equal(c.rows.length,1);assert.equal(c.skipped,1);assert.equal(c.career,null);});
 test('game logs validate source-reported year rather than relabel another year',()=>{const d=structuredClone(log);d.filters=[{name:'eventType',value:'2025'}];assert.throws(()=>espnGameLog(d,'2026','2'));});
 test('NBA actual fourteen-column layout joins opponent and points correctly',()=>{const d={filters:[{name:'eventType',value:'2026'},{name:'seasontype',value:'2'}],names:['minutes','fieldGoalsMade-fieldGoalsAttempted','fieldGoalPct','threePointFieldGoalsMade-threePointFieldGoalsAttempted','threePointFieldGoalPct','freeThrowsMade-freeThrowsAttempted','freeThrowPct','rebounds','assists','blocks','steals','fouls','turnovers','points'],events:{'401810660':{gameDate:'2026-04-13T00:30:00.000+00:00',atVs:'vs',opponent:{abbreviation:'UTAH'},team:{abbreviation:'LAL'},gameResult:'W',score:'131-107'}},seasonTypes:[{displayName:'2025-26 Regular Season',categories:[{displayName:'April',splitType:'3',type:'event',events:[{eventId:'401810660',stats:['17','6-15','40.0','0-4','0.0','6-9','66.7','4','6','0','3','0','2','18']}]}]}]};const p=espnGameLog(d,'2026','2');assert.equal(p.rows.length,1);assert.equal(p.rows[0].values.points,'18');assert.equal(p.rows[0].values.rebounds,'4');assert.equal(p.rows[0].values.blocks,'0');assert.equal(p.rows[0].opponent,'vs UTAH');});
+
+
+test('NHL player with no NHL regular-season games is identified as rookie/debut pending, not a data gap',()=>{
+  const diotte={
+    birthDate:'2003-04-10',
+    position:'D',
+    seasonTotals:[
+      {leagueAbbrev:'AHL',season:20252026,gameTypeId:2,gamesPlayed:5,goals:0,assists:1},
+      {leagueAbbrev:'ECHL',season:20252026,gameTypeId:2,gamesPlayed:2,goals:1,assists:1}
+    ],
+    careerTotals:{regularSeason:null}
+  };
+  const status=nhlEntryStatus(diotte,new Date('2026-09-23T12:00:00Z'));
+  assert.equal(status.noNhlRegularSeasonGames,true);
+  assert.equal(status.rookieEligible,true);
+  assert.equal(status.ageAtCutoff,23);
+  assert.equal(status.title,'NHL debut pending');
+});
+
+test('NHL debut state disappears automatically once an NHL regular-season game exists',()=>{
+  const player={
+    birthDate:'2003-04-10',
+    seasonTotals:[{leagueAbbrev:'NHL',season:20262027,gameTypeId:2,gamesPlayed:1,goals:0,assists:0}],
+    careerTotals:{regularSeason:{gamesPlayed:1}}
+  };
+  assert.equal(nhlEntryStatus(player,new Date('2026-10-10T12:00:00Z')),null);
+});
+
+test('NHL debut pages can show the current season even before a stat row exists',()=>{
+  assert.deepEqual(nhlCurrentSeasonOption(new Date('2026-09-23T12:00:00Z')),['20262027','2026-27']);
+});
+
+test('NHL no-stat UI explains debut pending and automatic population instead of a generic data-gap message',()=>{
+  const text=fs.readFileSync(new URL('../src/pages/player-history.js',import.meta.url),'utf8');
+  assert.match(text,/NHL ROOKIE · DEBUT PENDING/);
+  assert.match(text,/no NHL regular-season games recorded yet/);
+  assert.match(text,/populate automatically/);
+  assert.match(text,/not displaying a zero-stat season/);
+});
