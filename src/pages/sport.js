@@ -241,7 +241,7 @@ function youtubeEmbedUrl(videoId, { autoplay = false } = {}) {
     params.set('origin', window.location.origin);
   }
   if (autoplay) params.set('autoplay', '1');
-  return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
+  return `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
 }
 
 function renderInlineHighlightPlayer(video, label, { autoplay = false } = {}) {
@@ -253,7 +253,6 @@ function renderInlineHighlightPlayer(video, label, { autoplay = false } = {}) {
       title="${escapeAttr(video.title || `${label} video`)}"
       data-highlight-youtube-player
       loading="lazy"
-      referrerpolicy="strict-origin-when-cross-origin"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
       allowfullscreen
     ></iframe>
@@ -300,7 +299,7 @@ function loadYouTubeIframeApi() {
   return _youtubeIframeApiPromise;
 }
 
-async function watchHighlightPlayerErrors(frame, onBlocked) {
+async function watchHighlightPlayerErrors(frame, onError) {
   if (!frame) return null;
 
   try {
@@ -311,11 +310,8 @@ async function watchHighlightPlayerErrors(frame, onBlocked) {
       events: {
         onError(event) {
           const code = Number(event?.data);
-          // 101/150 = owner blocked embeds. 153 = missing client identity/referrer.
-          // 100/5 are also dead-end playback errors. In every case we keep the
-          // reader on PropBetEdge and advance to the next official upload.
           if ([5, 100, 101, 150, 153].includes(code)) {
-            onBlocked?.(code);
+            onError?.(code);
           }
         },
       },
@@ -398,11 +394,22 @@ function renderHighlightsSlot(sport, data) {
     youtubePlayer = await watchHighlightPlayerErrors(frame, (errorCode) => {
       const failedId = String(video.videoId);
       if (slot.dataset.selectedVideoId !== failedId) return;
+
+      // 153 is not a rights restriction. It means YouTube could not identify
+      // the embedding client/referrer. Do not falsely blacklist the video.
+      // Rebuild once on the standard youtube.com embed with the page origin.
+      if (errorCode === 153 && frame.dataset.pbeRetried153 !== '1') {
+        frame.dataset.pbeRetried153 = '1';
+        frame.src = youtubeEmbedUrl(failedId, { autoplay: false });
+        window.setTimeout(() => attachPlaybackGuard(video), 150);
+        return;
+      }
+
       failedVideoIds.add(failedId);
 
       const replacement = videos.find((candidate) => !failedVideoIds.has(String(candidate.videoId)));
       if (replacement) {
-        console.warn('[sport highlights] YouTube blocked embed; advancing', {
+        console.warn('[sport highlights] YouTube playback failed; advancing', {
           sport,
           videoId: failedId,
           errorCode,
@@ -412,15 +419,13 @@ function renderHighlightsSlot(sport, data) {
         return;
       }
 
-      // If YouTube reports every current upload as restricted, replace the raw
-      // player error with a controlled first-party state instead of leaving a
-      // broken iframe on the page.
+      // Keep the page clean when every current upload rejects embedded playback.
       if (player) {
         player.innerHTML = `
           <div class="sport-highlight-unavailable">
             <span>Official ${escapeHtml(label)} video</span>
-            <strong>This upload is restricted from embedded playback.</strong>
-            <a href="${escapeAttr(video.url || `https://www.youtube.com/watch?v=${video.videoId}`)}" target="_blank" rel="noopener">Watch this upload on YouTube ↗</a>
+            <strong>Embedded playback is unavailable for the current uploads.</strong>
+            <a href="${escapeAttr(video.url || `https://www.youtube.com/watch?v=${video.videoId}`)}" target="_blank" rel="noopener">Open on YouTube ↗</a>
           </div>
         `;
       }

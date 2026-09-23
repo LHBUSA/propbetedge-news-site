@@ -6,7 +6,7 @@ const sport = readFileSync(new URL('../src/pages/sport.js', import.meta.url), 'u
 const article = readFileSync(new URL('../src/pages/article.js', import.meta.url), 'utf8');
 
 test('sport highlight videos play on-site instead of redirecting to YouTube', () => {
-  assert.match(sport, /youtube-nocookie\.com\/embed/);
+  assert.match(sport, /youtube\\.com\\/embed/);
   assert.match(sport, /data-highlight-video-id/);
   assert.match(sport, /Play here/);
   assert.match(sport, /Playing on PropBetEdge/);
@@ -37,4 +37,11 @@ test('sport highlights detect YouTube embed-policy failures and advance', () => 
   assert.match(sport, /\[5, 100, 101, 150, 153\]/);
   assert.match(sport, /blocked embed; advancing/);
   assert.match(sport, /params\.set\('origin', window\.location\.origin\)/);
+});
+
+
+test('YouTube error 153 is retried as a client identity problem, not mislabeled as rights restriction', () => {
+  assert.match(sport, /errorCode === 153/);
+  assert.match(sport, /pbeRetried153/);
+  assert.match(sport, /youtubeEmbedUrl\(failedId/);
 });
