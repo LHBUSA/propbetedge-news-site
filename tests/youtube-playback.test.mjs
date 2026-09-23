@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 const sport = readFileSync(new URL('../src/pages/sport.js', import.meta.url), 'utf8');
 const article = readFileSync(new URL('../src/pages/article.js', import.meta.url), 'utf8');
 
-test('sport highlight videos play on-site instead of redirecting to YouTube', () => {
+test('standard sport highlight videos still play on-site', () => {
   assert.match(sport, /youtube\\.com\\/embed/);
   assert.match(sport, /data-highlight-video-id/);
   assert.match(sport, /Play here/);
@@ -39,4 +39,21 @@ test('highlight API keeps official-channel videos visible instead of pre-filteri
   assert.doesNotMatch(source, /selectEmbeddableHighlights/);
   assert.doesNotMatch(source, /verifyYouTubeEmbed/);
   assert.doesNotMatch(source, /isOnsitePlaybackCandidate/);
+});
+
+
+test('NFL embed policy is annotated per video without deleting or reordering the feed', () => {
+  const source = readFileSync(new URL('../api/youtube-highlights.js', import.meta.url), 'utf8');
+  assert.match(source, /sport === 'nfl'\s*\? await annotateNflEmbeddability\(selectedVideos\)\s*:\s*selectedVideos/);
+  assert.match(source, /youtube\.com\/oembed/);
+  assert.match(source, /return checks\.map/);
+  assert.doesNotMatch(source, /filter\([^\n]*embeddable/);
+});
+
+test('NFL alone gets restricted-video handling while other sport rendering stays on the existing path', () => {
+  assert.match(sport, /if \(sport === 'nfl'\) \{\s*renderNflHighlightsSlot\(data\);\s*return;\s*\}/);
+  assert.match(sport, /videos\.find\(\(video\) => video\.embeddable === true\)/);
+  assert.match(sport, /Watch on YouTube/);
+  assert.match(sport, /renderNflHighlightCard/);
+  assert.match(sport, /function renderHighlightCard\(video, label\)/);
 });
