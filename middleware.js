@@ -189,6 +189,7 @@ async function resolveMeta(pathname) {
             description: seo.description,
             image: seo.image.url,
             type: 'article',
+            sport,
             robots: seo.robots,
             publishedTime: seo.publishedTime,
             modifiedTime: seo.modifiedTime,
@@ -408,6 +409,17 @@ async function resolveMeta(pathname) {
 }
 
 function injectMeta(html, meta) {
+  // First paint must already know the league. The browser selector may later
+  // honor a user's manual scene choice, but a non-MLB article must never flash
+  // the old baseball fallback before JavaScript boots.
+  if (meta?.sport && /^(mlb|nfl|nba|nhl|wnba|ufc)$/.test(String(meta.sport))) {
+    if (/<body\b[^>]*data-pbe-scene=/i.test(html)) {
+      html = html.replace(/(<body\b[^>]*data-pbe-scene=["'])[^"']*(["'][^>]*>)/i, `$1${escapeAttr(meta.sport)}$2`);
+    } else {
+      html = html.replace(/<body\b([^>]*)>/i, `<body$1 data-pbe-scene="${escapeAttr(meta.sport)}">`);
+    }
+  }
+
   // Replace canonical
   html = html.replace(
     /<link\s+rel="canonical"[^>]*>/i,
