@@ -57,6 +57,10 @@ const LEGACY_ARTICLE_REDIRECTS = new Map([
     '/news/nfl/lessons-learned-from-week-2-vikings-packers-have-breakout-stars-bengals-have-nfl-2026-09-22',
     '/news/nfl/turner-van-ness-rewrite-pass-rush-narrative-2026-09-22',
   ],
+  [
+    '/news/nfl/broncos-backfield-limps-toward-rams-dobbins-harvey-limited-coleman-out-2026-09-23',
+    '/news/nfl/broncos-backfield-limps-toward-rams-dobbins-harvey-limited-coleman-dnp-2026-09-23',
+  ],
 ]);
 
 export default async function middleware(request) {
