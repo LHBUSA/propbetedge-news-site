@@ -292,17 +292,14 @@ function evidenceSentenceAround(text, index) {
   const left = Math.max(text.lastIndexOf('. ', index), text.lastIndexOf('! ', index), text.lastIndexOf('? ', index));
   const rest = text.slice(index);
   const ends = ['. ', '! ', '? '].map((x) => rest.indexOf(x)).filter((x) => x >= 0);
-  const right = ends.length ? index + Math.min(...ends) + 1 : Math.min(text.length, index + 420);
-  const value = text.slice(left >= 0 ? left + 2 : Math.max(0, index - 90), right).trim();
+  const right = ends.length ? index + Math.min(...ends) + 1 : text.length;
 
-  // Evidence cards should preserve a complete published sentence. The former
-  // 180-character hard cut produced misleading half-explainers such as the
-  // weather/velocity card ending in the middle of "Chicago's offense…".
-  if (ends.length || value.length <= 420) return value;
-
-  const clipped = value.slice(0, 419);
-  const boundary = clipped.lastIndexOf(' ');
-  return `${clipped.slice(0, boundary > 280 ? boundary : clipped.length).trim()}…`;
+  // Evidence cards are explanatory, so they must never clip a published
+  // sentence to fit a visual card. Return the complete sentence containing the
+  // metric and let layout height expand naturally. If the source has no later
+  // sentence terminator, preserve the remaining source text rather than
+  // inventing an ellipsis or silently dropping context.
+  return text.slice(left >= 0 ? left + 2 : 0, right).trim();
 }
 
 const PERCENT_EVIDENCE_LABELS = new Set(['SNAP SHARE', 'USAGE', 'FG%', 'OPP K%']);

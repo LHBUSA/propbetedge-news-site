@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { nflRecentMetric, renderArticleVisuals } from '../src/article-visuals.js';
 
 test('article visuals render only article facts and tagged entities', () => {
@@ -194,4 +195,39 @@ test('story evidence cards preserve the full published sentence instead of cutti
   const html = renderArticleVisuals(article, manifest);
   assert.match(html, /modest tailwind for Chicago's offense against a pitcher whose game is built around limiting hard airborne contact\./);
   assert.doesNotMatch(html, /Chicago's offense against a pitcher whose game is built…/);
+});
+
+
+test('evidence explainers never apply a character cap across sports', () => {
+  const longContext = [
+    'His defensive workload has been steady—62 snaps across both games—suggesting the Jaguars were testing his availability and conditioning post-injury before committing him to a heavy role',
+    'while also moving him across multiple alignments and asking him to handle motion adjustments in high-leverage situations',
+    'with the offense changing personnel groupings repeatedly and the coaching staff continuing to test how much two-way volume he can carry',
+    'this intentionally long source passage has no sentence terminator after the metric and must remain intact all the way through END OF CONTEXT'
+  ].join(' ');
+  const article = {
+    id: 'hunter-snaps',
+    sport: 'nfl',
+    title: 'Travis Hunter workload rises before matchup',
+    body: longContext,
+    take: { impact_score: 3, prop_types: ['receiving_yards'] },
+  };
+  const manifest = {
+    players: [{ id: '1', name: 'Travis Hunter', position: 'WR', path: '/player/nfl/1' }],
+    teams: [{ name: 'Jacksonville Jaguars', abbreviation: 'JAX', path: '/team/nfl/jacksonville-jaguars' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.match(html, /62<\/strong>\s*<b>SNAPS<\/b>/);
+  assert.match(html, /END OF CONTEXT/);
+  assert.doesNotMatch(html, /heavy role…/);
+  assert.doesNotMatch(html, /CONTEXT…/);
+});
+
+test('evidence card CSS explicitly forbids line-clamp and overflow clipping', () => {
+  const css = fs.readFileSync(new URL('../src/styles/pbe-article-visuals.css', import.meta.url), 'utf8');
+  assert.match(css, /\.pbe-av-evidence-card p\s*\{[\s\S]*max-height:\s*none !important;/);
+  assert.match(css, /\.pbe-av-evidence-card p\s*\{[\s\S]*overflow:\s*visible !important;/);
+  assert.match(css, /-webkit-line-clamp:\s*unset !important;/);
+  assert.match(css, /text-overflow:\s*clip !important;/);
 });
