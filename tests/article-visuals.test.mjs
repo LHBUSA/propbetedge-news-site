@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { nflRecentMetric, renderArticleVisuals } from '../src/article-visuals.js';
+import { metricSummary, nflRecentMetric, renderArticleVisuals, renderPlayerContext } from '../src/article-visuals.js';
 
 test('article visuals render only article facts and tagged entities', () => {
   const article = {
@@ -268,4 +268,91 @@ test('evidence grid expands distinct thoughts rather than leaving quarter-width 
   const css = fs.readFileSync(new URL('../src/styles/pbe-article-visuals.css', import.meta.url), 'utf8');
   assert.match(css, /\.pbe-av-evidence-grid\[data-count="1"\][\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/);
   assert.match(css, /\.pbe-av-evidence-card\.is-statline[\s\S]*min-height:\s*156px/);
+});
+
+
+test('live-form intelligence compares recent production to the full verified game log', () => {
+  const rows = [
+    { date: '2026-09-23', opponent: '@ NE', value: 12 },
+    { date: '2026-09-16', opponent: 'vs BUF', value: 10 },
+    { date: '2026-09-09', opponent: '@ MIA', value: 8 },
+    { date: '2026-09-02', opponent: 'vs KC', value: 7 },
+    { date: '2026-08-26', opponent: '@ PHI', value: 9 },
+    { date: '2026-08-19', opponent: 'vs NYG', value: 6 },
+    { date: '2026-08-12', opponent: '@ BAL', value: 5 },
+    { date: '2026-08-05', opponent: 'vs PIT', value: 7 },
+    { date: '2026-07-29', opponent: '@ CLE', value: 4 },
+    { date: '2026-07-22', opponent: 'vs CIN', value: 2 },
+  ];
+  const live = metricSummary(rows, (row) => row.value);
+
+  assert.equal(live.rows.length, 8);
+  assert.equal(live.seasonGames, 10);
+  assert.equal(live.baselineAvailable, true);
+  assert.equal(live.recentHigh, 12);
+  assert.equal(Number(live.recentAverage.toFixed(2)), 8);
+  assert.equal(Number(live.seasonAverage.toFixed(2)), 7);
+  assert.equal(Number(live.deltaPct.toFixed(1)), 14.3);
+  assert.equal(live.rows.at(-1).opponent, '@ NE', 'chart remains chronological with the latest game at right');
+});
+
+test('live-form card shows opponent context, season baseline and form signal when the sample supports them', () => {
+  const html = renderPlayerContext({
+    name: 'Example Player',
+    image: '/player.png',
+    label: 'Receiving Yards',
+    seasonStats: [['REC', 51], ['YDS', 704], ['TD', 5], ['TGTS', 73]],
+    rows: [
+      { date: '2026-08-05', opponent: 'vs PIT', value: 7 },
+      { date: '2026-08-12', opponent: '@ BAL', value: 5 },
+      { date: '2026-08-19', opponent: 'vs NYG', value: 6 },
+      { date: '2026-08-26', opponent: '@ PHI', value: 9 },
+      { date: '2026-09-02', opponent: 'vs KC', value: 7 },
+      { date: '2026-09-09', opponent: '@ MIA', value: 8 },
+      { date: '2026-09-16', opponent: 'vs BUF', value: 10 },
+      { date: '2026-09-23', opponent: '@ NE', value: 12 },
+    ],
+    metricLive: {
+      recentAverage: 8,
+      seasonAverage: 7,
+      recentHigh: 12,
+      seasonGames: 10,
+      baselineAvailable: true,
+      deltaPct: 14.2857,
+    },
+  });
+
+  assert.match(html, /RECENT HIGH/);
+  assert.match(html, /SEASON AVG/);
+  assert.match(html, /\+14% VS SEASON/);
+  assert.match(html, /Season average · 7 Receiving Yards/);
+  assert.match(html, />@ NE</);
+  assert.match(html, /pbe-av-baseline-tick/);
+  assert.match(html, /is-latest/);
+});
+
+test('early-season live-form cards call out sample size instead of manufacturing a trend', () => {
+  const html = renderPlayerContext({
+    name: 'Early Season Player',
+    image: null,
+    label: 'Receiving Yards',
+    seasonStats: [['REC', 1], ['YDS', 8], ['TD', 0], ['TGTS', 1]],
+    rows: [
+      { date: '2026-09-13', opponent: 'vs BUF', value: 0 },
+      { date: '2026-09-20', opponent: '@ MIA', value: 8 },
+    ],
+    metricLive: {
+      recentAverage: 4,
+      seasonAverage: 4,
+      recentHigh: 8,
+      seasonGames: 2,
+      baselineAvailable: false,
+      deltaPct: null,
+    },
+  });
+
+  assert.match(html, /2 GAME SAMPLE/);
+  assert.match(html, /Build the sample before calling a trend/);
+  assert.doesNotMatch(html, /Season average ·/);
+  assert.doesNotMatch(html, /VS SEASON/);
 });
