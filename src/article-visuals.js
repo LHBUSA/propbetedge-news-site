@@ -740,7 +740,7 @@ async function mlbContext(player, article) {
   const label = metric?.[1] || (pitcher ? 'Strikeouts' : 'Hits');
 
   const metricLive = metricSummary(
-    games.map((g) => ({
+    [...games].reverse().map((g) => ({
       date: g.date || g.game?.gameDate || '',
       opponent: g.opponent?.abbreviation || g.opponent?.name || '',
       result: g.isWin === true ? 'W' : g.isWin === false ? 'L' : '',
