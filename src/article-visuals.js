@@ -562,14 +562,89 @@ function statusTeamId(rule, player, context, manifest) {
   return current || String(teams[0]?.id || teams[0]?.abbreviation || '').toUpperCase() || null;
 }
 
-function teamForStatus(teamId, manifest) {
-  const wanted = String(teamId || '').toUpperCase();
+const RELATION_TEAM_ALIASES = {
+  nba: { NYK: 'NY', GSW: 'GS', NOP: 'NO', SAS: 'SA', UTA: 'UTAH', WAS: 'WSH' },
+  nfl: { WAS: 'WSH', LA: 'LAR' },
+};
+
+const RELATION_STATE = {
+  medical_absence: { kind: 'out', label: 'OUT / IR' },
+  medical_limited: { kind: 'limited', label: 'LIMITED' },
+  returning: { kind: 'return', label: 'RETURNING' },
+  role_increase: { kind: 'role', label: 'ROLE UP' },
+  added: { kind: 'added', label: 'ADDED' },
+  departed: { kind: 'departed', label: 'DEPARTED' },
+};
+
+function relationTeamCode(sport, value) {
+  const code = String(value || '').trim().toUpperCase();
+  return RELATION_TEAM_ALIASES[String(sport || '').toLowerCase()]?.[code] || code;
+}
+
+function relationPersonName(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[.’']/g, '')
+    .replace(/\b(?:jr|sr|ii|iii|iv)\b/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function teamForStatus(teamId, manifest, sport = '') {
+  const wanted = relationTeamCode(sport, teamId);
   return (manifest?.teams || []).find((team) =>
-    String(team?.id || team?.abbreviation || '').toUpperCase() === wanted
+    relationTeamCode(sport, team?.id || team?.abbreviation) === wanted
   ) || null;
 }
 
+/**
+ * Relation arrays are the authoritative v2 contract. null means a legacy
+ * article whose writer pre-dates the contract; [] means the writer explicitly
+ * found no roster relation and the UI must render no roster ripple.
+ */
+function classifyStructuredRelations(article, manifest) {
+  const relations = article?.take?.relations;
+  if (!Array.isArray(relations)) return null;
+
+  const sport = String(article?.sport || '').toLowerCase();
+  const players = manifest?.players || [];
+  const out = [];
+
+  for (const relation of relations) {
+    if (!relation || typeof relation !== 'object') continue;
+    const state = String(relation.state || '').toLowerCase();
+    if (state === 'neutral') continue;
+    const rule = RELATION_STATE[state];
+    if (!rule) continue;
+
+    const wanted = relationPersonName(relation.player);
+    if (!wanted) continue;
+    const candidates = players.filter((player) => relationPersonName(player?.name) === wanted);
+    if (candidates.length !== 1) continue;
+
+    const teamId = relationTeamCode(sport, relation.team);
+    if (!teamId) continue;
+
+    out.push({
+      player: candidates[0],
+      kind: rule.kind,
+      label: rule.label,
+      teamId,
+      context: String(relation.evidence || ''),
+      evidence: String(relation.evidence || ''),
+      destinationTeamId: relationTeamCode(sport, relation.destination_team),
+      authoritative: true,
+    });
+  }
+
+  const priority = { departed: 0, out: 1, limited: 2, return: 3, role: 4, added: 5 };
+  return out.sort((a, b) => (priority[a.kind] ?? 9) - (priority[b.kind] ?? 9));
+}
+
 function classifyPlayers(article, manifest, storyType = null) {
+  const structured = classifyStructuredRelations(article, manifest);
+  if (structured !== null) return structured;
   const text = fullStoryText(article);
   const type = storyType || detectStoryType(article);
   const out = [];
@@ -671,7 +746,7 @@ function renderRosterMap(article, manifest, statuses, type) {
 
   const cards = [];
   for (const [teamId, rows] of grouped) {
-    const team = teamForStatus(teamId, manifest);
+    const team = teamForStatus(teamId, manifest, article?.sport);
     const affected = rows.filter((x) => ['departed', 'out', 'limited'].includes(x.kind)).slice(0, 4);
     const roleUp = rows.filter((x) => ['role', 'added', 'return'].includes(x.kind)).slice(0, 4);
     if (!affected.length && !roleUp.length) continue;
