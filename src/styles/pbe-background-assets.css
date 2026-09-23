@@ -44,8 +44,8 @@ body[data-pbe-scene='mlb-ballpark'] {
 }
 
 body[data-pbe-scene='nfl'] {
-  --pbe-scene-image: url('/backgrounds/pbe/stadium-night.webp');
-  --pbe-scene-position: center 48%;
+  --pbe-scene-image: url('/backgrounds/pbe/gridiron-gold.webp');
+  --pbe-scene-position: center 60%;
   --pbe-scene-opacity: .285;
   --pbe-scene-filter: grayscale(16%) sepia(5%) saturate(86%) brightness(.86) contrast(1.10);
   --pbe-scene-orb-one: rgba(233,199,90,.16);
@@ -124,8 +124,8 @@ body[data-pbe-scene='nhl-blueline'] {
 }
 
 .pbe-scene-option[data-scene='nfl'] .pbe-scene-preview {
-  background-image: url('/backgrounds/pbe/stadium-night.webp') !important;
-  background-position: center 50% !important;
+  background-image: url('/backgrounds/pbe/gridiron-gold.webp') !important;
+  background-position: center 63% !important;
   filter: grayscale(16%) sepia(6%) saturate(84%) brightness(.76) contrast(1.13) !important;
 }
 
