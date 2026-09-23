@@ -512,3 +512,108 @@ test('global background first paint is neutral rather than an MLB image', () => 
   assert.match(root, /--pbe-scene-image:\s*none/);
   assert.match(root, /--pbe-scene-opacity:\s*0/);
 });
+
+
+test('v2 relation array is authoritative and an explicit empty array hides roster ripple', () => {
+  const article = {
+    id: 'relation-empty',
+    sport: 'nfl',
+    title: 'Vikings injury update',
+    summary: 'A multi-player availability update.',
+    body: 'Micah Parsons remains sidelined in Green Bay as his ACL heals.',
+    take: {
+      impact_score: 3,
+      prop_types: ['sacks'],
+      relations: [],
+    },
+  };
+  const manifest = {
+    players: [{ id: '4361423', name: 'Micah Parsons', team_id: 'GB', position: 'DE', path: '/player/nfl/4361423' }],
+    teams: [{ id: 'GB', abbreviation: 'GB', name: 'Green Bay Packers', path: '/team/nfl/green-bay-packers' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.doesNotMatch(html, /ROSTER RIPPLE/);
+  assert.doesNotMatch(html, /OUT \/ IR/);
+});
+
+test('v2 relations override current roster team for departures and preserve multi-team ownership', () => {
+  const article = {
+    id: 'relation-multiteam',
+    sport: 'nfl',
+    title: 'Vikings and Packers availability reset',
+    summary: 'Minnesota lost one edge defender while Green Bay waits on another.',
+    body: 'Jonathan Greenard is gone from Minnesota, dealt to Philadelphia. Micah Parsons remains sidelined in Green Bay as his ACL heals.',
+    take: {
+      impact_score: 4,
+      prop_types: ['sacks'],
+      relations: [
+        {
+          player: 'Jonathan Greenard',
+          team: 'MIN',
+          state: 'departed',
+          destination_team: 'PHI',
+          evidence: 'Jonathan Greenard is gone from Minnesota, dealt to Philadelphia.',
+        },
+        {
+          player: 'Micah Parsons',
+          team: 'GB',
+          state: 'medical_absence',
+          evidence: 'Micah Parsons remains sidelined in Green Bay as his ACL heals.',
+        },
+      ],
+    },
+  };
+  const manifest = {
+    players: [
+      { id: '3916409', name: 'Jonathan Greenard', team_id: 'PHI', position: 'LB', path: '/player/nfl/3916409' },
+      { id: '4361423', name: 'Micah Parsons', team_id: 'GB', position: 'DE', path: '/player/nfl/4361423' },
+    ],
+    teams: [
+      { id: 'MIN', abbreviation: 'MIN', name: 'Minnesota Vikings', path: '/team/nfl/minnesota-vikings' },
+      { id: 'GB', abbreviation: 'GB', name: 'Green Bay Packers', path: '/team/nfl/green-bay-packers' },
+    ],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  const min = html.indexOf('Minnesota Vikings');
+  const greenard = html.indexOf('Jonathan Greenard');
+  const gb = html.indexOf('Green Bay Packers');
+  const parsons = html.indexOf('Micah Parsons');
+
+  assert.ok(min >= 0 && greenard > min, 'departure stays attached to source team');
+  assert.ok(gb >= 0 && parsons > gb, 'medical absence stays attached to Green Bay');
+  assert.match(html, /DEPARTED/);
+  assert.match(html, /OUT \/ IR/);
+});
+
+test('v2 NBA relation aliases NYK to the entity graph Knicks code and never flips a departure to ADDED', () => {
+  const article = {
+    id: 'robinson-departure-v2',
+    sport: 'nba',
+    title: 'Knicks extension talks reshape roster',
+    summary: 'New York is balancing its second-apron roster decisions.',
+    body: 'That mandate already cost the Knicks Mitchell Robinson, a valuable backup center who signed with Boston this offseason rather than take a pay cut to stay under the threshold.',
+    take: {
+      impact_score: 3,
+      prop_types: ['team_total'],
+      relations: [{
+        player: 'Mitchell Robinson',
+        team: 'NYK',
+        state: 'departed',
+        destination_team: 'BOS',
+        evidence: 'That mandate already cost the Knicks Mitchell Robinson, a valuable backup center who signed with Boston this offseason rather than take a pay cut to stay under the threshold.',
+      }],
+    },
+  };
+  const manifest = {
+    players: [{ id: '4351852', name: 'Mitchell Robinson', team_id: 'BOS', position: 'C', path: '/player/nba/4351852' }],
+    teams: [{ id: 'NY', abbreviation: 'NY', name: 'New York Knicks', path: '/team/nba/new-york-knicks' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.match(html, /New York Knicks/);
+  assert.match(html, /Mitchell Robinson/);
+  assert.match(html, /DEPARTED/);
+  assert.doesNotMatch(html, />ADDED</);
+});
