@@ -1,78 +1,159 @@
 /**
- * Article-native visual intelligence for PropBetEdge newsroom stories.
+ * PropBetEdge article visual intelligence — v2.
  *
- * Rules:
- * - Never invent a number.
- * - Static visuals use only the article payload + deterministic entity manifest.
- * - Live player context is optional, read-only, and labeled as current context.
- * - If source data is missing, the chart disappears instead of filling with zeroes.
+ * Editorial rule: the module can re-present facts, never manufacture them.
+ * Static story visuals are deterministic from the frozen article + entity graph.
+ * Live form is a separate, labeled layer from first-party/league data adapters.
  */
 
-import { espnCategories, espnGameLog, nhlCategories, nhlGameLog, number as toNumber } from './pages/player-history-core.js';
+import {
+  espnCategories,
+  espnGameLog,
+  nhlCategories,
+  nhlGameLog,
+  number as toNumber,
+} from './pages/player-history-core.js';
 
 const PROP_LABELS = {
-  k_prop: 'Strikeouts', hr: 'Home Runs', altprop_hits: 'Hits', altprop_total_bases: 'Total Bases',
-  altprop_doubles: 'Doubles', altprop_rbi: 'RBI', altprop_runs: 'Runs', altprop_walks: 'Walks',
-  stolen_bases: 'Stolen Bases', team_total: 'Team Total', spread: 'Spread', moneyline: 'Moneyline',
-  first_5_innings: 'First 5', nrfi: 'NRFI', passing_yards: 'Passing Yards', passing_tds: 'Passing TDs',
-  rushing_yards: 'Rushing Yards', rushing_tds: 'Rushing TDs', receiving_yards: 'Receiving Yards',
-  receptions: 'Receptions', receiving_tds: 'Receiving TDs', anytime_td: 'Anytime TD', sacks: 'Sacks',
-  points: 'Points', rebounds: 'Rebounds', assists: 'Assists', threes_made: '3PM', pra: 'PRA',
-  shots_on_goal: 'Shots on Goal', goals: 'Goals', saves: 'Saves',
+  k_prop: 'Strikeouts',
+  hr: 'Home Runs',
+  altprop_hits: 'Hits',
+  altprop_total_bases: 'Total Bases',
+  altprop_doubles: 'Doubles',
+  altprop_rbi: 'RBI',
+  altprop_runs: 'Runs',
+  altprop_walks: 'Walks',
+  stolen_bases: 'Stolen Bases',
+  team_total: 'Team Total',
+  spread: 'Spread',
+  moneyline: 'Moneyline',
+  first_5_innings: 'First 5',
+  nrfi: 'NRFI',
+  passing_yards: 'Passing Yards',
+  passing_tds: 'Passing TDs',
+  rushing_yards: 'Rushing Yards',
+  rushing_tds: 'Rushing TDs',
+  receiving_yards: 'Receiving Yards',
+  receptions: 'Receptions',
+  receiving_tds: 'Receiving TDs',
+  anytime_td: 'Anytime TD',
+  sacks: 'Sacks',
+  points: 'Points',
+  rebounds: 'Rebounds',
+  assists: 'Assists',
+  threes_made: '3PM',
+  pra: 'PRA',
+  shots_on_goal: 'Shots on Goal',
+  goals: 'Goals',
+  saves: 'Saves',
+};
+
+const STORY_LABELS = {
+  availability: {
+    kicker: 'PBE IMPACT MAP',
+    title: 'The roster ripple.',
+    sub: 'Who is unavailable, who absorbs the role, and which markets are exposed.',
+  },
+  transaction: {
+    kicker: 'PBE ROLE MAP',
+    title: 'What changes now.',
+    sub: 'The personnel move, the depth-chart response, and the markets attached to it.',
+  },
+  trend: {
+    kicker: 'PBE TREND LENS',
+    title: 'The trend, in context.',
+    sub: 'The strongest signals in the story, separated from the noise around them.',
+  },
+  recap: {
+    kicker: 'PBE GAME LENS',
+    title: 'How the game turned.',
+    sub: 'The numbers that explain the result and what carries forward.',
+  },
+  preview: {
+    kicker: 'PBE MATCHUP LENS',
+    title: 'The pressure points.',
+    sub: 'The players, numbers, and markets most connected to this matchup.',
+  },
+  analysis: {
+    kicker: 'PBE DATA VIEW',
+    title: 'The story, in numbers.',
+    sub: 'The facts that matter most, with live context only where verified data exists.',
+  },
 };
 
 const METRIC_PATTERNS = {
   mlb: [
-    ['HR', /(\d+(?:\.\d+)?)\s+(?:home runs?|HRs?)\b/i],
+    ['VELOCITY', /(\d+(?:\.\d+)?)\s*mph\b/i],
     ['K', /(\d+(?:\.\d+)?)\s+(?:strikeouts?|Ks?)\b/i],
-    ['H', /(\d+(?:\.\d+)?)\s+hits?\b/i],
-    ['TB', /(\d+(?:\.\d+)?)\s+total bases?\b/i],
-    ['RBI', /(\d+(?:\.\d+)?)\s+RBIs?\b/i],
     ['IP', /(\d+(?:\.\d+)?)\s+innings?(?: pitched)?\b/i],
+    ['HR', /(\d+(?:\.\d+)?)\s+(?:home runs?|HRs?)\b/i],
+    ['H', /(\d+(?:\.\d+)?)\s+hits?\b/i],
+    ['RBI', /(\d+(?:\.\d+)?)\s+RBIs?\b/i],
+    ['TB', /(\d+(?:\.\d+)?)\s+total bases?\b/i],
+    ['OPS', /(?:OPS(?:\s+(?:of|at|was|is))?\s*)(\d?\.\d{3})\b/i],
+    ['ERA', /(?:ERA(?:\s+(?:of|at|was|is))?\s*)(\d+(?:\.\d+)?)\b/i],
   ],
   nfl: [
+    ['SNAP SHARE', /snap share(?:\s+\w+){0,4}\s+(?:at|of)\s+(\d+(?:\.\d+)?)%/i],
+    ['SNAPS', /(\d+(?:\.\d+)?)\s+snaps?\b/i],
+    ['PRESSURES', /(\d+(?:\.\d+)?)\s+pressures?\b/i],
+    ['HURRIES', /(\d+(?:\.\d+)?)\s+hurries\b/i],
+    ['QB HIT', /(\d+(?:\.\d+)?)\s+quarterback hits?\b/i],
+    ['SACKS', /(\d+(?:\.\d+)?)\s+sacks?\b/i],
     ['PASS YDS', /(\d+(?:\.\d+)?)\s+passing yards?\b/i],
     ['RUSH YDS', /(\d+(?:\.\d+)?)\s+rushing yards?\b/i],
-    ['REC YDS', /(\d+(?:\.\d+)?)\s+receiving yards?\b/i],
+    ['REC YDS', /(-?\d+(?:\.\d+)?)\s+(?:receiving )?yards?\b/i],
     ['REC', /(\d+(?:\.\d+)?)\s+receptions?\b/i],
-    ['TD', /(\d+(?:\.\d+)?)\s+(?:touchdowns?|TDs?)\b/i],
     ['TGT', /(\d+(?:\.\d+)?)\s+targets?\b/i],
-    ['CAR', /(\d+(?:\.\d+)?)\s+carries\b/i],
+    ['TD', /(\d+(?:\.\d+)?)\s+(?:touchdowns?|TDs?)\b/i],
   ],
   nba: [
+    ['MIN', /(\d+(?:\.\d+)?)\s+minutes?\b/i],
     ['PTS', /(\d+(?:\.\d+)?)\s+points?\b/i],
     ['REB', /(\d+(?:\.\d+)?)\s+rebounds?\b/i],
     ['AST', /(\d+(?:\.\d+)?)\s+assists?\b/i],
-    ['MIN', /(\d+(?:\.\d+)?)\s+minutes?\b/i],
     ['3PM', /(\d+(?:\.\d+)?)\s+(?:three-pointers?|3-pointers?|threes?)\b/i],
+    ['USAGE', /(?:usage(?: rate)?(?:\s+(?:of|at|was|is))?\s*)(\d+(?:\.\d+)?)%/i],
+    ['FG%', /(?:field[- ]goal(?: percentage| pct)?(?:\s+(?:of|at|was|is))?\s*)(\d+(?:\.\d+)?)%/i],
   ],
   nhl: [
+    ['TOI', /(\d+(?:\.\d+)?)\s+minutes?(?: of ice time| TOI)?\b/i],
     ['SOG', /(\d+(?:\.\d+)?)\s+shots?(?: on goal)?\b/i],
     ['G', /(\d+(?:\.\d+)?)\s+goals?\b/i],
     ['A', /(\d+(?:\.\d+)?)\s+assists?\b/i],
     ['PTS', /(\d+(?:\.\d+)?)\s+points?\b/i],
     ['SV', /(\d+(?:\.\d+)?)\s+saves?\b/i],
-    ['MIN', /(\d+(?:\.\d+)?)\s+minutes?\b/i],
+    ['SV%', /(?:save percentage|SV%)(?:\s+(?:of|at|was|is))?\s*(\.\d{3})\b/i],
   ],
 };
 
 const RECENT_METRIC = {
   mlb: {
-    k_prop: ['strikeOuts', 'Strikeouts'], hr: ['homeRuns', 'Home Runs'], altprop_hits: ['hits', 'Hits'],
-    altprop_total_bases: ['totalBases', 'Total Bases'], stolen_bases: ['stolenBases', 'Stolen Bases'],
+    k_prop: ['strikeOuts', 'Strikeouts'],
+    hr: ['homeRuns', 'Home Runs'],
+    altprop_hits: ['hits', 'Hits'],
+    altprop_total_bases: ['totalBases', 'Total Bases'],
+    stolen_bases: ['stolenBases', 'Stolen Bases'],
   },
   nfl: {
-    passing_yards: ['passingYards', 'Passing Yards'], passing_tds: ['passingTouchdowns', 'Passing TDs'],
-    rushing_yards: ['rushingYards', 'Rushing Yards'], rushing_tds: ['rushingTouchdowns', 'Rushing TDs'],
-    receiving_yards: ['receivingYards', 'Receiving Yards'], receptions: ['receptions', 'Receptions'],
+    passing_yards: ['passingYards', 'Passing Yards'],
+    passing_tds: ['passingTouchdowns', 'Passing TDs'],
+    rushing_yards: ['rushingYards', 'Rushing Yards'],
+    rushing_tds: ['rushingTouchdowns', 'Rushing TDs'],
+    receiving_yards: ['receivingYards', 'Receiving Yards'],
+    receptions: ['receptions', 'Receptions'],
     receiving_tds: ['receivingTouchdowns', 'Receiving TDs'],
   },
   nba: {
-    points: ['points', 'Points'], rebounds: ['rebounds', 'Rebounds'], assists: ['assists', 'Assists'],
+    points: ['points', 'Points'],
+    rebounds: ['rebounds', 'Rebounds'],
+    assists: ['assists', 'Assists'],
     threes_made: ['threePointFieldGoalsMade', '3PM'],
   },
   nhl: {
-    shots_on_goal: ['shots', 'Shots on Goal'], goals: ['goals', 'Goals'], saves: ['saves', 'Saves'],
+    shots_on_goal: ['shots', 'Shots on Goal'],
+    goals: ['goals', 'Goals'],
+    saves: ['saves', 'Saves'],
     points: ['points', 'Points'],
   },
 };
@@ -84,9 +165,21 @@ const FALLBACK_METRIC = {
   nhl: ['shots', 'Shots on Goal'],
 };
 
+const STATUS_RULES = [
+  { kind: 'out', label: 'OUT / IR', re: /(?:placed|lands?|heads?|moved)\s+(?:on|to)\s+(?:injured reserve|IR)|\b(?:ruled|deemed)\s+out\b|\bwon't return\b|\bwill miss\b|\bsidelined\b|season-ending/i },
+  { kind: 'limited', label: 'LIMITED', re: /week-to-week|day-to-day|questionable|doubtful|limited participant|unclear status|return timeline/i },
+  { kind: 'return', label: 'RETURNING', re: /activated|return(?:ing)? from|cleared to|back from|set to return/i },
+  { kind: 'role', label: 'ROLE UP', re: /promoted|elevated|expanded duty|larger role|more snaps|absorb|shoulder(?:ing)?|will now fall to|behind (?:him|her|them) are|fill the roster gaps/i },
+  { kind: 'added', label: 'ADDED', re: /signed|acquired|claimed|traded for|added to the roster|practice squad/i },
+];
+
 function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
   }[ch]));
 }
 
@@ -97,6 +190,8 @@ function strip(value) {
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;|&rsquo;/gi, "'")
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -105,13 +200,27 @@ function articleText(article) {
   return strip(article?.body_html || article?.body || article?.summary || '');
 }
 
-function sentenceAround(text, index) {
+function fullStoryText(article) {
+  return [article?.title, article?.summary, articleText(article)].filter(Boolean).join(' ');
+}
+
+function detectStoryType(article) {
+  const text = fullStoryText(article);
+  if (/injur|injured reserve|\bIR\b|ruled out|season-ending|week-to-week|day-to-day|surgery|sidelined/i.test(text)) return 'availability';
+  if (/\btrade(?:d)?\b|\bsign(?:ed|ing)?\b|waiv|claim(?:ed)?|promot(?:ed|ion)|practice squad|acquir(?:ed|es)|extension|release(?:d)?/i.test(text)) return 'transaction';
+  if (/last\s+\d+|streak|\bover\b|\bunder\b|trend|average|rate|percentage|\bpct\b|\d+(?:\.\d+)?%/i.test(text)) return 'trend';
+  if (/\bfinal\b|\bwin\b|\bloss\b|beat(?:s|en)?|defeat(?:s|ed)?|overtime|\bOT\b|recap/i.test(text)) return 'recap';
+  if (/\bvs\.?\b|against|matchup|preview|tonight|week\s+\d+/i.test(text)) return 'preview';
+  return 'analysis';
+}
+
+function sentenceAround(text, index, max = 128) {
   const left = Math.max(text.lastIndexOf('. ', index), text.lastIndexOf('! ', index), text.lastIndexOf('? ', index));
   const rest = text.slice(index);
   const ends = ['. ', '! ', '? '].map((x) => rest.indexOf(x)).filter((x) => x >= 0);
-  const right = ends.length ? index + Math.min(...ends) + 1 : Math.min(text.length, index + 150);
-  const value = text.slice(left >= 0 ? left + 2 : Math.max(0, index - 65), right).trim();
-  return value.length > 115 ? value.slice(0, 112).trim() + '…' : value;
+  const right = ends.length ? index + Math.min(...ends) + 1 : Math.min(text.length, index + max + 40);
+  const value = text.slice(left >= 0 ? left + 2 : Math.max(0, index - 70), right).trim();
+  return value.length > max ? value.slice(0, max - 1).trim() + '…' : value;
 }
 
 function keyNumbers(article) {
@@ -126,14 +235,19 @@ function keyNumbers(article) {
     const flags = re.flags.includes('g') ? re.flags : re.flags + 'g';
     const global = new RegExp(re.source, flags);
     let match;
-    while ((match = global.exec(text)) && found.length < 8) {
+    while ((match = global.exec(text)) && found.length < 12) {
       const value = match[1];
       const key = `${label}:${value}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      found.push({ label, value, context: sentenceAround(text, match.index) });
+      found.push({
+        label,
+        value: label === 'SNAP SHARE' || label === 'USAGE' || label === 'FG%' ? `${value}%` : value,
+        context: sentenceAround(text, match.index),
+      });
     }
   }
+
   return found.slice(0, 4);
 }
 
@@ -144,59 +258,261 @@ function impactScore(article) {
 
 function impactVisual(score) {
   if (score == null) return '';
-  const rounded = Math.max(0, Math.min(5, Math.round(score)));
+  const pct = Math.max(0, Math.min(100, (score / 5) * 100));
   return `<div class="pbe-av-impact" aria-label="Story impact ${esc(score)} out of 5">
-    <div class="pbe-av-impact-score"><strong>${esc(score)}</strong><span>/5</span></div>
-    <div class="pbe-av-impact-bars">${[1,2,3,4,5].map((n) => `<i class="${n <= rounded ? 'is-on' : ''}"></i>`).join('')}</div>
-    <small>Story impact</small>
+    <div class="pbe-av-impact-dial" style="--impact:${pct.toFixed(1)}%">
+      <span><strong>${esc(score)}</strong><b>/5</b></span>
+    </div>
+    <div class="pbe-av-impact-copy"><span>STORY IMPACT</span><small>PropBetEdge signal</small></div>
+  </div>`;
+}
+
+function contextForName(text, name) {
+  if (!name) return '';
+  const lower = text.toLowerCase();
+  const needle = String(name).toLowerCase();
+  let idx = lower.indexOf(needle);
+  if (idx < 0) {
+    const last = needle.split(/\s+/).pop();
+    idx = last?.length > 3 ? lower.indexOf(last) : -1;
+  }
+  if (idx < 0) return '';
+  const start = Math.max(0, idx - 165);
+  const end = Math.min(text.length, idx + needle.length + 230);
+  return text.slice(start, end);
+}
+
+function classifyPlayers(article, manifest) {
+  const text = fullStoryText(article);
+  const out = [];
+  for (const player of manifest?.players || []) {
+    const context = contextForName(text, player.name);
+    if (!context) continue;
+    const rule = STATUS_RULES.find((candidate) => candidate.re.test(context));
+    if (!rule) continue;
+    out.push({
+      player,
+      kind: rule.kind,
+      label: rule.label,
+      context: sentenceAround(text, Math.max(0, text.toLowerCase().indexOf(String(player.name || '').toLowerCase())), 105),
+    });
+  }
+
+  const priority = { out: 0, limited: 1, return: 2, role: 3, added: 4 };
+  return out.sort((a, b) => (priority[a.kind] ?? 9) - (priority[b.kind] ?? 9));
+}
+
+function playerChip(row) {
+  const p = row.player;
+  const cls = `is-${row.kind}`;
+  return `<a class="pbe-av-person ${cls}" href="${esc(p.path || '#')}">
+    <div class="pbe-av-person-photo">
+      ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="lazy" />` : '<span>•</span>'}
+      <i></i>
+    </div>
+    <div class="pbe-av-person-copy">
+      <span>${esc(row.label)}</span>
+      <b>${esc(p.name)}</b>
+      ${p.position ? `<small>${esc(p.position)}</small>` : ''}
+    </div>
+  </a>`;
+}
+
+function marketWatch(article) {
+  const props = [...new Set((article?.take?.prop_types || []).map((x) => String(x || '').trim()).filter(Boolean))].slice(0, 4);
+  if (!props.length) return '';
+  return `<aside class="pbe-av-market-watch">
+    <div class="pbe-av-minihead"><span>MARKET WATCH</span><small>Tagged by the story analysis</small></div>
+    <div class="pbe-av-market-list">
+      ${props.map((prop, idx) => `<div class="pbe-av-market-row">
+        <span>${String(idx + 1).padStart(2, '0')}</span>
+        <b>${esc(PROP_LABELS[prop] || prop.replace(/_/g, ' '))}</b>
+        <i>→</i>
+      </div>`).join('')}
+    </div>
+  </aside>`;
+}
+
+function renderRosterMap(article, manifest, statuses) {
+  if (!statuses.length) return '';
+
+  const affected = statuses.filter((x) => ['out', 'limited'].includes(x.kind)).slice(0, 4);
+  const roleUp = statuses.filter((x) => ['role', 'added', 'return'].includes(x.kind)).slice(0, 4);
+  const team = manifest?.teams?.[0];
+
+  return `<div class="pbe-av-ripple-grid">
+    <div class="pbe-av-ripple">
+      <div class="pbe-av-ripple-head">
+        <div class="pbe-av-team-lockup">
+          ${team?.logo_url ? `<img src="${esc(team.logo_url)}" alt="" loading="lazy" />` : ''}
+          <div><span>ROSTER RIPPLE</span><b>${esc(team?.name || article?.sport?.toUpperCase() || 'Team impact')}</b></div>
+        </div>
+        <small>Availability → role redistribution</small>
+      </div>
+      <div class="pbe-av-ripple-body">
+        <div class="pbe-av-ripple-side is-loss">
+          <div class="pbe-av-ripple-label"><i></i><span>AVAILABILITY HIT</span></div>
+          <div class="pbe-av-people">
+            ${affected.length ? affected.map(playerChip).join('') : '<div class="pbe-av-empty">No explicit unavailable player resolved.</div>'}
+          </div>
+        </div>
+        <div class="pbe-av-ripple-arrow" aria-hidden="true"><span>→</span></div>
+        <div class="pbe-av-ripple-side is-gain">
+          <div class="pbe-av-ripple-label"><i></i><span>ROLE SHIFT</span></div>
+          <div class="pbe-av-people">
+            ${roleUp.length ? roleUp.map(playerChip).join('') : '<div class="pbe-av-empty">Role redistribution is described in the article text.</div>'}
+          </div>
+        </div>
+      </div>
+    </div>
+    ${marketWatch(article)}
+  </div>`;
+}
+
+function renderSignalGrid(article, manifest) {
+  const props = [...new Set((article?.take?.prop_types || []).map((x) => String(x || '').trim()).filter(Boolean))].slice(0, 4);
+  const players = (manifest?.players || []).slice(0, 3);
+  const team = manifest?.teams?.[0];
+  if (!props.length && !players.length && !team) return '';
+
+  return `<div class="pbe-av-signal-grid">
+    ${team ? `<a href="${esc(team.path || '#')}" class="pbe-av-team-feature">
+      <span>TEAM CONTEXT</span>
+      <div>${team.logo_url ? `<img src="${esc(team.logo_url)}" alt="" loading="lazy" />` : ''}<b>${esc(team.name)}</b></div>
+      <small>Open team hub →</small>
+    </a>` : ''}
+    ${players.length ? `<div class="pbe-av-focus">
+      <div class="pbe-av-minihead"><span>PEOPLE IN FOCUS</span><small>Resolved from this story</small></div>
+      <div class="pbe-av-focus-row">
+        ${players.map((p) => `<a href="${esc(p.path || '#')}" title="${esc(p.name)}">
+          ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" loading="lazy" />` : ''}
+          <b>${esc(p.name)}</b>
+          ${p.position ? `<small>${esc(p.position)}</small>` : ''}
+        </a>`).join('')}
+      </div>
+    </div>` : ''}
+    ${props.length ? marketWatch(article) : ''}
   </div>`;
 }
 
 function renderKeyNumbers(article) {
   const rows = keyNumbers(article);
   if (!rows.length) return '';
-  return `<div class="pbe-av-keynums">
-    ${rows.map((row) => `<div class="pbe-av-keynum">
-      <strong>${esc(row.value)}</strong>
-      <span>${esc(row.label)}</span>
-      <small>${esc(row.context)}</small>
-    </div>`).join('')}
+
+  return `<div class="pbe-av-evidence">
+    <div class="pbe-av-minihead"><span>STORY EVIDENCE</span><small>Numbers stated in the published article</small></div>
+    <div class="pbe-av-evidence-grid">
+      ${rows.map((row, idx) => `<div class="pbe-av-evidence-card">
+        <span class="pbe-av-evidence-index">${String(idx + 1).padStart(2, '0')}</span>
+        <div><strong>${esc(row.value)}</strong><b>${esc(row.label)}</b></div>
+        <p>${esc(row.context)}</p>
+      </div>`).join('')}
+    </div>
   </div>`;
 }
 
-function renderFootprint(article, manifest) {
-  const props = [...new Set((article?.take?.prop_types || []).map((x) => String(x || '').trim()).filter(Boolean))].slice(0, 5);
-  const players = (manifest?.players || []).slice(0, 3);
-  const teams = (manifest?.teams || []).slice(0, 2);
-  if (!props.length && !players.length && !teams.length) return '';
+function renderPbeRead(article) {
+  const value = String(article?.take?.advice || article?.take?.summary || '').trim();
+  if (!value) return '';
+  return `<blockquote class="pbe-av-read">
+    <span>PBE READ</span>
+    <p>${esc(value)}</p>
+  </blockquote>`;
+}
 
-  return `<div class="pbe-av-footprint">
-    <div class="pbe-av-footprint-head"><span>MARKET FOOTPRINT</span><small>Entities and prop markets tagged to this story</small></div>
-    <div class="pbe-av-footprint-flow">
-      ${teams.map((team) => `<a href="${esc(team.path || '#')}" class="pbe-av-node pbe-av-node--team">${team.logo_url ? `<img src="${esc(team.logo_url)}" alt="" loading="lazy" />` : ''}<span>TEAM</span><b>${esc(team.abbreviation || team.name)}</b></a>`).join('')}
-      ${players.map((player) => `<a href="${esc(player.path || '#')}" class="pbe-av-node pbe-av-node--player">${player.image_url ? `<img src="${esc(player.image_url)}" alt="" loading="lazy" />` : ''}<span>PLAYER</span><b>${esc(player.name)}</b></a>`).join('')}
-      ${props.map((prop) => `<div class="pbe-av-node pbe-av-node--prop"><span>PROP</span><b>${esc(PROP_LABELS[prop] || prop.replace(/_/g, ' '))}</b></div>`).join('')}
-    </div>
-  </div>`;
+function archetypeShell(article, manifest, type) {
+  const labels = STORY_LABELS[type] || STORY_LABELS.analysis;
+  const statuses = classifyPlayers(article, manifest);
+  const roster = (type === 'availability' || type === 'transaction') ? renderRosterMap(article, manifest, statuses) : '';
+  const signal = roster ? '' : renderSignalGrid(article, manifest);
+
+  return {
+    labels,
+    statuses,
+    inner: `
+      <div class="pbe-av-stage" aria-hidden="true"></div>
+      <header class="pbe-av-head">
+        <div class="pbe-av-title">
+          <span class="pbe-av-kicker">${esc(labels.kicker)}</span>
+          <h2>${esc(labels.title)}</h2>
+          <p>${esc(labels.sub)}</p>
+        </div>
+        ${impactVisual(impactScore(article))}
+      </header>
+      ${renderKeyNumbers(article)}
+      ${roster}
+      ${signal}
+      ${renderPbeRead(article)}
+    `,
+  };
+}
+
+function chartPlayerFor(article, manifest, statuses, type) {
+  const players = manifest?.players || [];
+  if (!players.length) return null;
+  const sport = String(article?.sport || '').toLowerCase();
+  const props = article?.take?.prop_types || [];
+
+  if (sport === 'nfl') {
+    const skill = (p) => ['QB', 'RB', 'FB', 'WR', 'TE'].includes(String(p.position || '').toUpperCase());
+    if (type === 'availability') {
+      const affectedIds = new Set(statuses.filter((x) => ['out', 'limited'].includes(x.kind)).map((x) => x.player.id));
+      const hit = players.find((p) => affectedIds.has(p.id) && skill(p));
+      if (hit) return hit;
+    }
+    if (props.some((p) => String(p).startsWith('passing_'))) {
+      const qb = players.find((p) => String(p.position || '').toUpperCase() === 'QB');
+      if (qb) return qb;
+    }
+    if (props.some((p) => String(p).startsWith('receiving_') || p === 'receptions')) {
+      const receiver = players.find((p) => ['WR', 'TE', 'RB'].includes(String(p.position || '').toUpperCase()));
+      if (receiver) return receiver;
+    }
+    if (props.some((p) => String(p).startsWith('rushing_'))) {
+      const runner = players.find((p) => ['RB', 'QB'].includes(String(p.position || '').toUpperCase()));
+      if (runner) return runner;
+    }
+    return players.find(skill) || null;
+  }
+
+  if (type === 'availability') {
+    const affectedIds = new Set(statuses.filter((x) => ['out', 'limited'].includes(x.kind)).map((x) => x.player.id));
+    const hit = players.find((p) => affectedIds.has(p.id));
+    if (hit) return hit;
+  }
+
+  return players[0] || null;
 }
 
 export function renderArticleVisuals(article, manifest) {
   const score = impactScore(article);
   const nums = keyNumbers(article);
-  const hasPlayer = Boolean(manifest?.players?.[0]?.id);
-  const hasFootprint = Boolean((article?.take?.prop_types || []).length || (manifest?.players || []).length || (manifest?.teams || []).length);
-  if (score == null && !nums.length && !hasPlayer && !hasFootprint) return '';
+  const type = detectStoryType(article);
+  const shell = archetypeShell(article, manifest, type);
+  const selectedPlayer = chartPlayerFor(article, manifest, shell.statuses, type);
+  const hasStatic = score != null || nums.length || shell.statuses.length
+    || (article?.take?.prop_types || []).length
+    || (manifest?.players || []).length
+    || (manifest?.teams || []).length;
+
+  if (!hasStatic && !selectedPlayer) return '';
 
   const id = `pbe-av-${String(article?.id || article?.slug || 'story').replace(/[^a-z0-9_-]/gi, '')}`;
-  return `<section class="pbe-article-visuals" id="${esc(id)}" data-pbe-article-visuals aria-label="PropBetEdge story data">
-    <div class="pbe-av-head">
-      <div><span class="pbe-av-kicker">PBE DATA VIEW</span><h2>The story, visualized.</h2></div>
-      ${impactVisual(score)}
+  return `<section
+    class="pbe-article-visuals"
+    id="${esc(id)}"
+    data-pbe-article-visuals
+    data-sport="${esc(String(article?.sport || '').toLowerCase())}"
+    data-archetype="${esc(type)}"
+    data-player-id="${esc(selectedPlayer?.id || '')}"
+    aria-label="PropBetEdge story intelligence"
+  >
+    ${shell.inner}
+    ${selectedPlayer ? `<div class="pbe-av-player" data-pbe-player-chart><div class="pbe-av-loading"><span></span><span></span><span></span></div></div>` : ''}
+    <div class="pbe-av-source-note">
+      <span></span>
+      Article facts are frozen to publication. Current-form charts are verified live context and may update.
     </div>
-    ${nums.length ? renderKeyNumbers(article) : ''}
-    ${renderFootprint(article, manifest)}
-    ${hasPlayer ? `<div class="pbe-av-player" data-pbe-player-chart><div class="pbe-av-loading"><span></span><span></span><span></span></div></div>` : ''}
-    <div class="pbe-av-source-note">Visuals use numbers already in this story plus verified current player data when available. Missing data stays missing.</div>
   </section>`;
 }
 
@@ -231,6 +547,7 @@ async function mlbContext(player, article) {
   const data = await fetchJson(`https://statsapi.mlb.com/api/v1/people/${encodeURIComponent(player.id)}?hydrate=stats(group=[hitting,pitching],type=[season,gameLog],season=${season},sportId=1),currentTeam`);
   const person = data?.people?.[0];
   if (!person) return null;
+
   const pitcher = String(person.primaryPosition?.abbreviation || player.position || '').toUpperCase() === 'P';
   const group = pitcher ? 'pitching' : 'hitting';
   const stats = person.stats || [];
@@ -239,44 +556,49 @@ async function mlbContext(player, article) {
   const metric = chooseMetric(article, 'mlb');
   const key = metric?.[0] || (pitcher ? 'strikeOuts' : 'hits');
   const label = metric?.[1] || (pitcher ? 'Strikeouts' : 'Hits');
+
   const rows = [...games].reverse().slice(0, 8).map((g) => ({
     date: g.date || g.game?.gameDate || '',
     opponent: g.opponent?.name || g.opponent?.abbreviation || '',
     value: toNumber(g.stat?.[key]),
   })).filter((x) => x.value != null);
+
   const seasonStats = pitcher
-    ? [
-        ['ERA', seasonRow?.era], ['WHIP', seasonRow?.whip], ['K', seasonRow?.strikeOuts],
-        ['IP', seasonRow?.inningsPitched],
-      ]
-    : [
-        ['AVG', seasonRow?.avg], ['HR', seasonRow?.homeRuns], ['RBI', seasonRow?.rbi], ['OPS', seasonRow?.ops],
-      ];
+    ? [['ERA', seasonRow?.era], ['WHIP', seasonRow?.whip], ['K', seasonRow?.strikeOuts], ['IP', seasonRow?.inningsPitched]]
+    : [['AVG', seasonRow?.avg], ['HR', seasonRow?.homeRuns], ['RBI', seasonRow?.rbi], ['OPS', seasonRow?.ops]];
+
   return { name: person.fullName || player.name, image: player.image_url, label, rows, seasonStats };
 }
 
 function firstUsableCategory(categories, preferred) {
-  return categories.find((c) => c.key === preferred && c.rows?.length) || categories.find((c) => c.rows?.length) || null;
+  return categories.find((c) => c.key === preferred && c.rows?.length)
+    || categories.find((c) => c.rows?.length)
+    || null;
 }
 
 async function espnContext(player, article, sport) {
   const season = currentSeason(sport);
   const [statsPayload, logPayload] = await Promise.all([
     fetchJson(`/api/player-data?sport=${sport}&id=${encodeURIComponent(player.id)}&kind=stats&type=2`).then((x) => x.data),
-    fetchJson(`/api/player-data?sport=${sport}&id=${encodeURIComponent(player.id)}&kind=gamelog&type=2&season=${encodeURIComponent(season)}`).then((x) => x.data).catch(() => null),
+    fetchJson(`/api/player-data?sport=${sport}&id=${encodeURIComponent(player.id)}&kind=gamelog&type=2&season=${encodeURIComponent(season)}`)
+      .then((x) => x.data)
+      .catch(() => null),
   ]);
+
   const categories = espnCategories(statsPayload, '2');
   const metric = chooseMetric(article, sport);
   const preferred = sport === 'nfl'
     ? ((article?.take?.prop_types || []).some((p) => String(p).startsWith('passing_')) ? 'passing'
       : (article?.take?.prop_types || []).some((p) => String(p).startsWith('rushing_')) ? 'rushing'
-      : 'receiving')
+        : 'receiving')
     : 'averages';
+
   const cat = firstUsableCategory(categories, preferred);
   const seasonRow = cat?.rows?.[0] || null;
   const log = logPayload ? espnGameLog(logPayload, season, '2') : { rows: [] };
   const key = metric?.[0] || (sport === 'nba' ? 'points' : 'receivingYards');
   const label = metric?.[1] || (sport === 'nba' ? 'Points' : 'Receiving Yards');
+
   const rows = (log.rows || []).slice(0, 8).reverse().map((g) => ({
     date: g.date,
     opponent: g.opponent,
@@ -285,9 +607,12 @@ async function espnContext(player, article, sport) {
 
   const preferredKeys = sport === 'nba'
     ? ['avgPoints', 'avgRebounds', 'avgAssists', 'threePointFieldGoalPct']
-    : cat?.key === 'passing' ? ['passingYards', 'passingTouchdowns', 'interceptions', 'completionPct']
-      : cat?.key === 'rushing' ? ['rushingYards', 'rushingTouchdowns', 'yardsPerRushAttempt', 'rushingAttempts']
+    : cat?.key === 'passing'
+      ? ['passingYards', 'passingTouchdowns', 'interceptions', 'completionPct']
+      : cat?.key === 'rushing'
+        ? ['rushingYards', 'rushingTouchdowns', 'yardsPerRushAttempt', 'rushingAttempts']
         : ['receptions', 'receivingYards', 'receivingTouchdowns', 'receivingTargets'];
+
   const seasonStats = preferredKeys.map((keyName) => {
     const idx = cat?.names?.indexOf(keyName);
     return idx >= 0 ? [cat.labels?.[idx] || keyName, seasonRow?.values?.[keyName]] : null;
@@ -300,26 +625,33 @@ async function nhlContext(player, article) {
   const season = currentSeason('nhl');
   const [bio, logPayload] = await Promise.all([
     fetchJson(`/api/player-data?sport=nhl&id=${encodeURIComponent(player.id)}&kind=bio`).then((x) => x.data),
-    fetchJson(`/api/player-data?sport=nhl&id=${encodeURIComponent(player.id)}&kind=gamelog&type=2&season=${encodeURIComponent(season)}`).then((x) => x.data).catch(() => null),
+    fetchJson(`/api/player-data?sport=nhl&id=${encodeURIComponent(player.id)}&kind=gamelog&type=2&season=${encodeURIComponent(season)}`)
+      .then((x) => x.data)
+      .catch(() => null),
   ]);
+
   const cat = nhlCategories(bio, '2')[0];
   const seasonRow = cat?.rows?.[0] || null;
   const metric = chooseMetric(article, 'nhl');
   const key = metric?.[0] || (bio?.position === 'G' ? 'saves' : 'shots');
   const label = metric?.[1] || (bio?.position === 'G' ? 'Saves' : 'Shots on Goal');
   const log = logPayload ? nhlGameLog(logPayload, season, '2', bio?.position === 'G') : { rows: [] };
+
   const rows = (log.rows || []).slice(0, 8).reverse().map((g) => ({
     date: g.date,
     opponent: g.opponent,
     value: toNumber(g.values?.[key]),
   })).filter((x) => x.value != null);
+
   const preferred = bio?.position === 'G'
     ? ['savePctg', 'goalsAgainstAvg', 'wins', 'shutouts']
     : ['goals', 'assists', 'points', 'shots'];
+
   const seasonStats = preferred.map((keyName) => {
     const idx = cat?.names?.indexOf(keyName);
     return idx >= 0 ? [cat.labels?.[idx] || keyName, seasonRow?.values?.[keyName]] : null;
   }).filter(Boolean).slice(0, 4);
+
   return { name: player.name, image: player.image_url, label, rows, seasonStats };
 }
 
@@ -334,7 +666,9 @@ async function playerContext(player, article) {
 
 function compactDate(value) {
   const d = new Date(value);
-  return Number.isFinite(d.getTime()) ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+  return Number.isFinite(d.getTime())
+    ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : '';
 }
 
 function renderPlayerContext(data) {
@@ -344,39 +678,60 @@ function renderPlayerContext(data) {
   if (!rows.length && !stats.length) return '';
 
   const max = Math.max(1, ...rows.map((r) => Number(r.value) || 0));
-  const avg = rows.length ? rows.reduce((s, r) => s + Number(r.value || 0), 0) / rows.length : null;
+  const avg = rows.length
+    ? rows.reduce((sum, row) => sum + Number(row.value || 0), 0) / rows.length
+    : null;
 
   return `<div class="pbe-av-player-card">
-    <div class="pbe-av-player-head">
+    <header class="pbe-av-player-head">
       <div class="pbe-av-player-id">
         ${data.image ? `<img src="${esc(data.image)}" alt="" loading="lazy" />` : ''}
-        <div><span>CURRENT PLAYER CONTEXT</span><h3>${esc(data.name)}</h3></div>
+        <div>
+          <span>VERIFIED CURRENT FORM</span>
+          <h3>${esc(data.name)}</h3>
+          <small>Live context · separate from the frozen article record</small>
+        </div>
       </div>
-      ${avg != null ? `<div class="pbe-av-recent-avg"><strong>${esc(avg.toFixed(avg >= 10 ? 1 : 2).replace(/\.00$/, '').replace(/\.0$/, ''))}</strong><span>RECENT AVG · ${esc(data.label)}</span></div>` : ''}
-    </div>
-    ${stats.length ? `<div class="pbe-av-season-stats">${stats.map(([label, value]) => `<div><strong>${esc(value)}</strong><span>${esc(label)}</span></div>`).join('')}</div>` : ''}
+      ${avg != null ? `<div class="pbe-av-recent-avg">
+        <strong>${esc(avg.toFixed(avg >= 10 ? 1 : 2).replace(/\.00$/, '').replace(/\.0$/, ''))}</strong>
+        <span>RECENT AVG</span>
+        <small>${esc(data.label)}</small>
+      </div>` : ''}
+    </header>
+
+    ${stats.length ? `<div class="pbe-av-season-stats">
+      ${stats.map(([label, value]) => `<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join('')}
+    </div>` : ''}
+
     ${rows.length ? `<div class="pbe-av-form">
-      <div class="pbe-av-form-head"><b>Recent form · ${esc(data.label)}</b><span>${rows.length} verified games</span></div>
+      <div class="pbe-av-form-head">
+        <div><span>RECENT FORM</span><b>${esc(data.label)}</b></div>
+        <small>${rows.length} verified games</small>
+      </div>
       <div class="pbe-av-bars">
         ${rows.map((row) => {
-          const h = Math.max(7, Math.min(100, Number(row.value) / max * 100));
+          const height = Math.max(7, Math.min(100, Number(row.value) / max * 100));
           return `<div class="pbe-av-bar-col" title="${esc(compactDate(row.date))} ${esc(row.opponent)} · ${esc(row.value)} ${esc(data.label)}">
             <span class="pbe-av-bar-value">${esc(row.value)}</span>
-            <div class="pbe-av-bar-track"><i style="height:${h.toFixed(1)}%"></i></div>
+            <div class="pbe-av-bar-track"><i style="height:${height.toFixed(1)}%"></i></div>
             <small>${esc(compactDate(row.date))}</small>
           </div>`;
         }).join('')}
       </div>
     </div>` : ''}
-    <div class="pbe-av-context-note">Current season/recent-form context is separate from the frozen article record and may update after publication.</div>
   </div>`;
 }
 
 export async function mountArticleVisuals(article, manifest) {
   const root = document.querySelector('[data-pbe-article-visuals]');
   const slot = root?.querySelector('[data-pbe-player-chart]');
-  const player = manifest?.players?.[0];
-  if (!root || !slot || !player) return;
+  const selectedId = root?.getAttribute('data-player-id');
+  const player = (manifest?.players || []).find((p) => String(p.id) === String(selectedId));
+  if (!root || !slot || !player) {
+    slot?.remove();
+    return;
+  }
+
   try {
     const data = await playerContext(player, article);
     const html = renderPlayerContext(data);
