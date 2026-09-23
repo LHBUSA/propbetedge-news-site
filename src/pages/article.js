@@ -337,22 +337,29 @@ function renderBodyWithMidAd(article, ctx, graph, manifest, seo, visualHtml = ''
   `;
 }
 
+function isSpeculativeMarketAdvice(value) {
+  const text = String(value || '');
+  return /\b(?:when (?:the )?line sets|when lines? open|if (?:the )?line (?:sets|opens)|expect(?:ed)?\s+\d|typically\s+\d|project(?:ed|ion)|forecast|should open|likely (?:open|price)|market will likely price|range)\b/i.test(text)
+    || /\d+(?:\.\d+)?\s*(?:to|[-–—])\s*\d+(?:\.\d+)?/.test(text);
+}
+
 function renderTakeCallout(article) {
   if (!article.take?.summary) {
     return `
       <div class="ai-take-callout" style="opacity:0.5">
         <div class="ai-take-callout-header">
           <div class="ai-take-callout-icon">⚡</div>
-          <div class="ai-take-callout-label">Prop-Bet Take</div>
+          <div class="ai-take-callout-label">PBE Analysis</div>
         </div>
         <p class="ai-take-summary" style="font-size:15px;font-style:normal;font-weight:500">
-          AI analysis being generated — check back in a few minutes.
+          Analysis being generated — check back in a few minutes.
         </p>
       </div>
     `;
   }
 
   const t = article.take;
+  const adviceIsScenario = isSpeculativeMarketAdvice(t.advice);
   const tags = [];
   if (Array.isArray(t.players)) {
     for (const p of t.players.slice(0, 4)) tags.push(`<span class="ai-take-tag">${escapeHtml(p)}</span>`);
@@ -370,14 +377,15 @@ function renderTakeCallout(article) {
     <aside class="ai-take-callout">
       <div class="ai-take-callout-header">
         <div class="ai-take-callout-icon">⚡</div>
-        <div class="ai-take-callout-label">Bettor's Edge · AI Analysis</div>
+        <div class="ai-take-callout-label">PBE Analysis</div>
         <div class="ai-take-callout-impact">Impact <strong>${t.impact_score}/5</strong></div>
       </div>
       <p class="ai-take-summary">${escapeHtml(t.summary)}</p>
       ${t.advice ? `
-        <div class="ai-take-advice">
-          <span class="label">The Angle</span>
+        <div class="ai-take-advice${adviceIsScenario ? ' ai-take-advice--scenario' : ''}">
+          <span class="label">${adviceIsScenario ? 'Model Scenario' : 'The Angle'}</span>
           ${escapeHtml(t.advice)}
+          ${adviceIsScenario ? '<small class="ai-take-advice-note">Scenario only · not a live market quote.</small>' : ''}
         </div>
       ` : ''}
       ${tags.length ? `<div class="ai-take-tags">${tags.join('')}</div>` : ''}
@@ -404,14 +412,14 @@ function renderPicksCTA(article) {
   if (!cta) return '';
 
   const personalized = article.take?.players?.length
-    ? `Tonight's ${article.sport.toUpperCase()} model card includes angles on ${escapeHtml(article.take.players.slice(0, 2).join(' & '))}.`
-    : `See how this story affects tonight's ${article.sport.toUpperCase()} picks.`;
+    ? `Open the live ${article.sport.toUpperCase()} model card to see whether current angles involve ${escapeHtml(article.take.players.slice(0, 2).join(' & '))}.`
+    : `Open the live ${article.sport.toUpperCase()} model card for current picks and market context.`;
 
   return `
     <aside class="picks-cta">
       <div class="picks-cta-eyebrow">⚡ The Same Brain</div>
-      <h3 class="picks-cta-headline">Bet smarter on tonight's slate.</h3>
-      <p class="picks-cta-sub">${personalized} The same AI behind this take grades model picks against live odds, 24/7.</p>
+      <h3 class="picks-cta-headline">Take the story into the live model.</h3>
+      <p class="picks-cta-sub">${personalized} Recorded picks are graded against live odds.</p>
       <div class="picks-cta-buttons">
         <a href="${cta.url}" class="btn btn-primary" target="_blank" rel="noopener">${cta.label} →</a>
         <a href="${cta.secondaryUrl}" class="btn btn-ghost" target="_blank" rel="noopener">${cta.secondaryLabel}</a>
