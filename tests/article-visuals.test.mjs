@@ -705,3 +705,95 @@ test('structured relations render the roster ripple regardless of the headline a
   assert.match(html, /DEPARTED/);
   assert.doesNotMatch(html, />ADDED</);
 });
+
+
+test('structured practice DNP renders DNP instead of OUT / IR', () => {
+  const article = {
+    id: 'coleman-practice-dnp',
+    sport: 'nfl',
+    title: 'Broncos backfield limps toward Rams: Dobbins, Harvey limited; Coleman DNP',
+    summary: 'Denver is monitoring three injured backs after Wednesday practice.',
+    body: 'Jonah Coleman did not practice after spraining an ankle Sunday against Jacksonville.',
+    take: {
+      prompt_version: '3.18.1',
+      impact_score: 3,
+      prop_types: ['rushing_yards', 'rushing_attempts', 'rushing_tds'],
+      relations: [{
+        player: 'Jonah Coleman',
+        team: 'DEN',
+        state: 'practice_dnp',
+        evidence: 'Jonah Coleman did not practice after spraining an ankle Sunday against Jacksonville.'
+      }],
+    },
+  };
+  const manifest = {
+    players: [{ id: '4702555', name: 'Jonah Coleman', team_id: 'DEN', position: 'RB', path: '/player/nfl/4702555' }],
+    teams: [{ id: 'DEN', abbreviation: 'DEN', name: 'Denver Broncos', path: '/team/nfl/denver-broncos' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.match(html, />DNP</);
+  assert.doesNotMatch(html, />OUT \/ IR</);
+});
+
+test('legacy 3.18 practice-only medical_absence defensively presents as DNP', () => {
+  const article = {
+    id: 'coleman-legacy-overstatement',
+    sport: 'nfl',
+    title: 'Broncos backfield update',
+    body: 'Jonah Coleman did not practice after spraining an ankle Sunday against Jacksonville.',
+    take: {
+      prompt_version: '3.18.0',
+      impact_score: 3,
+      prop_types: ['rushing_yards'],
+      relations: [{
+        player: 'Jonah Coleman',
+        team: 'DEN',
+        state: 'medical_absence',
+        evidence: 'Jonah Coleman did not practice after spraining an ankle Sunday against Jacksonville.'
+      }],
+    },
+  };
+  const manifest = {
+    players: [{ id: '4702555', name: 'Jonah Coleman', team_id: 'DEN', position: 'RB', path: '/player/nfl/4702555' }],
+    teams: [{ id: 'DEN', abbreviation: 'DEN', name: 'Denver Broncos', path: '/team/nfl/denver-broncos' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.match(html, />DNP</);
+  assert.doesNotMatch(html, />OUT \/ IR</);
+});
+
+test('market watch labels use consistent human title casing', () => {
+  const article = {
+    id: 'market-label-casing',
+    sport: 'nfl',
+    title: 'Denver backfield markets',
+    body: 'Denver is monitoring its backfield.',
+    take: {
+      impact_score: 3,
+      prop_types: ['rushing_yards', 'rushing_attempts', 'rushing_tds'],
+    },
+  };
+  const manifest = {
+    players: [],
+    teams: [{ id: 'DEN', abbreviation: 'DEN', name: 'Denver Broncos', path: '/team/nfl/denver-broncos' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.match(html, /Rushing Yards/);
+  assert.match(html, /Rushing Attempts/);
+  assert.match(html, /Rushing TDs/);
+  assert.doesNotMatch(html, />rushing attempts</);
+});
+
+test('article detail routes override stale manual baseball background preferences', () => {
+  const source = fs.readFileSync(new URL('../src/background-selector.js', import.meta.url), 'utf8');
+  const currentScene = source.match(/function currentScene\(\)\s*\{([\s\S]*?)\n\}/)?.[1] || '';
+  assert.match(source, /function articleDetailSport/);
+  assert.match(currentScene, /const articleSport = articleDetailSport\(\)/);
+  assert.ok(
+    currentScene.indexOf('const articleSport = articleDetailSport()') < currentScene.indexOf('if (!autoScene)'),
+    'article sport must win before saved manual scene'
+  );
+});
