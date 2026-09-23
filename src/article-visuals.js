@@ -50,34 +50,34 @@ const PROP_LABELS = {
 
 const STORY_LABELS = {
   availability: {
-    kicker: 'PBE IMPACT MAP',
-    title: 'The roster ripple.',
-    sub: 'Who is unavailable, who absorbs the role, and which markets are exposed.',
+    kicker: 'PBE DATA INTELLIGENCE',
+    title: 'Here’s the data.',
+    sub: 'Availability, role redistribution, and the markets connected to the change.',
   },
   transaction: {
-    kicker: 'PBE ROLE MAP',
-    title: 'What changes now.',
+    kicker: 'PBE DATA INTELLIGENCE',
+    title: 'Here’s the data.',
     sub: 'The personnel move, the depth-chart response, and the markets attached to it.',
   },
   trend: {
-    kicker: 'PBE TREND LENS',
-    title: 'The trend, in context.',
-    sub: 'The strongest signals in the story, separated from the noise around them.',
+    kicker: 'PBE DATA INTELLIGENCE',
+    title: 'Here’s the data.',
+    sub: 'The strongest numbers behind the trend, with the surrounding context kept visible.',
   },
   recap: {
-    kicker: 'PBE GAME LENS',
-    title: 'How the game turned.',
-    sub: 'The numbers that explain the result and what carries forward.',
+    kicker: 'PBE DATA INTELLIGENCE',
+    title: 'Here’s the data.',
+    sub: 'The numbers that shaped the result and the signals worth carrying forward.',
   },
   preview: {
-    kicker: 'PBE MATCHUP LENS',
-    title: 'The pressure points.',
-    sub: 'The players, numbers, and markets most connected to this matchup.',
+    kicker: 'PBE DATA INTELLIGENCE',
+    title: 'Here’s the data.',
+    sub: 'The matchup numbers, player context, and markets most connected to the game.',
   },
   analysis: {
-    kicker: 'PBE DATA VIEW',
-    title: 'The story, in numbers.',
-    sub: 'The facts that matter most, with live context only where verified data exists.',
+    kicker: 'PBE DATA INTELLIGENCE',
+    title: 'Here’s the data.',
+    sub: 'Published facts first, with verified current context only where the data supports it.',
   },
 };
 
