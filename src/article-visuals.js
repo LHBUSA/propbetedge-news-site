@@ -83,7 +83,7 @@ const STORY_LABELS = {
 
 const METRIC_PATTERNS = {
   mlb: [
-    ['CAREER K', /((?:\d{1,3}(?:,\d{3})+|\d+))(?:st|nd|rd|th)?\s+(?:career\s+)?strikeouts?\b/i],
+    ['CAREER K', /((?:\d{1,3}(?:,\d{3})+|\d+))(?:st|nd|rd|th)?\s+career\s+strikeouts?\b/i],
     ['ERA', /((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+ERA\b/i],
     ['K/9', /strikeout rate[^.!?]{0,40}?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+per nine\b/i],
     ['K/9', /(?:fanned|struck out)[^.!?]{0,40}?((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?)\s+per nine\b/i],
