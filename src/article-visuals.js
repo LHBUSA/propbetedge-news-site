@@ -222,12 +222,20 @@ export function nflRecentMetric(article, position) {
   return passing || rushing || receiving || null;
 }
 
+const DEPARTURE_RULE = {
+  kind: 'departed',
+  label: 'DEPARTED',
+  re: /\bdepart(?:ed|ure)\b|\bleft\s+(?:for|to)\b|\bsigned\s+with\b|\bjoined\b|\btraded\s+to\b|\bsent\s+to\b|\bmoved\s+to\b|\breleased\s+by\b|\bwaived\s+by\b/i,
+};
+
+const TRANSACTION_ACTION_RE = /\b(?:signed|signs|signing|acquired|claimed|traded|trade|waived|released|joined|left|departed|moved|sent)\b/i;
+
 const STATUS_RULES = [
   { kind: 'out', label: 'OUT / IR', re: /(?:placed|lands?|heads?|moved)\s+(?:on|to)\s+(?:injured reserve|IR)|\b(?:ruled|deemed)\s+out\b|\bwon't return\b|\bwill miss\b|\bsidelined\b|season-ending/i },
   { kind: 'limited', label: 'LIMITED', re: /week-to-week|day-to-day|questionable|doubtful|limited participant|unclear status|return timeline/i },
   { kind: 'return', label: 'RETURNING', re: /activated|return(?:ing)? from|cleared to|back from|set to return/i },
   { kind: 'role', label: 'ROLE UP', re: /promoted|elevated|expanded duty|larger role|more snaps|absorb|shoulder(?:ing)?|will now fall to|behind (?:him|her|them) are|fill the roster gaps/i },
-  { kind: 'added', label: 'ADDED', re: /signed|acquired|claimed|traded for|added to the roster|practice squad/i },
+  { kind: 'added', label: 'ADDED', re: /\bsigned\b|\bacquired\b|\bclaimed\b|\btraded for\b|\badded to the roster\b|\bpractice squad\b/i },
 ];
 
 function esc(value) {
@@ -444,23 +452,97 @@ function contextForName(text, name) {
   return text.slice(start, end);
 }
 
-function classifyPlayers(article, manifest) {
+function contextsForName(text, name) {
+  if (!name) return [];
+  const lower = String(text || '').toLowerCase();
+  const full = String(name).toLowerCase();
+  const last = full.split(/\s+/).pop();
+  const needles = [full, last?.length > 3 ? last : null].filter(Boolean);
+  const seen = new Set();
+  const contexts = [];
+
+  for (const needle of needles) {
+    let from = 0;
+    while (from < lower.length) {
+      const idx = lower.indexOf(needle, from);
+      if (idx < 0) break;
+      const sentence = evidenceSentenceAround(text, idx);
+      const key = evidenceContextKey(sentence);
+      if (sentence && key && !seen.has(key)) {
+        seen.add(key);
+        contexts.push(sentence);
+      }
+      from = idx + needle.length;
+    }
+    if (contexts.length) break;
+  }
+
+  const fallback = contextForName(text, name);
+  if (!contexts.length && fallback) contexts.push(fallback);
+  return contexts;
+}
+
+function classifyPlayers(article, manifest, storyType = null) {
   const text = fullStoryText(article);
+  const type = storyType || detectStoryType(article);
+  const primaryTeam = manifest?.teams?.[0] || null;
+  const primaryTeamId = String(primaryTeam?.id || primaryTeam?.abbreviation || '').toUpperCase();
   const out = [];
+
   for (const player of manifest?.players || []) {
-    const context = contextForName(text, player.name);
-    if (!context) continue;
-    const rule = STATUS_RULES.find((candidate) => candidate.re.test(context));
+    const contexts = contextsForName(text, player.name);
+    if (!contexts.length) continue;
+
+    const playerTeamId = String(player?.team_id || '').toUpperCase();
+    const isOnAnotherTeam = Boolean(primaryTeamId && playerTeamId && playerTeamId !== primaryTeamId);
+    let rule = null;
+    let matchedContext = '';
+
+    // Transaction direction is not a bag-of-words problem. The entity graph
+    // already knows current team membership, so use it as a deterministic
+    // direction guard. "Robinson signed with Boston" in a Knicks story is a
+    // departure from New York, never an addition to New York.
+    if (type === 'transaction' && isOnAnotherTeam) {
+      matchedContext = contexts.find((context) => DEPARTURE_RULE.re.test(context))
+        || contexts.find((context) => TRANSACTION_ACTION_RE.test(context))
+        || '';
+      if (matchedContext) rule = DEPARTURE_RULE;
+    }
+
+    if (!rule) {
+      for (const context of contexts) {
+        const candidate = STATUS_RULES.find((status) => status.re.test(context));
+        if (!candidate) continue;
+
+        // A generic "signed" token can only be an addition when the resolved
+        // player currently belongs to the story's primary team. If the player
+        // is resolved to another club, fail toward DEPARTED rather than
+        // reversing the transaction direction.
+        if (type === 'transaction' && candidate.kind === 'added' && isOnAnotherTeam) {
+          rule = DEPARTURE_RULE;
+        } else {
+          rule = candidate;
+        }
+        matchedContext = context;
+        break;
+      }
+    }
+
     if (!rule) continue;
     out.push({
       player,
       kind: rule.kind,
       label: rule.label,
-      context: sentenceAround(text, Math.max(0, text.toLowerCase().indexOf(String(player.name || '').toLowerCase())), 105),
+      context: sentenceAround(
+        text,
+        Math.max(0, text.toLowerCase().indexOf(String(player.name || '').toLowerCase())),
+        105,
+      ),
+      evidence: matchedContext,
     });
   }
 
-  const priority = { out: 0, limited: 1, return: 2, role: 3, added: 4 };
+  const priority = { departed: 0, out: 1, limited: 2, return: 3, role: 4, added: 5 };
   return out.sort((a, b) => (priority[a.kind] ?? 9) - (priority[b.kind] ?? 9));
 }
 
@@ -495,12 +577,20 @@ function marketWatch(article) {
   </aside>`;
 }
 
-function renderRosterMap(article, manifest, statuses) {
+function renderRosterMap(article, manifest, statuses, type) {
   if (!statuses.length) return '';
 
-  const affected = statuses.filter((x) => ['out', 'limited'].includes(x.kind)).slice(0, 4);
+  const isTransaction = type === 'transaction';
+  const affected = statuses.filter((x) => ['departed', 'out', 'limited'].includes(x.kind)).slice(0, 4);
   const roleUp = statuses.filter((x) => ['role', 'added', 'return'].includes(x.kind)).slice(0, 4);
   const team = manifest?.teams?.[0];
+
+  const movementLabel = isTransaction ? 'ROSTER LOSS' : 'AVAILABILITY HIT';
+  const responseLabel = isTransaction ? 'DEPTH RESPONSE' : 'ROLE SHIFT';
+  const movementNote = isTransaction ? 'Roster movement → role redistribution' : 'Availability → role redistribution';
+  const emptyLoss = isTransaction
+    ? 'No explicit outgoing player resolved.'
+    : 'No explicit unavailable player resolved.';
 
   return `<div class="pbe-av-ripple-grid">
     <div class="pbe-av-ripple">
@@ -509,18 +599,18 @@ function renderRosterMap(article, manifest, statuses) {
           ${team?.logo_url ? `<img src="${esc(team.logo_url)}" alt="" loading="lazy" />` : ''}
           <div><span>ROSTER RIPPLE</span><b>${esc(team?.name || article?.sport?.toUpperCase() || 'Team impact')}</b></div>
         </div>
-        <small>Availability → role redistribution</small>
+        <small>${movementNote}</small>
       </div>
       <div class="pbe-av-ripple-body">
         <div class="pbe-av-ripple-side is-loss">
-          <div class="pbe-av-ripple-label"><i></i><span>AVAILABILITY HIT</span></div>
+          <div class="pbe-av-ripple-label"><i></i><span>${movementLabel}</span></div>
           <div class="pbe-av-people">
-            ${affected.length ? affected.map(playerChip).join('') : '<div class="pbe-av-empty">No explicit unavailable player resolved.</div>'}
+            ${affected.length ? affected.map(playerChip).join('') : `<div class="pbe-av-empty">${emptyLoss}</div>`}
           </div>
         </div>
         <div class="pbe-av-ripple-arrow" aria-hidden="true"><span>→</span></div>
         <div class="pbe-av-ripple-side is-gain">
-          <div class="pbe-av-ripple-label"><i></i><span>ROLE SHIFT</span></div>
+          <div class="pbe-av-ripple-label"><i></i><span>${responseLabel}</span></div>
           <div class="pbe-av-people">
             ${roleUp.length ? roleUp.map(playerChip).join('') : '<div class="pbe-av-empty">Role redistribution is described in the article text.</div>'}
           </div>
@@ -600,8 +690,8 @@ function renderKeyNumbers(article) {
 
 function archetypeShell(article, manifest, type) {
   const labels = STORY_LABELS[type] || STORY_LABELS.analysis;
-  const statuses = classifyPlayers(article, manifest);
-  const roster = (type === 'availability' || type === 'transaction') ? renderRosterMap(article, manifest, statuses) : '';
+  const statuses = classifyPlayers(article, manifest, type);
+  const roster = (type === 'availability' || type === 'transaction') ? renderRosterMap(article, manifest, statuses, type) : '';
   const signal = roster ? '' : renderSignalGrid(article, manifest);
 
   return {
