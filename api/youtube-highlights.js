@@ -128,7 +128,7 @@ function parseFeed(xml, sport) {
       videoId,
       title,
       url: `https://www.youtube.com/watch?v=${videoId}`,
-      embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?rel=0`,
+      embedUrl: `https://www.youtube.com/embed/${videoId}?rel=0`,
       thumbnail,
       channelName,
       publishedAt: publishedAt || updatedAt || null,
