@@ -29,3 +29,12 @@ test('NFL highlight source rejects rights-restricted full-game replay candidates
   assert.match(source, /\\bcondensed game\\b/);
   assert.match(source, /sport !== 'nfl'/);
 });
+
+
+test('sport highlights detect YouTube embed-policy failures and advance', () => {
+  assert.match(sport, /youtube\.com\/iframe_api/);
+  assert.match(sport, /onYouTubeIframeAPIReady/);
+  assert.match(sport, /\[5, 100, 101, 150, 153\]/);
+  assert.match(sport, /blocked embed; advancing/);
+  assert.match(sport, /params\.set\('origin', window\.location\.origin\)/);
+});
