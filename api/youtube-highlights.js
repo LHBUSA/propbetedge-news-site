@@ -27,10 +27,7 @@ export default async function handler(req, res) {
 
   try {
     const { xml, channelId } = await fetchOfficialFeed(meta);
-    const selectedVideos = selectHighlights(parseFeed(xml, sport), sport, limit);
-    const videos = sport === 'nfl'
-      ? await annotateNflEmbeddability(selectedVideos)
-      : selectedVideos;
+    const videos = selectHighlights(parseFeed(xml, sport), sport, limit);
 
     return res.status(200).json({
       ok: true,
@@ -140,53 +137,6 @@ function parseFeed(xml, sport) {
   }).filter(Boolean);
 
   return entries;
-}
-
-async function annotateNflEmbeddability(videos) {
-  // NFL only. Never remove or reorder videos based on embed policy.
-  // YouTube's public oEmbed endpoint requires no API key: embeddable public
-  // videos return metadata, while embed-disabled/restricted videos return 401
-  // (and unavailable videos can return 403/404). Network/server errors are
-  // treated as unknown so a transient probe never hides content.
-  const checks = await Promise.all(
-    videos.map(async (video) => ({
-      video,
-      embeddable: await probeYouTubeOembed(video),
-    }))
-  );
-
-  return checks.map(({ video, embeddable }) => ({
-    ...video,
-    embeddable,
-  }));
-}
-
-async function probeYouTubeOembed(video) {
-  const watchUrl = video?.url || (video?.videoId
-    ? `https://www.youtube.com/watch?v=${video.videoId}`
-    : '');
-  if (!watchUrl) return null;
-
-  const url = new URL('https://www.youtube.com/oembed');
-  url.searchParams.set('url', watchUrl);
-  url.searchParams.set('format', 'json');
-
-  try {
-    const response = await fetch(url, {
-      headers: {
-        accept: 'application/json',
-        'user-agent': USER_AGENT,
-      },
-      redirect: 'follow',
-    });
-
-    if (response.ok) return true;
-    if ([401, 403, 404].includes(response.status)) return false;
-    return null;
-  } catch (error) {
-    console.warn('[youtube-highlights] NFL oEmbed probe failed', video?.videoId, error?.message || error);
-    return null;
-  }
 }
 
 function selectHighlights(videos, sport, limit) {
