@@ -172,10 +172,55 @@ const RECENT_METRIC = {
 
 const FALLBACK_METRIC = {
   mlb: ['hits', 'Hits'],
-  nfl: ['receivingYards', 'Receiving Yards'],
   nba: ['points', 'Points'],
   nhl: ['shots', 'Shots on Goal'],
 };
+
+const NFL_PROP_GROUPS = {
+  passing: new Set(['passing_yards', 'passing_tds', 'passing_completions', 'passing_attempts', 'completion_pct']),
+  rushing: new Set(['rushing_yards', 'rushing_tds']),
+  receiving: new Set(['receiving_yards', 'receptions', 'receiving_tds']),
+};
+
+function firstNflMetric(props, group) {
+  for (const prop of props) {
+    if (NFL_PROP_GROUPS[group]?.has(prop) && RECENT_METRIC.nfl[prop]) return RECENT_METRIC.nfl[prop];
+  }
+  return null;
+}
+
+export function nflRecentMetric(article, position) {
+  const props = (article?.take?.prop_types || []).map((x) => String(x || '').trim()).filter(Boolean);
+  const pos = String(position || '').toUpperCase();
+  const subject = [article?.title, article?.summary].filter(Boolean).join(' ');
+
+  const passing = firstNflMetric(props, 'passing');
+  const rushing = firstNflMetric(props, 'rushing');
+  const receiving = firstNflMetric(props, 'receiving');
+
+  const explicitlyReceiving = /\breceiv(?:e|er|ers|ing)?\b|\breceptions?\b|\btargets?\b|pass[- ]catch/i.test(subject);
+  const explicitlyRushing = /\brush(?:ing|es|ed)?\b|\bcarr(?:y|ies)\b|\bground game\b/i.test(subject);
+
+  if (pos === 'QB') {
+    if (passing) return passing;
+    if (explicitlyRushing && rushing) return rushing;
+    return ['passingYards', 'Passing Yards'];
+  }
+
+  if (pos === 'RB' || pos === 'FB') {
+    // Market tags are intentionally broad. For backs, do not let an incidental
+    // receiving prop turn the live-form card into a receiver card. Receiving
+    // becomes primary only when the headline/dek is explicitly about that role.
+    if (explicitlyReceiving && !explicitlyRushing && receiving) return receiving;
+    return rushing || ['rushingYards', 'Rushing Yards'];
+  }
+
+  if (pos === 'WR' || pos === 'TE') {
+    return receiving || ['receivingYards', 'Receiving Yards'];
+  }
+
+  return passing || rushing || receiving || null;
+}
 
 const STATUS_RULES = [
   { kind: 'out', label: 'OUT / IR', re: /(?:placed|lands?|heads?|moved)\s+(?:on|to)\s+(?:injured reserve|IR)|\b(?:ruled|deemed)\s+out\b|\bwon't return\b|\bwill miss\b|\bsidelined\b|season-ending/i },
@@ -591,7 +636,9 @@ function currentSeason(sport, now = new Date()) {
   return String(year);
 }
 
-function chooseMetric(article, sport) {
+function chooseMetric(article, sport, player = null) {
+  if (sport === 'nfl') return nflRecentMetric(article, player?.position);
+
   const props = article?.take?.prop_types || [];
   for (const prop of props) {
     if (RECENT_METRIC[sport]?.[prop]) return RECENT_METRIC[sport][prop];
@@ -649,13 +696,14 @@ async function espnContext(player, article, sport) {
   ]);
 
   const categories = espnCategories(statsPayload, '2');
-  const requestedMetric = chooseMetric(article, sport);
+  const requestedMetric = chooseMetric(article, sport, player);
   const position = String(player?.position || '').toUpperCase();
-  const props = article?.take?.prop_types || [];
+  const requestedKey = requestedMetric?.[0] || '';
   const preferred = sport === 'nfl'
-    ? (position === 'QB' ? 'passing'
+    ? (position === 'QB'
+      ? (requestedKey.startsWith('rushing') ? 'rushing' : 'passing')
       : ['RB', 'FB'].includes(position)
-        ? (props.some((p) => String(p).startsWith('receiving_') || p === 'receptions') ? 'receiving' : 'rushing')
+        ? (requestedKey.startsWith('receiving') || requestedKey === 'receptions' ? 'receiving' : 'rushing')
         : ['WR', 'TE'].includes(position) ? 'receiving'
           : 'defensive')
     : 'averages';
