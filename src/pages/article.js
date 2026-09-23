@@ -247,26 +247,48 @@ async function attachGameEntity(article, manifest, graph) {
 }
 
 // v3.15: Render legal video/social embeds (MLB.tv + YouTube official)
+function youtubeVideoIdFromEmbed(embed) {
+  const direct = String(embed?.videoId || '').trim();
+  if (/^[A-Za-z0-9_-]{11}$/.test(direct)) return direct;
+
+  for (const candidate of [embed?.embedUrl, embed?.url]) {
+    const value = String(candidate || '');
+    const match = value.match(/(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?v=|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i);
+    if (match?.[1]) return match[1];
+  }
+  return '';
+}
+
+function youtubeEmbedUrlFromMedia(embed) {
+  const videoId = youtubeVideoIdFromEmbed(embed);
+  if (!videoId) return '';
+  return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?rel=0&playsinline=1&modestbranding=1`;
+}
+
 function renderMediaEmbeds(article) {
   const embeds = Array.isArray(article.media_embeds) ? article.media_embeds : [];
   if (!embeds.length) return '';
 
   const cards = embeds.map((e) => {
     if (e.type === 'youtube') {
+      const embedUrl = youtubeEmbedUrlFromMedia(e);
+      if (!embedUrl) return '';
       return `
         <div class="media-card media-youtube">
           <div class="media-youtube-frame">
             <iframe
-              src="${escapeAttr(e.embedUrl)}"
-              title="${escapeAttr(e.title)}"
+              src="${escapeAttr(embedUrl)}"
+              title="${escapeAttr(e.title || 'YouTube video')}"
               loading="lazy"
-              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowfullscreen
             ></iframe>
           </div>
           <div class="media-meta">
             <span class="media-source">${escapeHtml(e.channelName || 'YouTube')}</span>
             <span class="media-title">${escapeHtml(e.title)}</span>
+            <span class="media-onsite">Plays on PropBetEdge</span>
           </div>
         </div>
       `;
