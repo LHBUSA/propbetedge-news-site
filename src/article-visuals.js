@@ -336,7 +336,14 @@ function evidenceContextKey(context) {
     .trim();
 }
 
-function editorializeEvidence(rows) {
+const EVIDENCE_METRIC_PRIORITY = {
+  nhl: ['PTS', 'G', 'A', 'SOG', 'TOI', 'SV%', 'SV'],
+  nba: ['PTS', 'REB', 'AST', '3PM', 'USAGE', 'FG%', 'MIN'],
+  nfl: ['PASS YDS', 'RUSH YDS', 'REC YDS', 'TD', 'REC', 'TGT', 'SNAP SHARE', 'SNAPS', 'SACKS', 'PRESSURES', 'HURRIES', 'QB HIT'],
+  mlb: ['ERA', 'K/9', 'K', 'IP', 'HR', 'RBI', 'TB', 'H', 'OPS', 'CAREER K', 'OPP K%', 'VELOCITY'],
+};
+
+function editorializeEvidence(rows, sport) {
   const groups = new Map();
 
   for (const row of rows) {
@@ -358,6 +365,15 @@ function editorializeEvidence(rows) {
   // sentence contains a stat line (30 PTS, 5 G, 25 A), keep those numbers
   // together and print the supporting sentence once instead of cloning the
   // same paragraph under three separate cards.
+  const priority = EVIDENCE_METRIC_PRIORITY[sport] || [];
+  for (const group of groups.values()) {
+    group.metrics.sort((a, b) => {
+      const ai = priority.indexOf(a.label);
+      const bi = priority.indexOf(b.label);
+      return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
+    });
+  }
+
   return [...groups.values()].slice(0, 4);
 }
 
@@ -394,7 +410,7 @@ function keyNumbers(article) {
     }
   }
 
-  return editorializeEvidence(found);
+  return editorializeEvidence(found, sport);
 }
 
 function impactScore(article) {
@@ -564,7 +580,7 @@ function renderKeyNumbers(article) {
 
   return `<div class="pbe-av-evidence">
     <div class="pbe-av-minihead"><span>STORY EVIDENCE</span><small>Distinct facts from the published story</small></div>
-    <div class="pbe-av-evidence-grid">
+    <div class="pbe-av-evidence-grid" data-count="${Math.min(rows.length, 4)}">
       ${rows.map((row, idx) => {
         const statline = row.metrics.length > 1;
         return `<div class="pbe-av-evidence-card${statline ? ' is-statline' : ''}">
