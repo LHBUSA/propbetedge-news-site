@@ -231,3 +231,41 @@ test('evidence card CSS explicitly forbids line-clamp and overflow clipping', ()
   assert.match(css, /-webkit-line-clamp:\s*unset !important;/);
   assert.match(css, /text-overflow:\s*clip !important;/);
 });
+
+
+test('editorial evidence groups one stat line into one non-repetitive story card', () => {
+  const sentence = 'Last season he posted 30 points — 5 goals and 25 assists across 81 games — while maintaining the defensive infrastructure the Senators built around him.';
+  const article = {
+    id: 'ottawa-statline',
+    sport: 'nhl',
+    title: 'Ottawa adjusts its blue line around a key absence',
+    body: sentence,
+    take: {
+      impact_score: 4,
+      prop_types: ['points'],
+    },
+  };
+  const manifest = {
+    players: [{ id: '1', name: 'Example Senator', position: 'D', path: '/player/nhl/1' }],
+    teams: [{ name: 'Ottawa Senators', abbreviation: 'OTT', path: '/team/nhl/ottawa-senators' }],
+  };
+
+  const html = renderArticleVisuals(article, manifest);
+  assert.equal((html.match(/Last season he posted 30 points/g) || []).length, 1, 'shared source sentence appears once');
+  assert.equal((html.match(/pbe-av-evidence-card/g) || []).length, 1, 'one sentence becomes one evidence card');
+  assert.match(html, /class="pbe-av-evidence-card is-statline"/);
+
+  const pts = html.indexOf('<b>PTS</b>');
+  const goals = html.indexOf('<b>G</b>');
+  const assists = html.indexOf('<b>A</b>');
+  assert.ok(pts >= 0 && goals > pts && assists > goals, 'editorial total appears before component stats');
+  assert.match(html, /<strong>30</strong>s*<b>PTS</b>/);
+  assert.match(html, /<strong>5</strong>s*<b>G</b>/);
+  assert.match(html, /<strong>25</strong>s*<b>A</b>/);
+});
+
+test('evidence grid expands distinct thoughts rather than leaving quarter-width orphan cards', () => {
+  const css = fs.readFileSync(new URL('../src/styles/pbe-article-visuals.css', import.meta.url), 'utf8');
+  assert.match(css, /\.pbe-av-evidence-grid\[data-count="1"\][\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(css, /\.pbe-av-evidence-card\.is-statline[\s\S]*min-height:\s*156px/);
+});
