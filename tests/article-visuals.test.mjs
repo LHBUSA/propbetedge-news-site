@@ -797,3 +797,22 @@ test('article detail routes override stale manual baseball background preference
     'article sport must win before saved manual scene'
   );
 });
+
+
+test('article angle pills normalize mixed prop-type casing before render', () => {
+  const source = fs.readFileSync(new URL('../src/pages/article.js', import.meta.url), 'utf8');
+  const formatter = source.match(/function toTitleCase\([\s\S]*?function escapeAttr/ )?.[0] || '';
+  assert.match(formatter, /\.toLowerCase\(\)/);
+  assert.match(formatter, /replace\(\/\[\^a-z0-9\]\+\/g, '_'/);
+  assert.match(formatter, /rushing_attempts:\s*'Rushing Attempts'/);
+  assert.match(formatter, /return map\[key\] \|\| toTitleCase/);
+});
+
+test('default NFL article scene uses the football-native gridiron asset', () => {
+  const selector = fs.readFileSync(new URL('../src/background-selector.js', import.meta.url), 'utf8');
+  const assets = fs.readFileSync(new URL('../src/styles/pbe-background-assets.css', import.meta.url), 'utf8');
+  assert.match(selector, /nfl:\s*\{[^\n]*Gridiron Night[^\n]*gridiron-gold\.webp/);
+  const nflRule = assets.match(/body\[data-pbe-scene='nfl'\]\s*\{([\s\S]*?)\}/)?.[1] || '';
+  assert.match(nflRule, /gridiron-gold\.webp/);
+  assert.doesNotMatch(nflRule, /stadium-night\.webp/);
+});
