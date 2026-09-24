@@ -79,7 +79,7 @@ export function staticDocs() {
 // for entities, and for stories only up to STORY_WAIT_MS; if the archive is not
 // ready yet the answer is entity-only, flagged partial, and not edge-cached.
 
-const STORY_WAIT_MS = 250;
+const STORY_WAIT_MS = 150;
 
 const tiers = {
   entities: { value: null, loadedAt: 0, pending: null },
