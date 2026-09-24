@@ -51,6 +51,7 @@ export function renderShareBar(canonicalUrl, title, options = {}) {
   const encodedUrl = encodeURIComponent(url);
   const encodedText = encodeURIComponent(text);
   const compact = options.compact !== false;
+  const subject = String(options.subject || 'this article');
 
   // LinkedIn's share flow reads the destination's OpenGraph tags rather than a
   // title parameter, which is exactly why the article OG set has to be right.
@@ -59,13 +60,13 @@ export function renderShareBar(canonicalUrl, title, options = {}) {
       key: 'x',
       label: 'X',
       href: `https://x.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
-      accessible: `Share this article on X`,
+      accessible: `Share ${subject} on X`,
     },
     {
       key: 'linkedin',
       label: 'LinkedIn',
       href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-      accessible: `Share this article on LinkedIn`,
+      accessible: `Share ${subject} on LinkedIn`,
     },
     {
       key: 'bluesky',
@@ -74,7 +75,7 @@ export function renderShareBar(canonicalUrl, title, options = {}) {
       // it is what produces the link card, so the title and the URL travel
       // together in `text` rather than as separate parameters.
       href: `https://bsky.app/intent/compose?text=${encodeURIComponent(`${text} ${url}`.trim())}`,
-      accessible: `Share this article on Bluesky`,
+      accessible: `Share ${subject} on Bluesky`,
     },
   ];
 
@@ -91,7 +92,7 @@ export function renderShareBar(canonicalUrl, title, options = {}) {
     // aria-label rather than aria-labelledby: two share bars can legitimately
     // exist in one document (server markup and client render overlapping), and
     // a duplicated id would be invalid DOM.
-    + `<div class="pbe-share-actions" role="group" aria-label="Share this article">`
+    + `<div class="pbe-share-actions" role="group" aria-label="${attr(`Share ${subject}`)}">`
     + `<button type="button" class="pbe-share-btn pbe-share-btn--native" data-pbe-share-native hidden>`
     + icon('share')
     + `<span class="pbe-share-label">Share</span>`

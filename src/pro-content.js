@@ -113,7 +113,7 @@ function membershipCard(active) {
     </aside>`;
 }
 
-function hero() {
+function hero(shareBar = '') {
   return `
     <section class="pbe-pro-hero">
       <div class="pbe-pro-hero-copy">
@@ -129,12 +129,13 @@ function hero() {
         ${ctaButton('Get All Access', 'pbe-pro-cta-hero')}
         ${promoChip()}
         <p class="pbe-pro-hero-fine">Includes MLB, NFL, NBA, NHL, WNBA and UFC Pro today. Individual sport plans stay available; All Access is the umbrella, not a replacement.</p>
+        ${shareBar ? `<div class="pbe-pro-share">${shareBar}</div>` : ''}
       </div>
       ${membershipCard(false)}
     </section>`;
 }
 
-function successHero() {
+function successHero(shareBar = '') {
   return `
     <section class="pbe-pro-hero pbe-pro-hero-success">
       <div class="pbe-pro-hero-copy">
@@ -147,15 +148,16 @@ function successHero() {
           <li><strong>Repeat once per sport.</strong> One subscription, one email, every PropBetEdge property.</li>
         </ol>
         <p class="pbe-pro-success-note">Stripe confirms your subscription within a minute or two. If a sport does not recognize your email yet, wait a moment and request the sign-in link again. Questions: <a href="mailto:support@proptechusa.ai">support@proptechusa.ai</a>.</p>
+        ${shareBar ? `<div class="pbe-pro-share">${shareBar}</div>` : ''}
       </div>
       ${membershipCard(true)}
     </section>`;
 }
 
-export function buildProHtml({ checkoutSuccess = false } = {}) {
+export function buildProHtml({ checkoutSuccess = false, shareBar = '' } = {}) {
   return `
     <div class="pbe-pro ${checkoutSuccess ? 'pbe-pro-is-success' : ''}" data-pbe-page="pro">
-      ${checkoutSuccess ? successHero() : hero()}
+      ${checkoutSuccess ? successHero(shareBar) : hero(shareBar)}
 
       <section class="pbe-pro-section pbe-pro-sports-section" id="sports">
         <header class="pbe-pro-section-head">
@@ -204,43 +206,4 @@ export function buildProHtml({ checkoutSuccess = false } = {}) {
         ${ctaButton('Get All Access', 'pbe-pro-cta-hero')}
       </section>`}
     </div>`;
-}
-
-export function proMeta({ checkoutSuccess = false } = {}) {
-  return {
-    title: checkoutSuccess
-      ? 'All Access is active — PropBetEdge'
-      : 'PropBetEdge All Access — One Membership, Every Sport | $29/month',
-    description: 'PropBetEdge All Access: one $29/month membership for MLB, NFL, NBA, NHL, WNBA and UFC Pro, every model, every tracked pick, PBEcast and every future PropBetEdge sport. Launch offer: 25% off for as long as you stay active with code THEEDGE25.',
-    canonical: 'https://propbetedge.ai/pro',
-  };
-}
-
-/* Product + Offer schema for crawlers. Price is the list price; the promotion
-   is described in text (Stripe applies it at checkout). */
-export function proSchema() {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    '@id': 'https://propbetedge.ai/pro#product',
-    name: ALL_ACCESS.name,
-    description: 'One membership for every PropBetEdge sport: MLB, NFL, NBA, NHL, WNBA, UFC and every future sport. Proprietary models, tracked picks, live intelligence, PBEcast.',
-    brand: { '@type': 'Brand', name: 'PropBetEdge' },
-    url: 'https://propbetedge.ai/pro',
-    offers: {
-      '@type': 'Offer',
-      url: ALL_ACCESS.checkoutUrl,
-      price: String(ALL_ACCESS.priceUsd),
-      priceCurrency: 'USD',
-      availability: 'https://schema.org/InStock',
-      priceSpecification: {
-        '@type': 'UnitPriceSpecification',
-        price: String(ALL_ACCESS.priceUsd),
-        priceCurrency: 'USD',
-        billingDuration: 1,
-        billingIncrement: 1,
-        unitCode: 'MON',
-      },
-    },
-  };
 }

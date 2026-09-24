@@ -11,7 +11,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { ALL_ACCESS, SPORTS, buildProHtml, proMeta, proSchema, checkoutSucceeded, promoLine } from '../src/pro-content.js';
+import { ALL_ACCESS, SPORTS, buildProHtml, checkoutSucceeded, promoLine } from '../src/pro-content.js';
+import { proHeadMeta, proJsonLd, PRO_TITLE } from '../src/pro-seo.js';
 
 const read = f => readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
 const LIVE = {
@@ -76,18 +77,17 @@ test('?checkout=success renders the premium success state and no second checkout
   assert.match(html, /Manage subscription/);
   assert.equal(html.includes(LIVE.checkoutUrl), false, 'a buyer who just paid is not sold again');
   for (const s of SPORTS) assert.ok(html.includes(`href="${s.url}"`), `${s.label} reachable from the success state`);
-  assert.equal(proMeta({ checkoutSuccess: true }).title, 'All Access is active — PropBetEdge');
+  assert.equal(proHeadMeta({ checkoutSuccess: true }).title, 'All Access is active | PropBetEdge');
 });
 
 test('meta + schema: canonical /pro, $29 USD monthly offer at the live checkout URL', () => {
-  const meta = proMeta();
-  assert.equal(meta.canonical, 'https://propbetedge.ai/pro');
-  assert.match(meta.title, /All Access/); assert.match(meta.description, /THEEDGE25/);
-  const schema = proSchema();
-  assert.equal(schema['@type'], 'Product');
-  assert.equal(schema.offers.url, LIVE.checkoutUrl);
-  assert.equal(schema.offers.price, '29'); assert.equal(schema.offers.priceCurrency, 'USD');
-  assert.equal(schema.offers.priceSpecification.unitCode, 'MON');
+  const head = proHeadMeta();
+  assert.equal(head.canonical, 'https://propbetedge.ai/pro');
+  assert.equal(head.title, PRO_TITLE); assert.match(head.description, /\$29\/month/);
+  const offer = proJsonLd()['@graph'].find((n) => n['@type'] === 'Offer');
+  assert.equal(offer.url, LIVE.checkoutUrl);
+  assert.equal(offer.price, '29'); assert.equal(offer.priceCurrency, 'USD');
+  assert.equal(offer.priceSpecification.unitCode, 'MON');
 });
 
 test('wiring: router, styles, header pill, footer link, sitemap and Edge Middleware all know /pro', () => {
@@ -98,8 +98,7 @@ test('wiring: router, styles, header pill, footer link, sitemap and Edge Middlew
   assert.match(read('api/sitemap.js'), /'\/pro',/);
   const mw = read('middleware.js');
   assert.match(mw, /if \(pathname === '\/pro'\) \{/);
-  assert.ok(mw.includes(`const ALL_ACCESS_CHECKOUT = '${LIVE.checkoutUrl}';`));
-  assert.match(mw, /THEEDGE25/);
+  assert.match(mw, /from '\.\/src\/pro-seo\.js'/, 'middleware serves the shared /pro contract');
   assert.equal(read('vercel.json').includes('"/pro"'), false, 'the SPA catch-all already serves /pro; no bespoke rewrite');
 });
 
@@ -107,7 +106,7 @@ test('crawler bytes: Edge Middleware serves /pro with title, canonical, product 
   const { renderPage } = await import('./ssr-harness.mjs');
   const { html, status } = await renderPage('/pro');
   assert.equal(status, 200);
-  assert.match(html, /<title>PropBetEdge All Access — One Membership, Every Sport \| \$29\/month<\/title>/);
+  assert.match(html, /<title>PropBetEdge All Access \| MLB, NFL, NBA, NHL, WNBA &amp; UFC Pro<\/title>/);
   assert.match(html, /<link rel="canonical" href="https:\/\/propbetedge\.ai\/pro"/);
   assert.match(html, /data-server-rendered="1"/);
   assert.ok(html.includes(LIVE.checkoutUrl));
