@@ -19,7 +19,7 @@
  */
 
 import { allPlayers, allTeams, SUPPORTED_SPORTS, teamQueryAbbreviations, nhlTricode, playerNameAliases } from '../../../src/entity-graph/entities.js';
-import { searchDocs, toResult, parseSearchParams, MIN_QUERY_LENGTH } from '../../../src/search/rank.js';
+import { searchDocs, toResult, parseSearchParams, prepareDoc, MIN_QUERY_LENGTH } from '../../../src/search/rank.js';
 import { TOOL_DOCS, teamDoc } from '../../../src/search/destinations.js';
 import {
   dictionaryPlayerDocs, wnbaDocsFromApi, ufcDocsFromSitemaps, locsFromSitemap, compactStory, storyDoc,
@@ -127,6 +127,9 @@ async function loadStoryTier(env) {
   const rows = new Map();
   for (const shard of shards) for (const row of shard || []) if (Array.isArray(row) && row[0]) rows.set(row[0], row);
   const docs = [...rows.values()].map(storyDoc);
+  // Tokenize here, off the request path (this loader runs in waitUntil on a
+  // cold isolate), so the first full search does not pay for 8k+ headlines.
+  for (const doc of docs) prepareDoc(doc);
   return {
     docs,
     manifest: manifest ? { months: manifest.months, backfill: manifest.backfill, head_refreshed_at: manifest.head_refreshed_at } : null,
