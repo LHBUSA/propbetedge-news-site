@@ -94,6 +94,17 @@ test('wiring: router, styles, header pill, footer link, sitemap and Edge Middlew
   assert.match(read('src/router.js'), /if \(path === '\/pro'\) return renderPro\(root, setMeta\);/);
   assert.match(read('src/main.js'), /pbe-pro\.css/);
   assert.match(read('src/components/header.js'), /href="\/pro" class="nav-link pbe-all-access-link/);
+  /* mobile: the purpose-built .pbe-mobile-nav hides the desktop masthead rows at <=880px,
+     so All Access must be a first-class item inside it, plus a Membership entry in More */
+  const header = read('src/components/header.js');
+  const mobileNav = header.slice(header.indexOf('<nav class="pbe-mobile-nav"'), header.indexOf('</nav>', header.indexOf('<nav class="pbe-mobile-nav"')));
+  assert.match(mobileNav, /<a href="\/pro" class="pbe-mobile-nav-link pbe-mobile-all-access \$\{path === '\/pro' \? 'active' : ''\}"/, 'All Access is a visible mobile nav item with an active state on /pro');
+  assert.ok(mobileNav.indexOf('pbe-mobile-all-access') < mobileNav.indexOf('<details class="pbe-mobile-more">'), 'All Access sits in the row, not only inside More');
+  assert.match(mobileNav, /pbe-mobile-more-label">Membership<\/span>[\s\S]*href="\/pro" class="pbe-mobile-more-all-access/, 'More also carries a Membership entry');
+  assert.match(mobileNav, /pbe-mobile-more-search" data-pbe-search-open/, 'Search stays reachable from More');
+  const css = read('src/styles/pbe-mobile-cleanup.css');
+  assert.match(css, /\.pbe-mobile-all-access::before \{[\s\S]*content: 'All Access'/);
+  assert.match(css, /\.pbe-mobile-all-access\.active::before/);
   assert.match(read('src/components/footer.js'), /href="\/pro"><strong>All Access<\/strong>/);
   assert.match(read('api/sitemap.js'), /'\/pro',/);
   const mw = read('middleware.js');

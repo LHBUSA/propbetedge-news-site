@@ -117,10 +117,18 @@ export function renderHeader() {
           <a href="/games" class="pbe-mobile-nav-link ${isLive ? 'active' : ''}">Scores</a>
           <a href="/odds" class="pbe-mobile-nav-link ${isOdds ? 'active' : ''}">Picks</a>
           <a href="/leaders" class="pbe-mobile-nav-link ${isLeaders || isStandings ? 'active' : ''}">Stats</a>
+          <a href="/pro" class="pbe-mobile-nav-link pbe-mobile-all-access ${path === '/pro' ? 'active' : ''}" data-pbe-placement="mobile_nav_all_access" aria-label="PropBetEdge All Access membership">All Access</a>
           <button type="button" class="pbe-mobile-nav-link pbe-mobile-search" data-pbe-search-open aria-label="Search PropBetEdge">Search</button>
           <details class="pbe-mobile-more">
             <summary class="pbe-mobile-nav-link">More</summary>
             <div class="pbe-mobile-more-panel">
+              <div class="pbe-mobile-more-group pbe-mobile-more-membership">
+                <span class="pbe-mobile-more-label">Membership</span>
+                <div class="pbe-mobile-more-links">
+                  <a href="/pro" class="pbe-mobile-more-all-access ${path === '/pro' ? 'active' : ''}"><strong>All Access</strong><span>$29/mo · Every sport</span></a>
+                  <button type="button" class="pbe-mobile-more-search" data-pbe-search-open>Search</button>
+                </div>
+              </div>
               <div class="pbe-mobile-more-group">
                 <span class="pbe-mobile-more-label">News</span>
                 <div class="pbe-mobile-more-links">
