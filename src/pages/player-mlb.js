@@ -134,7 +134,7 @@ export async function renderMlbPlayerPage(root, playerId, setMeta) {
       ${heroHtml}
       <div data-mlb-body></div>
       ${renderPropAngle({ name: person.fullName, sport: 'mlb' })}
-      <section class="player-section">
+      <section class="player-section" data-mlb-section="news">
         <div class="player-section-kicker">RELATED NEWS</div>
         ${entityCoverageSlot('pbe-player-coverage')}
       </section>

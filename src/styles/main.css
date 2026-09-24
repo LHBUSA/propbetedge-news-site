@@ -8896,5 +8896,6 @@ a.leaders-sport-tab.active,
   }
 }
 
-
-
+/* MLB career profile: section labels sit directly on the dark page (not inside
+   the light cards), so the shared dark-ink kicker colour was invisible. */
+[data-mlb-section] > .player-section-kicker { color: var(--gold-bright); opacity: .92; }

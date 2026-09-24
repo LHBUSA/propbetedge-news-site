@@ -367,3 +367,11 @@ test('page order: season -> career -> recent -> history -> game log', async () =
   const page = p.root.innerHTML;
   assert.ok(page.indexOf('data-mlb-body') < page.indexOf('RELATED NEWS'));
 });
+
+test('section labels are legible on the dark page (scoped kicker colour)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const css = readFileSync(new URL('../src/styles/main.css', import.meta.url), 'utf8');
+  assert.match(css, /\[data-mlb-section\]\s*>\s*\.player-section-kicker\s*\{[^}]*color:\s*var\(--gold-bright\)/);
+  const page = readFileSync(new URL('../src/pages/player-mlb.js', import.meta.url), 'utf8');
+  assert.match(page, /data-mlb-section="news"/);
+});
