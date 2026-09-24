@@ -130,6 +130,17 @@ async function resolveMeta(pathname) {
     };
   }
 
+  // PropBetEdge network-wide membership.
+  if (pathname === '/pro') {
+    return {
+      canonical: `${SITE}/pro`,
+      title: 'PropBetEdge All Access — Every Sport, One Membership',
+      description: 'Every current PropBetEdge Pro sport for $29/month, plus every sport added in the future.',
+      image: `${SITE}/logo/pbe-full-600.png`,
+      robots: DEFAULT_ROBOTS,
+    };
+  }
+
   // News index — server-visible archive listing.
   if (pathname === '/news') {
     return buildNewsListingMeta({ page: 1 });
