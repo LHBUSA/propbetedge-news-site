@@ -50,6 +50,12 @@ export function renderProPage(root, setMeta) {
             </div>
           </div>
 
+          <div class="pbe-pro-launch-offer" aria-label="PropBetEdge All Access launch offer">
+            <span class="pbe-pro-launch-badge">LAUNCH OFFER</span>
+            <strong>Use code <code>THEEDGE25</code> at checkout</strong>
+            <span>25% off while your membership stays active · $21.75/month at today’s price</span>
+          </div>
+
           <div class="pbe-pro-actions">
             <a class="pbe-pro-primary" href="${CHECKOUT_URL}" target="_blank" rel="noopener">Get All Access →</a>
             <a class="pbe-pro-secondary" href="#sports">See what’s included</a>
@@ -103,7 +109,7 @@ export function renderProPage(root, setMeta) {
         <div class="container">
           <span>PROPBETEDGE ALL ACCESS</span>
           <h2>Stop buying sports one at a time.</h2>
-          <p>Get the entire PropBetEdge Pro network for $29/month.</p>
+          <p>Get the entire PropBetEdge Pro network for $29/month. Use <strong>THEEDGE25</strong> at checkout for 25% off while your membership stays active.</p>
           <a class="pbe-pro-primary" href="${CHECKOUT_URL}" target="_blank" rel="noopener">Start All Access →</a>
           <small>Existing sport-specific plans remain valid. All Access is an additional network-wide option.</small>
         </div>
