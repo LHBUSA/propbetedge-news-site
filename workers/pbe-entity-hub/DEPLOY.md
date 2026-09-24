@@ -32,6 +32,12 @@ player:{sport}:{id}            e.g. player:nhl:8471675
 team:{sport}:{slug}            e.g. team:nhl:pittsburgh-penguins
 cursor:player:{sport}          scheduled-refresh position
 report:{sport}:{kind}:{offset} per-slice run report, 14-day TTL
+search:v2:ufc                  UFC fighters/events/recent bouts (search docs)
+search:v2:wnba                 WNBA players + teams (search docs)
+search:v2:stories:manifest     newsroom index manifest + backfill cursor
+search:v2:stories:{yyyy-mm}    compact story rows for that month
+search:v2:lock:{source}        60–90s rebuild lock
+report:search:*                last search refresh outcomes, 14-day TTL
 ```
 
 Ids and slugs come from `src/entity-graph/dictionary.js`. The hub enriches
@@ -80,12 +86,28 @@ Full player coverage cycles roughly daily per sport.
 | GET | `/v1/health` | public |
 | GET | `/v1/snapshot/player/{sport}/{id}` | public read, CORS to propbetedge.ai + previews |
 | GET | `/v1/snapshot/team/{sport}/{slug}` | same |
-| GET | `/v1/index/{sport}?kind=&limit=&cursor=` | same — for sitemap/search |
+| GET | `/v1/index/{sport}?kind=&limit=&cursor=` | same — for sitemap |
+| GET | `/v1/search?q=&limit=20&sport=&type=` | public, CORS as above; `Cache-Control: public, max-age=60, s-maxage=300` |
+| GET | `/v1/admin/search-refresh?source=ufc\|wnba\|stories-head\|stories-backfill&pages=` | `X-Hub-Admin-Token` |
 | POST | `/v1/admin/refresh?sport=&kind=&limit=&offset=` | `X-Hub-Admin-Token` |
 
 Read routes are public because they serve exactly what the public page shows.
 Writes are token-gated. CORS echoes only `propbetedge.ai`, `www.propbetedge.ai`
 and the project's Vercel preview pattern.
+
+## Search service bindings
+
+`/v1/search` indexes two of our own Workers. A same-account
+`*.workers.dev` subrequest answers 404 on the edge, so they are bound:
+
+| Binding | Service | Used for |
+|---|---|---|
+| `NEWS_API_SERVICE` | `propbet-news-api` | `/news?limit=50&page=N` (newsroom corpus) |
+| `WNBA_API_SERVICE` | `wnba-api` | `/v1/players` (WNBA players + teams) |
+
+UFC is read from `https://ufc.propbetedge.ai` sitemaps (plain fetch). The
+search KV artifacts refresh on every cron tick (stories head + a 10-page
+backfill slice; UFC and WNBA every six hours) and lazily when missing.
 
 ## Rollback
 

@@ -253,16 +253,34 @@ async function withLock(env, name, job, ttlS = 90) {
   try {
     const out = await job();
     corpus = null; // next request re-reads the refreshed artifact
+    await recordRefresh(env, name, out);
     return out;
+  } catch (error) {
+    await recordRefresh(env, name, { ok: false, error: String(error?.message || error).slice(0, 200) });
+    throw error;
   } finally {
     await env.ENTITY_KV.delete(key).catch(() => {});
   }
 }
 
+/** Last lazy-refresh outcome per source, for operators (no secrets, 14-day TTL). */
+async function recordRefresh(env, name, result) {
+  try {
+    await env.ENTITY_KV.put(`report:search:lazy:${name}`, JSON.stringify({ at: new Date().toISOString(), result }), { expirationTtl: 60 * 60 * 24 * 14 });
+  } catch { /* reporting must never break a refresh */ }
+}
+
 // ─── source refreshers ──────────────────────────────────────────────────────
 
-async function fetchText(url, init = {}) {
-  const res = await fetch(url, { ...init, headers: { 'User-Agent': 'pbe-entity-hub/search (+https://propbetedge.ai)', ...(init.headers || {}) } });
+/**
+ * Fetch through a Service Binding when one is configured. Our own Workers on
+ * *.sales-fd3.workers.dev answer a same-account workers.dev subrequest with a
+ * 404 (measured on the edge), so wnba-api and propbet-news-api are reached via
+ * [[services]] bindings; the URL is kept for routing and error messages.
+ */
+async function fetchText(url, init = {}, service = null) {
+  const request = new Request(url, { ...init, headers: { 'User-Agent': 'pbe-entity-hub/search (+https://propbetedge.ai)', ...(init.headers || {}) } });
+  const res = service && typeof service.fetch === 'function' ? await service.fetch(request) : await fetch(request);
   if (!res.ok) throw new Error(`${res.status} ${url}`);
   return res.text();
 }
@@ -291,7 +309,7 @@ export async function refreshUfcIndex(env, { now = Date.now() } = {}) {
 
 /** WNBA: our own wnba-api Worker, the same source wnba.propbetedge.ai renders. */
 export async function refreshWnbaIndex(env, { now = Date.now() } = {}) {
-  const payload = JSON.parse(await fetchText(`${WNBA_API}/v1/players`, { headers: { Accept: 'application/json' } }));
+  const payload = JSON.parse(await fetchText(`${WNBA_API}/v1/players`, { headers: { Accept: 'application/json' } }, env.WNBA_API_SERVICE));
   if (!payload?.ok) return { ok: false, reason: 'upstream_not_ok' };
   const docs = wnbaDocsFromApi(payload);
   const counts = { players: docs.filter((d) => d.type === 'player').length, teams: docs.filter((d) => d.type === 'team').length };
@@ -308,10 +326,10 @@ export async function refreshWnbaIndex(env, { now = Date.now() } = {}) {
  * The news API admits our own properties by Origin; this Worker IS one of
  * them, and it only reads the public listing the site already renders.
  */
-async function fetchNewsPage(page) {
+async function fetchNewsPage(env, page) {
   const text = await fetchText(`${NEWS_API}/news?limit=${NEWS_PAGE_SIZE}&page=${page}`, {
     headers: { Accept: 'application/json', Origin: 'https://propbetedge.ai' },
-  });
+  }, env.NEWS_API_SERVICE);
   const data = JSON.parse(text);
   const articles = Array.isArray(data?.articles) ? data.articles : [];
   const rows = filterPublicArticles(articles).map(compactStory).filter(Boolean);
@@ -355,7 +373,7 @@ export async function refreshStoriesHead(env, { pages = 2 } = {}) {
   const rows = [];
   let totalPages = null;
   for (let page = 1; page <= pages; page++) {
-    const r = await fetchNewsPage(page);
+    const r = await fetchNewsPage(env, page);
     rows.push(...r.rows);
     totalPages = r.totalPages ?? totalPages;
     if (!r.hasMore) break;
@@ -382,7 +400,7 @@ export async function backfillStories(env, { pages = 10, now = Date.now() } = {}
   let totalPages = backfill.total_pages || null;
   let complete = false;
   for (let i = 0; i < pages; i++, page++) {
-    const r = await fetchNewsPage(page);
+    const r = await fetchNewsPage(env, page);
     rows.push(...r.rows);
     totalPages = r.totalPages ?? totalPages;
     if (!r.hasMore || !r.raw) { complete = true; page += 1; break; }

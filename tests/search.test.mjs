@@ -396,15 +396,19 @@ test('refresh: newsroom pages are merged into month shards through the publicati
   const env = { ENTITY_KV: fakeKv() };
   const realFetch = globalThis.fetch;
   const seen = [];
-  globalThis.fetch = async (url, init) => {
-    seen.push({ url: String(url), origin: init?.headers?.Origin });
-    return new Response(JSON.stringify({ page: 1, totalPages: 1, hasMore: false, articles: NEWS.articles }), { status: 200 });
+  globalThis.fetch = async () => { throw new Error('global fetch must not be used when a service binding exists'); };
+  env.NEWS_API_SERVICE = {
+    fetch: async (request) => {
+      seen.push({ url: request.url, origin: request.headers.get('Origin') });
+      return new Response(JSON.stringify({ page: 1, totalPages: 1, hasMore: false, articles: NEWS.articles }), { status: 200 });
+    },
   };
   try {
     const out = await refreshStoriesHead(env, { pages: 2 });
     assert.equal(out.ok, true);
     assert.equal(seen.length, 1, 'stops when hasMore is false');
     assert.ok(seen[0].url.startsWith(`${NEWS_API}/news?limit=50&page=1`));
+    assert.equal(seen[0].origin, 'https://propbetedge.ai');
     const manifest = await env.ENTITY_KV.get(KEYS.storiesManifest, 'json');
     assert.ok(manifest.months['2026-05'] >= 2);
     assert.ok(manifest.months['2026-09'] >= 2);
