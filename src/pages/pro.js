@@ -18,7 +18,7 @@ export function renderProPage(root, setMeta) {
 
   setMeta?.({
     title: 'PropBetEdge All Access — Every Sport, One Membership',
-    description: 'PropBetEdge All Access unlocks every current PropBetEdge Pro sport for $29/month, plus every sport added in the future.',
+    description: 'PropBetEdge All Access unlocks every current and future PropBetEdge sport, predictions, models and Pro add-ons for $29/month.',
     canonical: 'https://propbetedge.ai/pro',
     ogImage: 'https://propbetedge.ai/logo/pbe-full-600.png',
   });
@@ -38,22 +38,22 @@ export function renderProPage(root, setMeta) {
           <div class="pbe-pro-eyebrow">PROPBETEDGE PRO · ALL ACCESS</div>
           <h1>Every sport.<br><em>One membership.</em></h1>
           <p class="pbe-pro-dek">
-            One PropBetEdge subscription unlocks every current Pro sport — and every sport we add next.
+            One PropBetEdge subscription unlocks every current and future sport, plus predictions, models and Pro add-ons as they launch.
             No stacking subscriptions. No choosing one league over another.
           </p>
 
           <div class="pbe-pro-price-lockup">
             <div class="pbe-pro-price"><span>$</span><strong>29</strong><sup>/month</sup></div>
             <div class="pbe-pro-price-copy">
-              <b>All sports included</b>
-              <span>Cancel anytime · future sports included</span>
+              <b>All current + future sports included</b>
+              <span>Predictions, models and Pro add-ons included as they launch</span>
             </div>
           </div>
 
           <div class="pbe-pro-launch-offer" aria-label="PropBetEdge All Access launch offer">
             <span class="pbe-pro-launch-badge">LAUNCH OFFER</span>
-            <strong>Use code <code>THEEDGE25</code> at checkout</strong>
-            <span>25% off while your membership stays active · $21.75/month at today’s price</span>
+            <strong>Get 25% off for as long as you stay active</strong>
+            <span>Use <code>THEEDGE25</code> at checkout · all current and future sports, predictions and Pro add-ons included</span>
           </div>
 
           <div class="pbe-pro-actions">
@@ -63,7 +63,7 @@ export function renderProPage(root, setMeta) {
 
           <div class="pbe-pro-proof">
             <span>⚾ MLB</span><span>🏈 NFL</span><span>🏀 NBA</span><span>🏒 NHL</span><span>🏀 WNBA</span><span>🥊 UFC</span>
-            <b>+ whatever ships next</b>
+            <b>+ future sports, predictions & Pro add-ons</b>
           </div>
         </div>
       </section>
@@ -100,7 +100,7 @@ export function renderProPage(root, setMeta) {
           </div>
           <p>
             All Access is not a six-sport bundle with a fixed ceiling. It is the PropBetEdge Pro membership.
-            New sports join the membership as they launch.
+            New sports, prediction products, models and Pro add-ons join the membership as they launch.
           </p>
         </div>
       </section>
@@ -109,7 +109,7 @@ export function renderProPage(root, setMeta) {
         <div class="container">
           <span>PROPBETEDGE ALL ACCESS</span>
           <h2>Stop buying sports one at a time.</h2>
-          <p>Get the entire PropBetEdge Pro network for $29/month. Use <strong>THEEDGE25</strong> at checkout for 25% off while your membership stays active.</p>
+          <p>Get the entire PropBetEdge Pro network for $29/month. Use <strong>THEEDGE25</strong> at checkout and get 25% off for as long as you stay active — including current and future sports, predictions, models and Pro add-ons.</p>
           <a class="pbe-pro-primary" href="${CHECKOUT_URL}" target="_blank" rel="noopener">Start All Access →</a>
           <small>Existing sport-specific plans remain valid. All Access is an additional network-wide option.</small>
         </div>
