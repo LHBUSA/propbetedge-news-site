@@ -9,10 +9,13 @@
  *     response whose sequence is not the latest is dropped, so an older, slow
  *     answer can never overwrite a newer query
  *   - small in-memory LRU of recent answers
- *   - if the edge service fails or times out, results come from the local
- *     static index (destinations + teams) and navigation keeps working; the
- *     network is not retried for a short cool-down so a dead endpoint does not
- *     tax every keystroke
+ *   - a timed-out request is retried once (a cold edge isolate can be slow);
+ *     a timeout alone never blinds search to the edge
+ *   - only a hard failure (network error or 5xx) starts a short cool-down
+ *     (8s) during which queries answer from the local static index
+ *     (destinations + teams); the first distinct query after the cool-down
+ *     goes back to the edge
+ *   - while the edge is unavailable, local results keep navigation working
  */
 
 import { searchDocs, toResult, normalizeQuery, MIN_QUERY_LENGTH } from './rank.js';
@@ -34,7 +37,8 @@ export function createSearchController({
   onState = () => {},
   debounceMs = 110,
   timeoutMs = 3500,
-  cooldownMs = 30_000,
+  retryTimeoutMs = 5000,
+  cooldownMs = 8_000,
   limit = 20,
   lruSize = 40,
   now = () => Date.now(),
@@ -102,31 +106,50 @@ export function createSearchController({
     // Instant, honest first paint from the static index while the edge answers.
     emit({ seq: mySeq, query: rawQuery, normalized, status: 'loading', results: local, source: 'local' });
 
-    abortInflight();
-    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    inflight = controller;
     const started = now();
-    let timedOut = false;
-    const timer = setTimer(() => { timedOut = true; try { controller?.abort(); } catch { /* ignore */ } }, timeoutMs);
+    const url = `${String(apiBase).replace(/\/+$/, '')}/v1/search?q=${encodeURIComponent(normalized)}&limit=${limit}`;
+    let lastError = null;
 
-    try {
-      const url = `${String(apiBase).replace(/\/+$/, '')}/v1/search?q=${encodeURIComponent(normalized)}&limit=${limit}`;
-      const res = await fetchImpl(url, { signal: controller?.signal, credentials: 'omit', headers: { Accept: 'application/json' } });
-      if (!res.ok) throw new Error(`search_http_${res.status}`);
-      const body = await res.json();
-      if (!body || !Array.isArray(body.results)) throw new Error('search_bad_payload');
-      if (mySeq !== seq) return; // a newer query owns the screen
-      lruSet(normalized, body.results);
-      emit({ seq: mySeq, query: rawQuery, normalized, status: 'ready', results: body.results, source: 'edge', latencyMs: now() - started });
-    } catch (error) {
-      if (mySeq !== seq) return; // superseded (including our own abort)
-      if (error?.name === 'AbortError' && !timedOut) return;
-      downUntil = now() + cooldownMs;
-      emit({ seq: mySeq, query: rawQuery, normalized, status: 'fallback', results: local, source: 'local', latencyMs: now() - started, error: String(error?.message || error) });
-    } finally {
-      clearTimer(timer);
-      if (inflight === controller) inflight = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      abortInflight();
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      inflight = controller;
+      let timedOut = false;
+      const timer = setTimer(() => { timedOut = true; try { controller?.abort(); } catch { /* ignore */ } }, attempt ? retryTimeoutMs : timeoutMs);
+      try {
+        const res = await fetchImpl(url, { signal: controller?.signal, credentials: 'omit', headers: { Accept: 'application/json' } });
+        if (!res.ok) {
+          const err = new Error(`search_http_${res.status}`);
+          err.status = res.status;
+          throw err;
+        }
+        const body = await res.json();
+        if (!body || !Array.isArray(body.results)) throw new Error('search_bad_payload');
+        if (mySeq !== seq) return; // a newer query owns the screen
+        // A cold-isolate answer without the story archive is shown but not
+        // remembered, so the next identical query asks again.
+        if (!body.partial) lruSet(normalized, body.results);
+        emit({ seq: mySeq, query: rawQuery, normalized, status: 'ready', results: body.results, source: 'edge', latencyMs: now() - started, attempts: attempt + 1 });
+        return;
+      } catch (error) {
+        if (mySeq !== seq) return; // superseded (including our own abort)
+        if (error?.name === 'AbortError' && !timedOut) return;
+        lastError = timedOut ? Object.assign(new Error('search_timeout'), { timeout: true }) : error;
+        // Retry once, and only after a timeout: a slow cold start is not an outage.
+        if (!timedOut) break;
+      } finally {
+        clearTimer(timer);
+        if (inflight === controller) inflight = null;
+      }
     }
+
+    if (mySeq !== seq) return;
+    // Cool-down only on a hard failure: network error or 5xx. Timeouts and 4xx
+    // (e.g. a hub without the route yet) fall back for this query only.
+    const status = Number(lastError?.status) || 0;
+    const hard = !lastError?.timeout && (status >= 500 || !status);
+    if (hard) downUntil = now() + cooldownMs;
+    emit({ seq: mySeq, query: rawQuery, normalized, status: 'fallback', results: local, source: 'local', latencyMs: now() - started, error: String(lastError?.message || lastError), cooldown: hard });
   }
 
   /** Debounced entry point for keystrokes. */

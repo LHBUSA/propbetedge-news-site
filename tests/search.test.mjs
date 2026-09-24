@@ -368,10 +368,10 @@ test('worker: a cold KV still answers from the bundled corpus and schedules a la
   try {
     const { body, ctx } = await call('/v1/search?q=fight%20simulator', { env });
     assert.equal(body.results[0].href, 'https://ufc.propbetedge.ai/simulator');
-    assert.ok(ctx.jobs.length >= 3, 'ufc, wnba and stories rebuilds are scheduled');
+    assert.ok(ctx.jobs.length >= 3, 'bootstrap of the missing ufc, wnba and stories artifacts is scheduled');
     await Promise.all(ctx.jobs);
     assert.equal(env.ENTITY_KV.store.has(KEYS.ufc), false, 'a failed upstream writes nothing');
-    assert.ok(![...env.ENTITY_KV.store.keys()].some((k) => k.startsWith('search:v2:lock:')), 'locks are released');
+    assert.ok(env.ENTITY_KV.store.has(KEYS.lock('ufc')), 'bootstrap holds its lock window (no stampede)');
   } finally {
     globalThis.fetch = realFetch;
   }
@@ -473,7 +473,7 @@ test('client: search-service failure leaves static navigation usable', async () 
 
   await ctl.run('NYY');
   const teams = states.at(-1);
-  assert.equal(teams.status, 'fallback', 'cool-down skips the network');
+  assert.equal(teams.status, 'fallback', 'cool-down (hard network failure) skips the network');
   assert.equal(teams.results[0].title, 'New York Yankees');
   assert.equal(teams.results[0].href, '/team/mlb/new-york-yankees');
 
@@ -491,6 +491,7 @@ test('client: timeouts fall back; LRU serves repeats; short queries never hit th
     localDocs: () => LOCAL,
     onState: (s) => states.push(s),
     timeoutMs: 10,
+    retryTimeoutMs: 10,
     fetchImpl: (url, init) => new Promise((resolve, reject) => {
       calls += 1;
       init.signal.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })));
@@ -499,6 +500,8 @@ test('client: timeouts fall back; LRU serves repeats; short queries never hit th
   await ctl.run('hr targets');
   assert.equal(states.at(-1).status, 'fallback');
   assert.equal(states.at(-1).results[0].href, 'https://mlb.propbetedge.ai/hr-picks');
+  assert.equal(calls, 2, 'one retry after a timeout');
+  assert.equal(ctl.serviceDown, false, 'a timeout alone never starts the cool-down');
 
   let hits = 0;
   const cached = [];
@@ -556,4 +559,175 @@ test('palette: result lines make the type obvious', () => {
   assert.equal(resultLabel({ type: 'event', kind: 'event', sport: 'ufc', date: '2025-10-04T00:00:00Z' }, now).kicker, 'UFC EVENT · Oct 4, 2025');
   assert.equal(resultLabel({ type: 'tool', sport: 'ufc', label: 'UFC INTELLIGENCE · LABS' }, now).kicker, 'UFC INTELLIGENCE · LABS');
   assert.equal(resultLabel({ type: 'story', sport: 'mlb', date: '2026-09-24T20:00:00Z' }, now).kicker, 'MLB NEWS · 2h ago');
+});
+
+// ─── client resilience (cold starts must not blind search) ───────────────────
+
+function manualClock() {
+  let t = 1_000_000;
+  const timers = new Map();
+  let nextId = 1;
+  return {
+    now: () => t,
+    setTimer: (fn, ms) => { const id = nextId++; timers.set(id, { at: t + ms, fn }); return id; },
+    clearTimer: (id) => timers.delete(id),
+    advance(ms) {
+      t += ms;
+      for (const [id, timer] of [...timers]) if (timer.at <= t) { timers.delete(id); timer.fn(); }
+    },
+  };
+}
+
+const JUDGE_EDGE = { results: [{ type: 'player', sport: 'mlb', title: 'Aaron Judge', href: '/player/mlb/592450' }, { type: 'team', sport: 'mlb', title: 'New York Yankees', href: '/team/mlb/new-york-yankees' }] };
+
+test('client: a timeout does not start the cool-down; the next query still reaches the edge', async () => {
+  const clock = manualClock();
+  const calls = [];
+  const states = [];
+  const ctl = createSearchController({
+    localDocs: () => LOCAL, onState: (s) => states.push(s), now: clock.now, setTimer: clock.setTimer, clearTimer: clock.clearTimer,
+    timeoutMs: 100, retryTimeoutMs: 100,
+    fetchImpl: (url, init) => {
+      calls.push(url);
+      if (calls.length <= 2) {
+        return new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' }))));
+      }
+      return Promise.resolve(jsonResponse(JUDGE_EDGE));
+    },
+  });
+  const first = ctl.run('mcdvaid');
+  await Promise.resolve();
+  clock.advance(100);
+  await new Promise((r) => setImmediate(r));
+  clock.advance(100);
+  await first;
+  assert.equal(states.at(-1).status, 'fallback');
+  assert.equal(ctl.serviceDown, false);
+  await ctl.run('aaron judge');
+  assert.equal(calls.length, 3, 'next query went to the edge');
+  assert.equal(states.at(-1).source, 'edge');
+  assert.equal(states.at(-1).results[0].title, 'Aaron Judge');
+});
+
+test('client: one retry on timeout recovers a slow cold start', async () => {
+  const clock = manualClock();
+  let calls = 0;
+  const states = [];
+  const ctl = createSearchController({
+    localDocs: () => LOCAL, onState: (s) => states.push(s), now: clock.now, setTimer: clock.setTimer, clearTimer: clock.clearTimer,
+    timeoutMs: 100, retryTimeoutMs: 500,
+    fetchImpl: (url, init) => {
+      calls += 1;
+      if (calls === 1) return new Promise((_, reject) => init.signal.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' }))));
+      return Promise.resolve(jsonResponse(JUDGE_EDGE));
+    },
+  });
+  const run = ctl.run('aaron judge');
+  await Promise.resolve();
+  clock.advance(100);
+  await run;
+  assert.equal(calls, 2);
+  const final = states.at(-1);
+  assert.equal(final.status, 'ready');
+  assert.equal(final.attempts, 2);
+  assert.equal(final.results[0].title, 'Aaron Judge');
+});
+
+test('client: cool-down (network error) expires and the next distinct query hits the edge', async () => {
+  const clock = manualClock();
+  let calls = 0;
+  const states = [];
+  const ctl = createSearchController({
+    localDocs: () => LOCAL, onState: (s) => states.push(s), now: clock.now, setTimer: clock.setTimer, clearTimer: clock.clearTimer,
+    fetchImpl: async () => { calls += 1; if (calls === 1) throw new TypeError('Failed to fetch'); return jsonResponse(JUDGE_EDGE); },
+  });
+  await ctl.run('fight simulator');
+  assert.equal(ctl.serviceDown, true);
+  assert.equal(states.at(-1).results[0].href, 'https://ufc.propbetedge.ai/simulator', 'local results while cooled down');
+  await ctl.run('nyy');
+  assert.equal(calls, 1, 'within the cool-down: local only');
+  assert.equal(states.at(-1).results[0].title, 'New York Yankees');
+  clock.advance(8_001);
+  assert.equal(ctl.serviceDown, false, 'cool-down is ~8s');
+  await ctl.run('aaron judge');
+  assert.equal(calls, 2);
+  assert.equal(states.at(-1).source, 'edge');
+});
+
+test('client: 5xx starts the cool-down, 4xx does not', async () => {
+  const s5 = createSearchController({ localDocs: () => LOCAL, fetchImpl: async () => ({ ok: false, status: 503, json: async () => ({}) }) });
+  await s5.run('yankees');
+  assert.equal(s5.serviceDown, true);
+  const s4 = createSearchController({ localDocs: () => LOCAL, fetchImpl: async () => ({ ok: false, status: 404, json: async () => ({}) }) });
+  await s4.run('yankees');
+  assert.equal(s4.serviceDown, false);
+});
+
+test('client: entity results still render after a slow first response', async () => {
+  const clock = manualClock();
+  const pending = [];
+  const states = [];
+  const ctl = createSearchController({
+    localDocs: () => LOCAL, onState: (s) => states.push(s), now: clock.now, setTimer: clock.setTimer, clearTimer: clock.clearTimer,
+    timeoutMs: 3500,
+    fetchImpl: (url, init) => { const d = deferred(); pending.push(d); return d.promise; },
+  });
+  const run = ctl.run('aaron judge');
+  await Promise.resolve();
+  clock.advance(2200); // cold MISS ~2.2s: inside the budget
+  pending[0].resolve(jsonResponse({ ...JUDGE_EDGE, partial: ['stories'] }));
+  await run;
+  const final = states.at(-1);
+  assert.equal(final.status, 'ready');
+  assert.equal(final.results[0].type, 'player');
+  assert.equal(final.results[0].title, 'Aaron Judge');
+  assert.equal(ctl.serviceDown, false);
+  // partial answers are not remembered: the next identical query asks the edge again
+  const again = ctl.run('aaron judge');
+  await Promise.resolve();
+  assert.equal(pending.length, 2);
+  pending[1].resolve(jsonResponse(JUDGE_EDGE));
+  await again;
+});
+
+test('worker: request path never runs the archive backfill; cold story tier answers entity-only and uncached', async () => {
+  resetSearchCaches();
+  const base = seededEnv();
+  // Mark the backfill incomplete: the old code started a backfill on every search.
+  const manifest = await base.ENTITY_KV.get(KEYS.storiesManifest, 'json');
+  manifest.backfill = { next_page: 50, complete: false };
+  await base.ENTITY_KV.put(KEYS.storiesManifest, JSON.stringify(manifest));
+  const realFetch = globalThis.fetch;
+  let upstream = 0;
+  globalThis.fetch = async () => { upstream += 1; throw new Error('no upstream in request path'); };
+  base.NEWS_API_SERVICE = { fetch: async () => { upstream += 1; throw new Error('no upstream in request path'); } };
+  try {
+    const { body, ctx } = await call('/v1/search?q=aaron%20judge', { env: base });
+    await Promise.all(ctx.jobs);
+    assert.equal(upstream, 0, 'no refresh/backfill fetches from a search request');
+    assert.equal(body.results[0].title, 'Aaron Judge');
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+
+  // Slow story shards: entities come back without waiting, flagged partial.
+  resetSearchCaches();
+  const slow = seededEnv();
+  const kv = slow.ENTITY_KV;
+  const get = kv.get.bind(kv);
+  kv.get = async (key, type) => {
+    if (key.startsWith('search:v2:stories:')) await new Promise((r) => setTimeout(r, 600));
+    return get(key, type);
+  };
+  const t0 = Date.now();
+  const cold = await call('/v1/search?q=aaron%20judge', { env: slow });
+  assert.ok(Date.now() - t0 < 550, `entity answer did not wait on stories (${Date.now() - t0}ms)`);
+  assert.equal(cold.body.results[0].title, 'Aaron Judge');
+  assert.deepEqual(cold.body.partial, ['stories']);
+  assert.equal(cold.res.headers.get('X-PBE-Search-Cache'), 'PARTIAL');
+  assert.match(cold.res.headers.get('Cache-Control'), /max-age=0/);
+  await Promise.all(cold.ctx.jobs);
+  const warm = await call('/v1/search?q=aaron%20judge', { env: slow });
+  assert.equal(warm.body.partial, undefined);
+  assert.ok(warm.body.results.some((r) => r.type === 'story'), 'stories present once the tier is loaded');
 });

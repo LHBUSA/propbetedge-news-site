@@ -13,8 +13,8 @@
  *   UFC fighters / events / bouts     KV search:v2:ufc       <- ufc.propbetedge.ai sitemaps
  *   news stories (full corpus)        KV search:v2:stories:* <- propbet-news-api /news, paged
  *
- * The KV artifacts are rebuilt by the hub's existing cron (see runSearchRefresh)
- * and, if one is missing, lazily in waitUntil behind a short KV lock. A failed
+ * The KV artifacts are rebuilt ONLY by the hub's cron (see runSearchRefresh);
+ * a request may bootstrap a MISSING artifact in waitUntil, never a backfill. A failed
  * or implausibly small upstream never overwrites a good artifact.
  */
 
@@ -41,8 +41,6 @@ export const KEYS = Object.freeze({
 
 const NEWS_PAGE_SIZE = 50;             // the news API's own cap
 const CORPUS_TTL_MS = 5 * 60 * 1000;   // isolate memory
-const SOURCE_STALE_MS = 12 * 3600 * 1000;
-const STORIES_HEAD_STALE_MS = 30 * 60 * 1000;
 const BACKFILL_RESTART_MS = 7 * 24 * 3600 * 1000;
 const RESULT_MEMO_MAX = 400;
 
@@ -70,63 +68,124 @@ export function staticDocs() {
 }
 
 // ─── corpus loading ─────────────────────────────────────────────────────────
+//
+// Two independently cached tiers, so entity search never waits on the story
+// archive:
+//   entities  bundled dictionary + tools + KV UFC/WNBA artifacts (~1.7 MB)
+//   stories   KV month shards of the newsroom corpus (several MB)
+// Each tier is parsed once per isolate and kept in memory. After TTL it is
+// served stale while a reload runs in ctx.waitUntil (stale-while-revalidate),
+// so a warm isolate never re-parses on the request path. A cold isolate waits
+// for entities, and for stories only up to STORY_WAIT_MS; if the archive is not
+// ready yet the answer is entity-only, flagged partial, and not edge-cached.
 
-let corpus = null;
+const STORY_WAIT_MS = 250;
+
+const tiers = {
+  entities: { value: null, loadedAt: 0, pending: null },
+  stories: { value: null, loadedAt: 0, pending: null },
+};
 
 export function resetSearchCaches() {
-  corpus = null;
+  for (const t of Object.values(tiers)) { t.value = null; t.loadedAt = 0; t.pending = null; }
   resultMemo.clear();
+}
+
+/** Mark both tiers for background revalidation on the next request. */
+function invalidateTiers() {
+  for (const t of Object.values(tiers)) t.loadedAt = 0;
 }
 
 async function kvJson(env, key) {
   try { return await env.ENTITY_KV.get(key, 'json'); } catch { return null; }
 }
 
-export async function loadCorpus(env, { now = Date.now() } = {}) {
-  if (corpus && now - corpus.loadedAt < CORPUS_TTL_MS) return corpus;
+async function loadEntityTier(env) {
   const base = staticDocs();
-  const [ufc, wnba, manifest] = await Promise.all([
-    kvJson(env, KEYS.ufc),
-    kvJson(env, KEYS.wnba),
-    kvJson(env, KEYS.storiesManifest),
-  ]);
-  const months = Object.keys(manifest?.months || {});
-  const shards = await Promise.all(months.map((m) => kvJson(env, KEYS.storiesShard(m))));
-  const storyRows = new Map();
-  for (const shard of shards) for (const row of shard || []) if (Array.isArray(row) && row[0]) storyRows.set(row[0], row);
-  const stories = [...storyRows.values()].map(storyDoc);
-
-  const docs = [
-    ...base.players,
-    ...base.teams,
-    ...base.tools,
-    ...(wnba?.docs || []),
-    ...(ufc?.docs || []),
-    ...stories,
-  ];
+  const [ufc, wnba] = await Promise.all([kvJson(env, KEYS.ufc), kvJson(env, KEYS.wnba)]);
+  const docs = [...base.players, ...base.teams, ...base.tools, ...(wnba?.docs || []), ...(ufc?.docs || [])];
   const byHref = new Map();
   for (const d of docs) if (d.type === 'team') byHref.set(d.href, d);
-
-  corpus = {
-    loadedAt: now,
+  return {
     docs,
     byHref,
+    raw: { ufc: ufc ? { built_at: ufc.built_at } : null, wnba: wnba ? { built_at: wnba.built_at } : null },
     status: {
       dictionary_players: base.players.length,
       teams: base.teams.length + (wnba?.docs || []).filter((d) => d.type === 'team').length,
       tools: base.tools.length,
       wnba: wnba ? { docs: wnba.docs.length, built_at: wnba.built_at } : null,
       ufc: ufc ? { docs: ufc.docs.length, built_at: ufc.built_at } : null,
-      stories: {
-        docs: stories.length,
-        newest_at: manifest?.newest_at || null,
-        head_refreshed_at: manifest?.head_refreshed_at || null,
-        backfill_complete: Boolean(manifest?.backfill?.complete),
-      },
     },
-    raw: { ufc, wnba, manifest },
   };
-  return corpus;
+}
+
+async function loadStoryTier(env) {
+  const manifest = await kvJson(env, KEYS.storiesManifest);
+  const months = Object.keys(manifest?.months || {});
+  const shards = await Promise.all(months.map((m) => kvJson(env, KEYS.storiesShard(m))));
+  const rows = new Map();
+  for (const shard of shards) for (const row of shard || []) if (Array.isArray(row) && row[0]) rows.set(row[0], row);
+  const docs = [...rows.values()].map(storyDoc);
+  return {
+    docs,
+    manifest: manifest ? { months: manifest.months, backfill: manifest.backfill, head_refreshed_at: manifest.head_refreshed_at } : null,
+    status: {
+      docs: docs.length,
+      newest_at: manifest?.newest_at || null,
+      head_refreshed_at: manifest?.head_refreshed_at || null,
+      backfill_complete: Boolean(manifest?.backfill?.complete),
+    },
+  };
+}
+
+function startLoad(tier, loader, now) {
+  if (!tier.pending) {
+    tier.pending = loader()
+      .then((value) => { tier.value = value; tier.loadedAt = now; return value; })
+      .finally(() => { tier.pending = null; });
+  }
+  return tier.pending;
+}
+
+/**
+ * The tier's value, loading on first use. With `waitMs`, a cold tier waits at
+ * most waitMs (then resolves null) and keeps loading in the background.
+ */
+async function getTier(name, loader, ctx, now, { waitMs = null } = {}) {
+  const tier = tiers[name];
+  if (tier.value) {
+    if (now - tier.loadedAt >= CORPUS_TTL_MS && !tier.pending) {
+      const p = startLoad(tier, loader, now).catch(() => null);
+      if (ctx?.waitUntil) ctx.waitUntil(p);
+    }
+    return tier.value;
+  }
+  const p = startLoad(tier, loader, now);
+  if (waitMs == null) return p;
+  if (ctx?.waitUntil) ctx.waitUntil(p.catch(() => null));
+  let timer;
+  const timeout = new Promise((resolve) => { timer = setTimeout(() => resolve(null), waitMs); });
+  try {
+    return await Promise.race([p.catch(() => null), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function loadCorpus(env, { now = Date.now(), ctx = null, storyWaitMs = null } = {}) {
+  const [entities, stories] = await Promise.all([
+    getTier('entities', () => loadEntityTier(env), ctx, now),
+    getTier('stories', () => loadStoryTier(env), ctx, now, { waitMs: storyWaitMs }),
+  ]);
+  return {
+    docs: stories ? [...entities.docs, ...stories.docs] : entities.docs,
+    byHref: entities.byHref,
+    partial: stories ? null : ['stories'],
+    raw: { ...entities.raw, manifest: stories ? stories.manifest : undefined },
+    storiesLoaded: Boolean(stories),
+    status: { ...entities.status, stories: stories ? stories.status : { docs: 0, loading: true } },
+  };
 }
 
 function relatedFor(c) {
@@ -194,8 +253,8 @@ export async function handleSearch(url, env, ctx, { now = Date.now() } = {}) {
   }
 
   const started = Date.now();
-  const c = await loadCorpus(env, { now });
-  scheduleLazyRefresh(env, ctx, c, now);
+  const c = await loadCorpus(env, { now, ctx, storyWaitMs: STORY_WAIT_MS });
+  scheduleLazyRefresh(env, ctx, c);
 
   const ranked = searchDocs(c.docs, params.q, {
     limit: params.limit,
@@ -222,6 +281,13 @@ export async function handleSearch(url, env, ctx, { now = Date.now() } = {}) {
     generated_at: new Date(now).toISOString(),
   };
 
+  // A cold isolate that answered before the story archive finished loading:
+  // correct for entities, but not the full answer, so it is never cached.
+  if (c.partial) {
+    body.partial = c.partial;
+    return { status: 200, body, cacheControl: 'public, max-age=0, s-maxage=5', cache: 'PARTIAL' };
+  }
+
   memoSet(key, body);
   if (edgeCache && ctx?.waitUntil) {
     const stored = new Response(JSON.stringify(body), {
@@ -233,33 +299,37 @@ export async function handleSearch(url, env, ctx, { now = Date.now() } = {}) {
 }
 
 // ─── lazy refresh ───────────────────────────────────────────────────────────
+//
+// The request path does NO refresh work and NO backfill: the scheduled cron
+// (runSearchRefresh) owns every rebuild. The only lazy action is a one-time
+// bootstrap when an artifact is entirely MISSING (e.g. a fresh KV namespace),
+// started in ctx.waitUntil behind a KV lock, so the response is never delayed
+// and concurrent requests do not stampede. The archive backfill is never
+// started from a request.
 
-function scheduleLazyRefresh(env, ctx, c, now) {
+function scheduleLazyRefresh(env, ctx, c) {
   if (!ctx?.waitUntil || !env?.ENTITY_KV) return;
-  const stale = (builtAt, ms) => !builtAt || now - Date.parse(builtAt) > ms;
   const jobs = [];
-  if (stale(c.raw.ufc?.built_at, SOURCE_STALE_MS)) jobs.push(['ufc', () => refreshUfcIndex(env)]);
-  if (stale(c.raw.wnba?.built_at, SOURCE_STALE_MS)) jobs.push(['wnba', () => refreshWnbaIndex(env)]);
-  const m = c.raw.manifest;
-  if (!m || stale(m.head_refreshed_at, STORIES_HEAD_STALE_MS)) jobs.push(['stories-head', () => refreshStoriesHead(env, { pages: 2 })]);
-  if (!m?.backfill?.complete) jobs.push(['stories-backfill', () => backfillStories(env, { pages: 6 })]);
+  if (!c.raw.ufc) jobs.push(['ufc', () => refreshUfcIndex(env)]);
+  if (!c.raw.wnba) jobs.push(['wnba', () => refreshWnbaIndex(env)]);
+  if (c.storiesLoaded && !c.raw.manifest) jobs.push(['stories-head', () => refreshStoriesHead(env, { pages: 1 })]);
   for (const [name, job] of jobs) ctx.waitUntil(withLock(env, name, job).catch(() => {}));
 }
 
-async function withLock(env, name, job, ttlS = 90) {
+async function withLock(env, name, job, ttlS = 300) {
   const key = KEYS.lock(name);
   if (await env.ENTITY_KV.get(key)) return { skipped: 'locked' };
+  // Held for its TTL (not released on success) so a bootstrap runs at most once
+  // per window even before the artifact write has propagated.
   await env.ENTITY_KV.put(key, new Date().toISOString(), { expirationTtl: Math.max(60, ttlS) });
   try {
     const out = await job();
-    corpus = null; // next request re-reads the refreshed artifact
+    invalidateTiers();
     await recordRefresh(env, name, out);
     return out;
   } catch (error) {
     await recordRefresh(env, name, { ok: false, error: String(error?.message || error).slice(0, 200) });
     throw error;
-  } finally {
-    await env.ENTITY_KV.delete(key).catch(() => {});
   }
 }
 
@@ -435,6 +505,6 @@ export async function runSearchRefresh(event, env) {
   if (minute === 0 && hour % 6 === 0) await attempt('ufc', () => refreshUfcIndex(env));
   if (minute === 30 && hour % 6 === 0) await attempt('wnba', () => refreshWnbaIndex(env));
   await env.ENTITY_KV.put('report:search:last', JSON.stringify({ at: new Date().toISOString(), report }), { expirationTtl: 60 * 60 * 24 * 14 });
-  corpus = null;
+  invalidateTiers();
   return report;
 }
