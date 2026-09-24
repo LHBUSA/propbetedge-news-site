@@ -27,6 +27,7 @@ import { renderShareBar } from './src/entity-graph/share-bar.js';
 import { rankRelated } from './src/entity-graph/related.js';
 import { teamQueryAbbreviations } from './src/entity-graph/entities.js';
 import { liveCastUrl } from './src/live-cast-routes.js';
+import { mlbPlayerDescription } from './src/pages/player-mlb-data.js';
 
 export const config = {
   matcher: [
@@ -263,10 +264,13 @@ async function resolveMeta(pathname, search = '') {
     if (!entity || entity?.unavailable) return serviceUnavailableMeta(pathname, 'Player data temporarily unavailable');
     const name = entity.name || `${SPORT_LABELS[sport]} Player`;
     const canonical = `${SITE}/player/${sport}/${id}`;
+    const playerDescription = sport === 'mlb'
+      ? mlbPlayerDescription(name, entity?.team || null)
+      : `${name} player profile with current stats, recent form, game logs and connected PropBetEdge coverage.`;
     return {
       canonical,
       title: `${name} — ${SPORT_LABELS[sport]} Player Intelligence | PropBetEdge`,
-      description: `${name} player profile with current stats, recent form, game logs and connected PropBetEdge coverage.`,
+      description: playerDescription,
       image: entity?.image || `${SITE}/logo/pbe-full-600.png`,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildPlayerSchema(name, sport, canonical, entity?.image || null),
@@ -276,7 +280,7 @@ async function resolveMeta(pathname, search = '') {
         sport,
         canonical,
         image: entity?.image || null,
-        description: `${name} player profile with current stats, recent form, game logs and connected PropBetEdge coverage.`,
+        description: playerDescription,
       }),
     };
   }
@@ -856,13 +860,14 @@ async function resolvePlayerMeta(sport, id) {
   if (!/^\d{1,9}$/.test(String(id))) return { notFound: true };
 
   if (sport === 'mlb') {
-    const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${encodeURIComponent(id)}`);
+    const res = await fetch(`https://statsapi.mlb.com/api/v1/people/${encodeURIComponent(id)}?hydrate=currentTeam`);
     if (res.status === 404) return { notFound: true };
     if (!res.ok) return { unavailable: true };
     const person = (await res.json())?.people?.[0];
     if (!person) return { notFound: true };
     return {
       name: person.fullName,
+      team: person.currentTeam?.name || null,
       image: `https://img.mlbstatic.com/mlb-photos/image/upload/w_600,q_90/v1/people/${id}/headshot/67/current`,
     };
   }

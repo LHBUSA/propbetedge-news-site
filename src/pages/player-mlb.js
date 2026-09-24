@@ -1,21 +1,30 @@
 /**
  * src/pages/player-mlb.js — /player/mlb/:id
  *
- * v3.13 Drop 1 — MLB player profile.
+ * MLB player profile: hero -> selected season -> career totals -> recent form
+ * -> season history -> full game log -> related news.
  *
- * Single API call:
- *   https://statsapi.mlb.com/api/v1/people/{id}?hydrate=stats(group=[hitting,pitching],type=[season,career,gameLog,vsLHP,vsRHP,homeAndAway])
- *
- * Returns: bio, current team, season stats, career totals, full game log,
- *          vs LHP/RHP, home/away splits — all in one payload.
+ * Data contract (see player-mlb-data.js for URLs and normalization):
+ *   1. profile     people/{id}?hydrate=stats(type=[season,career], season=<current>)
+ *                  -> bio, current team, current-season line, CAREER totals
+ *   2. yearByYear  people/{id}/stats?stats=yearByYear&group=<g>&sportId=1&hydrate=team
+ *                  -> season history + the line for any selected season
+ *   3. gameLog     people/{id}/stats?stats=gameLog&group=<g>&season=<selected>&sportId=1
+ *                  -> recent form + game log, fetched on demand per season, cached
+ *   4. teams       teams?sportId=1&season=<selected> -> opponent id -> abbreviation
+ * 2–4 are independent: any of them failing leaves the rest of the page intact.
  */
 
 import {
-  playerPageShell, renderPlayerHero, renderStatRibbon, renderPropAngle,
-  renderRecentForm, renderSplits, renderGameLog, renderPlayerLoading,
-  setPlayerMeta, fmt, escapeHtml,
+  playerPageShell, renderPlayerHero, renderPropAngle, renderPlayerLoading, escapeHtml,
 } from './player-shared.js';
 import { entityCoverageSlot, mountEntityCoverage } from '../entity-graph/entity-coverage.js';
+import {
+  currentMlbSeason, profileUrl, yearByYearUrl, gameLogUrl, teamsUrl, gameLogCacheKey,
+  parseProfile, detectGroups, parseYearByYear, seasonsFromHistory, defaultSeason,
+  teamAbbrMap, parseGameLog, mlbPlayerDescription,
+} from './player-mlb-data.js';
+import { renderProfileBody } from './player-mlb-view.js';
 
 const MLB_TEAM_COLORS = {
   108:'#BA0021',109:'#A71930',110:'#DF4601',111:'#BD3039',112:'#0E3386',
@@ -26,298 +35,224 @@ const MLB_TEAM_COLORS = {
   144:'#CE1141',145:'#27251F',146:'#00A3E0',147:'#003087',158:'#12284B',
 };
 
+// Client-side caches shared across profile visits in one session.
+const gameLogCache = new Map();   // `${id}:${group}:${season}` -> parsed rows
+const teamAbbrCache = new Map();  // season -> Promise<Map(teamId -> abbr)>
+
+async function fetchJson(url, signal) {
+  const r = await fetch(url, { signal });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+function seasonAbbrs(season) {
+  if (!teamAbbrCache.has(season)) {
+    const p = fetchJson(teamsUrl(season)).then(teamAbbrMap).catch(() => {
+      teamAbbrCache.delete(season); // retry next time; fall back to names now
+      return new Map();
+    });
+    teamAbbrCache.set(season, p);
+  }
+  return teamAbbrCache.get(season);
+}
+
 export async function renderMlbPlayerPage(root, playerId, setMeta) {
+  root.__pbeMlbPlayer?.abort();
+  const controller = new AbortController();
+  const { signal } = controller;
+  root.__pbeMlbPlayer = controller;
+  const pathname = window.location.pathname;
+  const live = () => !signal.aborted && root.__pbeMlbPlayer === controller && window.location.pathname === pathname;
+
   root.innerHTML = playerPageShell(renderPlayerLoading());
 
-  try {
-    // Fetch person + stats in one shot
-    const url = `https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(group=[hitting,pitching],type=[season,career,gameLog],season=${currentMlbSeason()},sportId=1),currentTeam`;
-    const data = await fetch(url).then((r) => r.ok ? r.json() : null);
-    const person = data?.people?.[0];
+  if (!/^\d{1,10}$/.test(String(playerId))) {
+    root.innerHTML = playerPageShell(renderPlayerError('Player not found'));
+    return;
+  }
 
-    if (!person) {
-      root.innerHTML = playerPageShell(renderPlayerError('Player not found'));
+  const current = currentMlbSeason();
+  let profile;
+  try {
+    profile = parseProfile(await fetchJson(profileUrl(playerId, current), signal));
+  } catch (err) {
+    if (!live()) return;
+    console.error('[player-mlb]', err);
+    root.innerHTML = playerPageShell(renderPlayerError('Player data temporarily unavailable.'));
+    return;
+  }
+  if (!live()) return;
+  if (!profile) {
+    root.innerHTML = playerPageShell(renderPlayerError('Player not found'));
+    return;
+  }
+
+  const person = profile.person;
+  const canonical = `https://propbetedge.ai/player/mlb/${playerId}`;
+  const photo = `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/c_fill,g_face,h_400,w_400,q_auto:best/v1/people/${playerId}/headshot/67/current`;
+  setMeta?.({
+    title: `${person.fullName}${person.currentTeam?.name ? ` · ${person.currentTeam.name}` : ''} — MLB Stats, Career & Game Logs | PropBetEdge`,
+    description: mlbPlayerDescription(person.fullName, person.currentTeam?.name),
+    canonical,
+    ogImage: photo,
+  });
+
+  const groups = detectGroups(profile);
+  const state = {
+    groups,
+    current,
+    selected: String(current),
+    defaultSeason: String(current),
+    seasons: [String(current)],
+    history: Object.fromEntries(groups.map((g) => [g, { status: 'loading', rows: [] }])),
+    profileSeason: profile.season,
+    career: profile.career,
+    logs: Object.fromEntries(groups.map((g) => [g, { status: 'loading', rows: [] }])),
+    logGeneration: 0,
+  };
+
+  const teamId = person.currentTeam?.id;
+  const bats = person.batSide?.code;
+  const throws = person.pitchHand?.code;
+  const heroHtml = renderPlayerHero({
+    sport: 'mlb',
+    photo, name: person.fullName,
+    jersey: person.primaryNumber,
+    position: person.primaryPosition?.abbreviation,
+    team: person.currentTeam?.name,
+    teamId,
+    teamLogo: teamId ? `https://www.mlbstatic.com/team-logos/${teamId}.svg` : null,
+    teamColor: teamId ? MLB_TEAM_COLORS[teamId] : null,
+    age: person.currentAge,
+    height: person.height,
+    weight: person.weight ? `${person.weight} lb` : null,
+    batsThrows: bats && throws ? `${bats}/${throws}` : null,
+  });
+
+  root.innerHTML = playerPageShell(`
+    <div class="mlb-player" data-player-id="${escapeHtml(String(playerId))}">
+      ${heroHtml}
+      <div data-mlb-body></div>
+      ${renderPropAngle({ name: person.fullName, sport: 'mlb' })}
+      <section class="player-section">
+        <div class="player-section-kicker">RELATED NEWS</div>
+        ${entityCoverageSlot('pbe-player-coverage')}
+      </section>
+    </div>
+  `);
+
+  function paint() {
+    if (!live()) return;
+    const mount = root.querySelector('[data-mlb-body]');
+    if (!mount) return;
+    const focusSelect = document.activeElement?.matches?.('[data-mlb-season]');
+    try {
+      mount.innerHTML = renderProfileBody(state);
+    } catch (err) {
+      console.error('[player-mlb] render', err);
+      mount.innerHTML = '<div class="player-empty-card">Statistics could not be displayed.</div>';
+    }
+    if (focusSelect) mount.querySelector('[data-mlb-season]')?.focus({ preventScroll: true });
+  }
+
+  function knownEmpty(group, season) {
+    const hist = state.history[group];
+    return hist.status === 'ok' && !hist.rows.some((r) => r.season === season);
+  }
+
+  async function loadGroupLog(group, season, generation, force) {
+    const key = gameLogCacheKey(playerId, group, season);
+    // Known empty from the source's own season history: no request, no zeros.
+    if (!force && knownEmpty(group, season)) {
+      state.logs[group] = { status: 'ok', rows: [] };
       return;
     }
-
-    setPlayerMeta(setMeta, person.fullName, 'mlb', person.currentTeam?.name);
-
-    const isPitcher = person.primaryPosition?.code === '1' || person.primaryPosition?.abbreviation === 'P';
-
-    // Photo
-    const photo = `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/c_fill,g_face,h_400,w_400,q_auto:best/v1/people/${playerId}/headshot/67/current`;
-
-    // Team color + logo
-    const teamId = person.currentTeam?.id;
-    const teamColor = teamId ? MLB_TEAM_COLORS[teamId] : null;
-    const teamLogo = teamId ? `https://www.mlbstatic.com/team-logos/${teamId}.svg` : null;
-
-    // Bats / throws compact
-    const bats = person.batSide?.code;
-    const throws = person.pitchHand?.code;
-    const batsThrows = bats && throws ? `${bats}/${throws}` : null;
-
-    // Find season + gameLog stats
-    const stats = person.stats || [];
-    const seasonHit = stats.find((s) => s.group?.displayName === 'hitting' && s.type?.displayName === 'season')?.splits?.[0]?.stat;
-    const seasonPit = stats.find((s) => s.group?.displayName === 'pitching' && s.type?.displayName === 'season')?.splits?.[0]?.stat;
-    const careerHit = stats.find((s) => s.group?.displayName === 'hitting' && s.type?.displayName === 'career')?.splits?.[0]?.stat;
-    const careerPit = stats.find((s) => s.group?.displayName === 'pitching' && s.type?.displayName === 'career')?.splits?.[0]?.stat;
-    const gameLogHit = stats.find((s) => s.group?.displayName === 'hitting' && s.type?.displayName === 'gameLog')?.splits || [];
-    const gameLogPit = stats.find((s) => s.group?.displayName === 'pitching' && s.type?.displayName === 'gameLog')?.splits || [];
-
-    const heroHtml = renderPlayerHero({
-      sport: 'mlb',
-      photo, name: person.fullName,
-      jersey: person.primaryNumber,
-      position: person.primaryPosition?.abbreviation,
-      team: person.currentTeam?.name,
-      teamId, teamLogo, teamColor,
-      age: person.currentAge,
-      height: person.height,
-      weight: person.weight ? `${person.weight} lb` : null,
-      batsThrows,
-    });
-
-    const ribbon = isPitcher
-      ? renderPitchingRibbon(seasonPit, careerPit)
-      : renderHittingRibbon(seasonHit, careerHit);
-
-    const propAngle = renderPropAngle({
-      name: person.fullName,
-      sport: 'mlb',
-    });
-
-    const recentForm = isPitcher
-      ? renderPitchingRecentForm(gameLogPit)
-      : renderHittingRecentForm(gameLogHit);
-
-    const splits = isPitcher
-      ? renderPitchingSplits(seasonPit)
-      : renderHittingSplits(seasonHit);
-
-    const gameLog = isPitcher
-      ? renderPitchingGameLog(gameLogPit)
-      : renderHittingGameLog(gameLogHit);
-
-    const newsTease = renderNewsTease(person.fullName, 'mlb');
-
-    root.innerHTML = playerPageShell(`
-      ${heroHtml}
-      ${ribbon}
-      ${propAngle}
-      ${recentForm}
-      ${splits}
-      ${gameLog}
-      ${newsTease}
-    `);
-
-    // Reciprocal link: the stories tagged to this player.
-    mountEntityCoverage({
-      slotId: 'pbe-player-coverage',
-      sport: 'mlb',
-      kind: 'player',
-      name: person.fullName,
-    });
-  } catch (e) {
-    console.error('[player-mlb]', e);
-    root.innerHTML = playerPageShell(renderPlayerError(e.message));
+    if (!force && gameLogCache.has(key)) {
+      state.logs[group] = { status: 'ok', rows: gameLogCache.get(key) };
+      return;
+    }
+    try {
+      const [payload, abbrs] = await Promise.all([
+        fetchJson(gameLogUrl(playerId, group, season), signal),
+        seasonAbbrs(season),
+      ]);
+      const rows = parseGameLog(payload, { season, abbrs });
+      gameLogCache.set(key, rows);
+      if (generation === state.logGeneration) state.logs[group] = { status: 'ok', rows };
+    } catch (err) {
+      if (generation === state.logGeneration) state.logs[group] = { status: 'error', rows: [] };
+    }
   }
-}
 
-// ─── Hitting ────────────────────────────────────────────────────────────
-function renderHittingRibbon(season, career) {
-  if (!season) return renderStatRibbon([
-    { label: 'AVG', value: '—' }, { label: 'HR', value: '—' }, { label: 'RBI', value: '—' },
-    { label: 'OPS', value: '—' }, { label: 'SB', value: '—' }, { label: 'GP', value: '—' },
-  ], 'SEASON STATS · NO DATA YET');
+  async function loadLogs(onlyGroup = null) {
+    const generation = ++state.logGeneration;
+    const season = state.selected;
+    const targets = onlyGroup ? [onlyGroup] : groups;
+    for (const g of targets) {
+      const cached = gameLogCache.has(gameLogCacheKey(playerId, g, season));
+      if (onlyGroup || (!cached && !knownEmpty(g, season))) state.logs[g] = { status: 'loading', rows: [] };
+    }
+    paint();
+    await Promise.allSettled(targets.map((g) =>
+      loadGroupLog(g, season, generation, Boolean(onlyGroup)).then(() => {
+        if (generation === state.logGeneration) paint();
+      })));
+  }
 
-  return renderStatRibbon([
-    { label: 'AVG', value: season.avg || '—', color: '#7FB3FF' },
-    { label: 'HR', value: season.homeRuns ?? 0, color: '#FF6B6B' },
-    { label: 'RBI', value: season.rbi ?? 0, color: 'var(--gold)' },
-    { label: 'OPS', value: season.ops || '—', color: '#5FD38D' },
-    { label: 'OBP', value: season.obp || '—' },
-    { label: 'SLG', value: season.slg || '—' },
-    { label: 'SB', value: season.stolenBases ?? 0, color: '#FF8C42' },
-    { label: 'GP', value: season.gamesPlayed ?? 0 },
-  ], 'SEASON STATS');
-}
+  function select(season, { scroll = false } = {}) {
+    season = String(season);
+    if (!state.seasons.includes(season) || season === state.selected) return;
+    state.selected = season;
+    try {
+      const url = new URL(window.location.href);
+      if (season === state.defaultSeason) url.searchParams.delete('season');
+      else url.searchParams.set('season', season);
+      window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+    } catch (_) { /* URL reflection is a convenience only */ }
+    loadLogs().catch(() => {});
+    if (scroll) root.querySelector('[data-mlb-section="season"]')?.scrollIntoView({ block: 'start' });
+  }
 
-function renderHittingRecentForm(gameLog) {
-  if (!gameLog?.length) return '';
-  // Most recent first
-  const recent = [...gameLog].reverse().slice(0, 10);
-  const games = recent.map((g) => {
-    const s = g.stat || {};
-    const isHotHR = (s.homeRuns || 0) > 0;
-    const isHotMulti = (s.hits || 0) >= 2;
-    const isCold = (s.atBats || 0) >= 3 && (s.hits || 0) === 0;
-    return {
-      date: g.date,
-      opp: g.opponent?.abbreviation || g.opponent?.name?.split(' ').pop() || '',
-      statValues: [
-        { label: 'AB', value: s.atBats ?? '—' },
-        { label: 'H', value: s.hits ?? 0, isHot: (s.hits || 0) >= 3 },
-        { label: 'HR', value: s.homeRuns ?? 0, isHot: isHotHR },
-        { label: 'RBI', value: s.rbi ?? 0 },
-        { label: 'AVG', value: s.avg || '—', isHot: parseFloat(s.avg || 0) >= 0.4, isCold },
-      ],
-    };
-  });
-  return renderRecentForm(games, 'hits', 'H');
-}
+  root.addEventListener('change', (ev) => {
+    if (!live()) return;
+    if (ev.target?.matches?.('[data-mlb-season]')) select(ev.target.value);
+  }, { signal });
+  root.addEventListener('click', (ev) => {
+    if (!live()) return;
+    const retry = ev.target.closest?.('[data-mlb-retry]');
+    if (retry) { loadLogs(retry.dataset.mlbRetry).catch(() => {}); return; }
+    const row = ev.target.closest?.('[data-mlb-history-row]');
+    if (row) select(row.dataset.season, { scroll: true });
+  }, { signal });
 
-function renderHittingSplits(season) {
-  if (!season) return '';
-  // The MLB API doesn't always return vsLHP/vsRHP/homeAway in a single hydrate
-  // We'll use what's available in season.splits and fall back to placeholders
-  return renderSplits([
-    {
-      name: 'Situational',
-      rows: [
-        {
-          label: 'Season Total',
-          statValues: [
-            { label: 'AVG', value: season.avg || '—' },
-            { label: 'OPS', value: season.ops || '—' },
-            { label: 'HR', value: season.homeRuns ?? 0 },
-            { label: 'BB%', value: season.plateAppearances ? ((season.baseOnBalls / season.plateAppearances) * 100).toFixed(1) + '%' : '—' },
-            { label: 'K%', value: season.plateAppearances ? ((season.strikeOuts / season.plateAppearances) * 100).toFixed(1) + '%' : '—' },
-          ],
-        },
-      ],
-    },
-  ]);
-}
+  paint();
 
-function renderHittingGameLog(gameLog) {
-  if (!gameLog?.length) return '';
-  const recent = [...gameLog].reverse();
-  const headers = ['Date', 'Opp', 'AB', 'R', 'H', '2B', '3B', 'HR', 'RBI', 'BB', 'K', 'SB', 'AVG', 'OPS'];
-  const games = recent.map((g) => {
-    const s = g.stat || {};
-    return {
-      cells: [
-        { value: formatDate(g.date) },
-        { value: g.opponent?.abbreviation || '—' },
-        { value: s.atBats ?? '—' },
-        { value: s.runs ?? 0 },
-        { value: s.hits ?? 0, cls: (s.hits || 0) >= 3 ? 'stat-hot' : '' },
-        { value: s.doubles ?? 0 },
-        { value: s.triples ?? 0 },
-        { value: s.homeRuns ?? 0, cls: (s.homeRuns || 0) > 0 ? 'stat-hot' : '' },
-        { value: s.rbi ?? 0 },
-        { value: s.baseOnBalls ?? 0 },
-        { value: s.strikeOuts ?? 0 },
-        { value: s.stolenBases ?? 0 },
-        { value: s.avg || '—' },
-        { value: s.ops || '—' },
-      ],
-    };
-  });
-  return renderGameLog(games, headers);
-}
-
-// ─── Pitching ───────────────────────────────────────────────────────────
-function renderPitchingRibbon(season, career) {
-  if (!season) return renderStatRibbon([
-    { label: 'ERA', value: '—' }, { label: 'WHIP', value: '—' }, { label: 'K', value: '—' },
-    { label: 'W-L', value: '—' }, { label: 'IP', value: '—' }, { label: 'GP', value: '—' },
-  ], 'SEASON STATS · NO DATA YET');
-
-  return renderStatRibbon([
-    { label: 'ERA', value: season.era || '—', color: '#5FD38D' },
-    { label: 'WHIP', value: season.whip || '—', color: '#7FB3FF' },
-    { label: 'K', value: season.strikeOuts ?? 0, color: '#FF6B6B' },
-    { label: 'W-L', value: `${season.wins ?? 0}-${season.losses ?? 0}`, color: 'var(--gold)' },
-    { label: 'K/9', value: season.strikeoutsPer9Inn || '—' },
-    { label: 'BB/9', value: season.walksPer9Inn || '—' },
-    { label: 'IP', value: season.inningsPitched || '—' },
-    { label: 'SV', value: season.saves ?? 0, color: '#FF8C42' },
-  ], 'SEASON STATS');
-}
-
-function renderPitchingRecentForm(gameLog) {
-  if (!gameLog?.length) return '';
-  const recent = [...gameLog].reverse().slice(0, 10);
-  const games = recent.map((g) => {
-    const s = g.stat || {};
-    const isHotK = (s.strikeOuts || 0) >= 8;
-    const isCold = parseFloat(s.era || 0) >= 7;
-    return {
-      date: g.date,
-      opp: g.opponent?.abbreviation || '—',
-      statValues: [
-        { label: 'IP', value: s.inningsPitched || '—' },
-        { label: 'H', value: s.hits ?? 0 },
-        { label: 'ER', value: s.earnedRuns ?? 0, isCold: (s.earnedRuns || 0) >= 4 },
-        { label: 'K', value: s.strikeOuts ?? 0, isHot: isHotK },
-        { label: 'ERA', value: s.era || '—', isCold },
-      ],
-    };
-  });
-  return renderRecentForm(games, 'strikeOuts', 'K');
-}
-
-function renderPitchingSplits(season) {
-  if (!season) return '';
-  return renderSplits([
-    {
-      name: 'Season Performance',
-      rows: [
-        {
-          label: 'Total',
-          statValues: [
-            { label: 'ERA', value: season.era || '—' },
-            { label: 'WHIP', value: season.whip || '—' },
-            { label: 'K/9', value: season.strikeoutsPer9Inn || '—' },
-            { label: 'BB/9', value: season.walksPer9Inn || '—' },
-            { label: 'AVG', value: season.avg || '—' },
-          ],
-        },
-      ],
-    },
-  ]);
-}
-
-function renderPitchingGameLog(gameLog) {
-  if (!gameLog?.length) return '';
-  const recent = [...gameLog].reverse();
-  const headers = ['Date', 'Opp', 'IP', 'H', 'R', 'ER', 'BB', 'K', 'HR', 'ERA', 'WHIP'];
-  const games = recent.map((g) => {
-    const s = g.stat || {};
-    return {
-      cells: [
-        { value: formatDate(g.date) },
-        { value: g.opponent?.abbreviation || '—' },
-        { value: s.inningsPitched || '—' },
-        { value: s.hits ?? 0 },
-        { value: s.runs ?? 0 },
-        { value: s.earnedRuns ?? 0, cls: (s.earnedRuns || 0) >= 4 ? 'stat-cold' : '' },
-        { value: s.baseOnBalls ?? 0 },
-        { value: s.strikeOuts ?? 0, cls: (s.strikeOuts || 0) >= 8 ? 'stat-hot' : '' },
-        { value: s.homeRuns ?? 0 },
-        { value: s.era || '—' },
-        { value: s.whip || '—' },
-      ],
-    };
-  });
-  return renderGameLog(games, headers);
-}
-
-// ─── Helpers ────────────────────────────────────────────────────────────
-function formatDate(iso) {
-  if (!iso) return '—';
+  // Reciprocal link: the stories tagged to this player.
   try {
-    return new Date(iso).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
-  } catch { return iso; }
-}
+    mountEntityCoverage({ slotId: 'pbe-player-coverage', sport: 'mlb', kind: 'player', name: person.fullName });
+  } catch (err) { console.error('[player-mlb] coverage', err); }
 
-function currentMlbSeason() {
-  const now = new Date();
-  if (now.getMonth() < 2) return now.getFullYear() - 1;
-  return now.getFullYear();
+  // Season history, one request per rendered group; each can fail alone.
+  const results = await Promise.allSettled(groups.map((g) => fetchJson(yearByYearUrl(playerId, g), signal)));
+  if (!live()) return;
+  const okHistories = {};
+  results.forEach((res, i) => {
+    const g = groups[i];
+    if (res.status === 'fulfilled') {
+      const rows = parseYearByYear(res.value, g);
+      state.history[g] = { status: 'ok', rows };
+      okHistories[g] = rows;
+    } else {
+      state.history[g] = { status: 'error', rows: [] };
+    }
+  });
+  const seasons = seasonsFromHistory(okHistories);
+  state.seasons = seasons.length ? seasons : [String(current)];
+  state.defaultSeason = seasons.length ? defaultSeason(okHistories, current) : String(current);
+  let requested = null;
+  try { requested = new URL(window.location.href).searchParams.get('season'); } catch (_) {}
+  state.selected = requested && state.seasons.includes(requested) ? requested : state.defaultSeason;
+  await loadLogs();
 }
 
 function renderPlayerError(msg) {
@@ -326,20 +261,6 @@ function renderPlayerError(msg) {
       <h2>Player not available</h2>
       <p>${escapeHtml(msg || 'Could not load player profile.')}</p>
       <p><a href="/leaders/mlb">← Back to MLB leaders</a></p>
-    </section>
-  `;
-}
-
-/**
- * Real reciprocal coverage: the stories actually tagged to this player. The
- * slot is filled after render by mountEntityCoverage so the profile paints
- * without waiting on the newsroom.
- */
-function renderNewsTease(name, sport) {
-  return `
-    <section class="player-section">
-      <div class="player-section-kicker">RELATED NEWS</div>
-      ${entityCoverageSlot('pbe-player-coverage')}
     </section>
   `;
 }
