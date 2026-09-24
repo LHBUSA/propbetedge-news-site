@@ -358,6 +358,20 @@ async function resolveMeta(pathname) {
     };
   }
 
+  // PropBetEdge All Access membership (the network's one paid umbrella).
+  if (pathname === '/pro') {
+    const canonical = `${SITE}/pro`;
+    return {
+      canonical,
+      title: 'PropBetEdge All Access — One Membership, Every Sport | $29/month',
+      description: 'PropBetEdge All Access: one $29/month membership for MLB, NFL, NBA, NHL, WNBA and UFC Pro, every model, every tracked pick, PBEcast and every future PropBetEdge sport. Launch offer: 25% off for as long as you stay active with code THEEDGE25.',
+      image: `${SITE}/logo/pbe-full-600.png`,
+      robots: DEFAULT_ROBOTS,
+      jsonLd: buildProSchema(canonical),
+      ssrHtml: buildServerProHtml(),
+    };
+  }
+
   // Publisher identity / ownership / contact.
   if (pathname === '/about') {
     const canonical = `${SITE}/about`;
@@ -1180,6 +1194,54 @@ function buildAboutSchema(canonical) {
       },
     ],
   };
+}
+
+const ALL_ACCESS_CHECKOUT = 'https://buy.stripe.com/8x2eVdgmOaqy4pv8Ez7wA0N';
+
+function buildProSchema(canonical) {
+  return [{
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    '@id': `${canonical}#product`,
+    name: 'PropBetEdge All Access',
+    description: 'One membership for every PropBetEdge sport: MLB, NFL, NBA, NHL, WNBA, UFC and every future sport. Proprietary models, tracked picks, live intelligence, PBEcast.',
+    brand: { '@type': 'Brand', name: 'PropBetEdge' },
+    url: canonical,
+    offers: {
+      '@type': 'Offer',
+      url: ALL_ACCESS_CHECKOUT,
+      price: '29',
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
+      priceSpecification: { '@type': 'UnitPriceSpecification', price: '29', priceCurrency: 'USD', billingDuration: 1, billingIncrement: 1, unitCode: 'MON' },
+    },
+  }];
+}
+
+function buildServerProHtml() {
+  return `<main class="pbe-ssr-pro" data-server-rendered="1">
+    <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; All Access</nav>
+    <article>
+      <p>PropBetEdge Network · Membership</p>
+      <h1>PropBetEdge All Access</h1>
+      <p>One membership. Every sport. Every model. Every current and future PropBetEdge Pro product.</p>
+      <p><strong>$29 / month.</strong> Launch offer: 25% off for as long as you stay active with code <strong>THEEDGE25</strong>.</p>
+      <p><a href="${ALL_ACCESS_CHECKOUT}" rel="noopener">Get All Access</a></p>
+      <h2>Included today</h2>
+      <ul>
+        <li><a href="https://mlb.propbetedge.ai">PropBetEdge MLB</a></li>
+        <li><a href="https://nfl.propbetedge.ai">PropBetEdge NFL</a></li>
+        <li><a href="https://nba.propbetedge.ai">PropBetEdge NBA</a></li>
+        <li><a href="https://nhl.propbetedge.ai">PropBetEdge NHL</a></li>
+        <li><a href="https://wnba.propbetedge.ai">PropBetEdge WNBA</a></li>
+        <li><a href="https://ufc.propbetedge.ai">PropBetEdge UFC</a></li>
+        <li>Every future PropBetEdge sport and Pro product</li>
+      </ul>
+      <h2>What you get</h2>
+      <p>Proprietary algorithms, tracked and graded picks, live intelligence, PBEcast and sport-specific live experiences, player and matchup intelligence, predictions and future Pro tools, one login across the network.</p>
+      <p>Individual sport plans stay available. All Access is the umbrella, not a replacement.</p>
+    </article>
+  </main>`;
 }
 
 function buildServerAboutHtml() {

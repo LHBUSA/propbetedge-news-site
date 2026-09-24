@@ -100,6 +100,7 @@ export function renderHeader() {
           <a href="/news/nba" class="nav-link ${sportPathActive(path, 'nba') ? 'active' : ''}">NBA</a>
           <a href="https://wnba.propbetedge.ai" class="nav-link" target="_blank" rel="noopener">WNBA</a>
           <a href="/news/nhl" class="nav-link ${sportPathActive(path, 'nhl') ? 'active' : ''}">NHL</a>
+          <a href="/pro" class="nav-link pbe-all-access-link ${path === '/pro' ? 'active' : ''}" data-pbe-placement="masthead_all_access">All Access</a>
         </div>
         <div class="masthead-logo" aria-label="PropBetEdge">
           <img

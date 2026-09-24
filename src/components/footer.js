@@ -18,6 +18,7 @@ export function renderFooter() {
 
           <div class="footer-col">
             <h4>⚡ Sports Intelligence</h4>
+            <a href="/pro"><strong>All Access</strong> <span class="footer-badge footer-badge-gold">$29/mo</span></a>
             <a href="${PROPBET_LINKS.picks_mlb}" target="_blank" rel="noopener">MLB Intelligence <span class="footer-badge">Pro</span></a>
             <a href="${PROPBET_LINKS.picks_nfl}" target="_blank" rel="noopener">NFL Intelligence <span class="footer-badge">Pro</span></a>
             <a href="${PROPBET_LINKS.picks_nba}" target="_blank" rel="noopener">NBA Intelligence <span class="footer-badge">Pro</span></a>

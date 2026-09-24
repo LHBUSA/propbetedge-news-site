@@ -87,6 +87,7 @@ function staticSitemap() {
     '/standings/wnba',
     '/standings/nhl',
     '/games',
+    '/pro',
     '/about',
     '/editorial-standards',
     '/authors',

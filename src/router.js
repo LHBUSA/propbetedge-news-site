@@ -22,6 +22,7 @@ import { renderAuthor } from './pages/author.js';
 import { renderAuthorsIndex } from './pages/authors.js';
 import { renderEditorialStandards } from './pages/editorial-standards.js';
 import { renderAbout } from './pages/about.js';
+import { renderPro } from './pages/pro.js';
 import { renderNotFound } from './pages/404.js';
 import { renderGamesHub } from './pages/games-hub.js';
 import { renderGameDetail } from './pages/game-detail.js';
@@ -220,6 +221,8 @@ function clearAndRoute() {
 
   const authorMatch = path.match(/^\/authors\/([a-z0-9-]+)$/);
   if (authorMatch) return renderAuthor(root, authorMatch[1], setMeta);
+
+  if (path === '/pro') return renderPro(root, setMeta);
 
   if (path === '/about') return renderAbout(root, setMeta);
 
