@@ -115,6 +115,7 @@ export function renderHeader() {
           <a href="/news" class="pbe-mobile-nav-link ${path === '/news' ? 'active' : ''}">News</a>
           <a href="/games" class="pbe-mobile-nav-link ${isLive ? 'active' : ''}">Scores</a>
           <a href="/odds" class="pbe-mobile-nav-link ${isOdds ? 'active' : ''}">Picks</a>
+          <a href="/pro" class="pbe-mobile-nav-link ${path === '/pro' ? 'active' : ''}">Pro</a>
           <a href="/leaders" class="pbe-mobile-nav-link ${isLeaders || isStandings ? 'active' : ''}">Stats</a>
           <button type="button" class="pbe-mobile-nav-link pbe-mobile-search" data-pbe-search-open aria-label="Search PropBetEdge">Search</button>
           <details class="pbe-mobile-more">
@@ -159,6 +160,7 @@ export function renderHeader() {
             <span class="edges-bolt">⚡</span><span class="edges-label">Free Picks</span><span class="edges-count" id="edges-count" aria-live="polite"></span>
           </a>
           ${renderIntelligenceSwitcher(sport)}
+          <a href="/pro" class="nav-link cta ${path === '/pro' ? 'active' : ''}">All Access · $29</a>
         </div>
       </div>
     </header>
