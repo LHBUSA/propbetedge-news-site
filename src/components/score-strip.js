@@ -1,3 +1,5 @@
+import { liveCastUrl } from '../live-cast-routes.js';
+
 /**
  * src/components/score-strip.js
  * ESPN-elite score strip — v3.7
@@ -28,7 +30,7 @@ const UPCOMING_WINDOW_MS = 36 * 60 * 60 * 1000;
 const RECENT_FINAL_WINDOW_MS = 6 * 60 * 60 * 1000;
 
 const SPORT_TARGETS = {
-  mlb: { label: 'Picks live',  live: true,  base: null },
+  mlb: { label: 'Open PBEcast', live: true, base: 'https://mlb.propbetedge.ai' },
   nfl: { label: 'Open platform', live: false, base: 'https://nfl.propbetedge.ai' },
   nba: { label: 'Open platform', live: false, base: 'https://nba.propbetedge.ai' },
   wnba: { label: 'Live platform', live: true, base: 'https://wnba.propbetedge.ai' },
@@ -532,13 +534,14 @@ function escape(s) {
 function tileHref(g) {
   const target = SPORT_TARGETS[g.sport];
   if (!target) return '#';
-  if (g.sport === 'mlb' && g.gameId) return `/games/mlb/${g.gameId}`;
+  if (g.sport === 'mlb' && g.gameId) return liveCastUrl('mlb', g.gameId) || `${target.base}/pbecast`;
   if (g.sport === 'wnba' && g.gameId) return `${target.base}/cast/${g.gameId}`;
   return target.base || '#';
 }
 
 function tileTitle(g) {
   const target = SPORT_TARGETS[g.sport];
+  if (g.sport === 'mlb') return 'Open this game in MLB PBEcast';
   if (target?.live) return 'View game · see tonight\'s picks';
   return 'Open PropBetEdge platform';
 }

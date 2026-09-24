@@ -5,6 +5,10 @@ import { liveCastHome, liveCastLabel, liveCastUrl } from '../src/live-cast-route
 
 test('canonical league cast deep links preserve the clicked game id', () => {
   assert.equal(
+    liveCastUrl('mlb', '823326'),
+    'https://mlb.propbetedge.ai/pbecast?game=823326',
+  );
+  assert.equal(
     liveCastUrl('nfl', '401772510'),
     'https://nfl.propbetedge.ai/?event=401772510#pbecast',
   );
@@ -20,14 +24,16 @@ test('canonical league cast deep links preserve the clicked game id', () => {
 
 test('cast route contract fails closed for bad ids or unsupported sports', () => {
   assert.equal(liveCastUrl('nfl', 'not-a-game'), null);
-  assert.equal(liveCastUrl('mlb', '123456789'), null);
+  assert.equal(liveCastUrl('nba', '123456789'), null);
   assert.equal(liveCastUrl('', '401857189'), null);
 });
 
 test('cast homes and labels stay league-specific', () => {
+  assert.equal(liveCastHome('mlb'), 'https://mlb.propbetedge.ai/pbecast');
   assert.equal(liveCastHome('nfl'), 'https://nfl.propbetedge.ai/#pbecast');
   assert.equal(liveCastHome('nhl'), 'https://nhl.propbetedge.ai/#/cast');
   assert.equal(liveCastHome('wnba'), 'https://wnba.propbetedge.ai/cast');
+  assert.equal(liveCastLabel('mlb'), 'MLB PBEcast');
   assert.equal(liveCastLabel('nfl'), 'NFL PBEcast');
   assert.equal(liveCastLabel('nhl'), 'NHL PBEcast');
   assert.equal(liveCastLabel('wnba'), 'WNBACast');
@@ -39,4 +45,12 @@ test('/games actually includes WNBA and routes the three cast leagues through th
   assert.match(src, /detailUrl: liveCastUrl\('nfl', game\.id\)/);
   assert.match(src, /detailUrl: liveCastUrl\('nhl', game\.id\)/);
   assert.match(src, /detailUrl: liveCastUrl\('wnba', game\.id\)/);
+});
+
+
+test('the scrolling score strip sends MLB games directly into the free MLB PBEcast deep link', () => {
+  const src = readFileSync(new URL('../src/components/score-strip.js', import.meta.url), 'utf8');
+  assert.match(src, /liveCastUrl\('mlb', g\.gameId\)/);
+  assert.match(src, /Open PBEcast/);
+  assert.doesNotMatch(src, /\/games\/mlb\/\$\{g\.gameId\}/);
 });
