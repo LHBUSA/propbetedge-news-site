@@ -366,4 +366,13 @@ export function surnameSurface(entity) {
   return null;
 }
 
+/**
+ * Every normalized spelling the identity system treats as this player's name
+ * (suffix-less form, conventional given-name variants). Read-only view of the
+ * same keys resolvePlayer() matches on — exported for the search index.
+ */
+export function playerNameAliases(name) {
+  return playerAliasKeys(name);
+}
+
 export { slugifyEntity, normalizeName };

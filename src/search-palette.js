@@ -1,87 +1,51 @@
-import { api } from './api.js';
-import { SPORT_CONFIG, slugifyEntity } from './sport-config.js';
+/**
+ * PropBetEdge Search — the network-wide search palette.
+ *
+ * Results come from the edge search service (pbe-entity-hub /v1/search), which
+ * ranks players, fighters, teams, UFC events and bouts, intelligence tools and
+ * the full newsroom archive. The browser never downloads an index. If the
+ * service is unreachable, a small static index (verified destinations + every
+ * team) answers locally, so navigation always works.
+ *
+ * Configure the endpoint with VITE_PBE_SEARCH_API at build time, or
+ * window.PBE_SEARCH_API at runtime.
+ */
 
-const MAX_RESULTS = 12;
-const TEAM_CACHE_TTL = 30 * 60 * 1000;
+import { groupResults, normalizeQuery, MIN_QUERY_LENGTH } from './search/rank.js';
+import { TOOL_DOCS, EMPTY_STATE, SPORT_LABEL, dictionaryTeamDocs, wnbaTeamDocs } from './search/destinations.js';
+import { createSearchController, latencyBucket, DEFAULT_SEARCH_API } from './search/client.js';
+import { TEAMS } from './entity-graph/dictionary.js';
+
+const LISTBOX_ID = 'pbe-search-listbox';
+const TITLE_ID = 'pbe-search-title';
+
 let installed = false;
 let overlay = null;
 let input = null;
 let list = null;
 let status = null;
-let records = [];
+let controller = null;
+let options = [];          // flat, in display order
 let selectedIndex = 0;
-let indexPromise = null;
-let teamCacheAt = 0;
 let lastFocused = null;
+let lastTracked = '';
+let localIndex = null;
 
-const LIVE_PRODUCTS = Object.freeze([
-  Object.freeze({
-    type: 'product',
-    sport: 'mlb',
-    eyebrow: '⚾ MLB · LIVE INTELLIGENCE',
-    title: 'MLB Intelligence',
-    subtitle: 'Live game context, player research, props, model analysis and picks',
-    href: 'https://mlb.propbetedge.ai',
-    domain: 'mlb.propbetedge.ai',
-    external: true,
-    keywords: ['mlb', 'baseball', 'live intelligence', 'model', 'props', 'picks', 'player research', 'market'],
-  }),
-  Object.freeze({
-    type: 'product',
-    sport: 'nfl',
-    eyebrow: '🏈 NFL · LIVE INTELLIGENCE',
-    title: 'NFL Intelligence',
-    subtitle: 'Market Board, Model Lab, line simulation, matchup and live game intelligence',
-    href: 'https://nfl.propbetedge.ai',
-    domain: 'nfl.propbetedge.ai',
-    external: true,
-    keywords: ['nfl', 'football', 'live intelligence', 'market board', 'model lab', 'simulation', 'props', 'matchups'],
-  }),
-  Object.freeze({
-    type: 'product',
-    sport: 'ufc',
-    eyebrow: '🥊 UFC · LIVE INTELLIGENCE',
-    title: 'UFC Intelligence',
-    subtitle: 'Fight DNA, matchup research, rankings, cards and fight-week intelligence',
-    href: 'https://ufc.propbetedge.ai',
-    domain: 'ufc.propbetedge.ai',
-    external: true,
-    keywords: ['ufc', 'mma', 'fight', 'fighter', 'fight dna', 'rankings', 'cards', 'live intelligence', 'matchup'],
-  }),
-  Object.freeze({
-    type: 'product',
-    sport: 'nba',
-    eyebrow: '🏀 NBA · LIVE INTELLIGENCE',
-    title: 'NBA Intelligence',
-    subtitle: 'Live scores, player research, props, matchups and basketball intelligence',
-    href: 'https://nba.propbetedge.ai',
-    domain: 'nba.propbetedge.ai',
-    external: true,
-    keywords: ['nba', 'basketball', 'live intelligence', 'players', 'props', 'picks', 'matchups', 'scores'],
-  }),
-  Object.freeze({
-    type: 'product',
-    sport: 'wnba',
-    eyebrow: '🏀 WNBA · LIVE INTELLIGENCE',
-    title: 'WNBA Intelligence',
-    subtitle: 'WNBACast, live scores, game predictions, player research and women’s basketball intelligence',
-    href: 'https://wnba.propbetedge.ai',
-    domain: 'wnba.propbetedge.ai',
-    external: true,
-    keywords: ['wnba', 'women basketball', 'womens basketball', 'wnbacast', 'live intelligence', 'predictions', 'picks', 'players', 'scores'],
-  }),
-  Object.freeze({
-    type: 'product',
-    sport: 'nhl',
-    eyebrow: '🏒 NHL · LIVE INTELLIGENCE',
-    title: 'NHL Intelligence',
-    subtitle: 'Ice Board, PBE Cast, player research, picks and hockey intelligence',
-    href: 'https://nhl.propbetedge.ai',
-    domain: 'nhl.propbetedge.ai',
-    external: true,
-    keywords: ['nhl', 'hockey', 'ice board', 'pbe cast', 'live intelligence', 'players', 'picks', 'scores'],
-  }),
-]);
+const SPORT_GLYPH = { mlb: '⚾', nfl: '🏈', nba: '🏀', wnba: '🏀', nhl: '🏒', ufc: '🥊' };
+const TYPE_GLYPH = { player: '◉', team: '◆', event: '✪', tool: '⚡', story: '✦' };
+
+function searchApiBase() {
+  if (typeof window !== 'undefined' && typeof window.PBE_SEARCH_API === 'string' && window.PBE_SEARCH_API) {
+    return window.PBE_SEARCH_API;
+  }
+  const fromEnv = import.meta.env?.VITE_PBE_SEARCH_API;
+  return fromEnv || DEFAULT_SEARCH_API;
+}
+
+function localDocs() {
+  if (!localIndex) localIndex = [...TOOL_DOCS, ...dictionaryTeamDocs(TEAMS), ...wnbaTeamDocs()];
+  return localIndex;
+}
 
 export function initSearchPalette() {
   if (installed || typeof document === 'undefined') return;
@@ -99,8 +63,12 @@ function handleDocumentClick(event) {
   }
 }
 
+function isOpen() {
+  return Boolean(overlay?.classList.contains('is-open'));
+}
+
 function handleGlobalKeydown(event) {
-  if (overlay?.classList.contains('is-open')) {
+  if (isOpen()) {
     if (event.key === 'Escape') {
       event.preventDefault();
       closeSearch();
@@ -110,19 +78,15 @@ function handleGlobalKeydown(event) {
       trapFocus(event);
       return;
     }
-    if (event.key === 'ArrowDown') {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
-      moveSelection(1);
-      return;
-    }
-    if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      moveSelection(-1);
+      moveSelection(event.key === 'ArrowDown' ? 1 : -1);
+      if (document.activeElement !== input) input.focus({ preventScroll: true });
       return;
     }
     if (event.key === 'Enter' && document.activeElement === input) {
       event.preventDefault();
-      activateSelected();
+      activate(selectedIndex, { newTab: event.metaKey || event.ctrlKey });
     }
     return;
   }
@@ -130,10 +94,11 @@ function handleGlobalKeydown(event) {
   const target = event.target;
   const editing = target instanceof HTMLInputElement
     || target instanceof HTMLTextAreaElement
+    || target instanceof HTMLSelectElement
     || target?.isContentEditable;
   if (editing) return;
 
-  const commandK = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
+  const commandK = (event.metaKey || event.ctrlKey) && String(event.key).toLowerCase() === 'k';
   const slash = event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey;
   if (commandK || slash) {
     event.preventDefault();
@@ -148,33 +113,25 @@ function ensurePalette() {
   overlay.setAttribute('aria-hidden', 'true');
   overlay.innerHTML = `
     <div class="pbe-search-backdrop" data-pbe-search-close></div>
-    <section class="pbe-search-dialog" role="dialog" aria-modal="true" aria-label="Search PropBetEdge">
+    <section class="pbe-search-dialog" role="dialog" aria-modal="true" aria-labelledby="${TITLE_ID}">
       <div class="pbe-search-topline">
         <div class="pbe-search-brand">
-          <span>⚡</span>
-          <span class="pbe-search-brand-copy"><strong>PBE NETWORK SEARCH</strong><small>News · teams · live intelligence</small></span>
+          <span aria-hidden="true">⚡</span>
+          <span class="pbe-search-brand-copy"><strong id="${TITLE_ID}">PropBetEdge Search</strong><small>Across every sport and intelligence product</small></span>
         </div>
         <button type="button" class="pbe-search-close" data-pbe-search-close aria-label="Close search">ESC</button>
       </div>
-      ${renderNetworkShortcuts()}
-      <label class="pbe-search-input-wrap">
-        <span class="pbe-search-icon">⌕</span>
-        <input type="search" autocomplete="off" spellcheck="false" placeholder="Search WNBA, NBA, NHL, teams, players, injuries, headlines…" aria-label="Search PropBetEdge" />
-        <kbd>↵</kbd>
-      </label>
-      <div class="pbe-search-prompts" aria-label="Suggested searches">
-        <span>Try</span>
-        <button type="button" data-search-query="NFL">NFL</button>
-        <button type="button" data-search-query="UFC">UFC</button>
-        <button type="button" data-search-query="NBA">NBA</button>
-        <button type="button" data-search-query="WNBA">WNBA</button>
-        <button type="button" data-search-query="NHL">NHL</button>
-        <button type="button" data-search-query="injuries">Injuries</button>
-        <button type="button" data-search-query="standings">Standings</button>
+      <div class="pbe-search-input-wrap">
+        <span class="pbe-search-icon" aria-hidden="true">⌕</span>
+        <input type="search" role="combobox" autocomplete="off" autocapitalize="off" spellcheck="false"
+          aria-autocomplete="list" aria-expanded="true" aria-controls="${LISTBOX_ID}" aria-haspopup="listbox"
+          aria-label="Search PropBetEdge"
+          placeholder="Search players, teams, fights, stories and intelligence…" />
+        <kbd aria-hidden="true">↵</kbd>
       </div>
-      <div class="pbe-search-status" aria-live="polite"></div>
-      <div class="pbe-search-results" role="listbox"></div>
-      <div class="pbe-search-footer">
+      <div class="pbe-search-status" role="status" aria-live="polite"></div>
+      <div class="pbe-search-results" id="${LISTBOX_ID}" role="listbox" aria-label="Search results"></div>
+      <div class="pbe-search-footer" aria-hidden="true">
         <span><kbd>↑</kbd><kbd>↓</kbd> move</span>
         <span><kbd>↵</kbd> open</span>
         <span><kbd>esc</kbd> close</span>
@@ -187,348 +144,307 @@ function ensurePalette() {
   list = overlay.querySelector('.pbe-search-results');
   status = overlay.querySelector('.pbe-search-status');
 
+  controller = createSearchController({
+    apiBase: searchApiBase(),
+    localDocs,
+    onState: renderState,
+  });
+
   overlay.addEventListener('click', (event) => {
     if (event.target?.closest?.('[data-pbe-search-close]')) {
       closeSearch();
       return;
     }
-
-    const prompt = event.target?.closest?.('[data-search-query]');
-    if (prompt) {
-      event.preventDefault();
-      input.value = prompt.dataset.searchQuery || '';
-      input.focus({ preventScroll: true });
-      renderResults();
-      return;
-    }
-
     const row = event.target?.closest?.('[data-search-index]');
     if (row) {
-      selectedIndex = Number(row.dataset.searchIndex) || 0;
-      activateSelected();
+      event.preventDefault();
+      activate(Number(row.dataset.searchIndex) || 0, { newTab: event.metaKey || event.ctrlKey });
     }
   });
-  input.addEventListener('input', renderResults);
+  list.addEventListener('mousemove', (event) => {
+    const row = event.target?.closest?.('[data-search-index]');
+    if (row) {
+      const index = Number(row.dataset.searchIndex) || 0;
+      if (index !== selectedIndex) selectIndex(index, { scroll: false });
+    }
+  });
+  input.addEventListener('input', () => {
+    const value = input.value;
+    if (normalizeQuery(value).length < MIN_QUERY_LENGTH) {
+      controller.reset();
+      renderEmptyState();
+      return;
+    }
+    controller.setQuery(value);
+  });
 }
 
-function renderNetworkShortcuts() {
-  return `
-    <nav class="pbe-search-network" aria-label="Live PropBetEdge intelligence products">
-      <span class="pbe-search-network-label"><i></i> LIVE INTELLIGENCE</span>
-      <div class="pbe-search-network-links">
-        ${LIVE_PRODUCTS.map((product) => `
-          <a href="${product.href}" target="_blank" rel="noopener" class="pbe-search-network-link ${product.sport}">
-            <span>${iconFor('product', product.sport)}</span>
-            <strong>${product.sport.toUpperCase()}</strong>
-            <small>Open ↗</small>
-          </a>
-        `).join('')}
-      </div>
-    </nav>
-  `;
-}
-
-async function openSearch() {
+function openSearch() {
   ensurePalette();
-  if (!overlay.classList.contains('is-open')) lastFocused = document.activeElement;
+  if (!isOpen()) lastFocused = document.activeElement;
   overlay.classList.add('is-open');
   overlay.setAttribute('aria-hidden', 'false');
   document.documentElement.classList.add('pbe-search-open');
-  selectedIndex = 0;
+  controller.reset();
   input.value = '';
+  renderEmptyState();
   input.focus({ preventScroll: true });
-  renderQuickLinks();
-
-  status.textContent = 'Loading the PBE intelligence index…';
-  try {
-    await buildIndex();
-    if (!overlay.classList.contains('is-open')) return;
-    status.textContent = `${records.length} live destinations indexed across the PBE network`;
-    renderResults();
-  } catch {
-    status.textContent = 'Live search index partially unavailable — core destinations still work.';
-    renderResults();
-  }
 }
 
 function closeSearch() {
   if (!overlay) return;
+  controller?.reset();
   overlay.classList.remove('is-open');
   overlay.setAttribute('aria-hidden', 'true');
   document.documentElement.classList.remove('pbe-search-open');
-  if (lastFocused instanceof HTMLElement && document.contains(lastFocused)) {
-    window.setTimeout(() => lastFocused.focus({ preventScroll: true }), 0);
+  const target = lastFocused;
+  lastFocused = null;
+  if (target instanceof HTMLElement && document.contains(target)) {
+    window.setTimeout(() => target.focus({ preventScroll: true }), 0);
   }
 }
 
 function trapFocus(event) {
   const dialog = overlay?.querySelector('.pbe-search-dialog');
   if (!dialog) return;
-  const focusable = [...dialog.querySelectorAll('button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])')]
+  const focusable = [...dialog.querySelectorAll('button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])')]
     .filter((node) => !node.hidden && node.getClientRects().length);
   if (!focusable.length) return;
   const first = focusable[0];
   const last = focusable[focusable.length - 1];
-  if (event.shiftKey && document.activeElement === first) {
+  const active = document.activeElement;
+  if (!dialog.contains(active)) {
+    event.preventDefault();
+    first.focus();
+  } else if (event.shiftKey && active === first) {
     event.preventDefault();
     last.focus();
-  } else if (!event.shiftKey && document.activeElement === last) {
+  } else if (!event.shiftKey && active === last) {
     event.preventDefault();
     first.focus();
   }
 }
 
-async function buildIndex() {
-  if (indexPromise && Date.now() - teamCacheAt < TEAM_CACHE_TTL) return indexPromise;
-  indexPromise = (async () => {
-    const staticRecords = buildStaticRecords();
-    const [newsResult, ...teamResults] = await Promise.allSettled([
-      api.newsAll(100, 1),
-      ...Object.values(SPORT_CONFIG).map((config) => loadTeams(config)),
-    ]);
+// ─── rendering ───────────────────────────────────────────────────────────────
 
-    const articles = newsResult.status === 'fulfilled'
-      ? (newsResult.value?.articles || []).map(articleRecord)
-      : [];
-    const teams = teamResults.flatMap((result) => result.status === 'fulfilled' ? result.value : []);
-    records = dedupe([...staticRecords, ...teams, ...articles]);
-    teamCacheAt = Date.now();
-    return records;
-  })().finally(() => {
-    if (!records.length) indexPromise = null;
-  });
-  return indexPromise;
+function renderEmptyState() {
+  if (!list) return;
+  const live = EMPTY_STATE.live.map((d) => ({ ...d, type: 'tool', glyph: SPORT_GLYPH[d.sport] }));
+  const popular = EMPTY_STATE.popular.map((d) => ({ ...d, type: 'tool', glyph: d.sport ? SPORT_GLYPH[d.sport] : '⚡' }));
+  options = [...live, ...popular];
+  let index = 0;
+  const chipGroup = (id, label, items) => `
+    <div class="pbe-search-group pbe-search-group--chips" role="group" aria-labelledby="${id}">
+      <div class="pbe-search-section-label" id="${id}">${escapeHtml(label)}</div>
+      <div class="pbe-search-chips" role="presentation">
+        ${items.map((item) => renderChip(item, index++)).join('')}
+      </div>
+    </div>`;
+  list.innerHTML = chipGroup('pbe-sg-live', 'Live intelligence', live) + chipGroup('pbe-sg-popular', 'Popular', popular);
+  status.textContent = 'Live intelligence: MLB · NFL · NBA · WNBA · NHL · UFC';
+  selectIndex(-1);
 }
 
-async function loadTeams(config) {
-  const response = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${config.espnPath}/teams?limit=100`, { credentials: 'omit' });
-  if (!response.ok) return [];
-  const data = await response.json();
-  const teams = (data?.sports || [])
-    .flatMap((sport) => sport.leagues || [])
-    .flatMap((league) => league.teams || [])
-    .map((entry) => entry?.team || entry)
-    .filter(Boolean);
-
-  return teams.map((team) => ({
-    type: 'team',
-    sport: config.key,
-    eyebrow: `${config.label} TEAM`,
-    title: team.displayName || team.name || team.abbreviation || 'Team',
-    subtitle: 'Team intelligence · roster · schedule · connected stories',
-    href: `/team/${config.key}/${slugifyEntity(team.displayName || team.name || team.abbreviation)}`,
-    image: team.logos?.[0]?.href || team.logo || '',
-    keywords: [team.displayName, team.shortDisplayName, team.name, team.location, team.abbreviation, config.label].filter(Boolean),
-  }));
+function renderChip(item, index) {
+  return `
+    <div class="pbe-search-chip${item.sport ? ` is-${item.sport}` : ''}" role="option" id="pbe-opt-${index}" aria-selected="false" data-search-index="${index}">
+      <span aria-hidden="true">${item.glyph || '⚡'}</span><strong>${escapeHtml(item.title)}</strong>
+    </div>`;
 }
 
-function articleRecord(article) {
-  const config = SPORT_CONFIG[article?.sport] || null;
-  const players = article?.take?.players || [];
-  const teams = article?.take?.teams || [];
-  const props = article?.take?.prop_types || [];
-  return {
-    type: 'story',
-    sport: article?.sport || '',
-    eyebrow: `${config?.label || String(article?.sport || '').toUpperCase()} STORY`,
-    title: article?.title || 'Story',
-    subtitle: article?.summary || article?.take?.summary || formatDate(article?.published_at),
-    href: `/news/${article?.sport}/${article?.slug}`,
-    image: article?.image_url || '',
-    keywords: [article?.title, article?.summary, article?.category, article?.author, ...players, ...teams, ...props].filter(Boolean),
-    publishedAt: article?.published_at || '',
-  };
-}
-
-function buildStaticRecords() {
-  const core = [
-    ...LIVE_PRODUCTS,
-    { type: 'home', eyebrow: 'PROPBETEDGE', title: 'PropBetEdge Home', subtitle: 'Your sports news and intelligence front page', href: '/', keywords: ['home', 'front page', 'my edge', 'propbetedge'] },
-    { type: 'tool', eyebrow: 'PBE TOOL', title: 'PBEcast Live Games', subtitle: 'Live scores and game centers across every league', href: '/games', keywords: ['scores', 'live games', 'game center', 'pbecast'] },
-    { type: 'tool', eyebrow: 'PBE TOOL', title: 'Stat Leaders', subtitle: 'League leaders, advanced stats and player intelligence', href: '/leaders', keywords: ['leaders', 'stats', 'players'] },
-    { type: 'tool', eyebrow: 'FREE PICKS', title: 'Free Picks', subtitle: 'Up to 2 free MLB home run props plus current NFL, UFC, WNBA and NHL picks', href: '/odds', keywords: ['odds', 'picks', 'mlb', 'home runs', 'hr props', 'nfl', 'ufc', 'model'] },
-    { type: 'news', eyebrow: 'NEWSROOM', title: 'All News', subtitle: 'The complete PropBetEdge sports newsroom', href: '/news', keywords: ['news', 'stories', 'latest'] },
-    { type: 'news', sport: 'ufc', eyebrow: 'UFC DESK', title: 'UFC News', subtitle: 'Fight-week coverage connected to UFC Intelligence', href: 'https://ufc.propbetedge.ai/news', external: true, keywords: ['ufc', 'mma', 'fight', 'news', 'fighters'] },
-  ];
-
-  const leagues = Object.values(SPORT_CONFIG).flatMap((config) => [
-    { type: 'news', sport: config.key, eyebrow: `${config.label} DESK`, title: `${config.label} News`, subtitle: `Latest ${config.label} reporting and betting impact`, href: `/news/${config.key}`, keywords: [config.label, config.name, 'news'] },
-    { type: 'standings', sport: config.key, eyebrow: `${config.label} INTELLIGENCE`, title: config.key === 'ufc' ? 'UFC Rankings' : `${config.label} Standings`, subtitle: config.key === 'ufc' ? 'Current UFC divisional rankings and championship context' : 'Live table connected to team intelligence hubs', href: config.standingsUrl || `/standings/${config.key}`, keywords: [config.label, config.name, config.key === 'ufc' ? 'rankings' : 'standings', 'records'] },
-    { type: 'leaders', sport: config.key, eyebrow: `${config.label} INTELLIGENCE`, title: `${config.label} Leaders`, subtitle: 'Top performers and connected player context', href: `/leaders/${config.key}`, keywords: [config.label, config.name, 'leaders', 'stats'] },
-  ]);
-  return [...core, ...leagues];
-}
-
-function quickRecords() {
-  return buildStaticRecords().filter((record) => record.type !== 'product').slice(0, 8);
-}
-
-function renderQuickLinks() {
-  const quick = quickRecords();
-  selectedIndex = 0;
-  list.innerHTML = `
-    <div class="pbe-search-section-label">Jump anywhere</div>
-    ${quick.map((record, index) => renderRecord(record, index)).join('')}
-  `;
-  paintSelection();
-}
-
-function renderResults() {
-  if (!list || !input) return;
-  const query = normalize(input.value);
-  if (!query) {
-    renderQuickLinks();
+function renderState(state) {
+  if (!list || !isOpen()) return;
+  if (state.status === 'idle') {
+    renderEmptyState();
     return;
   }
 
-  const ranked = rankedResults(query);
-  selectedIndex = 0;
-  status.textContent = ranked.length ? `${ranked.length} best matches across news, teams and intelligence` : 'No exact match in the current PBE index';
-  list.innerHTML = ranked.length
-    ? ranked.map((record, index) => renderRecord(record, index)).join('')
-    : `<div class="pbe-search-empty"><strong>No match yet.</strong><span>Try a player, team, league, headline, “UFC”, “injuries”, “standings”, “leaders”, or “edges”.</span></div>`;
-  paintSelection();
-}
+  const results = state.results || [];
+  const groups = groupResults(results);
+  options = groups.flatMap((g) => g.items);
+  let index = 0;
+  const now = Date.now();
 
-function rankedResults(query) {
-  return records
-    .map((record) => ({ record, score: scoreRecord(record, query) }))
-    .filter((item) => item.score > 0)
-    .sort((a, b) => b.score - a.score || recentFirst(a.record, b.record))
-    .slice(0, MAX_RESULTS)
-    .map((item) => item.record);
-}
-
-function scoreRecord(record, query) {
-  const terms = query.split(/\s+/).filter(Boolean);
-  const title = normalize(record.title);
-  const eyebrow = normalize(record.eyebrow);
-  const keywords = normalize((record.keywords || []).join(' '));
-  const subtitle = normalize(record.subtitle);
-  const domain = normalize(record.domain);
-  let score = 0;
-
-  if (title === query) score += 160;
-  if (title.startsWith(query)) score += 110;
-  if (title.includes(query)) score += 75;
-  if (keywords.includes(query)) score += 48;
-  if (eyebrow.includes(query)) score += 28;
-  if (subtitle.includes(query)) score += 16;
-  if (domain.includes(query)) score += 32;
-
-  for (const term of terms) {
-    if (title.startsWith(term)) score += 25;
-    else if (title.includes(term)) score += 16;
-    if (keywords.includes(term)) score += 12;
-    if (subtitle.includes(term)) score += 4;
-    if (domain.includes(term)) score += 8;
+  if (!options.length) {
+    list.innerHTML = state.status === 'loading'
+      ? '<div class="pbe-search-empty" role="presentation"><span>Searching the PropBetEdge network…</span></div>'
+      : `<div class="pbe-search-empty" role="presentation"><strong>No match for “${escapeHtml(state.query.trim())}”.</strong><span>Try a player, fighter, team, event, “Fight Simulator”, “PBE Picks” or a headline.</span></div>`;
+  } else {
+    list.innerHTML = groups.map((g) => `
+      <div class="pbe-search-group" role="group" aria-labelledby="pbe-sg-${g.key}">
+        <div class="pbe-search-section-label" id="pbe-sg-${g.key}">${escapeHtml(g.label)}</div>
+        ${g.items.map((r) => renderResult(r, index++, now)).join('')}
+      </div>`).join('');
+    list.querySelectorAll('img[data-fallback]').forEach((img) => {
+      img.addEventListener('error', () => {
+        const span = document.createElement('span');
+        span.textContent = img.dataset.fallback || '✦';
+        img.replaceWith(span);
+      }, { once: true });
+    });
   }
 
-  if (record.type === 'product') score += 14;
-  if (record.type === 'team') score += 6;
-  return score;
+  if (state.status === 'fallback') {
+    status.textContent = 'Live search is unavailable — showing network destinations and teams.';
+  } else if (state.status === 'loading') {
+    status.textContent = 'Searching players, teams, events, tools and news…';
+  } else {
+    status.textContent = options.length
+      ? `${options.length} result${options.length === 1 ? '' : 's'} across the PropBetEdge network`
+      : 'No results';
+  }
+
+  selectIndex(options.length ? 0 : -1);
+  if (state.status === 'ready' || state.status === 'fallback') trackSearch(state);
 }
 
-function renderRecord(record, index) {
-  const icon = iconFor(record.type, record.sport);
-  const openLabel = record.type === 'product' ? '<b>LIVE</b> ↗' : '↗';
+function renderResult(r, index, now) {
+  const glyph = r.sport ? (SPORT_GLYPH[r.sport] || TYPE_GLYPH[r.type]) : TYPE_GLYPH[r.type] || '✦';
+  const icon = r.image
+    ? `<img src="${escapeAttr(r.image)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-fallback="${escapeAttr(glyph)}" />`
+    : `<span>${glyph}</span>`;
+  const { kicker, detail } = resultLabel(r, now);
   return `
-    <button type="button" class="pbe-search-row${record.type === 'product' ? ' is-product' : ''}" role="option" aria-selected="${index === selectedIndex ? 'true' : 'false'}" data-search-index="${index}">
-      <span class="pbe-search-row-icon">${record.image ? `<img src="${escapeAttr(record.image)}" alt="" loading="lazy" onerror="this.remove()" />` : icon}</span>
+    <div class="pbe-search-row is-${escapeAttr(r.type)}" role="option" id="pbe-opt-${index}" aria-selected="false" data-search-index="${index}" data-type="${escapeAttr(r.type)}">
+      <span class="pbe-search-row-icon${r.type === 'player' && r.image ? ' is-photo' : ''}" aria-hidden="true">${icon}</span>
       <span class="pbe-search-row-copy">
-        <span class="pbe-search-row-eyebrow">${escapeHtml(record.eyebrow || record.type)}</span>
-        <strong>${escapeHtml(record.title)}</strong>
-        <small>${escapeHtml(shorten(record.subtitle || '', 115))}${record.domain ? ` · ${escapeHtml(record.domain)}` : ''}</small>
+        <strong>${escapeHtml(r.title)}</strong>
+        <small><b class="pbe-search-kicker">${escapeHtml(kicker)}</b>${detail ? ` · ${escapeHtml(shorten(detail, 90))}` : ''}</small>
       </span>
-      <span class="pbe-search-row-open">${openLabel}</span>
-    </button>
-  `;
+      <span class="pbe-search-row-open" aria-hidden="true">${isExternal(r.href) ? '↗' : '→'}</span>
+    </div>`;
 }
 
-function moveSelection(delta) {
-  const rows = [...(list?.querySelectorAll('[data-search-index]') || [])];
-  if (!rows.length) return;
-  selectedIndex = (selectedIndex + delta + rows.length) % rows.length;
-  paintSelection();
-  rows[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+/** The type line under every result — the type is always the first words. */
+export function resultLabel(r, now = Date.now()) {
+  const S = SPORT_LABEL[r.sport] || (r.sport ? String(r.sport).toUpperCase() : 'PROPBETEDGE');
+  switch (r.type) {
+    case 'player':
+      return { kicker: `${S} ${r.sport === 'ufc' ? 'FIGHTER' : 'PLAYER'}`, detail: r.sport === 'ufc' ? '' : r.subtitle };
+    case 'team':
+      return { kicker: `${S} TEAM`, detail: '' };
+    case 'event': {
+      const when = shortDate(r.date, now);
+      if (r.kind === 'fight') return { kicker: `${S} FIGHT${when ? ` · ${when}` : ''}`, detail: r.subtitle };
+      return { kicker: `${S} EVENT${when ? ` · ${when}` : ''}`, detail: '' };
+    }
+    case 'tool':
+      return { kicker: r.label || r.subtitle || `${S} INTELLIGENCE`, detail: '' };
+    case 'story':
+      return { kicker: `${S} NEWS${r.date ? ` · ${timeAgo(r.date, now)}` : ''}`, detail: '' };
+    default:
+      return { kicker: S, detail: r.subtitle };
+  }
 }
 
-function paintSelection() {
-  [...(list?.querySelectorAll('[data-search-index]') || [])].forEach((row, index) => {
-    const active = index === selectedIndex;
+function selectIndex(index, { scroll = true } = {}) {
+  selectedIndex = index;
+  const rows = list ? [...list.querySelectorAll('[data-search-index]')] : [];
+  rows.forEach((row, i) => {
+    const active = i === index;
     row.classList.toggle('is-selected', active);
     row.setAttribute('aria-selected', active ? 'true' : 'false');
   });
-}
-
-function activateSelected() {
-  const rows = [...(list?.querySelectorAll('[data-search-index]') || [])];
-  const row = rows[selectedIndex];
-  if (!row) return;
-  const query = normalize(input?.value || '');
-  const resultSet = query ? rankedResults(query) : quickRecords();
-  const record = resultSet[selectedIndex];
-  if (!record) return;
-
-  sendSearchEvent(record, query);
-  closeSearch();
-  if (/^https?:\/\//i.test(record.href)) {
-    window.open(record.href, '_blank', 'noopener');
+  const activeRow = rows[index];
+  if (activeRow) {
+    input?.setAttribute('aria-activedescendant', activeRow.id);
+    if (scroll) activeRow.scrollIntoView({ block: 'nearest' });
   } else {
-    window.history.pushState({}, '', record.href);
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    input?.removeAttribute('aria-activedescendant');
   }
 }
 
-function sendSearchEvent(record, query) {
+function moveSelection(delta) {
+  if (!options.length) return;
+  const next = selectedIndex < 0
+    ? (delta > 0 ? 0 : options.length - 1)
+    : (selectedIndex + delta + options.length) % options.length;
+  selectIndex(next);
+}
+
+function activate(index, { newTab = false } = {}) {
+  const record = options[index < 0 ? 0 : index];
+  if (!record?.href) return;
+  trackOpen(record, index < 0 ? 0 : index);
+  closeSearch();
+  const href = record.href.replace(/^https:\/\/(?:www\.)?propbetedge\.ai(?=\/|$)/, '') || '/';
+  if (newTab) {
+    window.open(href.startsWith('/') ? `${window.location.origin}${href}` : href, '_blank', 'noopener');
+    return;
+  }
+  if (href.startsWith('/')) {
+    window.history.pushState({}, '', href);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    window.scrollTo?.(0, 0);
+  } else {
+    window.location.assign(href);
+  }
+}
+
+// ─── analytics (no user-identifying data: normalized query + counts only) ───
+
+function gtagEvent(name, params) {
   if (typeof window.gtag !== 'function') return;
-  window.gtag('event', 'site_search_result_open', {
-    search_term: query,
+  window.gtag('event', name, params);
+}
+
+function trackSearch(state) {
+  const key = `${state.normalized}|${state.source}`;
+  if (key === lastTracked) return;
+  lastTracked = key;
+  gtagEvent('site_search', {
+    search_term: String(state.normalized || '').slice(0, 60),
+    result_count: (state.results || []).length,
+    top_result_type: state.results?.[0]?.type || 'none',
+    latency_bucket: state.source === 'cache' ? 'cache' : latencyBucket(state.latencyMs),
+    search_source: state.source,
+  });
+}
+
+function trackOpen(record, index) {
+  gtagEvent('site_search_result_open', {
+    search_term: normalizeQuery(input?.value || '').slice(0, 60),
     result_type: record.type || '',
+    result_sport: record.sport || '',
     result_title: record.title || '',
     result_url: record.href || '',
+    result_position: index + 1,
   });
 }
 
-function dedupe(items) {
-  const seen = new Set();
-  return items.filter((item) => {
-    const key = `${item.type}:${item.href}`;
-    if (!item.href || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+// ─── formatting ──────────────────────────────────────────────────────────────
+
+function isExternal(href) {
+  return /^https?:\/\//i.test(href || '') && !/^https:\/\/(?:www\.)?propbetedge\.ai(?:\/|$)/i.test(href);
 }
 
-function recentFirst(a, b) {
-  return new Date(b?.publishedAt || 0).getTime() - new Date(a?.publishedAt || 0).getTime();
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export function shortDate(value, now = Date.now()) {
+  const t = Date.parse(value || '');
+  if (!Number.isFinite(t)) return '';
+  const d = new Date(t);
+  const sameYear = d.getUTCFullYear() === new Date(now).getUTCFullYear();
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}${sameYear ? '' : `, ${d.getUTCFullYear()}`}`;
 }
 
-function iconFor(type, sport) {
-  if (sport === 'ufc') return '🥊';
-  if (sport === 'wnba') return '🏀';
-  if (sport && SPORT_CONFIG[sport]) return SPORT_CONFIG[sport].emoji;
-  if (type === 'home') return '⌂';
-  if (type === 'story' || type === 'news') return '✦';
-  if (type === 'team') return '◆';
-  if (type === 'standings') return '▥';
-  if (type === 'leaders') return '↑';
-  return '⚡';
-}
-
-function normalize(value) {
-  return String(value || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9\s-]/g, ' ').replace(/\s+/g, ' ').trim();
+export function timeAgo(value, now = Date.now()) {
+  const t = Date.parse(value || '');
+  if (!Number.isFinite(t)) return '';
+  const diff = Math.max(0, now - t);
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return 'just now';
+  if (min < 60) return `${min}m ago`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return shortDate(value, now);
 }
 
 function shorten(value, max) {
   const text = String(value || '');
   return text.length > max ? `${text.slice(0, max - 1).trim()}…` : text;
-}
-
-function formatDate(value) {
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return '';
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function escapeHtml(value) {

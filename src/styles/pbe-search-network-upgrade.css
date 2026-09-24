@@ -1,7 +1,8 @@
 /*
  * PropBetEdge network search upgrade
- * Turns the existing command palette into a premium cross-product search layer
- * with direct MLB / NFL / UFC intelligence shortcuts.
+ * Dark/gold treatment of the PropBetEdge Search dialog. (Search v2 moved the
+ * old network shortcut strip and "Try" prompts into the empty state as
+ * keyboard-navigable destinations.)
  */
 
 .pbe-search-overlay {
@@ -75,89 +76,6 @@
   outline: none;
 }
 
-.pbe-search-network {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 14px;
-  margin: 14px 16px 6px;
-  padding: 10px 11px;
-  border: 1px solid rgba(233,199,90,.13);
-  border-radius: 12px;
-  background: rgba(212,175,55,.025);
-}
-
-.pbe-search-network-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: #a9a193;
-  font-family: var(--font-mono);
-  font-size: 7px;
-  font-weight: 900;
-  letter-spacing: .12em;
-  white-space: nowrap;
-}
-
-.pbe-search-network-label i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--crimson-bright);
-  box-shadow: 0 0 9px rgba(230,57,70,.5);
-}
-
-.pbe-search-network-links {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.pbe-search-network-link {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 9px;
-  border: 1px solid rgba(255,255,255,.055);
-  border-radius: 9px;
-  background: rgba(255,255,255,.018);
-  color: #eee8dc;
-  text-decoration: none;
-  transition: background .14s ease, border-color .14s ease, transform .14s ease;
-}
-
-.pbe-search-network-link:hover,
-.pbe-search-network-link:focus-visible {
-  transform: translateY(-1px);
-  border-color: rgba(233,199,90,.26);
-  background: rgba(212,175,55,.065);
-  outline: none;
-}
-
-.pbe-search-network-link > span {
-  font-size: 14px;
-}
-
-.pbe-search-network-link strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-family: var(--font-mono);
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: .08em;
-  white-space: nowrap;
-}
-
-.pbe-search-network-link small {
-  color: rgba(233,199,90,.7);
-  font-family: var(--font-mono);
-  font-size: 6px;
-  font-weight: 850;
-  white-space: nowrap;
-}
-
 .pbe-search-input-wrap {
   margin: 10px 16px 7px !important;
   padding: 12px 14px !important;
@@ -194,49 +112,6 @@
   border-color: rgba(255,255,255,.07) !important;
   background: rgba(255,255,255,.035) !important;
   color: #8f887d !important;
-}
-
-.pbe-search-prompts {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 1px 18px 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.pbe-search-prompts::-webkit-scrollbar {
-  display: none;
-}
-
-.pbe-search-prompts > span {
-  color: #6f685f;
-  font-family: var(--font-mono);
-  font-size: 7px;
-  font-weight: 900;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-}
-
-.pbe-search-prompts button {
-  appearance: none;
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 999px;
-  background: rgba(255,255,255,.02);
-  color: #9d9589;
-  padding: 5px 8px;
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 7px;
-  font-weight: 800;
-  letter-spacing: .04em;
-}
-
-.pbe-search-prompts button:hover,
-.pbe-search-prompts button:focus-visible {
-  border-color: rgba(233,199,90,.26);
-  color: var(--gold-bright);
-  outline: none;
 }
 
 .pbe-search-status {
@@ -344,22 +219,8 @@
     max-height: calc(100vh - 20px) !important;
   }
 
-  .pbe-search-network {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    margin-inline: 10px;
-  }
-
-  .pbe-search-network-label {
-    justify-content: center;
-  }
-
   .pbe-search-input-wrap {
     margin-inline: 10px !important;
-  }
-
-  .pbe-search-prompts {
-    padding-inline: 12px;
   }
 
   .pbe-search-footer-network {
@@ -368,19 +229,147 @@
 }
 
 @media (max-width: 480px) {
-  .pbe-search-network-link {
-    grid-template-columns: auto 1fr;
-  }
-
-  .pbe-search-network-link small {
-    display: none;
-  }
-
-  .pbe-search-network-link strong {
-    font-size: 7px;
-  }
-
   .pbe-search-input-wrap input {
     font-size: 15px !important;
   }
+}
+
+/*
+ * PropBetEdge Search v2 — grouped results (players & fighters, teams, events,
+ * intelligence & tools, news), type-first result lines and the empty-state
+ * destination chips. Same dark/gold language as the palette above.
+ */
+
+.pbe-search-brand-copy strong {
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.pbe-search-group + .pbe-search-group {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255,255,255,.04);
+}
+
+.pbe-search-group .pbe-search-section-label {
+  padding: 10px 11px 6px;
+  color: rgba(233,199,90,.62) !important;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 7.5px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.pbe-search-row {
+  user-select: none;
+}
+
+.pbe-search-row-copy strong {
+  font-size: 14px;
+}
+
+.pbe-search-row-copy small {
+  display: block;
+  font-size: 9.5px !important;
+}
+
+.pbe-search-kicker {
+  color: rgba(233,199,90,.9);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.pbe-search-row.is-story .pbe-search-kicker { color: #b9b1a3; }
+.pbe-search-row.is-tool .pbe-search-kicker { color: var(--gold-bright, #e9c75a); }
+
+.pbe-search-row.is-story .pbe-search-row-copy strong {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  line-height: 1.28;
+}
+
+.pbe-search-row-icon.is-photo {
+  border-radius: 50%;
+}
+
+.pbe-search-row-icon.is-photo img {
+  object-fit: cover;
+  object-position: center top;
+  padding: 0;
+  background: linear-gradient(180deg, #2a241c, #15120e) !important;
+}
+
+.pbe-search-row.is-selected .pbe-search-row-open {
+  color: var(--gold-bright, #e9c75a) !important;
+}
+
+.pbe-search-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 2px 9px 10px;
+}
+
+.pbe-search-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 999px;
+  background: rgba(255,255,255,.025);
+  color: #eee8dc;
+  cursor: pointer;
+  user-select: none;
+  transition: background .14s ease, border-color .14s ease, transform .14s ease;
+}
+
+.pbe-search-chip > span {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.pbe-search-chip strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.pbe-search-chip:hover,
+.pbe-search-chip.is-selected {
+  transform: translateY(-1px);
+  border-color: rgba(233,199,90,.34);
+  background: rgba(212,175,55,.08);
+}
+
+.pbe-search-empty span {
+  font-size: 11px;
+}
+
+@media (max-width: 720px) {
+  .pbe-search-row-copy strong { font-size: 13px; }
+  .pbe-search-chips { padding-inline: 6px; gap: 6px; }
+}
+
+@media (max-width: 380px) {
+  .pbe-search-topline { padding: 11px 12px !important; }
+  .pbe-search-brand-copy small { font-size: 6.5px; }
+  .pbe-search-input-wrap { padding: 10px 11px !important; }
+  .pbe-search-input-wrap kbd { display: none; }
+  .pbe-search-row { grid-template-columns: 38px minmax(0,1fr) auto; gap: 8px; padding-inline: 6px; }
+  .pbe-search-row-icon { width: 38px; height: 38px; }
+  .pbe-search-chip { padding: 7px 10px; }
 }
