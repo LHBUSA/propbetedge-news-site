@@ -40,6 +40,7 @@ import { renderOdds } from './pages/odds.js';
 import { renderFreePicksHistory } from './pages/free-picks-history.js';
 import { renderTeamPage } from './pages/team.js';
 import { renderStandingsPage } from './pages/standings.js';
+import { renderProPage } from './pages/pro.js';
 import { liveCastUrl } from './live-cast-routes.js';
 
 const VALID_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl']);
@@ -101,6 +102,10 @@ function clearAndRoute() {
       canonical: 'https://propbetedge.ai/',
     });
     return renderHome(root);
+  }
+
+  if (path === '/pro') {
+    return renderProPage(root, setMeta);
   }
 
   if (path === '/odds') {
