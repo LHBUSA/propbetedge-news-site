@@ -51,7 +51,7 @@ export const PROPBET_LINKS = {
   algo:        'https://mlb.propbetedge.ai/askalgo',
   k_props:     'https://mlb.propbetedge.ai/kprops',
   hr_targets:  'https://mlb.propbetedge.ai/picks',
-  learn:       'https://learn.propbetedge.ai',
+  learn:       'https://learn.propbetedge.ai/',
   propsports:  'https://propsports.proptechusa.ai',
   discord:     PROPBETEDGE_DISCORD_URL,
   twitter:     'https://x.com/MLBHRALERTSPBE',
