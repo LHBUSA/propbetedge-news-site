@@ -22,9 +22,9 @@ test('article visuals render only article facts and tagged entities', () => {
   const html = renderArticleVisuals(article, manifest);
   assert.match(html, /PBE DATA INTELLIGENCE/);
   assert.match(html, /Here’s the data\./);
-  assert.match(html, />4<\/strong><span>\/5/);
-  assert.match(html, />9<\/strong>\s*<span>K</);
-  assert.match(html, />6<\/strong>\s*<span>IP</);
+  assert.match(html, />4<\/strong><b>\/5/);
+  assert.match(html, />9<\/strong>\s*<b>K</);
+  assert.match(html, />6<\/strong>\s*<b>IP</);
   assert.match(html, /Strikeouts/);
   assert.match(html, /Home Runs/);
   assert.match(html, /Example Pitcher/);
@@ -178,10 +178,10 @@ test('NFL WR/TE and QB form charts remain position appropriate', () => {
 
 test('story evidence cards preserve the full published sentence instead of cutting explainers mid-thought', () => {
   const article = {
-    id: 'cubs-weather',
+    id: 'gausman-long-sentence',
     sport: 'mlb',
-    title: 'Cubs add Kevin Gausman before a windy matchup',
-    body: "Wind gusts of 10-20 mph out of the northeast, consistent with Tuesday's conditions, will suppress fly-ball carry — a modest tailwind for Chicago's offense against a pitcher whose game is built around limiting hard airborne contact.",
+    title: 'Cubs face Kevin Gausman before a windy matchup',
+    body: "Gausman struck out 9 hitters in his last start, consistent with the swing-and-miss profile he has carried all season — a real problem for Chicago's offense against a pitcher whose game is built around limiting hard airborne contact.",
     take: {
       impact_score: 4,
       prop_types: ['k_prop', 'team_total', 'moneyline'],
@@ -193,8 +193,21 @@ test('story evidence cards preserve the full published sentence instead of cutti
   };
 
   const html = renderArticleVisuals(article, manifest);
-  assert.match(html, /modest tailwind for Chicago's offense against a pitcher whose game is built around limiting hard airborne contact\./);
-  assert.doesNotMatch(html, /Chicago's offense against a pitcher whose game is built…/);
+  assert.match(html, /a real problem for Chicago(?:'|&#39;)s offense against a pitcher whose game is built around limiting hard airborne contact\./);
+  assert.doesNotMatch(html, /Chicago(?:'|&#39;)s offense against a pitcher whose game is built…/);
+});
+
+test('wind speed is weather, never pitch velocity evidence', () => {
+  const article = {
+    id: 'cubs-weather',
+    sport: 'mlb',
+    title: 'Cubs add Kevin Gausman before a windy matchup',
+    body: "Wind gusts of 10-20 mph out of the northeast, consistent with Tuesday's conditions, will suppress fly-ball carry.",
+    take: { impact_score: 4, prop_types: ['k_prop'] },
+  };
+  const html = renderArticleVisuals(article, { players: [], teams: [] });
+  assert.doesNotMatch(html, /VELO/);
+  assert.doesNotMatch(html, /Here’s the data\./);
 });
 
 

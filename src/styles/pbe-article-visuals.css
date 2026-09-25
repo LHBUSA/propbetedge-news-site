@@ -1245,3 +1245,344 @@
     transition: none;
   }
 }
+
+/* ==================================================================
+   Data Intelligence V3 — hierarchy, provenance, proportional weight
+   ================================================================== */
+
+.pbe-av-head-side {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.pbe-av-freshness {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border: 1px solid var(--av-line-strong);
+  border-radius: 999px;
+  color: var(--av-dim);
+  font: 800 9px/1 var(--font-mono, monospace);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pbe-av-freshness i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--av-faint);
+}
+
+.pbe-av-freshness.is-live { color: var(--av-green); border-color: rgba(120,209,140,.32); }
+.pbe-av-freshness.is-live i { background: var(--av-green); box-shadow: 0 0 0 3px rgba(120,209,140,.12); }
+.pbe-av-freshness.is-frozen { color: var(--av-gold-bright); border-color: rgba(212,175,55,.32); }
+.pbe-av-freshness.is-frozen i { background: var(--av-gold); border-radius: 1px; }
+
+.pbe-av-block { margin-top: 16px; }
+.pbe-av-block + .pbe-av-block { margin-top: 14px; }
+
+.pbe-av-minihead > span { font-size: 9.5px; }
+.pbe-av-minihead > small {
+  color: var(--av-faint);
+  font: 600 10px/1.3 var(--font-sans);
+  text-align: right;
+}
+
+/* Verified live context */
+.pbe-av-live .pbe-av-minihead > span { color: var(--av-green); }
+
+.pbe-av-team-card {
+  display: grid;
+  grid-template-columns: minmax(180px, .72fr) minmax(0, 2fr);
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--av-line);
+  border-radius: 14px;
+  background:
+    radial-gradient(220px 120px at 0 0, rgba(212,175,55,.07), transparent 72%),
+    rgba(0,0,0,.14);
+}
+
+.pbe-av-team-card:not(.has-data):not(:has(.pbe-av-team-slot)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pbe-av-team-id {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 4px 6px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.pbe-av-team-id img {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  object-fit: contain;
+}
+
+.pbe-av-team-id > div { min-width: 0; }
+
+.pbe-av-team-id span {
+  display: block;
+  color: var(--av-gold);
+  font: 800 9px/1 var(--font-mono, monospace);
+  letter-spacing: .14em;
+}
+
+.pbe-av-team-card.has-data .pbe-av-team-id span { color: var(--av-green); }
+
+.pbe-av-team-id b {
+  display: block;
+  margin-top: 5px;
+  color: var(--av-paper);
+  font: 750 14px/1.15 var(--font-sans);
+}
+
+.pbe-av-team-id small {
+  display: block;
+  margin-top: 4px;
+  color: var(--av-faint);
+  font: 650 10px/1.2 var(--font-sans);
+}
+
+.pbe-av-team-id:hover b,
+.pbe-av-team-id:focus-visible b { color: var(--av-gold-bright); }
+
+.pbe-av-team-slot {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  min-height: 58px;
+}
+
+.pbe-av-team-slot i {
+  border-radius: 9px;
+  background: linear-gradient(90deg, rgba(255,255,255,.02), rgba(255,255,255,.06), rgba(255,255,255,.02));
+  background-size: 220% 100%;
+  animation: pbeAvShimmer 1.25s linear infinite;
+}
+
+.pbe-av-team-data {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 6px;
+}
+
+.pbe-av-team-stat {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 10px;
+  background: rgba(255,255,255,.022);
+}
+
+.pbe-av-team-stat span,
+.pbe-av-team-stat strong,
+.pbe-av-team-stat small { display: block; }
+
+.pbe-av-team-stat span {
+  color: var(--av-faint);
+  font: 800 8.5px/1 var(--font-mono, monospace);
+  letter-spacing: .12em;
+}
+
+.pbe-av-team-stat strong {
+  margin-top: 6px;
+  color: var(--av-paper);
+  font: 750 21px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+  white-space: nowrap;
+}
+
+.pbe-av-team-stat small {
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--av-faint);
+  font: 600 9.5px/1.25 var(--font-sans);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pbe-av-team-stat.is-context {
+  border-style: dashed;
+  background: transparent;
+}
+
+.pbe-av-team-stat.is-context strong {
+  color: var(--av-dim);
+  font-size: 17px;
+}
+
+.pbe-av-player { min-height: 0; margin-top: 10px; }
+.pbe-av-loading.is-compact { height: 56px; }
+
+/* PBE model data inside a player card */
+.pbe-av-model {
+  position: relative;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(212,175,55,.22);
+  border-radius: 11px;
+  background: linear-gradient(90deg, rgba(212,175,55,.07), rgba(212,175,55,.015));
+}
+
+.pbe-av-model .pbe-av-minihead { margin-bottom: 7px; }
+
+.pbe-av-model-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.pbe-av-model-row span,
+.pbe-av-model-row strong,
+.pbe-av-model-row small { display: block; }
+.pbe-av-model-row span { color: var(--av-gold); font: 800 9px/1 var(--font-mono, monospace); letter-spacing: .1em; }
+.pbe-av-model-row strong { margin-top: 5px; color: var(--av-paper); font: 750 24px/1 var(--font-sans); font-variant-numeric: tabular-nums; }
+.pbe-av-model-row small { margin-top: 4px; color: var(--av-faint); font: 600 9.5px/1.3 var(--font-sans); }
+
+/* Roster impact: no side market column any more */
+.pbe-av-roster .pbe-av-ripple-grid {
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 0;
+}
+
+.pbe-av-roster .pbe-av-ripple-grid[data-count="2"],
+.pbe-av-roster .pbe-av-ripple-grid[data-count="3"],
+.pbe-av-roster .pbe-av-ripple-grid[data-count="4"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.pbe-av-focus.pbe-av-block {
+  padding: 12px;
+}
+
+.pbe-av-focus-row[data-count="1"] { grid-template-columns: minmax(0, 220px); }
+.pbe-av-focus-row[data-count="2"] { grid-template-columns: repeat(2, minmax(0, 220px)); }
+
+.pbe-av-focus-mono {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,.04);
+  color: var(--av-faint);
+}
+
+.pbe-av-focus-row b { font-size: 10px; }
+.pbe-av-focus-row small { font-size: 8.5px; }
+
+/* Markets affected: chips, deliberately not stat-shaped */
+.pbe-av-market-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pbe-av-market-chips li {
+  padding: 6px 10px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 999px;
+  color: var(--av-dim);
+  font: 650 11px/1.1 var(--font-sans);
+  background: rgba(255,255,255,.02);
+}
+
+/* Deeper intelligence */
+.pbe-av-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 16px;
+}
+
+.pbe-av-open {
+  color: var(--av-gold-bright);
+  font: 800 10px/1.2 var(--font-mono, monospace);
+  letter-spacing: .12em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.pbe-av-open.is-secondary { color: var(--av-dim); }
+.pbe-av-open:hover,
+.pbe-av-open:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
+
+.pbe-av-source-note p { margin: 0; font-size: 10px; line-height: 1.45; }
+
+/* Proportional weight: context-only modules are a compact briefing, not a
+   premium data panel. */
+.pbe-article-visuals.is-story,
+.pbe-article-visuals.is-impact {
+  padding: 18px 20px;
+  box-shadow: 0 16px 44px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.02);
+}
+
+.pbe-article-visuals.is-story .pbe-av-title h2,
+.pbe-article-visuals.is-impact .pbe-av-title h2 {
+  font-size: clamp(24px, 3vw, 30px);
+}
+
+.pbe-article-visuals.is-story .pbe-av-head,
+.pbe-article-visuals.is-impact .pbe-av-head { padding-bottom: 14px; }
+
+.pbe-article-visuals.is-story .pbe-av-impact-dial,
+.pbe-article-visuals.is-impact .pbe-av-impact-dial { width: 48px; height: 48px; }
+
+.pbe-article-visuals.is-story .pbe-av-stage,
+.pbe-article-visuals.is-impact .pbe-av-stage { opacity: .06; }
+
+@media (max-width: 760px) {
+  .pbe-av-team-card { grid-template-columns: minmax(0, 1fr); }
+  .pbe-av-team-data { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pbe-av-roster .pbe-av-ripple-grid[data-count] { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 520px) {
+  .pbe-av-head { flex-wrap: wrap; }
+  .pbe-av-head-side {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .pbe-av-impact-copy { display: block; }
+  .pbe-av-impact { display: flex; align-items: center; gap: 8px; }
+
+  .pbe-av-minihead { flex-wrap: wrap; row-gap: 4px; }
+  .pbe-av-minihead > small,
+  .pbe-av-ripple-head > small {
+    display: block;
+    width: 100%;
+    text-align: left;
+  }
+
+  .pbe-av-team-data { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pbe-av-team-stat strong { font-size: 19px; }
+  .pbe-av-team-slot { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pbe-av-focus-row[data-count="1"],
+  .pbe-av-focus-row[data-count="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pbe-article-visuals.is-story,
+  .pbe-article-visuals.is-impact { padding: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pbe-av-team-slot i { animation: none; }
+}
