@@ -17,7 +17,7 @@
  *   unresolved loading skeletons after hydration
  *
  * Usage:
- *   node scripts/article-intelligence-canary.mjs [--limit 25] [--sports nfl,mlb,nba,nhl]
+ *   node scripts/article-intelligence-canary.mjs [--limit 25] [--sports nfl,mlb,nba,wnba,nhl,ufc]
  *        [--base https://propbetedge.ai] [--no-live] [--json out.json] [--slug <slug>]
  */
 
@@ -36,7 +36,7 @@ const opt = (name, fallback) => {
 const flag = (name) => args.includes(`--${name}`);
 
 const LIMIT = Math.max(1, Math.min(100, Number(opt('limit', 25))));
-const SPORTS = opt('sports', 'nfl,mlb,nba,nhl').split(',').map((s) => s.trim()).filter(Boolean);
+const SPORTS = opt('sports', 'nfl,mlb,nba,wnba,nhl,ufc').split(',').map((s) => s.trim()).filter(Boolean);
 const BASE = opt('base', 'https://propbetedge.ai').replace(/\/+$/, '');
 const LIVE = !flag('no-live');
 const JSON_OUT = opt('json', null);
