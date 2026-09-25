@@ -1,0 +1,50 @@
+{
+ "id": "f0cc657a-f3b4-4697-a8d3-9e9cc090cd15",
+ "sport": "nfl",
+ "category": "injury",
+ "title": "Patriots' Right Guard Void Opens Question Mark Over Offensive Line Durability",
+ "slug": "patriots-right-guard-void-opens-question-mark-over-offensive-line-durability-2026-09-25",
+ "summary": "Michael Onwenu's ankle injury has New England cycling through interior linemen, with Greg Van Roten's veteran experience facing competition from lower-leverage candidates in a decision that will reshape the team's blocking efficiency.",
+ "body_html": "<p>Michael Onwenu will not play football for the New England Patriots until late in 2026 after suffering an ankle injury in Week 2. Head coach Mike Vrabel confirmed the right guard will remain sidelined for an extended window, forcing the organization to identify a replacement capable of holding the line for the remainder of the season.</p>\n<p>New England's internal solutions reveal a depth chart short on proven NFL-ready guards. Greg Van Roten, at 36 years old, has already claimed temporary duty at right guard during the team's Week 2 win over Pittsburgh. His 150 combined regular and postseason NFL appearances—105 of them starts—position him as the most credible stabilizer for the position. The team will evaluate him alongside Ben Brown, a recent return to practice who logged 14 starts between 2024 and 2025, and Walter Rouse, a 2024 sixth-round pick acquired from Minnesota who has transitioned from tackle work to interior positions. First-round rookie Caleb Lomu, drafted as a tackle prospect from Utah, remains a possibility if the Patriots opt to move him inside and allow Will Campbell and Morgan Moses to anchor the outside.</p>\n<p>Van Roten's immediate availability and track record create a narrow decision corridor for Vrabel. Brown's experience at the position in college gives him a technical foundation, but his 14 career starts across two seasons suggest a depth-chart player rather than a starter-in-waiting. Rouse's brief stint with Minnesota on the interior is encouraging from a versatility standpoint, but his exclusive tackle work in regular-season play amplifies execution risk. Lomu's inside deployment remains speculative; moving a first-round talent away from his drafted position mid-season risks compounding line instability rather than solving it.</p>\n<p>From a betting lens, this transition directly impacts Patriots rushing-game efficiency. The replacement guard's ability to sustain blocks on power runs and zone-stretch plays will determine whether New England can lean on that attack or force the offense into pass-heavy sequences. Van Roten, despite his age, carries the highest floor because his film history at guard—even in late-career situations—suggests competence in NFL gap schemes. A significant drop in rushing-yards efficiency or an uptick in quarterback pressures would point toward a weaker replacement holding the line. If Van Roten stays atop the depth chart, expect Patriots team rushing totals to remain relatively stable week-to-week; if the team rotates frequently among Brown, Rouse, or Lomu, volatility in run-game consistency should widen the range on rushing prop lines and make overs on Patriots opponent pass attempts more reliable bets as New England abandons the run earlier in games.</p>\n<p>The Patriots will spend the next several days evaluating candidates in practice. The decision Vrabel announces will carry implications for both the offense's personnel alignment and the secondary strain created by a pass-heavier operation. Markets have not yet fully repriced Patriots rushing efficiency for a mid-season guard replacement; sharp bettors should monitor early week props closely before the market adjusts to the final depth chart announcement.</p>",
+ "body": "Michael Onwenu will not play football for the New England Patriots until late in 2026 after suffering an ankle injury in Week 2. Head coach Mike Vrabel confirmed the right guard will remain sidelined for an extended window, forcing the organization to identify a replacement capable of holding the line for the remainder of the season.\n\nNew England's internal solutions reveal a depth chart short on proven NFL-ready guards. Greg Van Roten, at 36 years old, has already claimed temporary duty at right guard during the team's Week 2 win over Pittsburgh. His 150 combined regular and postseason NFL appearances—105 of them starts—position him as the most credible stabilizer for the position. The team will evaluate him alongside Ben Brown, a recent return to practice who logged 14 starts between 2024 and 2025, and Walter Rouse, a 2024 sixth-round pick acquired from Minnesota who has transitioned from tackle work to interior positions. First-round rookie Caleb Lomu, drafted as a tackle prospect from Utah, remains a possibility if the Patriots opt to move him inside and allow Will Campbell and Morgan Moses to anchor the outside.\n\nVan Roten's immediate availability and track record create a narrow decision corridor for Vrabel. Brown's experience at the position in college gives him a technical foundation, but his 14 career starts across two seasons suggest a depth-chart player rather than a starter-in-waiting. Rouse's brief stint with Minnesota on the interior is encouraging from a versatility standpoint, but his exclusive tackle work in regular-season play amplifies execution risk. Lomu's inside deployment remains speculative; moving a first-round talent away from his drafted position mid-season risks compounding line instability rather than solving it.\n\nFrom a betting lens, this transition directly impacts Patriots rushing-game efficiency. The replacement guard's ability to sustain blocks on power runs and zone-stretch plays will determine whether New England can lean on that attack or force the offense into pass-heavy sequences. Van Roten, despite his age, carries the highest floor because his film history at guard—even in late-career situations—suggests competence in NFL gap schemes. A significant drop in rushing-yards efficiency or an uptick in quarterback pressures would point toward a weaker replacement holding the line. If Van Roten stays atop the depth chart, expect Patriots team rushing totals to remain relatively stable week-to-week; if the team rotates frequently among Brown, Rouse, or Lomu, volatility in run-game consistency should widen the range on rushing prop lines and make overs on Patriots opponent pass attempts more reliable bets as New England abandons the run earlier in games.\n\nThe Patriots will spend the next several days evaluating candidates in practice. The decision Vrabel announces will carry implications for both the offense's personnel alignment and the secondary strain created by a pass-heavier operation. Markets have not yet fully repriced Patriots rushing efficiency for a mid-season guard replacement; sharp bettors should monitor early week props closely before the market adjusts to the final depth chart announcement.",
+ "published_at": "2026-09-25T17:19:27+00:00",
+ "take": {
+  "summary": "Onwenu's extended absence forces a right guard replacement that will likely reduce Patriots rushing efficiency. Van Roten's proven experience offers the smallest decline; rotations among less-proven candidates would increase volatility on rushing totals and create leverage opportunities on opposing teams' pass-attempt volume.",
+  "advice": "Monitor Patriots team rushing total and opponent pass-attempt projections closely upon depth chart announcement. If Van Roten is named the starter, rushing totals are defensible. If the team commits to Brown, Rouse, or frequent rotation, lean slightly toward pass-attempt overs for opposing defenses until efficiency stabilizes.",
+  "impact_score": 3,
+  "sports": [
+   "nfl"
+  ],
+  "teams": [
+   "NE"
+  ],
+  "players": [
+   "Michael Onwenu",
+   "Greg Van Roten",
+   "Ben Brown",
+   "Walter Rouse",
+   "Caleb Lomu"
+  ],
+  "prop_types": [
+   "rushing_yards",
+   "rushing_attempts"
+  ],
+  "relations": [
+   {
+    "team": "NE",
+    "state": "medical_absence",
+    "player": "Michael Onwenu",
+    "evidence": "Michael Onwenu will not play football for the New England Patriots until late in 2026 after suffering an ankle injury in Week 2."
+   },
+   {
+    "team": "NE",
+    "state": "neutral",
+    "player": "Walter Rouse",
+    "evidence": "Walter Rouse, a 2024 sixth-round pick acquired from Minnesota who has transitioned from tackle work to interior positions."
+   }
+  ],
+  "prompt_version": "3.18.1",
+  "contract": "news-publication-v2",
+  "model": "claude-haiku-4-5-20251001"
+ }
+}
