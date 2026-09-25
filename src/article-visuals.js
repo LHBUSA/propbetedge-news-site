@@ -860,10 +860,10 @@ function freshnessChip(intel) {
   return `<span class="pbe-av-freshness is-${f.state}" data-pbe-av-freshness><i aria-hidden="true"></i>${esc(text)}</span>`;
 }
 
-function renderSourceNote(intel) {
+function renderSourceNote(intel, settled = false) {
   const parts = [];
   if (intel.publishedEvidence.length) parts.push('Published evidence is frozen to the story as published.');
-  if (intel.expect.team || intel.expect.player || intel.hasLiveData) parts.push('Verified live context is read from league and PropBetEdge sources when the page loads and can change.');
+  if (settled ? intel.hasLiveData : (intel.expect.team || intel.expect.player || intel.hasLiveData)) parts.push('Verified live context is read from league and PropBetEdge sources when the page loads and can change.');
   if (intel.modelData.length) parts.push('PBE model data is labeled with its model version.');
   if (intel.marketConnections.length) parts.push('Markets are an editorial classification, not a live forecast.');
   if (!parts.length) return '';
@@ -932,10 +932,12 @@ export function renderArticleVisuals(article, manifest, options = {}) {
       ${renderTeamCard(team, { expectLive: intel.expect.team, pending, live: pending ? null : liveTeam })}
       ${playerHtml}
     </div>` : ''}
-    ${intel._html.roster || renderPeopleInFocus(intel.entities.players)}
+    ${intel._html.roster || renderPeopleInFocus(livePlayer && chartPlayer
+      ? intel.entities.players.filter((p) => String(p.id) !== String(chartPlayer.id))
+      : intel.entities.players)}
     ${renderMarkets(intel.marketConnections)}
     ${renderFooterLinks(intel)}
-    ${renderSourceNote(intel)}
+    ${renderSourceNote(intel, !pending)}
   </section>`;
 }
 
@@ -1115,6 +1117,16 @@ export async function mountArticleVisuals(article, manifest) {
     const next = buildArticleIntelligence(article, manifest, live);
     if (next.level) applyHeadline(root, next);
     settleLiveHead(root, next, done);
+    if (done) {
+      const note = root.querySelector('[data-pbe-av-source]');
+      const html = renderSourceNote(next, true);
+      if (note && !html) note.remove();
+      else if (note && html) {
+        const holder = document.createElement('div');
+        holder.innerHTML = html;
+        note.replaceWith(holder.firstElementChild);
+      }
+    }
   };
 
   const teamSlot = root.querySelector('[data-pbe-team-slot]');
@@ -1149,6 +1161,17 @@ export async function mountArticleVisuals(article, manifest) {
         live.player = data;
         live.fetchedAt = live.fetchedAt || new Date().toISOString();
         playerSlot.innerHTML = html;
+        // The charted player now has a full card; don't repeat them as a chip.
+        const focus = root.querySelector('[data-pbe-focus]');
+        const chip = focus && intel.expect.player.path
+          ? [...focus.querySelectorAll('.pbe-av-focus-row a')].find((a) => a.getAttribute('href') === intel.expect.player.path)
+          : null;
+        if (chip) {
+          chip.remove();
+          const row = focus.querySelector('.pbe-av-focus-row');
+          if (!row?.children.length) focus.remove();
+          else row.setAttribute('data-count', String(row.children.length));
+        }
         refresh();
       }));
   } else {

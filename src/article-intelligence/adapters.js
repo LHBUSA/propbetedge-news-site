@@ -296,7 +296,7 @@ async function espnPlayer(ctx, player, article, sport) {
   const metricLive = key ? metricSummary(log.rows || [], (g) => g.values?.[key]) : metricSummary([], () => null);
 
   const preferredKeys = sport !== 'nfl'
-    ? ['avgPoints', 'avgRebounds', 'avgAssists', 'threePointFieldGoalPct']
+    ? ['avgPoints', 'avgRebounds', 'avgAssists', 'threePointFieldGoalPct', 'avgBlocks', 'avgSteals']
     : cat?.key === 'passing' ? ['passingYards', 'passingTouchdowns', 'interceptions', 'completionPct']
       : cat?.key === 'rushing' ? ['rushingYards', 'rushingTouchdowns', 'yardsPerRushAttempt', 'rushingAttempts']
         : cat?.key === 'receiving' ? ['receptions', 'receivingYards', 'receivingTouchdowns', 'receivingTargets']
@@ -305,7 +305,11 @@ async function espnPlayer(ctx, player, article, sport) {
 
   const seasonStats = cleanStats(preferredKeys.map((keyName) => {
     const idx = cat?.names?.indexOf(keyName);
-    return idx >= 0 ? [cat.labels?.[idx] || keyName, seasonRow?.values?.[keyName]] : null;
+    if (!(idx >= 0)) return null;
+    const value = seasonRow?.values?.[keyName];
+    // A 0.0 shooting percentage on a non-shooter says nothing; show the next stat.
+    if (/Pct$/.test(keyName) && toNumber(value) === 0) return null;
+    return [cat.labels?.[idx] || keyName, value];
   })).slice(0, 4);
 
   const data = {

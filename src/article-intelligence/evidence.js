@@ -35,6 +35,7 @@ const GLOBAL_BEFORE_REJECT = [
   /\d\s*(?:[-–—]|to)\s*$/i,
   /(?:fewer than|less than|more than|greater than|at least|at most|upwards of|north of|south of|in excess of|\bnearly|\balmost|\bclose to|\baround|\broughly|\bapproximately|\babout)\s+$/i,
   /\bper\s+$/i,
+  /\bsub[- ]?$/i,
 ];
 
 // Count stats: a decimal is only legitimate as a per-game average, which is
@@ -401,6 +402,11 @@ export function extractPublishedEvidence(article) {
       const before = text.slice(Math.max(0, m.index - 40), m.index);
       if (entry.before && entry.before.test(before)) continue;
       if (GLOBAL_BEFORE_REJECT.some((re2) => re2.test(before))) continue;
+      // Parenthetical asides are comparisons to someone else ("joins only
+      // Justin Verlander (1.75 ERA in 2022)") — never the subject's stat.
+      const sentenceStart = Math.max(text.lastIndexOf('. ', m.index), text.lastIndexOf('! ', m.index), text.lastIndexOf('? ', m.index), 0);
+      const lead = text.slice(sentenceStart, m.index);
+      if ((lead.match(/\(/g) || []).length > (lead.match(/\)/g) || []).length) continue;
       const end = m.index + m[0].length;
       const after = text.slice(end, end + 40);
       if (entry.after && entry.after.test(after)) continue;

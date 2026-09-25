@@ -336,6 +336,25 @@ test('pbe-intel proxy only reads the documented NBA WinBA route', () => {
   assert.equal(pickWinba({ winba: { score: 87.4, status: 'QUALIFIED', rank: 2, season: 2026, sample: { games: 24 }, version: 'v' } }).score, 87.4);
 });
 
+test('corpus-audit false positives stay fixed', () => {
+  const ev = (sport, body) => extractPublishedEvidence({ sport, body }).flatMap((r) => r.metrics.map((m) => `${m.label}=${m.value}`));
+  assert.deepEqual(ev('nfl', 'Drake London over 65.5 receiving yards isolates the mechanism cleanly.'), [], 'prop line');
+  assert.deepEqual(ev('nfl', 'Justin Jefferson saw 8-10 targets in each game.'), [], 'range upper bound');
+  assert.deepEqual(ev('nfl', 'Minnesota averaged fewer than 200 passing yards in 16 of 21 games.'), [], 'threshold');
+  assert.deepEqual(ev('nfl', "Winston's line produced a 1.05 interception rate per contest."), [], 'rate is not a count');
+  assert.deepEqual(ev('mlb', 'His 47-for-47 success rate on stolen-base attempts is elite.'), [], 'not an at-bat line');
+  assert.deepEqual(ev('mlb', 'At 37, Sale joins only Justin Verlander (1.75 ERA in 2022) as pitchers to post a sub-2.20 ERA.'), [], 'parenthetical comparison + threshold');
+  assert.deepEqual(ev('mlb', 'Houston led 4-0 after three innings.'), [], 'game state, not innings pitched');
+  assert.deepEqual(ev('mlb', 'Luzardo stated readiness to pitch one, two, or three innings.'), [], 'hypothetical workload');
+  assert.deepEqual(ev('nba', 'He averaged 17.1 assists per 100 possessions.'), [], 'per-100 rate');
+  assert.deepEqual(ev('nba', 'He was 19.2 points per 36 minutes before the injury.'), [], 'per-36 rate');
+  assert.deepEqual(ev('nhl', 'The framework is transparent: 2 points per goal, 1 per assist.'), [], 'fantasy scoring rule');
+  assert.deepEqual(ev('nhl', 'He averages close to 19 minutes of ice time.'), [], 'approximation');
+  assert.deepEqual(ev('nfl', 'Dart produced 18 passing TDs and nine rushing TDs in his first 14 starts.'), ['PASS TD=18', 'RUSH TD=9', 'STARTS=14']);
+  assert.deepEqual(ev('nfl', 'Flacco averaged 272.7 passing yards per game.'), ['PASS YDS/G=272.7']);
+  assert.deepEqual(ev('mlb', "Schlittler's 11.3 K/9 rate leads the staff."), ['K/9=11.3']);
+});
+
 test('speculative, projected and line-setting numbers never become evidence', () => {
   const article = {
     id: 'spec', sport: 'nba', title: 'Brunson preview',
