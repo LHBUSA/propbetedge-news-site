@@ -25,6 +25,17 @@ preview_id = "427ba4e2ae5d4c6fa7c5bdce894fbfa1"
 # Staggered by minute so one sport's upstream having a bad hour cannot starve
 # the others, and so no single tick tries to walk 5,782 players.
 #   :00 NHL   :15 MLB   :30 NBA   :45 NFL
+# Search index sources (src/search-service.js). Our own Workers on
+# *.sales-fd3.workers.dev return 404 to a same-account workers.dev subrequest,
+# so they are reached through Service Bindings. Read-only public routes only.
+[[services]]
+binding = "NEWS_API_SERVICE"
+service = "propbet-news-api"
+
+[[services]]
+binding = "WNBA_API_SERVICE"
+service = "wnba-api"
+
 [triggers]
 crons = ["0 * * * *", "15 * * * *", "30 * * * *", "45 * * * *"]
 

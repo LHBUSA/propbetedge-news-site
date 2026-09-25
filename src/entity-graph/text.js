@@ -10,21 +10,44 @@
 const APOSTROPHES = "'‘’ʼ´`";
 const HYPHENS = '-‐‑‒–—―−';
 
+// Compiled once (normalizeName runs for every name in every index build).
+const COMBINING = /[̀-ͯ]/g;
+const APOSTROPHE_RE = new RegExp(`[${escapeClass(APOSTROPHES)}]`, 'g');
+const HYPHEN_RE = new RegExp(`[${escapeClass(HYPHENS)}]`, 'g');
+const PERIOD = /\./g;
+const AMPERSAND = /&/g;
+const NON_ALNUM = /[^a-z0-9]+/g;
+const ASCII_ONLY = /^[\x20-\x7e]*$/;
+// In pure ASCII: apostrophe, backtick and period are dropped; "-" becomes a
+// separator, which NON_ALNUM already does.
+const ASCII_DROP = /['`.]/g;
+
 /**
  * Canonical matching key for a name. Punctuation is dissolved rather than
  * preserved so "A.J. Brown", "AJ Brown", "D'Angelo Russell", "DAngelo Russell"
  * and "Smith-Schuster" / "Smith Schuster" all converge.
  */
 export function normalizeName(value) {
-  return String(value || '')
+  const input = String(value || '');
+  // Fast path for plain ASCII lower/upper-case names (the vast majority): no
+  // Unicode normalization needed. Output is identical to the full path.
+  if (ASCII_ONLY.test(input)) {
+    return input
+      .toLowerCase()
+      .replace(ASCII_DROP, '')
+      .replace(AMPERSAND, ' and ')
+      .replace(NON_ALNUM, ' ')
+      .trim();
+  }
+  return input
     .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(COMBINING, '')
     .toLowerCase()
-    .replace(new RegExp(`[${escapeClass(APOSTROPHES)}]`, 'g'), '')
-    .replace(/\./g, '')
-    .replace(new RegExp(`[${escapeClass(HYPHENS)}]`, 'g'), ' ')
-    .replace(/&/g, ' and ')
-    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(APOSTROPHE_RE, '')
+    .replace(PERIOD, '')
+    .replace(HYPHEN_RE, ' ')
+    .replace(AMPERSAND, ' and ')
+    .replace(NON_ALNUM, ' ')
     .trim();
 }
 

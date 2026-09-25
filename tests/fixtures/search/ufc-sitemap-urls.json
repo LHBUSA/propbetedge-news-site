@@ -1,0 +1,41 @@
+{
+ "captured_at": "2026-09-24T23:30:00Z",
+ "source": "https://ufc.propbetedge.ai/sitemap.xml children",
+ "fighters": [
+  "https://ufc.propbetedge.ai/fighters/alex-pereira-4705658",
+  "https://ufc.propbetedge.ai/fighters/alexandre-pantoja-2560746",
+  "https://ufc.propbetedge.ai/fighters/magomed-ankalaev-4273399",
+  "https://ufc.propbetedge.ai/fighters/brandon-moreno-3027545",
+  "https://ufc.propbetedge.ai/fighters/casey-oneill-4699589",
+  "https://ufc.propbetedge.ai/fighters/kai-asakura-4336757",
+  "https://ufc.propbetedge.ai/fighters/max-holloway-2614933",
+  "https://ufc.propbetedge.ai/fighters/conor-mcgregor-3022677",
+  "https://ufc.propbetedge.ai/fighters/junior-dos-santos-63def5a5662a6917",
+  "https://ufc.propbetedge.ai/fighters/joshua-van-5120301",
+  "https://ufc.propbetedge.ai/fighters/jose-aldo-2447641"
+ ],
+ "events": [
+  "https://ufc.propbetedge.ai/events/ufc-fight-night-lewis-vs-dos-santos-2019-03-09",
+  "https://ufc.propbetedge.ai/events/ufc-fight-night-rosas-jr-vs-barcelos-2026-09-26",
+  "https://ufc.propbetedge.ai/events/ufc-331-van-vs-pantoja-2-2026-09-19",
+  "https://ufc.propbetedge.ai/events/ufc-1-the-beginning-1993-11-12",
+  "https://ufc.propbetedge.ai/events/ufc-332-silva-vs-wang-2026-10-03",
+  "https://ufc.propbetedge.ai/events/ufc-300-pereira-vs-hill-2024-04-13",
+  "https://ufc.propbetedge.ai/events/ufc-310-pantoja-vs-asakura-2024-12-07",
+  "https://ufc.propbetedge.ai/events/ufc-335-2026-12-12",
+  "https://ufc.propbetedge.ai/events/ufc-320-ankalaev-vs-pereira-2-2025-10-04",
+  "https://ufc.propbetedge.ai/events/ufc-329-mcgregor-vs-holloway-2-2026-07-11",
+  "https://ufc.propbetedge.ai/events/ufc-323-dvalishvili-vs-yan-2-2025-12-06",
+  "https://ufc.propbetedge.ai/events/ufc-12-judgement-day-1997-02-07"
+ ],
+ "fights": [
+  "https://ufc.propbetedge.ai/fights/alexandre-pantoja-vs-joshua-van-ufc-323-dvalishvili-vs-yan-2-2025-12-06",
+  "https://ufc.propbetedge.ai/fights/conor-mcgregor-vs-max-holloway-ufc-fight-night-shogun-vs-sonnen-2013-08-17",
+  "https://ufc.propbetedge.ai/fights/joshua-van-vs-alexandre-pantoja-ufc-331-van-vs-pantoja-2-2026-09-19",
+  "https://ufc.propbetedge.ai/fights/casey-oneill-vs-eduarda-moura-ufc-331-van-vs-pantoja-2-2026-09-19",
+  "https://ufc.propbetedge.ai/fights/alexandre-pantoja-vs-kai-asakura-ufc-310-pantoja-vs-asakura-2024-12-07",
+  "https://ufc.propbetedge.ai/fights/conor-mcgregor-vs-max-holloway-ufc-329-mcgregor-vs-holloway-2-2026-07-11",
+  "https://ufc.propbetedge.ai/fights/magomed-ankalaev-vs-alex-pereira-ufc-320-ankalaev-vs-pereira-2-2025-10-04",
+  "https://ufc.propbetedge.ai/fights/alex-pereira-vs-magomed-ankalaev-ufc-313-pereira-vs-ankalaev-2025-03-08"
+ ]
+}

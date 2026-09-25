@@ -25,6 +25,10 @@ import {
   teamReadiness, TEAM_PROFILE_FIELDS,
 } from '../../../src/entity-hub/contract.js';
 import { refreshPlayer, refreshTeam, teamRefreshTargets } from '../../../src/entity-hub/refresh.js';
+import {
+  handleSearch, runSearchRefresh, refreshUfcIndex, refreshWnbaIndex, refreshStoriesHead, backfillStories,
+  SEARCH_SCHEMA,
+} from './search-service.js';
 
 const SCHEMA_VERSION = 'pbe-entity-hub/1';
 const HUB_ORIGINS = [
@@ -158,13 +162,14 @@ function cors(origin) {
   return headers;
 }
 
-function json(body, { status = 200, origin, maxAge = 60 } = {}) {
+function json(body, { status = 200, origin, maxAge = 60, cacheControl = null, extraHeaders = {} } = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Cache-Control': `public, max-age=${maxAge}, s-maxage=${maxAge}`,
+      'Cache-Control': cacheControl || `public, max-age=${maxAge}, s-maxage=${maxAge}`,
       'X-Content-Type-Options': 'nosniff',
+      ...extraHeaders,
       ...cors(origin),
     },
   });
@@ -194,7 +199,23 @@ export default {
           cycle_hours: expectedCycleHours(s),
         }])),
         nfl_team_data: env.PROPSPORTS_API_KEY ? 'enabled' : 'awaiting key',
+        search: { route: '/v1/search', schema: SEARCH_SCHEMA },
       }, { origin, maxAge: 30 });
+    }
+
+    // Network search: compact ranked results, edge-cached per normalized query.
+    if (path === '/v1/search') {
+      try {
+        const out = await handleSearch(url, env, ctx);
+        return json(out.body, {
+          status: out.status,
+          origin,
+          cacheControl: out.cacheControl,
+          extraHeaders: { 'X-PBE-Search-Cache': out.cache },
+        });
+      } catch (error) {
+        return json({ ok: false, error: 'search_unavailable', results: [] }, { status: 503, origin, maxAge: 0 });
+      }
     }
 
     const playerMatch = path.match(/^\/v1\/snapshot\/player\/([a-z]+)\/(\d+)$/);
@@ -209,6 +230,7 @@ export default {
 
     if (path === '/v1/admin/refresh') return adminRefresh(request, env, ctx, origin);
     if (path === '/v1/admin/coverage') return adminCoverage(request, env, url, origin);
+    if (path === '/v1/admin/search-refresh') return adminSearchRefresh(request, env, url, origin);
 
     return json({ ok: false, error: 'not_found' }, { status: 404, origin });
   },
@@ -221,6 +243,9 @@ export default {
    */
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runScheduledRefresh(event, env));
+    // Search artifacts refresh independently: a news API outage must never
+    // stall entity snapshots, and vice versa.
+    ctx.waitUntil(runSearchRefresh(event, env).catch(() => {}));
   },
 };
 
@@ -280,6 +305,31 @@ async function adminRefresh(request, env, ctx, origin) {
   return json({ ok: true, ...report }, { origin, maxAge: 0 });
 }
 
+
+/**
+ * Manual search-index rebuild (initial backfill, or after an upstream fix).
+ *   source = ufc | wnba | stories-head | stories-backfill
+ */
+async function adminSearchRefresh(request, env, url, origin) {
+  const provided = request.headers.get('X-Hub-Admin-Token') || '';
+  if (!env.HUB_ADMIN_TOKEN || !timingSafeEqual(provided, env.HUB_ADMIN_TOKEN)) {
+    return json({ ok: false, error: 'unauthorized' }, { status: 401, origin });
+  }
+  const source = url.searchParams.get('source') || '';
+  const pages = Math.min(40, Math.max(1, Number(url.searchParams.get('pages')) || 10));
+  const jobs = {
+    ufc: () => refreshUfcIndex(env),
+    wnba: () => refreshWnbaIndex(env),
+    'stories-head': () => refreshStoriesHead(env, { pages: Math.min(pages, 5) }),
+    'stories-backfill': () => backfillStories(env, { pages }),
+  };
+  if (!jobs[source]) return json({ ok: false, error: 'unknown_source', sources: Object.keys(jobs) }, { status: 400, origin });
+  try {
+    return json({ ok: true, source, result: await jobs[source]() }, { origin, maxAge: 0 });
+  } catch (error) {
+    return json({ ok: false, source, error: String(error?.message || error).slice(0, 200) }, { status: 502, origin, maxAge: 0 });
+  }
+}
 
 /**
  * Read-only coverage census.

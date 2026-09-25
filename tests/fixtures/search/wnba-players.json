@@ -1,0 +1,94 @@
+{
+ "ok": true,
+ "captured_at": "2026-09-24T23:09:21Z",
+ "source": "https://wnba-api.sales-fd3.workers.dev/v1/players",
+ "data": {
+  "players": [
+   {
+    "athlete_id": "4433730",
+    "name": "Paige Bueckers",
+    "short_name": "P. Bueckers",
+    "position": "G",
+    "position_name": "Guard",
+    "team_id": "3",
+    "team": {
+     "team_id": "3",
+     "abbr": "DAL",
+     "name": "Dallas Wings",
+     "short_name": "Wings",
+     "location": "Dallas",
+     "color": "#002b5c",
+     "alt_color": "#c4d600"
+    },
+    "photo": {
+     "square": "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/4433730.png&w=350&h=254",
+     "portrait": "https://a.espncdn.com/i/headshots/wnba/players/full/4433730.png"
+    }
+   },
+   {
+    "athlete_id": "4433403",
+    "name": "Caitlin Clark",
+    "short_name": "C. Clark",
+    "position": "G",
+    "position_name": "Guard",
+    "team_id": "5",
+    "team": {
+     "team_id": "5",
+     "abbr": "IND",
+     "name": "Indiana Fever",
+     "short_name": "Fever",
+     "location": "Indiana",
+     "color": "#002d62",
+     "alt_color": "#e03a3e"
+    },
+    "photo": {
+     "square": "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/4433403.png&w=350&h=254",
+     "portrait": "https://a.espncdn.com/i/headshots/wnba/players/full/4433403.png"
+    }
+   },
+   {
+    "athlete_id": "3917450",
+    "name": "Napheesa Collier",
+    "short_name": "N. Collier",
+    "position": "F",
+    "position_name": "Forward",
+    "team_id": "8",
+    "team": {
+     "team_id": "8",
+     "abbr": "MIN",
+     "name": "Minnesota Lynx",
+     "short_name": "Lynx",
+     "location": "Minnesota",
+     "color": "#266092",
+     "alt_color": "#79bc43"
+    },
+    "photo": {
+     "square": "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/3917450.png&w=350&h=254",
+     "portrait": "https://a.espncdn.com/i/headshots/wnba/players/full/3917450.png"
+    }
+   },
+   {
+    "athlete_id": "3149391",
+    "name": "A'ja Wilson",
+    "short_name": "A. Wilson",
+    "position": "C",
+    "position_name": "Center",
+    "team_id": "17",
+    "team": {
+     "team_id": "17",
+     "abbr": "LV",
+     "name": "Las Vegas Aces",
+     "short_name": "Aces",
+     "location": "Las Vegas",
+     "color": "#a7a8aa",
+     "alt_color": "#000000"
+    },
+    "photo": {
+     "square": "https://a.espncdn.com/combiner/i?img=/i/headshots/wnba/players/full/3149391.png&w=350&h=254",
+     "portrait": "https://a.espncdn.com/i/headshots/wnba/players/full/3149391.png"
+    }
+   }
+  ],
+  "teams": 15
+ }
+}

@@ -1,0 +1,93 @@
+{
+ "captured_at": "2026-09-24T23:30:00Z",
+ "source": "https://propbet-news-api.sales-fd3.workers.dev/news?limit=50&page=1|2|200 (bodies trimmed)",
+ "articles": [
+  {
+   "id": "09896778-48dc-435d-a7bd-f70d5a816449",
+   "sport": "mlb",
+   "category": "general",
+   "title": "Judge's Wild Card Return Hinges on Soleus Healing; Yankees Already Planning Without Him",
+   "slug": "judge-s-wild-card-return-hinges-on-soleus-healing-yankees-already-planning-without-him-2026-09-23",
+   "summary": "The Yankees' MVP candidate said Wednesday he intends to play Game 1 of the AL Wild Card Series next Tuesday, but his manager has already prepared the roster assuming he won't.",
+   "body": "",
+   "author": "Donneal Green",
+   "published_at": "2026-09-23T22:45:39.261262+00:00",
+   "url": "https://propbetedge.ai/news/mlb/judge-s-wild-card-return-hinges-on-soleus-healing-yankees-already-planning-without-him-2026-09-23",
+   "take": {
+    "players": [
+     "Aaron Judge"
+    ],
+    "teams": [
+     "NYY"
+    ]
+   }
+  },
+  {
+   "id": "3cfb2462-9cc3-4c78-81ec-39af2a90cce1",
+   "sport": "mlb",
+   "category": "injury",
+   "title": "Ohtani's IL Return Clears Path for Dodgers' October Push—But Timing Remains the Real Test",
+   "slug": "ohtani-s-il-return-clears-path-for-dodgers-october-push-but-timing-remains-the-real-test-2026-09-24",
+   "summary": "The Dodgers got their envisioned lineup on the field Wednesday, but Ohtani's comeback performance raises a harder question: how many plate appearances can he log before the postseason without fresh in",
+   "body": "",
+   "author": "Eric Esters",
+   "published_at": "2026-09-24T05:31:48+00:00",
+   "url": "https://propbetedge.ai/news/mlb/ohtani-s-il-return-clears-path-for-dodgers-october-push-but-timing-remains-the-real-test-2026-09-24",
+   "take": {
+    "players": [
+     "Shohei Ohtani"
+    ],
+    "teams": [
+     "LAD"
+    ]
+   }
+  },
+  {
+   "id": "0ffc0e91-ea4a-423d-8efd-c7a6b462bb5a",
+   "sport": "mlb",
+   "category": "general",
+   "title": "DeLauter's Two-Run Single and Cleveland's Bullpen Blueprint Snap Three-Game Skid in Kansas City",
+   "slug": "hedges-wheels-delauters-bat-come-up-big-for-guards-in-kc-2026-05-07",
+   "summary": "The Guardians don't need five-tool stars to manufacture runs — they need a backup catcher willing to steal third and a 24-year-old DH who can put the ball where they ain't.",
+   "body": "",
+   "author": "Erik Schwartz",
+   "published_at": "2026-05-07T02:38:44+00:00",
+   "url": "https://propbetedge.ai/news/mlb/hedges-wheels-delauters-bat-come-up-big-for-guards-in-kc-2026-05-07",
+   "take": {
+    "players": [
+     "Chase DeLauter",
+     "Austin Hedges",
+     "Joey Cantillo",
+     "Cade Smith",
+     "Hunter Gaddis",
+     "David Fry"
+    ],
+    "teams": [
+     "CLE",
+     "KC"
+    ]
+   }
+  },
+  {
+   "id": "a5dd04b8-aeda-4ff9-8a9e-680ae101334f",
+   "sport": "mlb",
+   "category": "general",
+   "title": "Ezequiel Duran Is Playing Himself Into Texas's Lineup — and Into Your Prop Sheets",
+   "slug": "durans-heater-continues-in-dominant-rangers-win-2026-05-07",
+   "summary": "A career utilityman with a 275-PA homer drought just rediscovered his plate discipline, and the Rangers are riding it against one of baseball's marquee opponents.",
+   "body": "",
+   "author": "Erik Schwartz",
+   "published_at": "2026-05-07T02:15:48+00:00",
+   "url": "https://propbetedge.ai/news/mlb/durans-heater-continues-in-dominant-rangers-win-2026-05-07",
+   "take": {
+    "players": [
+     "Ezequiel Duran"
+    ],
+    "teams": [
+     "TEX",
+     "NYY"
+    ]
+   }
+  }
+ ]
+}
