@@ -8,7 +8,7 @@ import { liveCastHome, liveCastLabel, liveCastUrl } from '../live-cast-routes.js
 const SPORT = {
   mlb: { label: 'MLB', emoji: '⚾', name: 'Baseball', product: 'https://mlb.propbetedge.ai', productLabel: 'MLB Intelligence', news: '/news/mlb' },
   nfl: { label: 'NFL', emoji: '🏈', name: 'Football', product: 'https://nfl.propbetedge.ai', productLabel: 'NFL Intelligence', news: '/news/nfl', cast: true },
-  nba: { label: 'NBA', emoji: '🏀', name: 'Basketball', product: '/news/nba', productLabel: 'NBA Coverage', news: '/news/nba' },
+  nba: { label: 'NBA', emoji: '🏀', name: 'Basketball', product: 'https://nba.propbetedge.ai', productLabel: 'NBA Intelligence', news: '/news/nba', cast: true },
   wnba: { label: 'WNBA', emoji: '🏀', name: "Women's Basketball", product: 'https://wnba.propbetedge.ai', productLabel: 'WNBA Intelligence', news: 'https://wnba.propbetedge.ai/news', cast: true },
   nhl: { label: 'NHL', emoji: '🏒', name: 'Hockey', product: 'https://nhl.propbetedge.ai', productLabel: 'NHL Intelligence', news: '/news/nhl', cast: true },
 };
@@ -397,7 +397,7 @@ function normalizeMLB(games) {
       sport: 'mlb', gameId: game.gamePk, state, gameDate: game.gameDate,
       statusText: state === 'live' ? `${linescore.inningHalf || 'Live'} ${linescore.currentInningOrdinal || ''}`.trim() : state === 'final' ? 'Final' : formatGameTime(game.gameDate),
       away: mlbTeam(game.teams?.away), home: mlbTeam(game.teams?.home),
-      detailUrl: `/games/mlb/${game.gamePk}`,
+      detailUrl: liveCastUrl('mlb', game.gamePk),
       context: awayPitcher || homePitcher ? `${awayPitcher || 'TBD'} vs ${homePitcher || 'TBD'} · probable starters` : '',
     };
   });
@@ -422,7 +422,7 @@ function normalizeNBA(games) {
       statusText: state === 'live' ? `Q${game.period || ''} ${game.clock || ''}`.trim() : state === 'final' ? 'Final' : game.statusDetail || formatGameTime(game.date),
       away: { name: game.away || '', abbr: game.awayAbbr || shortAbbr(game.away), logo: game.awayLogo || null, score: game.awayScore ?? '', record: '' },
       home: { name: game.home || '', abbr: game.homeAbbr || shortAbbr(game.home), logo: game.homeLogo || null, score: game.homeScore ?? '', record: '' },
-      detailUrl: `/games/nba/${game.id}`,
+      detailUrl: liveCastUrl('nba', game.id),
       context: game.statusDetail && state !== 'pre' ? game.statusDetail : '',
     };
   });
