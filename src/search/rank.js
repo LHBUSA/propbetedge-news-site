@@ -24,7 +24,7 @@
 
 import { normalizeName } from '../entity-graph/text.js';
 
-export const SEARCH_TYPES = Object.freeze(['player', 'team', 'event', 'tool', 'story']);
+export const SEARCH_TYPES = Object.freeze(['player', 'team', 'event', 'tool', 'learn', 'story']);
 export const SEARCH_SPORTS = Object.freeze(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc']);
 export const MIN_QUERY_LENGTH = 2;
 export const MAX_QUERY_LENGTH = 80;
@@ -32,7 +32,7 @@ export const MAX_QUERY_LENGTH = 80;
 // Deterministic tie-break when two docs score identically. Network order, the
 // same order the palette's "Live intelligence" row uses.
 const SPORT_ORDER = Object.freeze({ mlb: 0, nfl: 1, nba: 2, wnba: 3, nhl: 4, ufc: 5 });
-const TYPE_ORDER = Object.freeze({ player: 0, team: 1, event: 2, tool: 3, story: 4 });
+const TYPE_ORDER = Object.freeze({ player: 0, team: 1, event: 2, tool: 3, learn: 4, story: 5 });
 
 // Words that name a league. In a multi-word query they scope and boost rather
 // than having to appear in the doc's own title ("UFC Pantoja" -> Pantoja).
@@ -407,6 +407,7 @@ export const GROUPS = Object.freeze([
   Object.freeze({ key: 'team', label: 'Teams' }),
   Object.freeze({ key: 'event', label: 'Events' }),
   Object.freeze({ key: 'tool', label: 'Intelligence & Tools' }),
+  Object.freeze({ key: 'learn', label: 'Learn' }),
   Object.freeze({ key: 'story', label: 'News' }),
 ]);
 

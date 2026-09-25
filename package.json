@@ -8,13 +8,13 @@
     "build": "node scripts/verify-retired-contributors.mjs && vite build",
     "preview": "vite preview",
     "seo:verify": "node scripts/verify-seo-contract.mjs",
-    "test": "node --test --test-concurrency=1 tests/live-cast-routes.test.mjs tests/entity-linking.test.mjs tests/publication-policy.test.mjs tests/player-history.test.mjs tests/entity-hub.test.mjs tests/seo-canaries.test.mjs tests/article-visuals.test.mjs tests/youtube-playback.test.mjs tests/pro-page.test.mjs tests/pro-seo.test.mjs tests/search.test.mjs",
+    "test": "node --test --test-concurrency=1 tests/live-cast-routes.test.mjs tests/entity-linking.test.mjs tests/publication-policy.test.mjs tests/player-history.test.mjs tests/entity-hub.test.mjs tests/seo-canaries.test.mjs tests/article-visuals.test.mjs tests/youtube-playback.test.mjs tests/pro-page.test.mjs tests/pro-seo.test.mjs tests/search.test.mjs tests/search-learn.test.mjs",
     "test:unit": "node --test tests/live-cast-routes.test.mjs tests/entity-linking.test.mjs tests/publication-policy.test.mjs tests/player-history.test.mjs",
     "test:seo": "node --test --test-concurrency=1 tests/seo-canaries.test.mjs",
     "entities:build": "node scripts/build-entity-dictionary.mjs",
     "entities:backfill": "node scripts/entity-backfill.mjs",
     "test:hub": "node --test --test-concurrency=1 tests/entity-hub.test.mjs",
-    "test:search": "node --test --test-concurrency=1 tests/search.test.mjs"
+    "test:search": "node --test --test-concurrency=1 tests/search.test.mjs tests/search-learn.test.mjs"
   },
   "dependencies": {
     "@vercel/edge": "^1.1.1",

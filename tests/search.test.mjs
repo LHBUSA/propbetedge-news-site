@@ -24,7 +24,7 @@ import { TEAMS } from '../src/entity-graph/dictionary.js';
 import { filterPublicArticles } from '../news-integrity.js';
 import worker from '../workers/pbe-entity-hub/src/index.js';
 import {
-  staticDocs, resetSearchCaches, KEYS, refreshWnbaIndex, refreshStoriesHead, NEWS_API,
+  staticDocs, resetSearchCaches, KEYS, refreshWnbaIndex, refreshStoriesHead, NEWS_API, learnDocsFromManifest,
 } from '../workers/pbe-entity-hub/src/search-service.js';
 import { resultLabel } from '../src/search-palette.js';
 
@@ -265,6 +265,8 @@ function seededEnv() {
   const seed = {
     [KEYS.ufc]: { built_at: fresh, docs: ufc },
     [KEYS.wnba]: { built_at: fresh, docs: wnba },
+    // Every artifact present (incl. Learn), so no lazy bootstrap fires from a request.
+    [KEYS.learn]: { built_at: fresh, docs: learnDocsFromManifest(JSON.parse(fs.readFileSync(new URL('./fixtures/search/learn-search-manifest.json', import.meta.url), 'utf8'))) },
     [KEYS.storiesManifest]: {
       months: Object.fromEntries(Object.entries(byMonth).map(([m, v]) => [m, v.length])),
       head_refreshed_at: fresh, backfill: { complete: true, completed_at: fresh },

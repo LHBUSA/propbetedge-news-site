@@ -32,7 +32,7 @@ let lastTracked = '';
 let localIndex = null;
 
 const SPORT_GLYPH = { mlb: '⚾', nfl: '🏈', nba: '🏀', wnba: '🏀', nhl: '🏒', ufc: '🥊' };
-const TYPE_GLYPH = { player: '◉', team: '◆', event: '✪', tool: '⚡', story: '✦' };
+const TYPE_GLYPH = { player: '◉', team: '◆', event: '✪', tool: '⚡', learn: '◈', story: '✦' };
 
 function searchApiBase() {
   if (typeof window !== 'undefined' && typeof window.PBE_SEARCH_API === 'string' && window.PBE_SEARCH_API) {
@@ -268,7 +268,7 @@ function renderState(state) {
   if (!options.length) {
     list.innerHTML = state.status === 'loading'
       ? '<div class="pbe-search-empty" role="presentation"><span>Searching the PropBetEdge network…</span></div>'
-      : `<div class="pbe-search-empty" role="presentation"><strong>No match for “${escapeHtml(state.query.trim())}”.</strong><span>Try a player, fighter, team, event, “Fight Simulator”, “PBE Picks” or a headline.</span></div>`;
+      : `<div class="pbe-search-empty" role="presentation"><strong>No match for “${escapeHtml(state.query.trim())}”.</strong><span>Try a player, fighter, team, event, “Fight Simulator”, “PBE Picks”, a concept like “Brier score” or a headline.</span></div>`;
   } else {
     list.innerHTML = groups.map((g) => `
       <div class="pbe-search-group" role="group" aria-labelledby="pbe-sg-${g.key}">
@@ -330,6 +330,8 @@ export function resultLabel(r, now = Date.now()) {
     }
     case 'tool':
       return { kicker: r.label || r.subtitle || `${S} INTELLIGENCE`, detail: '' };
+    case 'learn':
+      return { kicker: r.label || 'LEARN', detail: r.subtitle };
     case 'story':
       return { kicker: `${S} NEWS${r.date ? ` · ${timeAgo(r.date, now)}` : ''}`, detail: '' };
     default:

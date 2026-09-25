@@ -26,7 +26,7 @@ import {
 } from '../../../src/entity-hub/contract.js';
 import { refreshPlayer, refreshTeam, teamRefreshTargets } from '../../../src/entity-hub/refresh.js';
 import {
-  handleSearch, runSearchRefresh, refreshUfcIndex, refreshWnbaIndex, refreshStoriesHead, backfillStories,
+  handleSearch, runSearchRefresh, refreshUfcIndex, refreshWnbaIndex, refreshLearnIndex, refreshStoriesHead, backfillStories,
   SEARCH_SCHEMA,
 } from './search-service.js';
 
@@ -34,6 +34,7 @@ const SCHEMA_VERSION = 'pbe-entity-hub/1';
 const HUB_ORIGINS = [
   'https://propbetedge.ai',
   'https://www.propbetedge.ai',
+  'https://learn.propbetedge.ai',
 ];
 const PREVIEW_ORIGIN = /^https:\/\/propbetedge-news-site(?:-[a-z0-9-]+)?-justins-projects-ad4f4bb7\.vercel\.app$/;
 
@@ -308,7 +309,7 @@ async function adminRefresh(request, env, ctx, origin) {
 
 /**
  * Manual search-index rebuild (initial backfill, or after an upstream fix).
- *   source = ufc | wnba | stories-head | stories-backfill
+ *   source = ufc | wnba | learn | stories-head | stories-backfill
  */
 async function adminSearchRefresh(request, env, url, origin) {
   const provided = request.headers.get('X-Hub-Admin-Token') || '';
@@ -320,6 +321,7 @@ async function adminSearchRefresh(request, env, url, origin) {
   const jobs = {
     ufc: () => refreshUfcIndex(env),
     wnba: () => refreshWnbaIndex(env),
+    learn: () => refreshLearnIndex(env),
     'stories-head': () => refreshStoriesHead(env, { pages: Math.min(pages, 5) }),
     'stories-backfill': () => backfillStories(env, { pages }),
   };

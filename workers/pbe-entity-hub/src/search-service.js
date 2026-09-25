@@ -11,6 +11,7 @@
  *   tools / products                  src/search/destinations.js (verified URLs)
  *   WNBA players + teams              KV search:v2:wnba      <- wnba-api /v1/players
  *   UFC fighters / events / bouts     KV search:v2:ufc       <- ufc.propbetedge.ai sitemaps
+ *   Learn lessons / glossary / tools  KV search:v2:learn     <- learn.propbetedge.ai/search-manifest.json
  *   news stories (full corpus)        KV search:v2:stories:* <- propbet-news-api /news, paged
  *
  * The KV artifacts are rebuilt ONLY by the hub's cron (see runSearchRefresh);
@@ -30,10 +31,13 @@ export const SEARCH_SCHEMA = 'pbe-search/1';
 export const NEWS_API = 'https://propbet-news-api.sales-fd3.workers.dev';
 export const WNBA_API = 'https://wnba-api.sales-fd3.workers.dev';
 export const UFC_SITE = 'https://ufc.propbetedge.ai';
+export const LEARN_SITE = 'https://learn.propbetedge.ai';
+export const LEARN_MANIFEST_SCHEMA = 'pbe-learn-search/1';
 
 export const KEYS = Object.freeze({
   ufc: 'search:v2:ufc',
   wnba: 'search:v2:wnba',
+  learn: 'search:v2:learn',
   storiesManifest: 'search:v2:stories:manifest',
   storiesShard: (month) => `search:v2:stories:${month}`,
   lock: (name) => `search:v2:lock:${name}`,
@@ -102,20 +106,21 @@ async function kvJson(env, key) {
 
 async function loadEntityTier(env) {
   const base = staticDocs();
-  const [ufc, wnba] = await Promise.all([kvJson(env, KEYS.ufc), kvJson(env, KEYS.wnba)]);
-  const docs = [...base.players, ...base.teams, ...base.tools, ...(wnba?.docs || []), ...(ufc?.docs || [])];
+  const [ufc, wnba, learn] = await Promise.all([kvJson(env, KEYS.ufc), kvJson(env, KEYS.wnba), kvJson(env, KEYS.learn)]);
+  const docs = [...base.players, ...base.teams, ...base.tools, ...(wnba?.docs || []), ...(ufc?.docs || []), ...(learn?.docs || [])];
   const byHref = new Map();
   for (const d of docs) if (d.type === 'team') byHref.set(d.href, d);
   return {
     docs,
     byHref,
-    raw: { ufc: ufc ? { built_at: ufc.built_at } : null, wnba: wnba ? { built_at: wnba.built_at } : null },
+    raw: { ufc: ufc ? { built_at: ufc.built_at } : null, wnba: wnba ? { built_at: wnba.built_at } : null, learn: learn ? { built_at: learn.built_at } : null },
     status: {
       dictionary_players: base.players.length,
       teams: base.teams.length + (wnba?.docs || []).filter((d) => d.type === 'team').length,
       tools: base.tools.length,
       wnba: wnba ? { docs: wnba.docs.length, built_at: wnba.built_at } : null,
       ufc: ufc ? { docs: ufc.docs.length, built_at: ufc.built_at } : null,
+      learn: learn ? { docs: learn.docs.length, built_at: learn.built_at } : null,
     },
   };
 }
@@ -315,6 +320,7 @@ function scheduleLazyRefresh(env, ctx, c) {
   const jobs = [];
   if (!c.raw.ufc) jobs.push(['ufc', () => refreshUfcIndex(env)]);
   if (!c.raw.wnba) jobs.push(['wnba', () => refreshWnbaIndex(env)]);
+  if (!c.raw.learn) jobs.push(['learn', () => refreshLearnIndex(env)]);
   if (c.storiesLoaded && !c.raw.manifest) jobs.push(['stories-head', () => refreshStoriesHead(env, { pages: 1 })]);
   for (const [name, job] of jobs) ctx.waitUntil(withLock(env, name, job).catch(() => {}));
 }
@@ -388,6 +394,50 @@ export async function refreshWnbaIndex(env, { now = Date.now() } = {}) {
   const counts = { players: docs.filter((d) => d.type === 'player').length, teams: docs.filter((d) => d.type === 'team').length };
   if (counts.players < 50 || counts.teams < 10) return { ok: false, reason: 'implausible_roster', counts };
   await env.ENTITY_KV.put(KEYS.wnba, JSON.stringify({ built_at: new Date(now).toISOString(), source: `${WNBA_API}/v1/players`, counts, docs }));
+  return { ok: true, counts };
+}
+
+/**
+ * Learn: learn.propbetedge.ai publishes its lessons, glossary terms, Model Lab
+ * tools, paths and academies as compact search docs at /search-manifest.json
+ * (built from the same source as the pages). Only type "learn" docs whose href
+ * is on the Learn origin are accepted, and every field is re-shaped here so the
+ * manifest can never inject another type, an off-site link or oversized text.
+ */
+export function learnDocsFromManifest(manifest) {
+  if (!manifest || manifest.schema !== LEARN_MANIFEST_SCHEMA || !Array.isArray(manifest.docs)) return null;
+  const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
+  const list = (v, n, max) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string' && x).slice(0, n).map((x) => x.slice(0, max)) : []);
+  const KINDS = new Set(['lesson', 'glossary', 'tool', 'path', 'academy']);
+  const SPORTS = new Set(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc']);
+  const seen = new Set();
+  const docs = [];
+  for (const d of manifest.docs) {
+    if (!d || d.type !== 'learn' || !KINDS.has(d.kind)) continue;
+    const href = str(d.href, 300);
+    if (!href.startsWith(`${LEARN_SITE}/`) || seen.has(href)) continue;
+    const title = str(d.title, 140);
+    if (!title) continue;
+    seen.add(href);
+    const doc = {
+      type: 'learn', kind: d.kind, id: str(d.id, 120) || href, title, subtitle: str(d.subtitle, 160), href,
+      aliases: list(d.aliases, 12, 80), keywords: list(d.keywords, 24, 120),
+      label: str(d.label, 40) || 'LEARN', boost: Math.max(-40, Math.min(40, Number(d.boost) || 0)),
+    };
+    if (SPORTS.has(d.sport)) doc.sport = d.sport;
+    docs.push(doc);
+  }
+  return docs;
+}
+
+export async function refreshLearnIndex(env, { now = Date.now() } = {}) {
+  const source = `${LEARN_SITE}/search-manifest.json`;
+  const docs = learnDocsFromManifest(JSON.parse(await fetchText(source, { headers: { Accept: 'application/json' } })));
+  if (!docs) return { ok: false, reason: 'bad_manifest_schema' };
+  const counts = { docs: docs.length, lessons: docs.filter((d) => d.kind === 'lesson').length, glossary: docs.filter((d) => d.kind === 'glossary').length };
+  // Plausibility gate: a broken or truncated Learn deploy must not replace a good index.
+  if (counts.lessons < 10 || counts.glossary < 30) return { ok: false, reason: 'implausible_manifest', counts };
+  await env.ENTITY_KV.put(KEYS.learn, JSON.stringify({ built_at: new Date(now).toISOString(), source, counts, docs }));
   return { ok: true, counts };
 }
 
@@ -507,6 +557,7 @@ export async function runSearchRefresh(event, env) {
   await attempt('stories_backfill', () => backfillStories(env, { pages: 10 }));
   if (minute === 0 && hour % 6 === 0) await attempt('ufc', () => refreshUfcIndex(env));
   if (minute === 30 && hour % 6 === 0) await attempt('wnba', () => refreshWnbaIndex(env));
+  if (minute === 15) await attempt('learn', () => refreshLearnIndex(env));
   await env.ENTITY_KV.put('report:search:last', JSON.stringify({ at: new Date().toISOString(), report }), { expirationTtl: 60 * 60 * 24 * 14 });
   invalidateTiers();
   return report;
