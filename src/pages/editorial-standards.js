@@ -13,6 +13,7 @@
 
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
+import { PROPBETEDGE_X_URL, PROPBETEDGE_X_HANDLE } from '../social.js';
 import {
   organizationSchema, websiteSchema, breadcrumbSchema, injectSchemas,
 } from '../schema.js';
@@ -146,7 +147,7 @@ export async function renderEditorialStandards(root, setMeta) {
           <ul class="editorial-list">
             <li><strong>Email:</strong> <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a> for editorial feedback, corrections, or tips.</li>
             <li><strong>Discord:</strong> Join our community to discuss picks, debate angles, and call us out in real time.</li>
-            <li><strong>X / Twitter:</strong> <a href="https://x.com/MLBHRALERTSPBE" target="_blank" rel="noopener">@MLBHRALERTSPBE</a> for public discussion.</li>
+            <li><strong>X / Twitter:</strong> <a href="${PROPBETEDGE_X_URL}" target="_blank" rel="noopener noreferrer">${PROPBETEDGE_X_HANDLE}</a> for public discussion.</li>
             <li><strong>Bluesky:</strong> <a href="https://bsky.app/profile/propbetedge.bsky.social" target="_blank" rel="noopener">@propbetedge.bsky.social</a> for longer-form community conversation.</li>
           </ul>
           <p>

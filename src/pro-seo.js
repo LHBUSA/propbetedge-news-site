@@ -12,6 +12,7 @@
 
 import { ALL_ACCESS, SPORTS } from './pro-content.js';
 
+import { PROPBETEDGE_X_HANDLE } from './social.js';
 export const SITE = 'https://propbetedge.ai';
 export const PRO_CANONICAL = `${SITE}/pro`;
 export const ORG_ID = `${SITE}/#organization`;
@@ -86,7 +87,7 @@ export function proOpenGraphTags() {
 export function proTwitterTags() {
   return [
     ['twitter:card', 'summary_large_image'],
-    ['twitter:site', '@MLBHRALERTSPBE'],
+    ['twitter:site', PROPBETEDGE_X_HANDLE],
     ['twitter:title', PRO_TITLE],
     ['twitter:description', PRO_DESCRIPTION],
     ['twitter:image', PRO_SOCIAL_IMAGE.url],

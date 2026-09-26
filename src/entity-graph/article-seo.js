@@ -14,6 +14,7 @@
 import { SITE, SPORT_LABELS } from './entities.js';
 import { buildShareImage } from './share-image.js';
 
+import { PROPBETEDGE_X_HANDLE } from '../social.js';
 const ORG_ID = `${SITE}/#organization`;
 const SITE_ID = `${SITE}/#website`;
 const DEFAULT_ROBOTS = 'index, follow, max-image-preview:large';
@@ -161,7 +162,7 @@ function openGraphTags({ canonical, title, description, image, published, modifi
 function twitterTags({ title, description, image }) {
   return [
     ['twitter:card', 'summary_large_image'],
-    ['twitter:site', '@MLBHRALERTSPBE'],
+    ['twitter:site', PROPBETEDGE_X_HANDLE],
     ['twitter:title', title],
     ['twitter:description', description],
     ['twitter:image', image.url],

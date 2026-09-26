@@ -17,6 +17,8 @@
  * Copy link and the native share sheet are buttons the client upgrades.
  */
 
+import { xShareUrl } from '../social.js';
+
 /**
  * Inline SVG, 16px, currentColor. Five tiny icons do not justify an icon font
  * or a third-party library, and inlining keeps them crisp and themable.
@@ -49,7 +51,6 @@ export function renderShareBar(canonicalUrl, title, options = {}) {
   if (!url) return '';
   const text = String(title || '').trim();
   const encodedUrl = encodeURIComponent(url);
-  const encodedText = encodeURIComponent(text);
   const compact = options.compact !== false;
   const subject = String(options.subject || 'this article');
 
@@ -59,7 +60,7 @@ export function renderShareBar(canonicalUrl, title, options = {}) {
     {
       key: 'x',
       label: 'X',
-      href: `https://x.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
+      href: xShareUrl({ text, url }),
       accessible: `Share ${subject} on X`,
     },
     {

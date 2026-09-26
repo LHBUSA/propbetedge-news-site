@@ -10,6 +10,8 @@
  * intentionally excluded from normal sports-news inventory.
  */
 
+import { PROPBETEDGE_X_URL } from './social.js';
+
 // ═════ IMAGE PROXY ═════
 export const IMG_PROXY = 'https://propbet-img-proxy.sales-fd3.workers.dev/?url=';
 
@@ -54,7 +56,7 @@ export const PROPBET_LINKS = {
   learn:       'https://learn.propbetedge.ai/',
   propsports:  'https://propsports.proptechusa.ai',
   discord:     PROPBETEDGE_DISCORD_URL,
-  twitter:     'https://x.com/MLBHRALERTSPBE',
+  twitter:     PROPBETEDGE_X_URL,
   bluesky:     'https://bsky.app/profile/propbetedge.bsky.social',
   linkedin:    'https://www.linkedin.com/company/propbetedge-ai/',
   api_news:    'https://rapidapi.com/propdata-propdata-default/api/propbetedge-sports-news-api',

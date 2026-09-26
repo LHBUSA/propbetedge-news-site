@@ -27,6 +27,7 @@ import { renderShareBar } from './src/entity-graph/share-bar.js';
 import { rankRelated } from './src/entity-graph/related.js';
 import { teamQueryAbbreviations } from './src/entity-graph/entities.js';
 import { liveCastUrl } from './src/live-cast-routes.js';
+import { NETWORK_SOCIAL_IMAGE } from './src/social.js';
 
 export const config = {
   matcher: [
@@ -127,7 +128,7 @@ async function resolveMeta(pathname, search = '') {
       canonical: `${SITE}/`,
       title: 'PropBetEdge — Sports News & Prop-Bet Intelligence',
       description: 'Editorial sports journalism with AI prop-bet impact analysis. MLB, NFL, NBA, NHL.',
-      image: `${SITE}/logo/pbe-full-600.png`,
+      image: NETWORK_SOCIAL_IMAGE.url,
     };
   }
 
@@ -238,7 +239,7 @@ async function resolveMeta(pathname, search = '') {
       canonical,
       title: `${name} — ${SPORT_LABELS[sport]} Team Intelligence | PropBetEdge`,
       description: `${name} team hub with schedule, roster, standings context and connected PropBetEdge coverage.`,
-      image: entity?.image || `${SITE}/logo/pbe-full-600.png`,
+      image: entity?.image || NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildTeamSchema(name, sport, canonical, entity?.image || null),
       ssrHtml: buildServerEntityHtml({
@@ -267,7 +268,7 @@ async function resolveMeta(pathname, search = '') {
       canonical,
       title: `${name} — ${SPORT_LABELS[sport]} Player Intelligence | PropBetEdge`,
       description: `${name} player profile with current stats, recent form, game logs and connected PropBetEdge coverage.`,
-      image: entity?.image || `${SITE}/logo/pbe-full-600.png`,
+      image: entity?.image || NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildPlayerSchema(name, sport, canonical, entity?.image || null),
       ssrHtml: buildServerEntityHtml({
@@ -299,7 +300,7 @@ async function resolveMeta(pathname, search = '') {
       canonical,
       title,
       description,
-      image: game.image || `${SITE}/logo/pbe-full-600.png`,
+      image: game.image || NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildGameSchema(game, sport, canonical),
       ssrHtml: buildServerGameHtml(game, sport, canonical),
@@ -313,7 +314,7 @@ async function resolveMeta(pathname, search = '') {
       canonical: `${SITE}/standings/${sport}`,
       title: `${SPORT_LABELS[sport]} Standings — PropBetEdge`,
       description: `Current ${SPORT_LABELS[sport]} standings with team intelligence and connected news coverage.`,
-      image: `${SITE}/logo/pbe-full-600.png`,
+      image: NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
     };
   }
@@ -325,7 +326,7 @@ async function resolveMeta(pathname, search = '') {
       canonical,
       title: 'Editorial Team — PropBetEdge',
       description: 'Meet the PropBetEdge editorial team, research analysts and transparent AI-assisted editorial operation behind our sports coverage.',
-      image: `${SITE}/logo/pbe-full-600.png`,
+      image: NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildAuthorsSchema(canonical),
       ssrHtml: buildServerAuthorsHtml(),
@@ -342,7 +343,7 @@ async function resolveMeta(pathname, search = '') {
         canonical: `${SITE}/authors/propbetedge-editorial-team`,
         title: 'Not found — PropBetEdge',
         description: 'This author page is not available.',
-        image: `${SITE}/logo/pbe-full-600.png`,
+        image: NETWORK_SOCIAL_IMAGE.url,
         robots: 'noindex, follow',
         status: 404,
       };
@@ -352,7 +353,7 @@ async function resolveMeta(pathname, search = '') {
       canonical,
       title: `${author.name} — ${author.role} · PropBetEdge`,
       description: `Articles by ${author.name} on PropBetEdge.`,
-      image: `${SITE}/logo/pbe-full-600.png`,
+      image: NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildAuthorSchema(slug, author, canonical),
       ssrHtml: buildServerAuthorHtml(slug, author),
@@ -385,7 +386,7 @@ async function resolveMeta(pathname, search = '') {
       canonical,
       title: 'About PropBetEdge — Sports News & Intelligence',
       description: 'About PropBetEdge: ownership, editorial operation, sports-intelligence network, standards, and contact information.',
-      image: `${SITE}/logo/pbe-full-600.png`,
+      image: NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildAboutSchema(canonical),
       ssrHtml: buildServerAboutHtml(),
@@ -398,7 +399,7 @@ async function resolveMeta(pathname, search = '') {
       canonical: `${SITE}/editorial-standards`,
       title: 'Editorial Standards — PropBetEdge',
       description: 'How PropBetEdge produces editorial content. AI-assisted journalism with editorial review.',
-      image: `${SITE}/logo/pbe-full-600.png`,
+      image: NETWORK_SOCIAL_IMAGE.url,
     };
   }
 
@@ -420,7 +421,7 @@ async function resolveMeta(pathname, search = '') {
         : sport
           ? `Live ${labels[sport]} player leaderboards with automatic in-page refresh and connected PropBetEdge intelligence.`
           : 'Live leaderboards across MLB, WNBA, NFL, NHL and NBA, plus current UFC divisional champions.',
-      image: `${SITE}/logo/pbe-full-600.png`,
+      image: NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
     };
   }
@@ -431,7 +432,7 @@ async function resolveMeta(pathname, search = '') {
       canonical: `${SITE}/games`,
       title: 'Live Games — PropBetEdge',
       description: 'Live scores across MLB, NFL, NBA, WNBA and NHL, with NFL, WNBA and NHL games connected to their live PBEcast experiences.',
-      image: `${SITE}/logo/pbe-full-600.png`,
+      image: NETWORK_SOCIAL_IMAGE.url,
     };
   }
 
@@ -440,7 +441,7 @@ async function resolveMeta(pathname, search = '') {
     canonical: `${SITE}${pathname}`,
     title: 'PropBetEdge — Sports News & Prop-Bet Intelligence',
     description: 'Editorial sports journalism with AI prop-bet impact analysis.',
-    image: `${SITE}/logo/pbe-full-600.png`,
+    image: NETWORK_SOCIAL_IMAGE.url,
   };
 }
 
@@ -510,6 +511,7 @@ function injectMeta(html, meta) {
       /<meta\s+property="og:image"[^>]*>/i,
       `<meta property="og:image" content="${escapeAttr(meta.image)}" />`
     );
+    html = applyImageDetails(html, meta);
     if (meta.type) {
       html = html.replace(
         /<meta\s+property="og:type"[^>]*>/i,
@@ -555,6 +557,31 @@ function injectMeta(html, meta) {
   }
 
   return html;
+}
+
+/**
+ * The shipped head describes the network card (type, 1200x630, alt). Keep that
+ * description only while the network card is the image; any other image gets
+ * its own secure_url and alt, and loses dimensions we cannot vouch for.
+ */
+function applyImageDetails(html, meta) {
+  const isNetworkCard = meta.image === NETWORK_SOCIAL_IMAGE.url;
+  const alt = isNetworkCard ? NETWORK_SOCIAL_IMAGE.alt : (meta.imageAlt || meta.title || 'PropBetEdge');
+  let out = html.replace(
+    /<meta\s+property="og:image:secure_url"[^>]*>/i,
+    `<meta property="og:image:secure_url" content="${escapeAttr(meta.image)}" />`
+  );
+  if (!isNetworkCard) {
+    out = out.replace(/[ \t]*<meta\s+property="og:image:(?:type|width|height)"[^>]*>[ \t]*\r?\n?/gi, '');
+  }
+  out = out.replace(
+    /<meta\s+property="og:image:alt"[^>]*>/i,
+    `<meta property="og:image:alt" content="${escapeAttr(alt)}" />`
+  );
+  return out.replace(
+    /<meta\s+name="twitter:image:alt"[^>]*>/i,
+    `<meta name="twitter:image:alt" content="${escapeAttr(alt)}" />`
+  );
 }
 
 /**
@@ -689,7 +716,7 @@ async function buildNewsListingMeta({ sport = null, page = 1 }) {
     canonical,
     title,
     description,
-    image: articles[0]?.image_url || `${SITE}/logo/pbe-full-600.png`,
+    image: articles[0]?.image_url || NETWORK_SOCIAL_IMAGE.url,
     robots: DEFAULT_ROBOTS,
     jsonLd: buildNewsCollectionSchema({ sport, page, canonical, title, description, articles }),
     ssrHtml: buildServerNewsListingHtml({ sport, page, articles, totalPages, canonical }),
@@ -812,7 +839,7 @@ function notFoundMeta(pathname, label) {
     canonical: `${SITE}${pathname}`,
     title: `${label} — PropBetEdge`,
     description: 'The requested PropBetEdge page is not available.',
-    image: `${SITE}/logo/pbe-full-600.png`,
+    image: NETWORK_SOCIAL_IMAGE.url,
     robots: 'noindex, follow',
     status: 404,
   };
@@ -823,7 +850,7 @@ function serviceUnavailableMeta(pathname, label) {
     canonical: `${SITE}${pathname}`,
     title: `${label} — PropBetEdge`,
     description: 'This PropBetEdge page is temporarily unavailable while its source data is refreshed.',
-    image: `${SITE}/logo/pbe-full-600.png`,
+    image: NETWORK_SOCIAL_IMAGE.url,
     robots: 'noindex, follow',
     status: 503,
   };

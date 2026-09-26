@@ -19,6 +19,8 @@
  *        injectSchemas([ schema1, schema2, ... ])
  */
 
+import { PROPBETEDGE_X_URL } from './social.js';
+
 const SITE = {
   url: 'https://propbetedge.ai',
   name: 'PropBetEdge',
@@ -26,7 +28,7 @@ const SITE = {
   description: 'AI-native sports newsroom and sports-intelligence network covering MLB, NFL, NBA, WNBA, NHL, UFC, and expanding sports data products.',
   logo: 'https://propbetedge.ai/logo/pbe-full-400.png',
   logoSquare: 'https://propbetedge.ai/favicon-192.png',
-  twitter: 'https://x.com/MLBHRALERTSPBE',
+  twitter: PROPBETEDGE_X_URL,
   linkedin: 'https://www.linkedin.com/company/propbetedge-ai/',
   bluesky: 'https://bsky.app/profile/propbetedge.bsky.social',
 };

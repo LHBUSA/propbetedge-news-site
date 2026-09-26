@@ -43,9 +43,10 @@ import { renderTeamPage } from './pages/team.js';
 import { renderStandingsPage } from './pages/standings.js';
 import { liveCastUrl } from './live-cast-routes.js';
 
+import { NETWORK_SOCIAL_IMAGE } from './social.js';
 const VALID_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl']);
 const STANDINGS_SPORTS = new Set(['mlb', 'nfl', 'nba', 'wnba', 'nhl']);
-const DEFAULT_OG_IMAGE = 'https://propbetedge.ai/logo/pbe-full-600.png';
+const DEFAULT_OG_IMAGE = NETWORK_SOCIAL_IMAGE.url;
 
 function setMeta({ title, description, canonical, ogImage }) {
   if (title) document.title = title;
@@ -72,6 +73,15 @@ function setMeta({ title, description, canonical, ogImage }) {
   const socialImage = ogImage || DEFAULT_OG_IMAGE;
   setOrCreateMeta('property', 'og:image', socialImage);
   setOrCreateMeta('name', 'twitter:image', socialImage);
+  setOrCreateMeta('property', 'og:image:secure_url', socialImage);
+  // The shipped type/size/alt describe the network card only.
+  if (socialImage !== DEFAULT_OG_IMAGE) {
+    document.querySelectorAll('meta[property="og:image:type"],meta[property="og:image:width"],meta[property="og:image:height"]')
+      .forEach((el) => el.remove());
+  }
+  const imageAlt = socialImage === DEFAULT_OG_IMAGE ? NETWORK_SOCIAL_IMAGE.alt : (title || 'PropBetEdge');
+  setOrCreateMeta('property', 'og:image:alt', imageAlt);
+  setOrCreateMeta('name', 'twitter:image:alt', imageAlt);
 }
 
 function setOrCreateMeta(attr, name, value) {

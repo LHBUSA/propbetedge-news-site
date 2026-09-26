@@ -21,6 +21,7 @@
 
 import { SITE, SPORT_LABELS } from './constants.js';
 
+import { NETWORK_SOCIAL_IMAGE } from '../social.js';
 export const SHARE_IMAGE_WIDTH = 1200;
 export const SHARE_IMAGE_HEIGHT = 630;
 
@@ -117,7 +118,7 @@ export function selectShareSubject(article, manifest) {
 export function shareImageUrl(article, { variant = null } = {}) {
   const slug = String(article?.slug || '');
   const sport = String(article?.sport || '').toLowerCase();
-  if (!slug || !sport) return `${SITE}/logo/pbe-full-600.png`;
+  if (!slug || !sport) return NETWORK_SOCIAL_IMAGE.url;
   const query = new URLSearchParams({ sport, slug });
   if (variant) query.set('v', variant);
   return `${SITE}/api/social-card?${query.toString()}`;

@@ -494,7 +494,7 @@ test('sharing uses the clean canonical URL with nothing appended', () => {
   const hrefs = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
 
   assert.equal(hrefs.length, 3);
-  assert.ok(hrefs[0].startsWith('https://x.com/intent/tweet?'));
+  assert.ok(hrefs[0].startsWith('https://x.com/intent/post?'));
   assert.ok(hrefs[1].startsWith('https://www.linkedin.com/sharing/share-offsite/?url='));
   assert.ok(hrefs[2].startsWith('https://bsky.app/intent/compose?text='));
 

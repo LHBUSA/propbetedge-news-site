@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- PropBetEdge network share card (1200x630). Render with render-network-card.mjs. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Inter:wght@500;600;700&family=JetBrains+Mono:wght@500;600&display=block" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1200px;height:630px;overflow:hidden;background:#08090b}
+  .card{position:relative;width:1200px;height:630px;overflow:hidden;color:#f5f3ee;font-family:Inter,system-ui,sans-serif;
+    background:
+      radial-gradient(760px 520px at 1010px 90px, rgba(212,168,67,.20), transparent 62%),
+      radial-gradient(620px 420px at 120px 640px, rgba(212,168,67,.07), transparent 70%),
+      linear-gradient(160deg,#101216 0%,#0a0b0e 55%,#07080a 100%)}
+  .grid{position:absolute;inset:0;
+    background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+    background-size:40px 40px;
+    -webkit-mask-image:radial-gradient(900px 560px at 900px 260px,#000 30%,transparent 80%)}
+  svg.art{position:absolute;inset:0}
+  .frame{position:absolute;inset:22px;border-radius:22px;border:1px solid rgba(212,168,67,.38);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.02),0 0 40px rgba(212,168,67,.06)}
+  .edge{position:absolute;left:22px;right:22px;bottom:22px;height:2px;border-radius:2px;
+    background:linear-gradient(90deg,transparent,rgba(232,196,104,.85) 30%,rgba(232,196,104,.85) 70%,transparent)}
+  .safe{position:absolute;left:84px;top:66px;right:84px;bottom:62px}
+  .brandrow{display:flex;align-items:center;gap:18px}
+  .brandrow img{height:62px;width:auto;filter:drop-shadow(0 6px 18px rgba(0,0,0,.55))}
+  .kicker{font:600 15px/1 'JetBrains Mono',monospace;letter-spacing:.32em;color:#d9b45a;text-transform:uppercase}
+  .kicker b{color:rgba(245,243,238,.55);font-weight:500}
+  h1{margin-top:34px;font:800 150px/.86 'Barlow Condensed',sans-serif;letter-spacing:.005em;text-transform:uppercase;color:#f7f5f0;
+    text-shadow:0 10px 40px rgba(0,0,0,.5)}
+  h1 span{background:linear-gradient(180deg,#f6df9c 0%,#e2bb5c 45%,#b8892f 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .rule{width:88px;height:3px;margin:26px 0 20px;background:linear-gradient(90deg,#e8c468,rgba(232,196,104,0))}
+  .tag{font:700 29px/1 Inter,sans-serif;letter-spacing:.20em;color:#f5f3ee;text-transform:uppercase}
+  .caps{margin-top:22px;font:600 19px/1 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(245,243,238,.78)}
+  .dot{color:#e2bb5c;padding:0 12px}
+  .foot{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:flex-end;justify-content:space-between}
+  .sports{font:700 30px/1 'Barlow Condensed',sans-serif;letter-spacing:.16em;color:#f5f3ee}
+  .sports .dot{padding:0 10px;font-size:22px;position:relative;top:-3px}
+  .domain{display:flex;align-items:center;gap:12px;font:600 21px/1 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(245,243,238,.9)}
+  .domain i{display:block;width:9px;height:9px;border-radius:50%;background:#e2bb5c;box-shadow:0 0 12px rgba(226,187,92,.9)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="grid"></div>
+  <!-- abstract field geometry + a model trace; no league marks -->
+  <svg class="art" viewBox="0 0 1200 630" fill="none">
+    <g stroke="rgba(226,187,92,.16)" stroke-width="1.2">
+      <path d="M1210 520 L960 270 L1210 20"/>               <!-- diamond edge -->
+      <circle cx="960" cy="270" r="170"/>
+      <circle cx="960" cy="270" r="92" stroke-dasharray="3 7"/>
+      <rect x="770" y="80" width="380" height="380" rx="190" stroke="rgba(255,255,255,.05)"/>
+    </g>
+    <g stroke="rgba(255,255,255,.07)" stroke-width="1">
+      <path d="M700 470 H1178"/><path d="M700 510 H1178" stroke-dasharray="2 8"/>
+    </g>
+    <path d="M708 452 C760 440 790 404 834 410 S905 350 950 342 S1010 280 1050 262 S1112 190 1170 176"
+          stroke="url(#trace)" stroke-width="2.4" stroke-linecap="round"/>
+    <g fill="#e8c468">
+      <circle cx="834" cy="410" r="4" opacity=".55"/>
+      <circle cx="950" cy="342" r="4" opacity=".7"/>
+      <circle cx="1050" cy="262" r="4.5" opacity=".85"/>
+      <circle cx="1170" cy="176" r="6"/>
+    </g>
+    <circle cx="1170" cy="176" r="15" stroke="rgba(232,196,104,.45)"/>
+    <defs>
+      <linearGradient id="trace" x1="708" y1="452" x2="1170" y2="176" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#e8c468" stop-opacity="0"/>
+        <stop offset=".45" stop-color="#e8c468" stop-opacity=".45"/>
+        <stop offset="1" stop-color="#f3d78c"/>
+      </linearGradient>
+    </defs>
+  </svg>
+  <div class="frame"></div>
+  <div class="edge"></div>
+  <div class="safe">
+    <div class="brandrow">
+      <img src="../../public/logo/pbe-mark-240.png" alt="">
+      <div class="kicker">PBE <b>&nbsp;/&nbsp; Network</b></div>
+    </div>
+    <h1>PropBet<span>Edge</span></h1>
+    <div class="rule"></div>
+    <div class="tag">The Sports Intelligence Network</div>
+    <div class="caps">LIVE DATA<span class="dot">•</span>PLAYER DNA<span class="dot">•</span>PBECAST<span class="dot">•</span>PREDICTIVE MODELS</div>
+    <div class="foot">
+      <div class="sports">MLB<span class="dot">•</span>NFL<span class="dot">•</span>NBA<span class="dot">•</span>WNBA<span class="dot">•</span>NHL<span class="dot">•</span>UFC</div>
+      <div class="domain"><i></i>propbetedge.ai</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

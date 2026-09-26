@@ -3,6 +3,8 @@
  * lightweight sharing surface without changing the underlying article renderer.
  */
 
+import { xShareUrl } from './social.js';
+
 const NEWS_API = 'https://propbet-news-api.sales-fd3.workers.dev';
 const ARTICLE_RE = /^\/news\/(mlb|nfl|nba|nhl)\/([^/]+)\/?$/i;
 let activeKey = '';
@@ -77,7 +79,7 @@ function renderTrust(article) {
       ` : ''}
       <div class="pbe-share-actions" aria-label="Share this story">
         <button type="button" data-pbe-share="copy">Copy link</button>
-        <a data-pbe-share="x" href="${xShareUrl()}" target="_blank" rel="noopener">Share on X</a>
+        <a data-pbe-share="x" href="${articleXShareUrl()}" target="_blank" rel="noopener noreferrer">Share on X</a>
       </div>
     </aside>
   `;
@@ -107,11 +109,11 @@ function handleShareClick(event) {
   }
 }
 
-function xShareUrl() {
-  const url = new URL('https://x.com/intent/post');
-  url.searchParams.set('url', window.location.href);
-  url.searchParams.set('text', document.title.replace(/\s*[—-]\s*PropBetEdge\s*$/, ''));
-  return url.toString();
+function articleXShareUrl() {
+  return xShareUrl({
+    text: document.title.replace(/\s*[—-]\s*PropBetEdge\s*$/, ''),
+    url: window.location.href,
+  });
 }
 
 function safeHttpUrl(raw) {
