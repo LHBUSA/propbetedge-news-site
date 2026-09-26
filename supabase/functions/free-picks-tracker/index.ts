@@ -5,6 +5,18 @@ const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const EPOCH = "2026-09-20";
 const TABLE = "pbe_free_pick_tracker";
+// The NHL gateway serves product routes only to first-party origins; a
+// server-side fetch without one gets a 403. That 403 was swallowed, so no NHL
+// free pick after 2026-09-20 ever reached the ledger while the board showed them.
+const FIRST_PARTY = { Origin:"https://propbetedge.ai", Referer:"https://propbetedge.ai/odds" };
+// Output classes that are never a published free pick.
+const NON_PICK_SCOPES = new Set(["tracking","validation","shadow","research","rehearsal_shadow","unpublished"]);
+
+function isNonPickOutput(item:any) {
+  const scope = String(item?.publication_scope || "").toLowerCase();
+  if (scope && NON_PICK_SCOPES.has(scope)) return true;
+  return /VALIDATION|SHADOW|RESEARCH/.test(String(item?.scope_label || "").toUpperCase());
+}
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -118,10 +130,12 @@ async function insertEntry(row:Record<string,unknown>) {
   if (!res.ok && res.status !== 409) throw new Error(`insert ${res.status}: ${await res.text()}`);
 }
 
-async function json(url:string) {
-  const r = await fetch(url, { headers:{ Accept:"application/json" } });
+async function json(url:string, headers:Record<string,string> = {}) {
+  const r = await fetch(url, { headers:{ Accept:"application/json", ...headers } });
   if (!r.ok) throw new Error(`${url} ${r.status}`);
-  return r.json();
+  const body = await r.json();
+  if (body && body.ok === false) throw new Error(`${url} ok:false ${body.error || ""}`.trim());
+  return body;
 }
 
 function normalizeResult(value:unknown) {
@@ -133,9 +147,12 @@ function normalizeResult(value:unknown) {
   return "PENDING";
 }
 
-async function captureCurrent() {
+type CaptureReport = Record<string,{ status:string, offered?:number, inserted?:number, blocked_non_pick?:number, error?:string }>;
+
+async function captureCurrent():Promise<CaptureReport> {
+  const report:CaptureReport = {};
   const today = etDate();
-  if (today < EPOCH) return;
+  if (today < EPOCH) return report;
   const weeklyStartRaw = sundayOf(today);
   const weeklyStart = weeklyStartRaw < EPOCH ? EPOCH : weeklyStartRaw;
   const weeklyEnd = addDays(weeklyStartRaw, 6);
@@ -146,8 +163,8 @@ async function captureCurrent() {
     json("https://ufc.propbetedge.ai/api/ufc/free-sample"),
     json("https://wnba-api.propbetedge.ai/v1/pbe/free-sample"),
     Promise.allSettled([
-      json("https://nhl-api.propbetedge.ai/nhl/picks/free-sample"),
-      json(`https://nhl-api.propbetedge.ai/nhl/picks/preseason?date=${today}`)
+      json("https://nhl-api.propbetedge.ai/nhl/picks/free-sample", FIRST_PARTY),
+      json(`https://nhl-api.propbetedge.ai/nhl/picks/preseason?date=${today}`, FIRST_PARTY)
     ]),
   ]);
 
@@ -172,7 +189,10 @@ async function captureCurrent() {
   };
 
   const capture = async (sport:string, cadence:"daily"|"weekly", periodStart:string, periodEnd:string, items:any[]) => {
+    const r = report[sport] = { status:"ok", offered:items.length, inserted:0, blocked_non_pick:0 };
     for (const item of items) {
+      // Validation / tracking / shadow / research output is never a free pick.
+      if (isNonPickOutput(item.snapshot)) { r.blocked_non_pick++; continue; }
       const itemPeriodStart = String(item.period_start || periodStart);
       const itemPeriodEnd = String(item.period_end || periodEnd || itemPeriodStart);
       const rowForIdentity = { ...item, sport, cadence, period_start:itemPeriodStart, period_end:itemPeriodEnd };
@@ -206,7 +226,12 @@ async function captureCurrent() {
         evidence:item.evidence || {},
         last_checked_at:new Date().toISOString(),
       });
+      r.inserted++;
     }
+  };
+  const failed = (sport:string, reason:unknown) => {
+    report[sport] = { status:"error", error:String((reason as any)?.message || reason) };
+    console.error("tracker capture", sport, String(reason));
   };
 
   if (sources[0].status === "fulfilled") {
@@ -233,7 +258,7 @@ async function captureCurrent() {
       };
     });
     await capture("MLB","daily",today,today,items);
-  }
+  } else failed("MLB", sources[0].reason);
 
   if (sources[1].status === "fulfilled") {
     const d:any = sources[1].value;
@@ -249,7 +274,7 @@ async function captureCurrent() {
       snapshot:p,
     }));
     await capture("NFL","weekly",weeklyStart,weeklyEnd,items);
-  }
+  } else failed("NFL", sources[1].reason);
 
   if (sources[2].status === "fulfilled") {
     const d:any = sources[2].value;
@@ -271,7 +296,7 @@ async function captureCurrent() {
       };
     });
     await capture("UFC","weekly",weeklyStart,weeklyEnd,items);
-  }
+  } else failed("UFC", sources[2].reason);
 
   if (sources[3].status === "fulfilled") {
     const d:any = sources[3].value?.data || sources[3].value;
@@ -293,7 +318,7 @@ async function captureCurrent() {
       };
     });
     await capture("WNBA","daily",today,today,items);
-  }
+  } else failed("WNBA", sources[3].reason);
 
   if (sources[4].status === "fulfilled") {
     const pair:any = sources[4].value;
@@ -344,8 +369,10 @@ async function captureCurrent() {
       }
     }
     const unique = [...new Map(cards.map(x => [stableIdentity("NHL",x),x])).values()].slice(0,2);
-    await capture("NHL","daily",today,today,unique);
+    if (pair[0]?.status === "rejected" && pair[1]?.status === "rejected") failed("NHL", pair[1].reason);
+    else await capture("NHL","daily",today,today,unique);
   }
+  return report;
 }
 
 async function resolveMlb(entry:any) {
@@ -414,9 +441,12 @@ async function resolveMlb(entry:any) {
     boxscore_url:`https://statsapi.mlb.com/api/v1/game/${game.gamePk}/boxscore`,
   };
 
+  const mlbResult = hrs > 0 ? "WIN" : "LOSS";
   await patchEntry(entry.id,{
-    result:hrs > 0 ? "WIN" : "LOSS",
-    result_at:checkedAt,
+    result:mlbResult,
+    // Re-checks must not move the settlement time, or every recheck would
+    // float MLB to the top of "latest results".
+    result_at:entry.result === mlbResult && entry.result_at ? entry.result_at : checkedAt,
     score,
     evidence,
   });
@@ -820,7 +850,7 @@ async function resolvePending() {
   }
 }
 
-async function responsePayload() {
+async function responsePayload(capture:CaptureReport = {}) {
   const rows = await sb(`${TABLE}?period_start=gte.${EPOCH}&select=*&order=period_start.desc,sport.asc,slot.asc`);
   const visible = (rows || []).filter((e:any) => e?.evidence?.suppressed !== true);
 
@@ -882,6 +912,7 @@ async function responsePayload() {
       visible_rows:visible.length,
       unique_public_picks:entries.length,
       duplicate_rows_ignored:Math.max(0, visible.length - entries.length),
+      capture,
     },
     entries,
   };
@@ -891,9 +922,9 @@ Deno.serve(async (req:Request) => {
   if (req.method === "OPTIONS") return new Response(null,{ status:204, headers:CORS });
   if (req.method !== "GET") return new Response(JSON.stringify({ok:false,error:"method_not_allowed"}),{status:405,headers:CORS});
   try {
-    await captureCurrent();
+    const capture = await captureCurrent();
     await resolvePending();
-    return new Response(JSON.stringify(await responsePayload()),{ status:200, headers:CORS });
+    return new Response(JSON.stringify(await responsePayload(capture)),{ status:200, headers:CORS });
   } catch (error) {
     console.error("free-picks-tracker", error);
     return new Response(JSON.stringify({ok:false,error:"tracker_unavailable"}),{ status:503, headers:CORS });
