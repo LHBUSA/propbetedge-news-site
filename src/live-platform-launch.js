@@ -86,20 +86,6 @@ function patchHeaderSwitcher() {
   active?.classList.add('is-active');
 }
 
-function patchScoreStrip() {
-  for (const [sport, config] of Object.entries(LIVE)) {
-    document.querySelectorAll(`.pss-tile[data-sport="${sport}"]`).forEach(tile => {
-      setExternal(tile, config.href);
-      tile.title = `Open ${config.label} Intelligence · live platform`;
-      const mini = tile.querySelector('.pss-cta-mini');
-      if (mini) {
-        mini.textContent = 'Live platform';
-        mini.classList.remove('soon');
-      }
-    });
-  }
-}
-
 function patchCampaignElement(root, sport) {
   const config = LIVE[sport];
   if (!root || !config) return;
@@ -172,7 +158,8 @@ function patchArticleSurfaces() {
 function sync() {
   queued = false;
   patchHeaderSwitcher();
-  patchScoreStrip();
+  // Score-strip tiles are owned by components/score-strip.js, which deep-links
+  // each game through live-cast-routes.js. Never rewrite them here.
   patchHouseAds();
   patchArticleSurfaces();
 }

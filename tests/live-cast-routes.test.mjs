@@ -117,3 +117,12 @@ test('other root game surfaces route through the central cast router', () => {
   assert.match(detail, /liveCastUrl\(sport, gameId\)/);
   assert.doesNotMatch(detail, /sport === 'mlb' \? 'mlb\.'/);
 });
+
+test('no post-render layer rewrites score-strip tiles back to a platform homepage', () => {
+  const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
+  for (const file of ['../src/live-platform-launch.js', '../src/site-enhancements.js', '../src/nfl-launch-priority.js', '../src/main.js']) {
+    const src = read(file);
+    assert.doesNotMatch(src, /\.pss-tile[^`'"]*`?\)\.forEach\(tile => \{\s*setExternal/, file);
+    assert.doesNotMatch(src, /patchScoreStrip/, file);
+  }
+});
