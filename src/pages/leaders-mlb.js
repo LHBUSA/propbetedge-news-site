@@ -412,8 +412,8 @@ const ADVANCED_CATS = [
 ];
 
 const PREMIUM_CATS = [
-  { label: 'wOBA',   color: '#5FD38D', statName: 'Weighted On-Base Average', dek: 'Single most predictive offensive stat. Sourced from FanGraphs.' },
-  { label: 'xFIP',   color: '#FF6B6B', statName: 'Expected Fielding Indep. Pitching', dek: 'Strips luck from ERA. Sourced from FanGraphs.' },
+  { label: 'wOBA',   color: '#5FD38D', statName: 'Weighted On-Base Average', dek: 'Single most predictive offensive stat. Data · PropSports.' },
+  { label: 'xFIP',   color: '#FF6B6B', statName: 'Expected Fielding Indep. Pitching', dek: 'Strips luck from ERA. Data · PropSports.' },
   { label: 'wRC+',   color: 'var(--gold)', statName: 'Weighted Runs Created Plus', dek: 'Park-and-league-adjusted offense. 100 = league avg.' },
 ];
 
