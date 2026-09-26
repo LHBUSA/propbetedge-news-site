@@ -150,7 +150,7 @@ function patchHouseAds() {
 
   document.querySelectorAll('[data-ad-brand="propbetedge_network"]').forEach(root => {
     const sub = root.querySelector('.ad-block-sub');
-    if (sub) sub.textContent = 'MLB, NFL, NBA, WNBA, NHL and UFC now have live PropBetEdge intelligence platforms connected by the same data-first network.';
+    if (sub) sub.textContent = 'MLB, NFL, NBA, WNBA, NHL, UFC and Tennis now have live PropBetEdge intelligence platforms connected by the same data-first network.';
   });
 }
 

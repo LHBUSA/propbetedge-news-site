@@ -25,7 +25,7 @@ const SITE = {
   url: 'https://propbetedge.ai',
   name: 'PropBetEdge',
   parentOrg: 'PropTechUSA.ai',
-  description: 'AI-native sports newsroom and sports-intelligence network covering MLB, NFL, NBA, WNBA, NHL, UFC, and expanding sports data products.',
+  description: 'AI-native sports newsroom and sports-intelligence network covering MLB, NFL, NBA, WNBA, NHL, UFC, Tennis, and expanding sports data products.',
   logo: 'https://propbetedge.ai/logo/pbe-full-400.png',
   logoSquare: 'https://propbetedge.ai/favicon-192.png',
   twitter: PROPBETEDGE_X_URL,

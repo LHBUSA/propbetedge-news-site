@@ -12,14 +12,14 @@ export const PROPBETEDGE_X_HANDLE = '@PROPBETEDGE';
 /* Network default share card: static 1200x630 RGB PNG rendered from
    scripts/og/network-card.html. Bump ?v= whenever the PNG changes so X,
    LinkedIn, Slack and Discord refetch instead of serving their cached copy. */
-const NETWORK_CARD = 'https://propbetedge.ai/og/propbetedge-network-1200x630.png?v=20260926';
+const NETWORK_CARD = 'https://propbetedge.ai/og/propbetedge-network-1200x630.png?v=20260926t';
 export const NETWORK_SOCIAL_IMAGE = Object.freeze({
   url: NETWORK_CARD,
   secure_url: NETWORK_CARD,
   type: 'image/png',
   width: 1200,
   height: 630,
-  alt: 'PropBetEdge — The Sports Intelligence Network. Live data, Player DNA, PBEcast and predictive models across MLB, NFL, NBA, WNBA, NHL and UFC.',
+  alt: 'PropBetEdge — The Sports Intelligence Network. Live data, Player DNA, PBEcast and predictive models across MLB, NFL, NBA, WNBA, NHL, UFC and Tennis.',
 });
 
 /** X share-intent URL (never the profile URL) with encoded text and url. */

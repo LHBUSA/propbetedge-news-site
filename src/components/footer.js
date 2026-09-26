@@ -25,6 +25,7 @@ export function renderFooter() {
             <a href="https://wnba.propbetedge.ai" target="_blank" rel="noopener">WNBA Intelligence <span class="footer-badge">Pro</span></a>
             <a href="${PROPBET_LINKS.picks_nhl}" target="_blank" rel="noopener">NHL Intelligence <span class="footer-badge">Pro</span></a>
             <a href="${PROPBET_LINKS.picks_ufc}" target="_blank" rel="noopener">UFC Intelligence <span class="footer-badge">Pro</span></a>
+            <a href="${PROPBET_LINKS.tennis}" target="_blank" rel="noopener">Tennis Intelligence <span class="footer-badge">Free</span></a>
           </div>
 
           <div class="footer-col">

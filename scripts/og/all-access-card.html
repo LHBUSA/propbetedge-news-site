@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- PropBetEdge All Access share card (1200x630) for /pro. Render: node scripts/og/render-all-access-card.mjs
+     Commercial facts must match src/pro-content.js ALL_ACCESS (price) and SPORTS (every sport). -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700&display=block" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1200px;height:630px;overflow:hidden;background:#0a0e17}
+  .card{position:relative;width:1200px;height:630px;overflow:hidden;color:#f5f1e8;font-family:Inter,system-ui,sans-serif;
+    background:
+      radial-gradient(640px 420px at 1040px 40px, rgba(214,178,74,.20), transparent 65%),
+      radial-gradient(520px 360px at 60px 660px, rgba(120,40,40,.18), transparent 70%),
+      linear-gradient(165deg,#0f1522 0%,#0b101b 55%,#090d15 100%)}
+  .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);background-size:44px 44px}
+  .frame{position:absolute;inset:22px;border-radius:24px;border:1px solid rgba(214,178,74,.42)}
+  .safe{position:absolute;left:72px;top:62px;right:72px;bottom:58px}
+  .kicker{display:flex;align-items:center;gap:14px;font:800 17px/1 Inter,sans-serif;letter-spacing:.24em;color:#e6c35c}
+  .kicker i{width:10px;height:10px;border-radius:50%;background:#e6c35c;box-shadow:0 0 14px rgba(230,195,92,.8)}
+  .kicker span{color:rgba(245,241,232,.62);font-weight:700;font-size:15px;letter-spacing:.18em}
+  h1{margin-top:22px;font:800 132px/1 'Playfair Display',serif;letter-spacing:-.01em;
+    background:linear-gradient(95deg,#f3dc8e 0%,#e2bf55 45%,#c6973a 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tag{margin-top:18px;font:700 42px/1.1 'Playfair Display',serif;color:#f5f1e8}
+  .tag em{font-style:italic;color:rgba(245,241,232,.85)}
+  .sports{margin-top:30px;font:700 25px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#f5f1e8}
+  .sports b{color:#e6c35c;padding:0 10px;font-weight:700}
+  .foot{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:flex-end;justify-content:space-between}
+  .price{font:800 86px/1 Inter,sans-serif;letter-spacing:-.02em;color:#f5f1e8}
+  .price small{font:600 26px/1 'JetBrains Mono',monospace;color:rgba(245,241,232,.6);letter-spacing:.04em;margin-left:10px}
+  .inc{text-align:right}
+  .inc p{font:700 22px/1.35 Inter,sans-serif;color:#fff}
+  .inc p + p{font-weight:500;color:rgba(245,241,232,.66)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="grid"></div>
+  <div class="frame"></div>
+  <div class="safe">
+    <div class="kicker"><i></i>PROPBETEDGE <span>· NETWORK MEMBERSHIP</span></div>
+    <h1>All Access</h1>
+    <div class="tag">One membership. <em>Every sport.</em></div>
+    <div class="sports">MLB<b>·</b>NFL<b>·</b>NBA<b>·</b>NHL<b>·</b>WNBA<b>·</b>UFC<b>·</b>TENNIS</div>
+    <div class="foot">
+      <div class="price">$29<small>/ MO</small></div>
+      <div class="inc"><p>Every future PropBetEdge Pro sport included.</p><p>Models · Tracked picks · Live intelligence</p></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,7 +1,7 @@
 /* /pro — PropBetEdge All Access membership page.
  *
  * Pins the ONE live Stripe checkout (payment link + price), the $29/month
- * price, the THEEDGE25 launch offer, the six included sports plus the
+ * price, the THEEDGE25 launch offer, the seven included sports plus the
  * future-sports promise, the ?checkout=success state, and the crawler bytes
  * Edge Middleware serves for /pro.
  *
@@ -35,7 +35,7 @@ test('the live Stripe identities are pinned and nothing else is offered', () => 
   assert.equal((html.match(/data-pbe-placement="all_access_checkout"/g) || []).length, stripeLinks.length);
 });
 
-test('hierarchy: title, statement, price, CTA, launch offer, six sports, future sports', () => {
+test('hierarchy: title, statement, price, CTA, launch offer, seven sports (Tennis included), future sports', () => {
   const html = buildProHtml();
   assert.match(html, /PropBetEdge<\/span><span class="pbe-pro-title-all">All Access/);
   for (const line of ['One membership.', 'Every sport.', 'Every model.', 'Every current and future PropBetEdge Pro product.']) assert.ok(html.includes(line), line);
@@ -43,7 +43,9 @@ test('hierarchy: title, statement, price, CTA, launch offer, six sports, future 
   assert.match(html, />Get All Access</);
   assert.match(html, /25% off for as long as you stay active/);
   assert.match(html, /<code data-pbe-promo-code>THEEDGE25<\/code>/);
-  assert.deepEqual(SPORTS.map(s => s.label), ['MLB', 'NFL', 'NBA', 'NHL', 'WNBA', 'UFC']);
+  assert.deepEqual(SPORTS.map(s => s.label), ['MLB', 'NFL', 'NBA', 'NHL', 'WNBA', 'UFC', 'Tennis']);
+  assert.match(html, /7 sports today, every future sport included/);
+  assert.match(html, /plus PropBetEdge Tennis, today/);
   for (const s of SPORTS) {
     assert.match(html, new RegExp(`data-sport="${s.key}"`), s.key);
     assert.ok(html.includes(`href="${s.url}"`), `${s.label} links to its property`);
@@ -117,7 +119,7 @@ test('crawler bytes: Edge Middleware serves /pro with title, canonical, product 
   const { renderPage } = await import('./ssr-harness.mjs');
   const { html, status } = await renderPage('/pro');
   assert.equal(status, 200);
-  assert.match(html, /<title>PropBetEdge All Access \| MLB, NFL, NBA, NHL, WNBA &amp; UFC Pro<\/title>/);
+  assert.match(html, /<title>PropBetEdge All Access \| 7 Sports, One Membership<\/title>/);
   assert.match(html, /<link rel="canonical" href="https:\/\/propbetedge\.ai\/pro"/);
   assert.match(html, /data-server-rendered="1"/);
   assert.ok(html.includes(LIVE.checkoutUrl));

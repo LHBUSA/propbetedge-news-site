@@ -18,16 +18,16 @@ import { renderShareBar } from '../src/entity-graph/share-bar.js';
 
 const read = f => readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
 const CANON = 'https://propbetedge.ai/pro';
-const IMAGE = 'https://propbetedge.ai/social/all-access-1200x630.png';
+const IMAGE = 'https://propbetedge.ai/social/all-access-1200x630.png?v=20260926t';
 const GENERIC_LOGO = /pbe-full-\d+\.png/;
 
 /* ---------------------------------------------------------------- module */
 test('title and description: premium, descriptive, SERP-length, product first (not the coupon)', () => {
-  assert.equal(seo.PRO_TITLE, 'PropBetEdge All Access | MLB, NFL, NBA, NHL, WNBA & UFC Pro');
+  assert.equal(seo.PRO_TITLE, 'PropBetEdge All Access | 7 Sports, One Membership');
   assert.ok(seo.PRO_TITLE.length <= 60, `title ${seo.PRO_TITLE.length} chars`);
   assert.equal(/THEEDGE25|25%/.test(seo.PRO_TITLE), false, 'the discount never leads the title');
   assert.ok(seo.PRO_DESCRIPTION.length >= 140 && seo.PRO_DESCRIPTION.length <= 300, `description ${seo.PRO_DESCRIPTION.length} chars`);
-  for (const word of ['MLB', 'NFL', 'NBA', 'NHL', 'WNBA', 'UFC', 'future sport', '$29/month', 'prediction models', 'tracked and graded picks', 'live intelligence']) {
+  for (const word of ['MLB', 'NFL', 'NBA', 'NHL', 'WNBA', 'UFC', 'Tennis', 'future sport', '$29/month', 'prediction models', 'tracked and graded picks', 'live intelligence']) {
     assert.ok(seo.PRO_DESCRIPTION.includes(word), word);
   }
   assert.equal(/best|#1|most accurate/i.test(seo.PRO_TITLE + seo.PRO_DESCRIPTION), false, 'no fabricated superlatives');
@@ -118,7 +118,7 @@ test('crawler HTML: one H1, descriptive sport anchors to canonical properties, r
 test('share UI: canonical URL only, clean product text, X / LinkedIn / Bluesky / copy / native, no query strings or Stripe URLs', () => {
   const bar = renderShareBar(seo.PRO_CANONICAL, seo.PRO_SHARE_TITLE, { compact: true, subject: 'PropBetEdge All Access' });
   assert.match(bar, /data-share-url="https:\/\/propbetedge\.ai\/pro"/);
-  assert.equal(seo.PRO_SHARE_TITLE, 'PropBetEdge All Access — MLB, NFL, NBA, NHL, WNBA and UFC Pro under one membership.');
+  assert.equal(seo.PRO_SHARE_TITLE, 'PropBetEdge All Access — MLB, NFL, NBA, NHL, WNBA, UFC and Tennis under one membership.');
   assert.equal(/THEEDGE25|25%/.test(seo.PRO_SHARE_TITLE), false, 'no promo spam in share intents');
   for (const key of ['x', 'linkedin', 'bluesky', 'copy', 'native']) assert.match(bar, new RegExp(`pbe-share-btn--${key}`));
   const urls = [...bar.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
@@ -174,7 +174,7 @@ test('crawler bytes /pro: exactly one authoritative value for every head field, 
   assert.equal(status, 200);
   const once = (re) => assert.equal((head.match(re) || []).length, 1, String(re));
   for (const re of [/<title>/g, /rel="canonical"/g, /name="description"/g, /name="robots"/g, /property="og:title"/g, /property="og:description"/g, /property="og:url"/g, /property="og:image"/g, /property="og:type"/g, /property="og:site_name"/g, /property="og:locale"/g, /property="og:image:width"/g, /property="og:image:height"/g, /property="og:image:alt"/g, /name="twitter:card"/g, /name="twitter:title"/g, /name="twitter:description"/g, /name="twitter:image"/g, /name="twitter:image:alt"/g]) once(re);
-  assert.deepEqual(pick(head, /<title>([^<]*)<\/title>/g), ['PropBetEdge All Access | MLB, NFL, NBA, NHL, WNBA &amp; UFC Pro']);
+  assert.deepEqual(pick(head, /<title>([^<]*)<\/title>/g), ['PropBetEdge All Access | 7 Sports, One Membership']);
   assert.deepEqual(pick(head, /rel="canonical" href="([^"]+)"/g), [CANON]);
   assert.deepEqual(pick(head, /name="robots" content="([^"]+)"/g), ['index, follow, max-image-preview:large']);
   assert.equal(headers.get('x-robots-tag'), null);

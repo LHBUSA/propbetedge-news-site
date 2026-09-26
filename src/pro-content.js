@@ -27,6 +27,7 @@ export const SPORTS = Object.freeze([
   { key: 'nhl', label: 'NHL', name: 'PropBetEdge NHL', url: 'https://nhl.propbetedge.ai', glyph: '🏒', edge: 'PBE NHL Picks, live scores, atmosphere board' },
   { key: 'wnba', label: 'WNBA', name: 'PropBetEdge WNBA', url: 'https://wnba.propbetedge.ai', glyph: '🏀', edge: 'PBE model, props board, newsroom and video' },
   { key: 'ufc', label: 'UFC', name: 'PropBetEdge UFC', url: 'https://ufc.propbetedge.ai', glyph: '🥊', edge: 'PBE Algo, Fighter DNA, fight-week intelligence' },
+  { key: 'tennis', label: 'Tennis', name: 'PropBetEdge Tennis', url: 'https://tennis.propbetedge.ai', glyph: '🎾', edge: 'Live scores, rankings, Tennis DNA, PBEcast' },
 ]);
 
 export const VALUE_PROPS = Object.freeze([
@@ -128,7 +129,7 @@ function hero(shareBar = '') {
         <div class="pbe-pro-price" aria-label="Price"><span class="pbe-pro-price-amount">$${ALL_ACCESS.priceUsd}</span><span class="pbe-pro-price-per">/ ${ALL_ACCESS.interval}</span></div>
         ${ctaButton('Get All Access', 'pbe-pro-cta-hero')}
         ${promoChip()}
-        <p class="pbe-pro-hero-fine">Includes MLB, NFL, NBA, NHL, WNBA and UFC Pro today. Individual sport plans stay available; All Access is the umbrella, not a replacement.</p>
+        <p class="pbe-pro-hero-fine">Includes MLB, NFL, NBA, NHL, WNBA and UFC Pro, plus PropBetEdge Tennis, today. Individual sport plans stay available; All Access is the umbrella, not a replacement.</p>
         ${shareBar ? `<div class="pbe-pro-share">${shareBar}</div>` : ''}
       </div>
       ${membershipCard(false)}
@@ -193,7 +194,7 @@ export function buildProHtml({ checkoutSuccess = false, shareBar = '' } = {}) {
           <div class="pbe-pro-plans-facts">
             <div><span class="pbe-pro-fact-k">Billing</span><span class="pbe-pro-fact-v">${priceLabel()}, cancel anytime</span></div>
             <div><span class="pbe-pro-fact-k">Access</span><span class="pbe-pro-fact-v">Secure sign-in link to your checkout email</span></div>
-            <div><span class="pbe-pro-fact-k">Coverage</span><span class="pbe-pro-fact-v">6 sports today, every future sport included</span></div>
+            <div><span class="pbe-pro-fact-k">Coverage</span><span class="pbe-pro-fact-v">7 sports today, every future sport included</span></div>
             <div><span class="pbe-pro-fact-k">Launch offer</span><span class="pbe-pro-fact-v">${esc(promoLine())}</span></div>
           </div>
         </div>

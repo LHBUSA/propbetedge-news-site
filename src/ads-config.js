@@ -45,6 +45,7 @@ export const PROPBET_LINKS = {
   picks_wnba:  'https://wnba.propbetedge.ai',
   picks_nba:   'https://nba.propbetedge.ai',
   picks_nhl:   'https://nhl.propbetedge.ai',
+  tennis:      'https://tennis.propbetedge.ai',
   news_mlb:    'https://propbetedge.ai/news/mlb',
   news_nfl:    'https://propbetedge.ai/news/nfl',
   news_ufc:    'https://ufc.propbetedge.ai/news',

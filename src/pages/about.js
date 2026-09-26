@@ -61,7 +61,7 @@ export function renderAbout(root, setMeta) {
             The main PropBetEdge publication covers MLB, NFL, NBA, and NHL news and analysis while connecting stories to permanent player, team, game, standings, and statistical-intelligence pages.
           </p>
           <p>
-            The wider PropBetEdge network also includes dedicated MLB, NFL, NBA, WNBA, NHL, and UFC product sites. Those products are connected properties in the same network, not separate publisher identities.
+            The wider PropBetEdge network also includes dedicated MLB, NFL, NBA, WNBA, NHL, UFC, and Tennis product sites. Those products are connected properties in the same network, not separate publisher identities.
           </p>
           <ul>
             <li><a href="https://mlb.propbetedge.ai/" target="_blank" rel="noopener"><strong>PropBetEdge MLB</strong></a></li>
