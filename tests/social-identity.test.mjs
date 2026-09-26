@@ -115,3 +115,12 @@ test('footer X links: canonical account, new tab, safe rel, accessible name, no 
   }
   assert.doesNotMatch(footer, /X \/ Twitter|>\s*Twitter\s*</);
 });
+
+test('Reader Pass email: PropBetEdge sign-off with @PROPBETEDGE below the security line', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'api/paywall.js'), 'utf8');
+  const body = src.slice(src.indexOf('function readerPassEmail'), src.indexOf('</body></html>', src.indexOf('function readerPassEmail')));
+  assert.ok(body.indexOf('you can ignore this email.</p>') < body.indexOf('${EMAIL_FOOTER_HTML}'));
+  assert.match(src, /<a href="https:\/\/x\.com\/PROPBETEDGE"[^>]*>@PROPBETEDGE<\/a>/);
+  assert.match(src, /The Sports Intelligence Network/);
+  assert.match(src, /expires in 30 minutes\.\$\{EMAIL_FOOTER_TEXT\}`/);
+});

@@ -1,5 +1,9 @@
 import crypto from 'node:crypto';
 
+// Standard PropBetEdge email sign-off, kept below the security/action content.
+const EMAIL_FOOTER_HTML = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:26px;border-top:1px solid rgba(255,255,255,.08)"><tr><td style="padding-top:14px;font-family:Arial,sans-serif;font-size:11px;line-height:1.6;color:#7f8ca3"><strong style="color:#7f8ca3">PropBetEdge</strong><br>The Sports Intelligence Network<br><a href="https://propbetedge.ai" style="color:#7f8ca3;text-decoration:underline">propbetedge.ai</a> &middot; X: <a href="https://x.com/PROPBETEDGE" style="color:#ffd24a;text-decoration:none">@PROPBETEDGE</a></td></tr></table>';
+const EMAIL_FOOTER_TEXT = '\n\n--\nPropBetEdge\nThe Sports Intelligence Network\npropbetedge.ai\nX: @PROPBETEDGE (https://x.com/PROPBETEDGE)';
+
 const SITE_ORIGIN = process.env.PAYWALL_SITE_ORIGIN || 'https://propbetedge.ai';
 const COOKIE_NAME = 'pbe_reader';
 const PASS_TTL_MS = 30 * 60 * 1000;
@@ -83,7 +87,7 @@ async function sendReaderPass(email, verifyUrl) {
       to: [email],
       subject: 'Your PropBetEdge Reader Pass',
       html: readerPassEmail(verifyUrl),
-      text: `Your PropBetEdge Reader Pass: ${verifyUrl}\n\nThis secure link expires in 30 minutes.`,
+      text: `Your PropBetEdge Reader Pass: ${verifyUrl}\n\nThis secure link expires in 30 minutes.${EMAIL_FOOTER_TEXT}`,
     }),
   });
 
@@ -104,6 +108,7 @@ function readerPassEmail(verifyUrl) {
       <p style="font-size:15px;line-height:1.6;color:#cbd5e1;margin:0 0 24px">Use the secure button below to unlock the full PropBetEdge story. This link expires in 30 minutes; once verified, your browser stays unlocked for 30 days.</p>
       <a href="${escapeHtml(verifyUrl)}" style="display:inline-block;background:#ffd24a;color:#111827;text-decoration:none;font-weight:900;font-size:14px;padding:13px 19px;border-radius:8px">Unlock PropBetEdge →</a>
       <p style="font-size:11px;line-height:1.5;color:#7f8ca3;margin:24px 0 0">If you did not request this Reader Pass, you can ignore this email.</p>
+      ${EMAIL_FOOTER_HTML}
     </div>
   </div>
 </body></html>`;
