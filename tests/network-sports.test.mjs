@@ -37,3 +37,21 @@ test('root footer links every PropBetEdge sport, Tennis included', () => {
   }
   assert.ok(footer.includes('https://wnba.propbetedge.ai'), 'wnba');
 });
+
+test('no fabricated Tennis Pro tier; success state says Tennis needs no sign-in; seven-sport line', async () => {
+  const { buildProHtml } = await import('../src/pro-content.js');
+  const html = buildProHtml();
+  assert.ok(!/Tennis Pro<\/li>/.test(html), 'Tennis has no Pro tier yet');
+  assert.match(html, /Tennis Intelligence, plus its Pro features as they launch/);
+  assert.match(html, /One membership\. Seven sports\. Every future sport\./);
+  assert.match(html, /MLB · NFL · NBA · WNBA · NHL · UFC · Tennis/);
+  assert.match(buildProHtml({ checkoutSuccess: true }), /Tennis is open to everyone today, no sign-in needed/);
+});
+
+test('root WebSite schema lists all seven sport properties once', async () => {
+  const { websiteSchema } = await import('../src/schema.js');
+  const urls = websiteSchema().hasPart.map((p) => p.url);
+  assert.equal(urls.length, 7);
+  assert.equal(new Set(urls).size, 7);
+  assert.ok(urls.includes('https://tennis.propbetedge.ai/'));
+});

@@ -27,7 +27,9 @@ export const SPORTS = Object.freeze([
   { key: 'nhl', label: 'NHL', name: 'PropBetEdge NHL', url: 'https://nhl.propbetedge.ai', glyph: '🏒', edge: 'PBE NHL Picks, live scores, atmosphere board' },
   { key: 'wnba', label: 'WNBA', name: 'PropBetEdge WNBA', url: 'https://wnba.propbetedge.ai', glyph: '🏀', edge: 'PBE model, props board, newsroom and video' },
   { key: 'ufc', label: 'UFC', name: 'PropBetEdge UFC', url: 'https://ufc.propbetedge.ai', glyph: '🥊', edge: 'PBE Algo, Fighter DNA, fight-week intelligence' },
-  { key: 'tennis', label: 'Tennis', name: 'PropBetEdge Tennis', url: 'https://tennis.propbetedge.ai', glyph: '🎾', edge: 'Live scores, rankings, Tennis DNA, PBEcast' },
+  // Tennis Intelligence is open to everyone (no sign-in, no Pro tier yet): All Access members get its Pro
+  // features automatically when they launch. Never list a "Tennis Pro" that does not exist.
+  { key: 'tennis', label: 'Tennis', name: 'PropBetEdge Tennis', url: 'https://tennis.propbetedge.ai', glyph: '🎾', edge: 'Live scores, rankings, Tennis DNA, PBEcast', open: true },
 ]);
 
 export const VALUE_PROPS = Object.freeze([
@@ -105,7 +107,7 @@ function membershipCard(active) {
       <div class="pbe-pro-card-price"><span class="pbe-pro-card-amount">$${ALL_ACCESS.priceUsd}</span><span class="pbe-pro-card-per">/ ${ALL_ACCESS.interval}</span></div>
       <p class="pbe-pro-card-sub">Cancel anytime. One login across the whole network.</p>
       <ul class="pbe-pro-card-list">
-        ${SPORTS.map((s) => `<li><span class="pbe-pro-check" aria-hidden="true">✓</span>${s.label} Pro</li>`).join('')}
+        ${SPORTS.map((s) => `<li><span class="pbe-pro-check" aria-hidden="true">✓</span>${s.open ? `${s.label} Intelligence, plus its Pro features as they launch` : `${s.label} Pro`}</li>`).join('')}
         <li class="pbe-pro-card-future"><span class="pbe-pro-check" aria-hidden="true">✓</span>Every future sport and Pro product</li>
       </ul>
       ${active
@@ -126,6 +128,7 @@ function hero(shareBar = '') {
           <span>Every model.</span>
           <span>Every current and future PropBetEdge Pro product.</span>
         </p>
+        <p class="pbe-pro-family"><strong>One membership. ${SPORTS.length === 7 ? 'Seven' : SPORTS.length} sports. Every future sport.</strong><span>MLB · NFL · NBA · WNBA · NHL · UFC · Tennis</span></p>
         <div class="pbe-pro-price" aria-label="Price"><span class="pbe-pro-price-amount">$${ALL_ACCESS.priceUsd}</span><span class="pbe-pro-price-per">/ ${ALL_ACCESS.interval}</span></div>
         ${ctaButton('Get All Access', 'pbe-pro-cta-hero')}
         ${promoChip()}
@@ -144,7 +147,7 @@ function successHero(shareBar = '') {
         <h1 class="pbe-pro-title"><span class="pbe-pro-title-brand">Welcome to</span><span class="pbe-pro-title-all">All Access</span></h1>
         <p class="pbe-pro-success-lead">Your PropBetEdge All Access membership is active. Every sport in the network now recognizes the email you used at checkout.</p>
         <ol class="pbe-pro-steps">
-          <li><strong>Open any sport</strong> below and choose <em>Sign in</em>.</li>
+          <li><strong>Open any sport</strong> below and choose <em>Sign in</em>. Tennis is open to everyone today, no sign-in needed.</li>
           <li><strong>Enter the email you used at checkout.</strong> A secure sign-in link arrives in that inbox; no password to remember.</li>
           <li><strong>Repeat once per sport.</strong> One subscription, one email, every PropBetEdge property.</li>
         </ol>

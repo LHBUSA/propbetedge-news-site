@@ -25,6 +25,9 @@
   text-shadow: 0 0 60px rgba(212,175,55,.18);
 }
 .pbe-pro-statement { margin: 0 0 26px; display: grid; gap: 2px; font-family: var(--font-serif); font-size: clamp(20px, 2.3vw, 28px); line-height: 1.25; color: var(--paper); }
+.pbe-pro-family { margin: -10px 0 24px; display: grid; gap: 4px; }
+.pbe-pro-family strong { font: 800 12px/1.4 var(--font-sans); letter-spacing: .14em; text-transform: uppercase; color: var(--gold-bright); }
+.pbe-pro-family span { font: 600 14px/1.5 var(--font-sans); color: var(--paper); overflow-wrap: anywhere; }
 .pbe-pro-statement span:last-child { color: var(--paper-dim); font-style: italic; }
 .pbe-pro-price { display: flex; align-items: baseline; gap: 10px; margin-bottom: 22px; }
 .pbe-pro-price-amount { font: 800 clamp(40px, 5vw, 56px)/1 var(--font-sans); letter-spacing: -.03em; }

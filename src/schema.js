@@ -115,6 +115,7 @@ export function websiteSchema() {
       ['WNBA', 'https://wnba.propbetedge.ai/'],
       ['NHL', 'https://nhl.propbetedge.ai/'],
       ['UFC', 'https://ufc.propbetedge.ai/'],
+      ['Tennis', 'https://tennis.propbetedge.ai/'],
     ].map(([sport, url]) => ({
       '@type': 'WebSite',
       name: `PropBetEdge ${sport}`,
