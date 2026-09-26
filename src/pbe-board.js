@@ -1,6 +1,7 @@
 import { api } from './api.js';
 import { sports } from './api-sports.js';
 import { getSportConfig } from './sport-config.js';
+import { liveCastUrl } from './live-cast-routes.js';
 
 const EV_URL = '/api/mlb-edge-sample';
 const REFRESH_MS = 3 * 60 * 1000;
@@ -148,8 +149,10 @@ function normalizeGames(scoreboards) {
 function renderGame(game) {
   const config = getSportConfig(game.sport);
   const status = game.statusDetail || game.status || formatGameTime(game.date);
+  const id = game.gamePk ?? game.id;
+  const href = liveCastUrl(game.sport, id) || `/games/${game.sport}/${id}`;
   return `
-    <a class="pbe-board-game" href="/games/${escapeAttr(game.sport)}/${escapeAttr(game.id)}" data-pbe-board-kind="game">
+    <a class="pbe-board-game" href="${escapeAttr(href)}" data-pbe-board-kind="game">
       <span>${config?.emoji || '◆'} ${escapeHtml(config?.label || '')}</span>
       <strong>${escapeHtml(shortName(game.away, game.awayAbbr))} <b>${score(game.awayScore)}</b> <em>at</em> ${escapeHtml(shortName(game.home, game.homeAbbr))} <b>${score(game.homeScore)}</b></strong>
       <small>${escapeHtml(status)}</small>

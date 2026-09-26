@@ -1,3 +1,4 @@
+import { liveCastUrl } from '../live-cast-routes.js';
 /**
  * src/components/score-strip-normalize.js
  * Shared normalizer for the multi-sport score strip and games hub.
@@ -23,7 +24,7 @@ export function normalizeWNBA(games) {
                 : state === 'final' ? 'Final' : g.statusDetail || formatTime(g.date),
       home: { name: g.home, abbr: g.homeAbbr, logo: g.homeLogo, score: g.homeScore ?? '', record: g.homeRecord || '' },
       away: { name: g.away, abbr: g.awayAbbr, logo: g.awayLogo, score: g.awayScore ?? '', record: g.awayRecord || '' },
-      detailUrl: `https://wnba.propbetedge.ai/cast/${g.id}`,
+      detailUrl: liveCastUrl('wnba', g.id),
       gameDate: g.date,
     }
   })
@@ -54,7 +55,7 @@ export function normalizeMLB(games) {
         score: g.teams?.away?.score ?? '',
         record: g.teams?.away?.leagueRecord ? `${g.teams.away.leagueRecord.wins}-${g.teams.away.leagueRecord.losses}` : '',
       },
-      detailUrl: `/games/mlb/${g.gamePk}`,
+      detailUrl: liveCastUrl('mlb', g.gamePk),
       pitchers: g.teams ? `${g.teams.away?.probablePitcher?.fullName || 'TBD'} vs ${g.teams.home?.probablePitcher?.fullName || 'TBD'}` : null,
       gameDate: g.gameDate,
     }
@@ -71,7 +72,7 @@ export function normalizeNBA(games) {
                 : state === 'final' ? 'Final' : g.statusDetail || formatTime(g.date),
       home: { name: g.home, abbr: g.homeAbbr, logo: g.homeLogo, score: g.homeScore ?? '', record: '' },
       away: { name: g.away, abbr: g.awayAbbr, logo: g.awayLogo, score: g.awayScore ?? '', record: '' },
-      detailUrl: `/games/nba/${g.id}`,
+      detailUrl: liveCastUrl('nba', g.id),
       gameDate: g.date,
     }
   })
@@ -88,7 +89,7 @@ export function normalizeNHL(games) {
       statusText: state === 'live' ? 'Live' : state === 'final' ? 'Final' : formatTime(g.date),
       home: { name: g.home, abbr: g.homeAbbr || teamAbbr(g.home), logo: g.homeLogo || null, score: g.homeScore ?? '', record: '' },
       away: { name: g.away, abbr: g.awayAbbr || teamAbbr(g.away), logo: g.awayLogo || null, score: g.awayScore ?? '', record: '' },
-      detailUrl: null,
+      detailUrl: liveCastUrl('nhl', g.id),
       gameDate: g.date,
     }
   })
@@ -121,7 +122,7 @@ export function normalizeNFL(games) {
         score: g.awayScore ?? '',
         record: g.awayRecord || '',
       },
-      detailUrl: null,
+      detailUrl: liveCastUrl('nfl', g.id),
       gameDate: g.date,
     }
   })

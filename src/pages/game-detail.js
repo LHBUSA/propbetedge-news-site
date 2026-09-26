@@ -17,6 +17,7 @@
  */
 
 import { sports } from '../api-sports.js';
+import { liveCastHome, liveCastLabel, liveCastUrl } from '../live-cast-routes.js';
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 
@@ -191,7 +192,7 @@ async function renderMlbDetail(target, gamePk) {
     ${lineScoreHtml}
     ${battersHtml}
     ${playsHtml}
-    ${propBetEdgeAngle('mlb')}
+    ${propBetEdgeAngle('mlb', gamePk)}
   `;
 
   // Auto-refresh if live
@@ -325,7 +326,7 @@ async function renderNbaDetail(target, gameId) {
     ${heroHtml}
     ${boxHtml}
     ${playsHtml}
-    ${propBetEdgeAngle('nba')}
+    ${propBetEdgeAngle('nba', gameId)}
   `;
 
   if (isLive) {
@@ -434,7 +435,7 @@ async function renderNflDetail(target, gameId) {
     ${heroHtml}
     ${statsHtml}
     ${playsHtml}
-    ${propBetEdgeAngle('nfl')}
+    ${propBetEdgeAngle('nfl', gameId)}
   `;
 
   if (isLive) setTimeout(() => renderNflDetail(target, gameId), 30000);
@@ -504,7 +505,7 @@ async function renderNhlDetail(target, gameId) {
     ${heroHtml}
     ${statsHtml}
     ${scoringHtml}
-    ${propBetEdgeAngle('nhl')}
+    ${propBetEdgeAngle('nhl', gameId)}
   `;
 
   if (isLive) setTimeout(() => renderNhlDetail(target, gameId), 30000);
@@ -549,7 +550,8 @@ function unsupportedDetail(sport) {
 }
 
 // ─── PropBetEdge angle (no picks given away) ─────────────────────────────
-function propBetEdgeAngle(sport) {
+function propBetEdgeAngle(sport, gameId) {
+  const castUrl = liveCastUrl(sport, gameId);
   const sportLabel = { mlb: 'MLB', nba: 'NBA', nfl: 'NFL', nhl: 'NHL' }[sport] || '';
   return `
     <section class="pbe-angle">
@@ -563,7 +565,7 @@ function propBetEdgeAngle(sport) {
           umpire grades, park factors, lineup K-rates, sharp line movement.
         </p>
         <div class="pbe-angle-ctas">
-          <a href="https://${sport === 'mlb' ? 'mlb.' : sport === 'nfl' ? 'nfl.' : sport === 'nba' ? 'nba.' : sport === 'nhl' ? 'nhl.' : ''}propbetedge.ai" class="pbe-angle-cta primary">Open ${sportLabel} intelligence →</a>
+          <a href="${escapeAttr(castUrl || liveCastHome(sport) || 'https://propbetedge.ai')}" class="pbe-angle-cta primary">${castUrl ? `Open this game in ${liveCastLabel(sport)}` : `Open ${sportLabel} intelligence`} →</a>
           <a href="https://propsports.proptechusa.ai" class="pbe-angle-cta">PropSports API →</a>
         </div>
       </div>

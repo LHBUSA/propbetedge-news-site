@@ -1,4 +1,4 @@
-import { liveCastUrl } from '../live-cast-routes.js';
+import { liveCastHome, liveCastLabel, liveCastUrl } from '../live-cast-routes.js';
 
 /**
  * src/components/score-strip.js
@@ -30,11 +30,21 @@ const UPCOMING_WINDOW_MS = 36 * 60 * 60 * 1000;
 const RECENT_FINAL_WINDOW_MS = 6 * 60 * 60 * 1000;
 
 const SPORT_TARGETS = {
-  mlb: { label: 'Open PBEcast', live: true, base: 'https://mlb.propbetedge.ai' },
-  nfl: { label: 'Open platform', live: false, base: 'https://nfl.propbetedge.ai' },
-  nba: { label: 'Open platform', live: false, base: 'https://nba.propbetedge.ai' },
-  wnba: { label: 'Live platform', live: true, base: 'https://wnba.propbetedge.ai' },
-  nhl: { label: 'Open platform', live: false, base: 'https://nhl.propbetedge.ai' },
+  mlb: { base: 'https://mlb.propbetedge.ai' },
+  nfl: { base: 'https://nfl.propbetedge.ai' },
+  nba: { base: 'https://nba.propbetedge.ai' },
+  wnba: { base: 'https://wnba.propbetedge.ai' },
+  nhl: { base: 'https://nhl.propbetedge.ai' },
+};
+
+// CTA wording for a tile that deep-links into its league's cast. Only used
+// when liveCastUrl() returned a URL for that exact game.
+const CAST_CTA = {
+  mlb: 'Open PBEcast',
+  nhl: 'Open PBEcast',
+  nfl: 'Open PBEcast',
+  nba: 'Open NBACast',
+  wnba: 'Open WNBACast',
 };
 
 const SPORT_ACCENTS = {
@@ -531,19 +541,26 @@ function escape(s) {
   })[c]);
 }
 
-function tileHref(g) {
-  const target = SPORT_TARGETS[g.sport];
-  if (!target) return '#';
-  if (g.sport === 'mlb' && g.gameId) return liveCastUrl('mlb', g.gameId) || `${target.base}/pbecast`;
-  if (g.sport === 'wnba' && g.gameId) return `${target.base}/cast/${g.gameId}`;
-  return target.base || '#';
+// Every game destination comes from src/live-cast-routes.js — no per-sport
+// URL construction here.
+function tileCastUrl(g) {
+  return g.gameId ? liveCastUrl(g.sport, g.gameId) : null;
 }
 
-function tileTitle(g) {
+export function tileHref(g) {
   const target = SPORT_TARGETS[g.sport];
-  if (g.sport === 'mlb') return 'Open this game in MLB PBEcast';
-  if (target?.live) return 'View game · see tonight\'s picks';
+  if (!target) return '#';
+  return tileCastUrl(g) || liveCastHome(g.sport) || target.base || '#';
+}
+
+export function tileTitle(g) {
+  if (tileCastUrl(g)) return `Open this game in ${liveCastLabel(g.sport)}`;
   return 'Open PropBetEdge platform';
+}
+
+export function tileCta(g) {
+  if (tileCastUrl(g) && CAST_CTA[g.sport]) return { text: CAST_CTA[g.sport], cls: '' };
+  return { text: 'Open platform', cls: 'soon' };
 }
 
 function shortName(fullName) {
@@ -600,10 +617,8 @@ function gameSignature(g) {
  * ────────────────────────────────────────────────────────────────────────*/
 function tileHTML(g) {
   const accent = SPORT_ACCENTS[g.sport] || '#94a3b8';
-  const target = SPORT_TARGETS[g.sport] || {};
   const sportTag = SPORT_BADGE[g.sport] || '';
-  const ctaText = target.label || (target.live ? 'Picks live' : 'Open platform');
-  const ctaCls = target.live ? '' : 'soon';
+  const { text: ctaText, cls: ctaCls } = tileCta(g);
 
   const topLine = renderTopLine(g);
   const awayRow = renderTeamRow(g, 'away');
@@ -711,9 +726,7 @@ function updateTileInPlace(tileEl, g) {
     }
   });
 
-  const target = SPORT_TARGETS[g.sport] || {};
-  const ctaText = target.label || (target.live ? 'Picks live' : 'Open platform');
-  const ctaCls = target.live ? '' : 'soon';
+  const { text: ctaText, cls: ctaCls } = tileCta(g);
   const bottomEl = tileEl.querySelector('.pss-tile-bottom');
   if (bottomEl) bottomEl.innerHTML = renderBottomLine(g, ctaText, ctaCls);
 }
