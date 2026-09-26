@@ -716,7 +716,8 @@ async function buildNewsListingMeta({ sport = null, page = 1 }) {
     canonical,
     title,
     description,
-    image: articles[0]?.image_url || NETWORK_SOCIAL_IMAGE.url,
+    // Archives change lead story constantly and lead photos are third-party; share the owned network card.
+    image: NETWORK_SOCIAL_IMAGE.url,
     robots: DEFAULT_ROBOTS,
     jsonLd: buildNewsCollectionSchema({ sport, page, canonical, title, description, articles }),
     ssrHtml: buildServerNewsListingHtml({ sport, page, articles, totalPages, canonical }),

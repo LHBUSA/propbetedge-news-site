@@ -77,7 +77,7 @@ test('network share card asset is a 1200x630 RGB PNG', () => {
 test('homepage and generic pages ship the network card with coherent meta', async (t) => {
   installHarnessFetch();
   try {
-    for (const p of ['/', '/about', '/editorial-standards']) {
+    for (const p of ['/', '/about', '/editorial-standards', '/news', '/news/mlb']) {
       const { status, html } = await renderPage(p);
       await t.test(p, () => {
         assert.equal(status, 200);
