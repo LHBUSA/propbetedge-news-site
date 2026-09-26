@@ -12,7 +12,7 @@ import { renderShareBar } from '../src/entity-graph/share-bar.js';
 import { installHarnessFetch, restoreFetch, renderPage } from './ssr-harness.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const STALE = [/x\.com\/MLBHRALERTSPBE/i, /@MLBHRALERTSPBE/i, /x\.com\/propbetedgeai/i, /@propbetedgeai/i, /twitter\.com\/intent\/tweet/i, /x\.com\/intent\/tweet/i];
+const STALE = [/x\.com\/MLBHRALERTSPBE/i, /@MLBHRALERTSPBE/i, /x\.com\/propbetedgeai/i, /@propbetedgeai/i, /twitter\.com\/intent\/tweet/i, /x\.com\/intent\/tweet/i, /X \/ Twitter/i];
 
 function sourceFiles(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
