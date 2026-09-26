@@ -103,3 +103,15 @@ test('homepage and generic pages ship the network card with coherent meta', asyn
     restoreFetch();
   }
 });
+
+test('footer X links: canonical account, new tab, safe rel, accessible name, no "Twitter" label', () => {
+  const footer = fs.readFileSync(path.join(ROOT, 'src/components/footer.js'), 'utf8');
+  const anchors = [...footer.matchAll(/<a href="\$\{PROPBET_LINKS\.twitter\}"[^>]*>[\s\S]*?<\/a>/g)].map((m) => m[0]);
+  assert.equal(anchors.length, 2, 'Community column + Follow bar (mirrors Discord/LinkedIn)');
+  for (const a of anchors) {
+    assert.match(a, /target="_blank" rel="noopener noreferrer"/);
+    assert.match(a, /aria-label="Follow PropBetEdge on X \(@PROPBETEDGE\)"/);
+    assert.match(a, /title="Follow PropBetEdge on X"/);
+  }
+  assert.doesNotMatch(footer, /X \/ Twitter|>\s*Twitter\s*</);
+});
