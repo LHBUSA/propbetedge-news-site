@@ -107,7 +107,7 @@ test('homepage and generic pages ship the network card with coherent meta', asyn
 test('footer X links: canonical account, new tab, safe rel, accessible name, no "Twitter" label', () => {
   const footer = fs.readFileSync(path.join(ROOT, 'src/components/footer.js'), 'utf8');
   const anchors = [...footer.matchAll(/<a href="\$\{PROPBET_LINKS\.twitter\}"[^>]*>[\s\S]*?<\/a>/g)].map((m) => m[0]);
-  assert.equal(anchors.length, 2, 'Community column + Follow bar (mirrors Discord/LinkedIn)');
+  assert.equal(anchors.length, 1, 'one PropBetEdge X control: the icon in the Follow PropBetEdge bar');
   for (const a of anchors) {
     assert.match(a, /target="_blank" rel="noopener noreferrer"/);
     assert.match(a, /aria-label="Follow PropBetEdge on X \(@PROPBETEDGE\)"/);

@@ -70,9 +70,6 @@ export function renderFooter() {
               <span class="footer-icon">𝕯</span> Discord
               <span class="footer-badge-discord">Live</span>
             </a>
-            <a href="${PROPBET_LINKS.twitter}" target="_blank" rel="noopener noreferrer" aria-label="Follow PropBetEdge on X (@PROPBETEDGE)" title="Follow PropBetEdge on X">
-              <span class="footer-icon" aria-hidden="true">𝕏</span> @PROPBETEDGE
-            </a>
             <a href="${PROPBET_LINKS.linkedin}" target="_blank" rel="noopener">
               <span class="footer-icon">in</span> LinkedIn
             </a>
