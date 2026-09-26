@@ -55,3 +55,9 @@ test('root WebSite schema lists all seven sport properties once', async () => {
   assert.equal(new Set(urls).size, 7);
   assert.ok(urls.includes('https://tennis.propbetedge.ai/'));
 });
+
+test('Tennis footer badge is Included (part of All Access), never a separate Free plan', () => {
+  const footer = fs.readFileSync(new URL('../src/components/footer.js', import.meta.url), 'utf8');
+  assert.match(footer, /Tennis Intelligence <span class="footer-badge">Included<\/span>/);
+  assert.doesNotMatch(footer, /Tennis[^<]*<span class="footer-badge">Free/);
+});
