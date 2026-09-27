@@ -55,7 +55,7 @@ function countOccurrences(html, needle) {
 test('homepage first response positions PropBetEdge as the sports intelligence network', async () => {
   const { status, html } = await renderPage('/');
   assert.equal(status, 200);
-  assert.equal(html.match(/<title>([\\s\\S]*?)<\\/title>/)?.[1], 'PropBetEdge — Live Sports Intelligence & Predictive Models');
+  assert.equal(html.match(/<title>([\s\S]*?)<\/title>/)?.[1], 'PropBetEdge — Live Sports Intelligence & Predictive Models');
   assert.equal(
     html.match(/<meta name="description" content="([^"]*)"/)?.[1],
     'Live sports intelligence, proprietary prediction models, Player DNA, PBEcast, news and deep analytics across MLB, NFL, NBA, WNBA, NHL, UFC and Tennis.',
