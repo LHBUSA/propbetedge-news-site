@@ -140,9 +140,26 @@ test('NFL: max two official TD Targets per slate; tracking targets and duplicate
   assert.ok(nfl.every((r) => r.cadence === 'daily' && r.period_start === DAY));
   assert.equal(payload.records.free_td_target_record.lifetime.pending, 2);
 
+  // Owner decision (1.1.0): a PRIMARY tracking target is free-eligible, stored with its true scope.
   const tracking = [target('t9', 'Tracked Guy', { publication_scope: 'tracking', official: false })];
   const t2 = await capture({ [MLB_URL]: {}, [NFL_URL]: tdPayload(tracking) });
-  assert.equal(t2.db.table.filter((r) => r.sport === 'NFL').length, 0, 'tracking-scope target is never a free pick');
+  const tr = t2.db.table.filter((r) => r.sport === 'NFL');
+  assert.equal(tr.length, 1, 'tracking primary target is a free pick');
+  assert.equal(tr[0].snapshot.official, false);
+  assert.equal(tr[0].snapshot.publication_scope, 'tracking');
+  const trEntry = t2.payload.entries.find((e) => e.sport === 'NFL');
+  assert.equal(trEntry.official, false, 'never presented as official');
+  assert.equal(trEntry.record_class, 'free_pick');
+  // Mislabelled (tracking claimed official) or non-free scopes are refused, never repaired.
+  for (const bad of [
+    target('m1', 'Mislabel', { publication_scope: 'tracking', official: true }),
+    target('m2', 'Validation', { publication_scope: 'validation', official: false }),
+    target('m3', 'Shadow', { publication_scope: 'shadow', official: false }),
+    target('m4', 'NotFree', { publication_scope: 'tracking', official: false, free: false }),
+  ]) {
+    const r = await capture({ [MLB_URL]: {}, [NFL_URL]: tdPayload([bad]) });
+    assert.equal(r.db.table.filter((x) => x.sport === 'NFL').length, 0, bad.player_name);
+  }
 
   const dup = [target('t1', 'Isiah Pacheco'), target('t1b', 'Isiah Pacheco')];
   const t3 = await capture({ [MLB_URL]: {}, [NFL_URL]: tdPayload(dup) });
@@ -230,4 +247,22 @@ test('free TD Target settles ONLY from the canonical TD grade (no second grader)
     const writes = db.calls.filter((c) => c.method !== 'GET' && !c.url.includes('pbe_free_pick_tracker'));
     assert.deepEqual(writes, [], 'the tracker never writes to TD grade/pick tables');
   }
+});
+
+
+test('tracking free TD grades land in the Free TD Target record (by_scope.tracking), never as official; legacy NFL validation rows stay excluded', async () => {
+  const trackingWin = { id: 'tw', sport: 'NFL', cadence: 'daily', period_start: DAY, public_key: 'NFL-TD:tw', source_record_id: 'tw', pick_type: 'TD_TARGET', selection: 'Tracked Guy', result: 'WIN', event_start_at: `${DAY}T20:25:00Z`, snapshot: { selection_type: 'td_target', free: true, official: false, publication_scope: 'tracking', target_id: 'tw', game_id: 'g1', player_id: 'p1' } };
+  const officialLoss = { ...trackingWin, id: 'ol', public_key: 'NFL-TD:ol', source_record_id: 'ol', selection: 'Official Guy', result: 'LOSS', snapshot: { ...trackingWin.snapshot, official: true, publication_scope: 'official', target_id: 'ol', player_id: 'p2' } };
+  const legacyValidation = { id: 'lv', sport: 'NFL', cadence: 'weekly', period_start: '2026-09-20', public_key: 'NFL:lv', pick_type: 'spread', selection: 'DAL -4', result: 'WIN', event_start_at: '2026-09-21T17:00:00Z', snapshot: { publication_scope: 'tracking', scope_label: 'PBE VALIDATION SIGNAL', market: 'spread' } };
+  installFetch({ rows: [trackingWin, officialLoss, legacyValidation] });
+  const p = await T.responsePayload({});
+  const td = p.records.free_td_target_record;
+  assert.deepEqual([td.lifetime.wins, td.lifetime.losses], [1, 1]);
+  assert.deepEqual([td.by_scope.tracking.wins, td.by_scope.tracking.losses], [1, 0]);
+  assert.deepEqual([td.by_scope.official.wins, td.by_scope.official.losses], [0, 1], 'official scope only counts official rows');
+  assert.equal(p.entries.find((e) => e.id === 'tw').official, false);
+  assert.equal(p.entries.find((e) => e.id === 'ol').official, true);
+  assert.equal(p.entries.find((e) => e.id === 'lv').record_class, 'legacy_validation_signal', 'legacy validation signals unchanged');
+  assert.equal(p.records.legacy.nfl_team_picks.lifetime.wins, 0);
+  assert.equal(p.products.NFL.after.product_version, 'nfl-free-td-targets/1.1.0');
 });

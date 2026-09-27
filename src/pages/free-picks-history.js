@@ -179,7 +179,7 @@ function renderHistory(tracker) {
 function renderProductRecords(tracker) {
   const rows = [
     ['MLB Featured Player', namespacedRecord(tracker, 'free_featured_player_record'), 'Since Sep 28, 2026 · editorial showcase · not an Algo record'],
-    ['NFL Free TD Targets', namespacedRecord(tracker, 'free_td_target_record'), 'Since Sep 28, 2026 · official TD Targets only'],
+    ['NFL Free TD Targets', namespacedRecord(tracker, 'free_td_target_record'), 'Since Sep 28, 2026 · official first, tracking targets labelled'],
     ['MLB Algo free picks', namespacedRecord(tracker, 'legacy.mlb_algo_free_picks'), 'Legacy free product · Sep 20–27, 2026'],
     ['NFL team picks', namespacedRecord(tracker, 'legacy.nfl_team_picks'), 'Legacy free product · before Sep 28, 2026'],
   ].filter(([, rec]) => rec);
@@ -256,7 +256,7 @@ function renderHistoryRow(entry) {
   const type = selectionType(entry);
   const productFlag = featured
     ? '<span class="free-history-flag is-featured">FEATURED PLAYER · NOT AN ALGO PICK · SEPARATE RECORD</span>'
-    : isTdTarget(entry) ? '<span class="free-history-flag is-td">FREE TD TARGET · OFFICIAL</span>'
+    : isTdTarget(entry) ? `<span class="free-history-flag is-td">${String(entry?.snapshot?.publication_scope || '').toLowerCase() === 'official' ? 'FREE TD TARGET · OFFICIAL TARGET' : 'FREE TD TARGET · TRACKING TARGET · VALIDATION PHASE · NOT IN THE OFFICIAL TD RECORD'}</span>`
       : (type === 'algo' || type === 'team_pick') ? `<span class="free-history-flag is-product-legacy">${escapeHtml(productLabel(entry))}</span>` : '';
   const withdrawn = entry?.evidence?.withdrawn === true;
   const recovered = entry?.evidence?.recovered === true;

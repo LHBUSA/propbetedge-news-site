@@ -29,7 +29,7 @@ const PRODUCTS = {
   },
   NFL:{
     before:{ selection_type:"team_pick", selection_source:"nfl_free_sample_team_picks", official:true, product_version:"nfl-free-team-picks/legacy", record_namespace:"free_picks_record" },
-    after:{ selection_type:"td_target", selection_source:"nfl_td_targets_free_sample", official:true, product_version:"nfl-free-td-targets/1.0.0", record_namespace:"free_td_target_record", max_per_slate:2 },
+    after:{ selection_type:"td_target", selection_source:"nfl_td_targets_free_sample", product_version:"nfl-free-td-targets/1.1.0", eligible_scopes:["official","tracking"], official_preferred:true, record_namespace:"free_td_target_record", max_per_slate:2, official_td_target_record:"separate (nfl.propbetedge.ai); free rows never enter it" },
   },
 };
 
@@ -44,7 +44,9 @@ function productOf(entry:any) {
       product_version:snap.product_version || null,
       record_namespace:snap.record_namespace || "free_picks_record",
       official_algo:snap.official_algo === true,
-      official:snap.selection_type === "featured_player" ? false : snap.official !== false,
+      official:snap.selection_type === "featured_player" ? false
+        : snap.selection_type === "td_target" ? String(snap.publication_scope || "").toLowerCase() === "official"
+        : snap.official !== false,
     };
   }
   if (sport === "MLB") return { ...PRODUCTS.MLB.before, official:true };
@@ -75,7 +77,17 @@ function isWithdrawn(entry:any) {
   return entry?.evidence?.withdrawn === true;
 }
 
+// Owner decision 2026-09-27 (nfl-free-td-targets/1.1.0): a PRIMARY TD Target issued at tracking scope may be one of
+// the two free TD Targets. It stays a tracking target (official:false) - it is a free pick, never an official one.
+// Only rows that are explicitly a free TD Target qualify; legacy NFL validation/tracking signals stay excluded.
+const FREE_TD_SCOPES = new Set(["official","tracking"]);
+function isFreeTdTarget(item:any) {
+  return item?.selection_type === "td_target" && item?.free === true
+    && FREE_TD_SCOPES.has(String(item?.publication_scope || "").toLowerCase());
+}
+
 function isNonPickOutput(item:any) {
+  if (isFreeTdTarget(item)) return false;
   const scope = String(item?.publication_scope || "").toLowerCase();
   if (scope && NON_PICK_SCOPES.has(scope)) return true;
   return /VALIDATION|SHADOW|RESEARCH/.test(String(item?.scope_label || "").toUpperCase());
@@ -351,13 +363,19 @@ async function captureCurrent():Promise<CaptureReport> {
     await capture("MLB","daily",today,today,items,PRODUCTS.MLB.after.max_per_day);
   } else failed("MLB", sources[0].reason);
 
-  // NFL: up to two official, free TD Targets per slate day. Tracking-scope targets are never captured.
+  // NFL: up to two free TD Targets per slate day (official preferred by the endpoint, tracking fallback). Scope is
+  // preserved exactly: a tracking target must arrive as official:false and is stored that way. Any mismatch between
+  // `official` and `publication_scope` is refused rather than repaired.
   if (sources[1].status === "fulfilled") {
     const d:any = sources[1].value;
     const slate = String(d?.slate_date || "");
     const items = (d?.contract === "pbe-nfl-free-td-targets-v1" && slate >= PRODUCT_BOUNDARY ? (d?.targets || []) : [])
-      .filter((t:any) => t?.selection_type === "td_target" && t?.official === true && t?.free === true
-        && String(t?.publication_scope || "").toLowerCase() === "official" && t?.target_id && t?.player_id
+      .filter((t:any) => {
+        const scope = String(t?.publication_scope || "").toLowerCase();
+        return t?.selection_type === "td_target" && t?.free === true && FREE_TD_SCOPES.has(scope)
+          && t?.official === (scope === "official") && t?.target_id && t?.player_id;
+      })
+      .filter((t:any) => true
         && (!t.kickoff_ts || Date.parse(t.kickoff_ts) > Date.now()))
       .slice(0, PRODUCTS.NFL.after.max_per_slate)
       .map((t:any) => ({
@@ -373,7 +391,9 @@ async function captureCurrent():Promise<CaptureReport> {
         period_end:String(t.slate_date || slate),
         published_at:t.issued_at || d.generated_at || new Date().toISOString(),
         snapshot:{
-          ...t, selection_type:"td_target", selection_source:"nfl_td_targets_free_sample", official:true, free:true,
+          ...t, selection_type:"td_target", selection_source:"nfl_td_targets_free_sample",
+          official:String(t.publication_scope).toLowerCase() === "official", free:true,
+          publication_scope:String(t.publication_scope).toLowerCase(),
           product_version:d.product_version || PRODUCTS.NFL.after.product_version, record_namespace:"free_td_target_record",
         },
       }));
@@ -1192,7 +1212,13 @@ async function responsePayload(capture:CaptureReport = {}) {
     // MLB Featured Player: engagement grading only. Not Algo, not Game Best, not the .290 record.
     free_featured_player_record:{ sport:"MLB", product_version:PRODUCTS.MLB.after.product_version, official_algo:false, counts_toward_free_picks_record:false, ...namespaced(featuredRows) },
     // NFL free TD Targets. Separate from legacy team picks and from the full paid TD Target record.
-    free_td_target_record:{ sport:"NFL", product_version:PRODUCTS.NFL.after.product_version, ...namespaced(tdRows) },
+    free_td_target_record:{
+      sport:"NFL", product_version:PRODUCTS.NFL.after.product_version, ...namespaced(tdRows),
+      by_scope:{
+        official:tally(tdRows.filter((e:any) => String(e.snapshot?.publication_scope || "").toLowerCase() === "official")),
+        tracking:tally(tdRows.filter((e:any) => String(e.snapshot?.publication_scope || "").toLowerCase() === "tracking")),
+      },
+    },
     legacy:{
       mlb_algo_free_picks:{ sport:"MLB", selection_type:"algo", before:PRODUCT_BOUNDARY, ...namespaced(publicPickEntries.filter((e:any) => e.sport === "MLB" && e.selection_type === "algo")) },
       nfl_team_picks:{ sport:"NFL", selection_type:"team_pick", before:PRODUCT_BOUNDARY, ...namespaced(publicPickEntries.filter((e:any) => e.sport === "NFL" && e.selection_type === "team_pick")) },

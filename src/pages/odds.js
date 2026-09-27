@@ -339,10 +339,12 @@ function cardFromEntry(entry, state, payload) {
     };
   }
   if (sport === 'nfl' && isTdTarget(entry)) {
+    const official = String(snap.publication_scope || '').toLowerCase() === 'official';
     return {
       ...base,
       kicker: 'NFL · FREE TD TARGET',
-      label: 'Anytime TD target',
+      label: official ? 'Official target' : 'Tracking target · validation phase',
+      note: official ? null : 'Named before kickoff and graded from the official final box score. Touchdown Targets is still completing its validation window.',
       matchup: [entry.matchup, formatDateTime(start)].filter(Boolean).join(' · '),
       detail: [snap.position, snap.team].filter(Boolean).join(' · '),
       insights: (Array.isArray(snap.insights) ? snap.insights : []).slice(0, 3),
@@ -638,9 +640,7 @@ function renderSportStatus(sport, board, tracker) {
       ? 'No MLB games today, so no Featured Player. It returns with the next slate.'
       : "Today's Featured Player posts before first pitch. Official Algo Picks are members-only.";
   } else if (sport === 'nfl') {
-    copy = feed?.eligibility?.gate_open === false
-      ? 'No qualified free TD targets yet. Free TD Targets come only from official targets, and TD Targets are still in their public tracking phase.'
-      : 'No qualified free TD targets yet. Up to two post automatically when official targets qualify for the slate.';
+    copy = 'No qualified free TD targets yet. Up to two primary TD Targets post automatically once they are named for the slate.';
   } else {
     copy = `No current ${meta.label} free pick. The next published call appears here automatically.`;
   }
@@ -727,7 +727,7 @@ function renderHowItWorks() {
       <h2 id="fp-how-title" class="fp-section__title">How it works</h2>
       <ul class="fp-how__list">
         <li><b>MLB Featured Player.</b> One established hitter a day, chosen from public season, Player DNA and matchup data. It is not an official Algo Pick and has its own record. Official Algo Picks are members-only.</li>
-        <li><b>NFL: 2 Free TD Targets.</b> Up to two official Touchdown Targets per slate, with their own record. Never padded: if fewer qualify, fewer are shown.</li>
+        <li><b>NFL: 2 Free TD Targets.</b> Up to two primary Touchdown Targets per slate, official targets first, then tracking targets while the model completes its validation window. Tracking targets are labelled and never count as official. Own record; never padded.</li>
         <li><b>UFC, WNBA and NHL.</b> Each publishes from its own model and rules. No filler picks.</li>
         <li><b>Frozen on publication.</b> Each card is recorded the moment it appears here. Only the result can change.</li>
         <li><b>Graded from official results.</b> HIT, MISS, PUSH or VOID lands in the public record automatically.</li>

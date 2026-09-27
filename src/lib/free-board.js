@@ -101,8 +101,18 @@ export function publicationScope(item) {
   return String(snap.publication_scope || '').toLowerCase() || null;
 }
 
+/**
+ * A free TD Target (nfl-free-td-targets/1.1.0) may be issued at tracking scope and is still a free pick - but never an
+ * official one. Only rows explicitly marked as a free TD Target get this exception.
+ */
+export function isFreeTdTargetRow(item) {
+  const snap = item?.snapshot || item || {};
+  return snap.selection_type === 'td_target' && snap.free === true && ['official', 'tracking'].includes(String(snap.publication_scope || '').toLowerCase());
+}
+
 /** True when the output is validation/tracking/shadow/research — never a free pick. */
 export function isNonPickOutput(item) {
+  if (isFreeTdTargetRow(item)) return false;
   const scope = publicationScope(item);
   if (scope && NON_PICK_SCOPES.has(scope)) return true;
   const label = upper(item?.snapshot?.scope_label || item?.scope_label);
