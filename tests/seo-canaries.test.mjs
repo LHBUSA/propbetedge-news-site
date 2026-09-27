@@ -52,6 +52,21 @@ function countOccurrences(html, needle) {
   return (html.match(new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
 }
 
+test('homepage first response positions PropBetEdge as the sports intelligence network', async () => {
+  const { status, html } = await renderPage('/');
+  assert.equal(status, 200);
+  assert.equal(html.match(/<title>([\\s\\S]*?)<\\/title>/)?.[1], 'PropBetEdge — Live Sports Intelligence & Predictive Models');
+  assert.equal(
+    html.match(/<meta name="description" content="([^"]*)"/)?.[1],
+    'Live sports intelligence, proprietary prediction models, Player DNA, PBEcast, news and deep analytics across MLB, NFL, NBA, WNBA, NHL, UFC and Tennis.',
+  );
+  assert.equal(meta(html, 'og:title'), 'PropBetEdge — Live Sports Intelligence & Predictive Models');
+  assert.equal(meta(html, 'og:description'), 'Live sports intelligence, proprietary prediction models, Player DNA, PBEcast, news and deep analytics across MLB, NFL, NBA, WNBA, NHL, UFC and Tennis.');
+  assert.equal(meta(html, 'twitter:title'), 'PropBetEdge — Live Sports Intelligence & Predictive Models');
+  assert.equal(meta(html, 'twitter:description'), 'Live sports intelligence, proprietary prediction models, Player DNA, PBEcast, news and deep analytics across MLB, NFL, NBA, WNBA, NHL, UFC and Tennis.');
+  assert.equal(html.match(/<link rel="canonical" href="([^"]+)"/)?.[1], `${SITE}/`);
+});
+
 for (const sport of SPORTS) {
   test(`${sport}: first-response HTML carries the full SEO contract`, async (t) => {
     const articles = await sampleArticles(sport, SAMPLES_PER_SPORT);
@@ -67,7 +82,7 @@ for (const sport of SPORTS) {
         // ── head ──────────────────────────────────────────────────────────
         const title = html.match(/<title>([\s\S]*?)<\/title>/)?.[1];
         assert.ok(title && title.length > 10, 'missing <title>');
-        assert.ok(!title.includes('PropBetEdge — Sports News & Prop-Bet Intelligence'),
+        assert.ok(!title.includes('PropBetEdge — Live Sports Intelligence & Predictive Models'),
           'the default site title leaked onto an article');
 
         const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
