@@ -391,9 +391,9 @@ export function ad_footer_banner() {
     <div class="footer-cta">
       <div class="container footer-cta-inner">
         <div class="footer-cta-text">
-          <span class="footer-cta-eyebrow">⚡ CHOOSE YOUR NEXT INTELLIGENCE LAYER</span>
-          <h3 class="footer-cta-headline">Don’t dead-end at the article.</h3>
-          <p class="footer-cta-sub">Move into Free Picks, PBE Cast, six live sport-specific intelligence products or the PropSports data layer.</p>
+          <span class="footer-cta-eyebrow">⚡ EXPLORE THE PROPBETEDGE NETWORK</span>
+          <h3 class="footer-cta-headline">Go deeper than the article.</h3>
+          <p class="footer-cta-sub">Live picks, PBEcast, Player DNA, model records and sport-specific intelligence across the PropBetEdge network.</p>
         </div>
         <div class="footer-cta-buttons">
           <a href="${withUtm(PROPBET_LINKS.picks_mlb, 'footer_banner', 'mlb', 'mlb')}" class="footer-cta-btn footer-cta-btn-mlb" target="_blank" rel="noopener">
