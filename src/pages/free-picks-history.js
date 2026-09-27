@@ -8,6 +8,7 @@
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { escapeHtml } from '../components/article-card.js';
+import { countsTowardRecord } from '../lib/free-board.js';
 import {
   organizationSchema, websiteSchema, breadcrumbSchema, injectSchemas,
 } from '../schema.js';
@@ -70,7 +71,8 @@ function renderHero() {
       <span class="kicker kicker-gold">FREE PICKS HISTORY</span>
       <h1>Every free pick. Every result. Nothing disappears.</h1>
       <p>
-        The public proof ledger for PropBetEdge free picks. Tracking started September 20, 2026 with no historical backfill.
+        The public proof ledger for PropBetEdge free picks. Tracking started September 20, 2026.
+        No model-history backfill. Documented public picks missed during capture outages may be restored and are explicitly labeled RECOVERED.
         Once a free pick is recorded here, the pick identity stays frozen; only its settlement can change.
       </p>
     </header>
@@ -106,17 +108,19 @@ function renderHistory(tracker) {
   const losses = Number(record.losses || 0);
   const pushes = Number(record.pushes || 0);
   const pending = Number(record.pending || 0);
+  const picks = entries.filter(countsTowardRecord);
+  const legacy = entries.length - picks.length;
 
   return `
     <section class="free-history-summary">
       <div class="free-history-overall">
         <span>OVERALL FREE RECORD</span>
         <strong>${wins}–${losses}${pushes ? `–${pushes}P` : ''}</strong>
-        <small>${entries.length} recorded free pick${entries.length === 1 ? '' : 's'} · ${pending} pending</small>
+        <small>${picks.length} recorded free pick${picks.length === 1 ? '' : 's'} · ${pending} pending${legacy ? ` · ${legacy} legacy validation signal${legacy === 1 ? '' : 's'} excluded` : ''}</small>
       </div>
 
       <div class="free-history-summary-copy">
-        <span class="free-history-epoch">STARTED 09/20/26 · NO BACKFILL</span>
+        <span class="free-history-epoch">STARTED 09/20/26 · NO MODEL-HISTORY BACKFILL</span>
         <h2>A public record built from the actual free board.</h2>
         <p>Daily lanes: MLB, WNBA, NHL and NBA. Weekly lanes: NFL and UFC. The overall record is just the sum of those individual ledgers.</p>
       </div>
@@ -158,6 +162,11 @@ function renderHistory(tracker) {
       <p>
         The live page decides what is currently being shown. This page never selects or rotates picks.
         It only preserves what was already published publicly and records the result when that sport's settlement source confirms it.
+      </p>
+      <p>
+        No model-history backfill. Documented public picks missed during capture outages may be restored and are explicitly labeled RECOVERED.
+        A pick replaced before its event is never swapped: the original is marked WITHDRAWN (void, with the reason and time) and the replacement is recorded separately.
+        Rows labeled LEGACY VALIDATION SIGNAL were shown publicly before the Free Picks contract excluded validation output; they stay here for transparency and are excluded from the Free Picks record.
       </p>
     </section>
   `;
@@ -215,10 +224,19 @@ function renderHistoryRow(entry) {
   const provider = proofLabel(entry);
   const published = formatEt(entry.published_at);
   const settledAt = settled ? formatEt(entry.result_at) : null;
+  const legacy = !countsTowardRecord(entry);
+  const withdrawn = entry?.evidence?.withdrawn === true;
+  const recovered = entry?.evidence?.recovered === true;
+  const badge = withdrawn ? 'WITHDRAWN' : result === 'WIN' ? 'HIT' : result === 'LOSS' ? 'MISS' : statusLabel;
+  const flags = [
+    legacy ? '<span class="free-history-flag is-legacy">LEGACY VALIDATION SIGNAL · EXCLUDED FROM FREE PICKS RECORD</span>' : '',
+    withdrawn ? `<span class="free-history-flag is-withdrawn">WITHDRAWN ${escapeHtml(formatEt(entry.evidence.withdrawn_at))} · ${escapeHtml(String(entry.evidence.withdrawn_reason || '').replace(/_/g, ' '))}</span>` : '',
+    recovered ? `<span class="free-history-flag is-recovered">RECOVERED ${escapeHtml(formatEt(entry.evidence.recovered_at))} · missed at capture (${escapeHtml(String(entry.evidence.capture_gap_reason || 'capture gap').replace(/_/g, ' '))})</span>` : '',
+  ].filter(Boolean).join('');
 
   return `
     <article
-      class="free-history-row is-${escapeHtml(result.toLowerCase())}"
+      class="free-history-row is-${escapeHtml(result.toLowerCase())}${legacy ? ' is-legacy' : ''}"
       data-history-sport="${escapeHtml(sport)}"
       data-history-result="${escapeHtml(result)}"
     >
@@ -231,6 +249,7 @@ function renderHistoryRow(entry) {
         <span>${escapeHtml(entry.pick_type || 'FREE PICK')}</span>
         <strong>${escapeHtml(entry.selection || 'Recorded free pick')}</strong>
         <small>${escapeHtml(entry.matchup || entry.opponent || '')}</small>
+        ${flags}
       </div>
 
       <div class="free-history-row-times">
@@ -239,7 +258,7 @@ function renderHistoryRow(entry) {
       </div>
 
       <div class="free-history-row-result">
-        <span class="free-history-result-badge is-${escapeHtml(result.toLowerCase())}">${escapeHtml(result === 'WIN' ? 'HIT' : result === 'LOSS' ? 'MISS' : statusLabel)}</span>
+        <span class="free-history-result-badge is-${escapeHtml(result.toLowerCase())}">${escapeHtml(badge)}</span>
         ${entry.score ? `<strong>${escapeHtml(entry.score)}</strong>` : ''}
         <small>${escapeHtml(provider)}</small>
       </div>

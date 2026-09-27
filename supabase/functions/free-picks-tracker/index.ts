@@ -12,6 +12,17 @@ const FIRST_PARTY = { Origin:"https://propbetedge.ai", Referer:"https://propbete
 // Output classes that are never a published free pick.
 const NON_PICK_SCOPES = new Set(["tracking","validation","shadow","research","rehearsal_shadow","unpublished"]);
 
+/** Record class of a ledger entry. Only free_pick rows count toward the record. */
+function recordClass(entry:any) {
+  if (isNonPickOutput(entry?.snapshot || entry)) return "legacy_validation_signal";
+  if (entry?.evidence?.withdrawn === true) return "withdrawn";
+  return "free_pick";
+}
+
+function isWithdrawn(entry:any) {
+  return entry?.evidence?.withdrawn === true;
+}
+
 function isNonPickOutput(item:any) {
   const scope = String(item?.publication_scope || "").toLowerCase();
   if (scope && NON_PICK_SCOPES.has(scope)) return true;
@@ -147,7 +158,7 @@ function normalizeResult(value:unknown) {
   return "PENDING";
 }
 
-type CaptureReport = Record<string,{ status:string, offered?:number, inserted?:number, blocked_non_pick?:number, error?:string }>;
+type CaptureReport = Record<string,{ status:string, offered?:number, inserted?:number, blocked_non_pick?:number, blocked_unfrozen?:number, error?:string }>;
 
 async function captureCurrent():Promise<CaptureReport> {
   const report:CaptureReport = {};
@@ -169,7 +180,11 @@ async function captureCurrent():Promise<CaptureReport> {
   ]);
 
   const existing = await sb(`${TABLE}?period_start=gte.${EPOCH}&select=sport,period_start,slot,public_key,source_record_id,pick_type,selection,opponent,event_start_at,snapshot,evidence,published_at,result,result_at,score`);
+  // Two active free picks per sport per period. A withdrawn pick keeps its
+  // slot number (its receipt never moves) but frees capacity, so its
+  // replacement is recorded separately under the next slot number.
   const used = new Map<string,Set<number>>();
+  const active = new Map<string,number>();
   const keys = new Set<string>();
   const identities = new Set<string>();
   for (const r of existing || []) {
@@ -178,21 +193,29 @@ async function captureCurrent():Promise<CaptureReport> {
     if (!used.has(k)) used.set(k,new Set());
     if (!suppressed) {
       used.get(k)!.add(Number(r.slot));
+      if (!isWithdrawn(r)) active.set(k, (active.get(k) || 0) + 1);
       identities.add(stableIdentity(r.sport, r));
     }
     keys.add(String(r.public_key));
   }
   const nextSlot = (sport:string, period:string) => {
-    const set = used.get(`${sport}|${period}`) || new Set<number>();
-    for (let i=1;i<=2;i++) if (!set.has(i)) { set.add(i); used.set(`${sport}|${period}`,set); return i; }
-    return null;
+    const k = `${sport}|${period}`;
+    if ((active.get(k) || 0) >= 2) return null;
+    const set = used.get(k) || new Set<number>();
+    let i = 1;
+    while (set.has(i)) i++;
+    set.add(i); used.set(k,set); active.set(k,(active.get(k) || 0) + 1);
+    return i;
   };
 
   const capture = async (sport:string, cadence:"daily"|"weekly", periodStart:string, periodEnd:string, items:any[]) => {
-    const r = report[sport] = { status:"ok", offered:items.length, inserted:0, blocked_non_pick:0 };
+    const r = report[sport] = { status:"ok", offered:items.length, inserted:0, blocked_non_pick:0, blocked_unfrozen:0 };
     for (const item of items) {
       // Validation / tracking / shadow / research output is never a free pick.
       if (isNonPickOutput(item.snapshot)) { r.blocked_non_pick++; continue; }
+      // A pick enters the ledger only once it is frozen under its sport's
+      // contract. UFC PROVISIONAL calls can still change before lock.
+      if (item.frozen === false) { r.blocked_unfrozen++; continue; }
       const itemPeriodStart = String(item.period_start || periodStart);
       const itemPeriodEnd = String(item.period_end || periodEnd || itemPeriodStart);
       const rowForIdentity = { ...item, sport, cadence, period_start:itemPeriodStart, period_end:itemPeriodEnd };
@@ -293,6 +316,7 @@ async function captureCurrent():Promise<CaptureReport> {
         period_end:addDays(start,6),
         published_at:p.observed_at || d.generated_at,
         snapshot:p,
+        frozen:String(p.lifecycle || "").toUpperCase() === "LOCKED",
       };
     });
     await capture("UFC","weekly",weeklyStart,weeklyEnd,items);
@@ -771,6 +795,7 @@ async function resolveUfc(entry:any) {
     `ufc_bout_results?bout_id=eq.${encodeURIComponent(bout.id)}&select=bout_id,winner_id,method,method_raw,round,time_sec,result_source,source_url,captured_at&limit=1`
   );
   const result = results?.[0] || null;
+  if (!result && await withdrawUfcIfReplaced(entry, bout, pickFighter)) return;
   if (!result) {
     await patchEntry(entry.id, {
       evidence:{
@@ -815,6 +840,50 @@ async function resolveUfc(entry:any) {
       checked_at:new Date().toISOString()
     }
   });
+}
+
+/**
+ * A published UFC free pick is withdrawn, never silently swapped, when before
+ * the fight its bout is cancelled or the model's current selection on that
+ * bout is no longer the published fighter. The receipt keeps its original
+ * identity and publication time; it settles VOID with an explicit reason.
+ */
+async function withdrawUfcIfReplaced(entry:any, bout:any, pickFighter:any) {
+  const withdraw = async (reason:string, extra:Record<string,unknown> = {}) => {
+    const at = new Date().toISOString();
+    await patchEntry(entry.id, {
+      result:"VOID",
+      result_at:at,
+      score:null,
+      evidence:{
+        ...(entry.evidence || {}),
+        provider:"ufc_model_predictions",
+        withdrawn:true,
+        withdrawn_reason:reason,
+        withdrawn_at:at,
+        bout_id:bout.id,
+        published_selection:entry.selection,
+        ...extra,
+      },
+    });
+    return true;
+  };
+
+  if (/cancel|withdraw|scrap|removed/i.test(String(bout.status || ""))) {
+    return withdraw("bout_cancelled", { bout_status:bout.status });
+  }
+  const preds = await sb(
+    `ufc_model_predictions?bout_id=eq.${encodeURIComponent(bout.id)}&select=model_version,locked_at,pick_fighter_id,created_at&order=created_at.desc&limit=5`
+  ).catch(() => []);
+  const current = (preds || []).find((p:any) => p.locked_at) || preds?.[0] || null;
+  if (current?.pick_fighter_id && String(current.pick_fighter_id) !== String(pickFighter.id)) {
+    return withdraw("model_selection_changed_before_event", {
+      replacement_fighter_id:current.pick_fighter_id,
+      replacement_model_version:current.model_version,
+      replacement_locked_at:current.locked_at,
+    });
+  }
+  return false;
 }
 
 async function resolvePending() {
@@ -879,20 +948,25 @@ async function responsePayload(capture:CaptureReport = {}) {
     }
   }
 
-  const entries = [...canonical.values()].sort((a:any,b:any) =>
-    Date.parse(b.published_at || b.created_at || 0) - Date.parse(a.published_at || a.created_at || 0)
-  );
-  const counted = entries.filter((e:any) => ["WIN","LOSS","PUSH"].includes(e.result));
+  const entries = [...canonical.values()]
+    .map((e:any) => ({ ...e, record_class:recordClass(e), counts_toward_record:recordClass(e) === "free_pick" }))
+    .sort((a:any,b:any) =>
+      Date.parse(b.published_at || b.created_at || 0) - Date.parse(a.published_at || a.created_at || 0)
+    );
+  // Historical validation rows stay in `entries` for audit/history, but the
+  // FREE PICKS record, by_sport and pending counts come from real picks only.
+  const publicPickEntries = entries.filter((e:any) => !isNonPickOutput(e.snapshot || e));
+  const counted = publicPickEntries.filter((e:any) => ["WIN","LOSS","PUSH"].includes(e.result));
   const record = {
     wins: counted.filter((e:any) => e.result === "WIN").length,
     losses: counted.filter((e:any) => e.result === "LOSS").length,
     pushes: counted.filter((e:any) => e.result === "PUSH").length,
-    voids: entries.filter((e:any) => e.result === "VOID").length,
-    pending: entries.filter((e:any) => e.result === "PENDING").length,
+    voids: publicPickEntries.filter((e:any) => e.result === "VOID").length,
+    pending: publicPickEntries.filter((e:any) => e.result === "PENDING").length,
   };
   const bySport:Record<string,any> = {};
   for (const sport of ["MLB","NFL","UFC","WNBA","NHL","NBA"]) {
-    const sportEntries = entries.filter((e:any) => e.sport === sport);
+    const sportEntries = publicPickEntries.filter((e:any) => e.sport === sport);
     bySport[sport] = {
       wins:sportEntries.filter((e:any) => e.result === "WIN").length,
       losses:sportEntries.filter((e:any) => e.result === "LOSS").length,
@@ -902,7 +976,7 @@ async function responsePayload(capture:CaptureReport = {}) {
   }
   return {
     ok:true,
-    contract:"pbe-free-picks-tracker-v2",
+    contract:"pbe-free-picks-tracker-v3",
     epoch:EPOCH,
     generated_at:new Date().toISOString(),
     record,
@@ -912,6 +986,8 @@ async function responsePayload(capture:CaptureReport = {}) {
       visible_rows:visible.length,
       unique_public_picks:entries.length,
       duplicate_rows_ignored:Math.max(0, visible.length - entries.length),
+      public_pick_entries:publicPickEntries.length,
+      excluded_non_pick_entries:entries.length - publicPickEntries.length,
       capture,
     },
     entries,

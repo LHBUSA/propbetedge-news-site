@@ -8975,3 +8975,10 @@ a.leaders-sport-tab.active,
 .fp-cta__btn:hover { background: var(--gold-bright); }
 .fp-cta__fine { grid-column: 1 / -1; font-size: 11px; color: var(--paper-faint); }
 @media (max-width: 560px) { .fp-cta { grid-template-columns: minmax(0, 1fr); } .fp-cta__btn { justify-content: center; } }
+
+/* Free Picks history record-class flags */
+.free-history-flag { display: block; margin-top: 6px; font: 700 10px/1.35 var(--font-mono); letter-spacing: 0.06em; color: var(--paper-faint); overflow-wrap: anywhere; }
+.free-history-flag.is-legacy { color: #d9a441; }
+.free-history-flag.is-withdrawn { color: var(--paper-dim); }
+.free-history-flag.is-recovered { color: #7fb8e6; }
+.free-history-row.is-legacy { opacity: 0.78; }

@@ -65,6 +65,21 @@ export function isNonPickOutput(item) {
   return /VALIDATION|SHADOW|RESEARCH/.test(label);
 }
 
+/**
+ * Does this ledger entry count toward the FREE PICKS record? Legacy
+ * validation/tracking rows stay in the ledger for audit but never count,
+ * never render as a current pick and never appear in Latest Results.
+ */
+export function countsTowardRecord(entry) {
+  if (entry?.counts_toward_record === false && entry?.record_class !== 'withdrawn') return false;
+  return !isNonPickOutput(entry);
+}
+
+/** Ledger entries that are real public free picks (the record's population). */
+export function publicPickEntries(tracker) {
+  return ledgerEntries(tracker).filter(countsTowardRecord);
+}
+
 export function isSettled(entry) {
   return SETTLED_RESULTS.includes(upper(entry?.result));
 }
@@ -143,6 +158,7 @@ export function buildFreeBoard(tracker, now = new Date(), liveHints = new Map())
     const hint = liveHints.get(entry.public_key) || null;
     const state = entryState(entry, now, hint);
     if (state === 'SETTLED') {
+      if (!countsTowardRecord(entry)) { excluded.push({ entry, reason: 'non_pick_output' }); continue; }
       // Event date, not result_at: older MLB rows had result_at rewritten on
       // every recheck, so result_at cannot say which day a pick belonged to.
       if (eventDate(entry) === today) settledToday.push(entry);
@@ -198,7 +214,7 @@ export function buildFreeBoard(tracker, now = new Date(), liveHints = new Map())
  */
 export function latestResults(tracker, { max = 6, perSport = 2 } = {}) {
   const ts = (entry) => Date.parse(entry.result_at || entry.published_at || 0) || 0;
-  const settled = ledgerEntries(tracker)
+  const settled = publicPickEntries(tracker)
     .filter((entry) => ['WIN', 'LOSS', 'PUSH', 'VOID'].includes(upper(entry.result)))
     .sort((a, b) => String(eventDate(b) || '').localeCompare(String(eventDate(a) || '')) || ts(b) - ts(a));
   const taken = new Map();
@@ -242,7 +258,7 @@ export function sportRecord(tracker, sport) {
  * aggregate the page prints must equal the entries the page can show.
  */
 export function recountSport(tracker, sport) {
-  const rows = ledgerEntries(tracker).filter((entry) => sportOf(entry) === String(sport).toLowerCase());
+  const rows = publicPickEntries(tracker).filter((entry) => sportOf(entry) === String(sport).toLowerCase());
   return {
     wins: rows.filter((e) => upper(e.result) === 'WIN').length,
     losses: rows.filter((e) => upper(e.result) === 'LOSS').length,
@@ -284,6 +300,18 @@ export function checkFreePickInvariant({ displayed = [], tracker, board, feedIte
     if (agg.wins !== live.wins || agg.losses !== live.losses || agg.pushes !== live.pushes || agg.pending !== live.pending) {
       failures.push(`${sport} aggregate ${agg.wins}-${agg.losses} (${agg.pending} pending) != ledger ${live.wins}-${live.losses} (${live.pending} pending)`);
     }
+  }
+  const all = publicPickEntries(tracker);
+  const rec = tracker?.record || {};
+  const recount = {
+    wins: all.filter((e) => upper(e.result) === 'WIN').length,
+    losses: all.filter((e) => upper(e.result) === 'LOSS').length,
+    pushes: all.filter((e) => upper(e.result) === 'PUSH').length,
+    pending: all.filter((e) => upper(e.result) === 'PENDING').length,
+  };
+  if (Number(rec.wins || 0) !== recount.wins || Number(rec.losses || 0) !== recount.losses
+    || Number(rec.pushes || 0) !== recount.pushes || Number(rec.pending || 0) !== recount.pending) {
+    failures.push(`global record ${rec.wins}-${rec.losses} (${rec.pending} pending) != recount(publicPickEntries) ${recount.wins}-${recount.losses} (${recount.pending} pending)`);
   }
   if (board && displayed.length !== board.current.length) {
     failures.push(`displayed ${displayed.length} current cards != ledger current ${board.current.length}`);

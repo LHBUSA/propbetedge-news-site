@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 
 import {
   buildFreeBoard, checkFreePickInvariant, entryState, latestResults,
-  recordSummary, trackerEntryMatchesCard,
+  recordSummary, trackerEntryMatchesCard, countsTowardRecord,
 } from '../src/lib/free-board.js';
 
 // 2026-09-26 19:45 ET — the production state this contract was written against.
@@ -21,7 +21,7 @@ function entry(over) {
 function trackerOf(entries) {
   const by = {};
   for (const sport of ['MLB', 'NFL', 'UFC', 'WNBA', 'NHL', 'NBA']) {
-    const rows = entries.filter((e) => e.sport === sport && e.evidence?.suppressed !== true);
+    const rows = entries.filter((e) => e.sport === sport && e.evidence?.suppressed !== true && countsTowardRecord(e));
     by[sport] = {
       wins: rows.filter((e) => e.result === 'WIN').length,
       losses: rows.filter((e) => e.result === 'LOSS').length,
@@ -29,7 +29,7 @@ function trackerOf(entries) {
       pending: rows.filter((e) => e.result === 'PENDING').length,
     };
   }
-  const all = entries.filter((e) => e.evidence?.suppressed !== true);
+  const all = entries.filter((e) => e.evidence?.suppressed !== true && countsTowardRecord(e));
   return {
     ok: true,
     generated_at: NOW.toISOString(),
@@ -163,4 +163,51 @@ test('a rechecked old pick with a fresh result_at is not "settled today"', () =>
   const board = buildFreeBoard(trackerOf([old, NHL_CAR]), NOW);
   assert.equal(board.counts.settledToday, 1);
   assert.deepEqual(latestResults(trackerOf([old, NHL_CAR])).map((e) => e.selection), ['CAR', 'Yordan Alvarez']);
+});
+
+// The two historical NFL validation rows, exactly as they sit in the ledger.
+const NFL_DAL = entry({ sport: 'NFL', period_start: '2026-09-20', selection: 'DAL -4', matchup: 'WSH @ DAL', result: 'WIN', result_at: '2026-09-20T23:46:08Z', snapshot: { publication_scope: 'tracking', scope_label: 'PBE VALIDATION SIGNAL', market: 'spread' } });
+const NFL_ARI = entry({ sport: 'NFL', period_start: '2026-09-20', slot: 2, selection: 'ARI ML', matchup: 'SEA @ ARI', result: 'LOSS', result_at: '2026-09-20T23:31:23Z', snapshot: { publication_scope: 'tracking', scope_label: 'PBE VALIDATION SIGNAL', market: 'moneyline' } });
+
+test('validation rows stay in entries but never touch the Free Picks record', () => {
+  const tracker = trackerOf([NFL_DAL, NFL_ARI, NHL_CAR, NHL_BUF]);
+  assert.equal(tracker.entries.length, 4, 'history keeps the validation rows');
+  assert.deepEqual([tracker.record.wins, tracker.record.losses], [1, 1]);
+  assert.deepEqual([tracker.by_sport.NFL.wins, tracker.by_sport.NFL.losses], [0, 0]);
+  const res = checkFreePickInvariant({ displayed: [], tracker, board: buildFreeBoard(tracker, NOW) });
+  assert.equal(res.pass, true, res.failures.join('; '));
+});
+
+test('an aggregate that still counts validation rows fails the invariant', () => {
+  const tracker = trackerOf([NFL_DAL, NFL_ARI]);
+  tracker.by_sport.NFL = { wins: 1, losses: 1, pushes: 0, pending: 0 };
+  tracker.record = { wins: 1, losses: 1, pushes: 0, pending: 0 };
+  const res = checkFreePickInvariant({ displayed: [], tracker, board: buildFreeBoard(tracker, NOW) });
+  assert.equal(res.pass, false);
+  assert.match(res.failures.join('\n'), /nfl aggregate 1-1/);
+  assert.match(res.failures.join('\n'), /global record 1-1/);
+});
+
+test('validation rows never render as current picks or latest results', () => {
+  const tracker = trackerOf([NFL_DAL, NFL_ARI, NFL_VALIDATION, NHL_CAR]);
+  const board = buildFreeBoard(tracker, NOW);
+  assert.ok(board.current.every(({ entry: e }) => e.sport !== 'NFL'));
+  assert.ok(board.settledToday.every((e) => e.sport !== 'NFL'));
+  assert.deepEqual(latestResults(tracker).map((e) => e.selection), ['CAR']);
+});
+
+test('server record_class is honoured, withdrawn picks still count as free picks', () => {
+  assert.equal(countsTowardRecord({ record_class: 'legacy_validation_signal', counts_toward_record: false, snapshot: {} }), false);
+  assert.equal(countsTowardRecord({ record_class: 'withdrawn', counts_toward_record: false, result: 'VOID', snapshot: {} }), true);
+  assert.equal(countsTowardRecord({ record_class: 'free_pick', counts_toward_record: true, snapshot: {} }), true);
+});
+
+test('tracker derives the record from publicPickEntries and freezes UFC before capture', () => {
+  const src = readFileSync(new URL('../supabase/functions/free-picks-tracker/index.ts', import.meta.url), 'utf8');
+  assert.match(src, /const publicPickEntries = entries\.filter\(\(e:any\) => !isNonPickOutput\(e\.snapshot \|\| e\)\)/);
+  assert.match(src, /const counted = publicPickEntries\.filter/);
+  assert.match(src, /const sportEntries = publicPickEntries\.filter/);
+  assert.match(src, /frozen:String\(p\.lifecycle \|\| ""\)\.toUpperCase\(\) === "LOCKED"/);
+  assert.match(src, /withdrawn_reason:reason/);
+  assert.doesNotMatch(src, /\.delete\(|method:"DELETE"/, 'the tracker never deletes receipts');
 });
