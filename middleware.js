@@ -386,8 +386,8 @@ async function resolveMeta(pathname, search = '') {
     const canonical = `${SITE}/about`;
     return {
       canonical,
-      title: 'About PropBetEdge — Sports News & Intelligence',
-      description: 'About PropBetEdge: ownership, editorial operation, sports-intelligence network, standards, and contact information.',
+      title: 'About PropBetEdge — The Sports Intelligence Network',
+      description: 'PropBetEdge is a multi-sport intelligence network combining data, models, live analysis, player intelligence, public records, and original sports journalism.',
       image: NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildAboutSchema(canonical),
@@ -1218,7 +1218,7 @@ function buildAboutSchema(canonical) {
         '@id': `${canonical}#page`,
         url: canonical,
         name: 'About PropBetEdge',
-        description: 'Ownership, editorial operation, sports-intelligence network, standards, and contact information for PropBetEdge.',
+        description: 'PropBetEdge is a multi-sport intelligence network combining data, models, live analysis, player intelligence, public records, and original sports journalism.',
         mainEntity: { '@id': `${SITE}/#organization` },
         isPartOf: { '@id': `${SITE}/#website` },
         inLanguage: 'en-US',
@@ -1238,12 +1238,25 @@ function buildServerAboutHtml() {
   return `<main class="pbe-ssr-about" data-server-rendered="1">
     <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; About</nav>
     <article>
-      <p>Publisher</p>
-      <h1>About PropBetEdge</h1>
-      <p><strong>PropBetEdge is owned, built, and operated by PropTechUSA.ai.</strong> Its newsroom, sports-intelligence products, APIs, models, automation, and technical infrastructure operate within the broader PropTechUSA.ai organization.</p>
-      <h2>Editorial operation</h2>
-      <p>PropBetEdge uses a hybrid human-and-AI editorial workflow with public standards covering source verification, AI assistance, human review, corrections, feedback, ethics, and coverage inclusivity.</p>
-      <p><a href="/authors">Editorial Team</a> · <a href="/editorial-standards">Editorial Standards</a></p>
+      <p>The Sports Intelligence Network</p>
+      <h1>Sports are deeper than the scoreboard.</h1>
+      <p>PropBetEdge connects live sports data, proprietary analytics, player intelligence, model output, permanent records and original journalism across one multi-sport network.</p>
+      <p><strong>News is the entry point. Intelligence is the product.</strong></p>
+      <h2>Seven live sport verticals</h2>
+      <p>
+        <a href="https://mlb.propbetedge.ai/sharp-tools">MLB</a> ·
+        <a href="https://nfl.propbetedge.ai/">NFL</a> ·
+        <a href="https://nba.propbetedge.ai/">NBA</a> ·
+        <a href="https://wnba.propbetedge.ai/">WNBA</a> ·
+        <a href="https://nhl.propbetedge.ai/">NHL</a> ·
+        <a href="https://ufc.propbetedge.ai/">UFC</a> ·
+        <a href="https://tennis.propbetedge.ai/">Tennis</a>
+      </p>
+      <h2>Accountability by design</h2>
+      <p>PropBetEdge separates research from live claims, preserves missing data as missing, and keeps permanent records where models are live. Its editorial workflow uses source checks, evidence gates, human review and public standards.</p>
+      <p><a href="/authors">Editorial Team</a> · <a href="/editorial-standards">Editorial Standards</a> · <a href="/pro">All Access</a></p>
+      <h2>Built by PropTechUSA.ai</h2>
+      <p><strong>PropBetEdge is owned, built and operated by PropTechUSA.ai.</strong> The newsroom, sports-data pipelines, models, APIs, automation and technical infrastructure operate inside the broader PropTechUSA.ai technology ecosystem.</p>
       <h2>Contact</h2>
       <p>Editorial: <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a><br>
       Business: <a href="mailto:hello@proptechusa.ai">hello@proptechusa.ai</a><br>
