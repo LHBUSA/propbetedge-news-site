@@ -171,16 +171,39 @@ export function renderAbout(root, setMeta) {
           </div>
         </section>
 
-        <section class="about-news">
-          <div class="about-news-mark">PBE</div>
-          <div>
-            <span class="about-section-kicker">NEWS → INTELLIGENCE</span>
-            <h2>The newsroom is the top of the funnel — not a detached blog.</h2>
-            <p>
-              A PropBetEdge story should lead somewhere useful: a player, a team, a game, a model, a PBEcast,
-              a leaderboard or a deeper sport-specific product. The goal is to make every story an entry point into the intelligence graph.
-            </p>
-            <a class="about-text-link" href="/news">Explore PropBetEdge News →</a>
+        <section class="about-news" aria-labelledby="about-news-title">
+          <div class="about-news-shell">
+            <div class="about-news-brand" aria-hidden="true">
+              <div class="about-news-brand-frame">
+                <span class="about-news-brand-edge about-news-brand-edge--tl"></span>
+                <span class="about-news-brand-edge about-news-brand-edge--br"></span>
+                <img
+                  src="/logo/pbe-full-400.png"
+                  srcset="/logo/pbe-full-200.png 200w, /logo/pbe-full-400.png 400w, /logo/pbe-full-600.png 600w"
+                  sizes="(max-width: 760px) 190px, 260px"
+                  alt=""
+                  class="about-news-logo"
+                  width="600"
+                  height="600"
+                  loading="lazy"
+                  decoding="async"
+                >
+                <span class="about-news-brand-line">NEWS <i>•</i> DATA <i>•</i> INTELLIGENCE</span>
+              </div>
+            </div>
+
+            <div class="about-news-copy">
+              <span class="about-section-kicker about-news-kicker"><span aria-hidden="true"></span>NEWS <i>•</i> INTELLIGENCE</span>
+              <h2 id="about-news-title">The <em>newsroom</em> is the top of the funnel — not a detached blog.</h2>
+              <p>
+                A PropBetEdge story should lead somewhere useful: a player, a team, a game, a model, a PBEcast,
+                a leaderboard or a deeper sport-specific product. The goal is to make every story an entry point into the intelligence graph.
+              </p>
+              <div class="about-news-action-row">
+                <a class="about-news-cta" href="/news">Explore PropBetEdge News <span aria-hidden="true">→</span></a>
+                <span class="about-news-proofline">Original reporting <i>•</i> data-linked stories <i>•</i> evidence-gated publishing</span>
+              </div>
+            </div>
           </div>
         </section>
 
