@@ -120,7 +120,7 @@ export function renderSectionHeroCta(sport, { pageType = 'sport_index' } = {}) {
         <p class="pbe-intel-cta-line">${esc(intel.line)}</p>
       </div>
       <a class="pbe-intel-cta-btn" href="${esc(intel.href)}" ${ctaAttrs(intel, { placement: 'section_hero', pageType })}>
-        ${esc(ctaLabel(intel))}<span aria-hidden="true"> →</span>
+        ${esc(ctaLabel(intel))}<span aria-hidden="true">&nbsp;→</span>
       </a>
     </aside>
   `;
@@ -131,7 +131,7 @@ export function renderSectionNavCta(sport, { pageType = 'sport_index' } = {}) {
   const intel = intelligenceFor(sport);
   if (!intel) return '';
   return `<a class="section-link pbe-intel-navlink" href="${esc(intel.href)}" ${ctaAttrs(intel, { placement: 'section_nav', pageType })}>
-    <span class="pbe-intel-navlink-full">${esc(intel.label.toUpperCase())} Intelligence</span><span class="pbe-intel-navlink-short">Intelligence</span><span aria-hidden="true"> →</span>
+    <span class="pbe-intel-navlink-full">${esc(intel.label.toUpperCase())} Intelligence</span><span class="pbe-intel-navlink-short">Intelligence</span><span aria-hidden="true">&nbsp;→</span>
   </a>`;
 }
 
@@ -143,7 +143,7 @@ export function renderMoreThanNewsCta(sport, { placement, pageType, slug = '' })
     <aside class="pbe-intel-closer" aria-label="${esc(intel.label)} Intelligence">
       <p><span class="pbe-intel-closer-mono">MORE THAN NEWS.</span> Explore ${esc(intel.label)} Intelligence on <span class="pbe-intel-closer-domain">${esc(intel.domain)}</span>.</p>
       <a class="pbe-intel-cta-btn pbe-intel-cta-btn--ghost" href="${esc(intel.href)}" ${ctaAttrs(intel, { placement, pageType, slug })}>
-        ${esc(ctaLabel(intel))}<span aria-hidden="true"> →</span>
+        ${esc(ctaLabel(intel))}<span aria-hidden="true">&nbsp;→</span>
       </a>
     </aside>
   `;
