@@ -107,8 +107,8 @@ function clearAndRoute() {
 
   if (path === '/' || path === '') {
     setMeta({
-      title: 'PropBetEdge — Sports News & Prop-Bet Intelligence',
-      description: 'Editorial sports journalism with AI prop-bet impact analysis. MLB, NFL, NBA, NHL.',
+      title: 'PropBetEdge — Live Sports Intelligence & Predictive Models',
+      description: 'Live sports intelligence, proprietary prediction models, Player DNA, PBEcast, news and deep analytics across MLB, NFL, NBA, WNBA, NHL, UFC and Tennis.',
       canonical: 'https://propbetedge.ai/',
     });
     return renderHome(root);
