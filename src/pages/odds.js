@@ -666,9 +666,9 @@ function renderNamespacedRecords(tracker) {
         <h3>Free products · separate records</h3>
         <ul class="fp-record__sports">
           ${row('MLB Featured Player', featured, 'Engagement record · not an Algo record')}
-          ${row('NFL Free TD Targets', td, 'Since Sep 28, 2026')}
+          ${row('NFL Free TD Targets', td, 'Since Sep 27, 2026')}
           ${row('MLB Algo free picks (legacy)', mlbAlgo, 'Before Sep 28, 2026')}
-          ${row('NFL team picks (legacy)', nflTeam, 'Before Sep 28, 2026')}
+          ${row('NFL team picks (legacy)', nflTeam, 'Before Sep 27, 2026')}
         </ul>
       </div>`;
 }

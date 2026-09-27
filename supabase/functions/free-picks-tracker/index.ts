@@ -19,10 +19,13 @@ const NON_PICK_SCOPES = new Set(["tracking","validation","shadow","research","re
 //   NFL = up to two official TD Targets per slate day, own record namespace.
 // Historical rows are never rewritten; their product is derived from sport + snapshot when the snapshot predates it.
 const PRODUCT_BOUNDARY = "2026-09-28";
+// NFL switched on the owner decision day: no NFL free rows exist for 2026-09-27, so nothing historical moves.
+const NFL_TD_BOUNDARY = "2026-09-27";
 const MLB_FEATURED_URL = "https://mlb.propbetedge.ai/api/free-featured-player";
 const NFL_TD_URL = "https://nfl.propbetedge.ai/api/pbe-touchdown-targets?view=free-sample";
 const PRODUCTS = {
   boundary:PRODUCT_BOUNDARY,
+  nfl_boundary:NFL_TD_BOUNDARY,
   MLB:{
     before:{ selection_type:"algo", selection_source:"official_algo_free_sample", official_algo:true, product_version:"mlb-free-algo/legacy", record_namespace:"free_picks_record" },
     after:{ selection_type:"featured_player", selection_source:"free_editorial_selector", official_algo:false, product_version:"mlb-free-featured-player/1.0.0", record_namespace:"free_featured_player_record", counts_toward_free_picks_record:false, max_per_day:1 },
@@ -369,7 +372,7 @@ async function captureCurrent():Promise<CaptureReport> {
   if (sources[1].status === "fulfilled") {
     const d:any = sources[1].value;
     const slate = String(d?.slate_date || "");
-    const items = (d?.contract === "pbe-nfl-free-td-targets-v1" && slate >= PRODUCT_BOUNDARY ? (d?.targets || []) : [])
+    const items = (d?.contract === "pbe-nfl-free-td-targets-v1" && slate >= NFL_TD_BOUNDARY ? (d?.targets || []) : [])
       .filter((t:any) => {
         const scope = String(t?.publication_scope || "").toLowerCase();
         return t?.selection_type === "td_target" && t?.free === true && FREE_TD_SCOPES.has(scope)
@@ -1221,7 +1224,7 @@ async function responsePayload(capture:CaptureReport = {}) {
     },
     legacy:{
       mlb_algo_free_picks:{ sport:"MLB", selection_type:"algo", before:PRODUCT_BOUNDARY, ...namespaced(publicPickEntries.filter((e:any) => e.sport === "MLB" && e.selection_type === "algo")) },
-      nfl_team_picks:{ sport:"NFL", selection_type:"team_pick", before:PRODUCT_BOUNDARY, ...namespaced(publicPickEntries.filter((e:any) => e.sport === "NFL" && e.selection_type === "team_pick")) },
+      nfl_team_picks:{ sport:"NFL", selection_type:"team_pick", before:NFL_TD_BOUNDARY, ...namespaced(publicPickEntries.filter((e:any) => e.sport === "NFL" && e.selection_type === "team_pick")) },
     },
   };
   return {

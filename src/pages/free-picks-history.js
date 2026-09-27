@@ -179,9 +179,9 @@ function renderHistory(tracker) {
 function renderProductRecords(tracker) {
   const rows = [
     ['MLB Featured Player', namespacedRecord(tracker, 'free_featured_player_record'), 'Since Sep 28, 2026 · editorial showcase · not an Algo record'],
-    ['NFL Free TD Targets', namespacedRecord(tracker, 'free_td_target_record'), 'Since Sep 28, 2026 · official first, tracking targets labelled'],
+    ['NFL Free TD Targets', namespacedRecord(tracker, 'free_td_target_record'), 'Since Sep 27, 2026 · official first, tracking targets labelled'],
     ['MLB Algo free picks', namespacedRecord(tracker, 'legacy.mlb_algo_free_picks'), 'Legacy free product · Sep 20–27, 2026'],
-    ['NFL team picks', namespacedRecord(tracker, 'legacy.nfl_team_picks'), 'Legacy free product · before Sep 28, 2026'],
+    ['NFL team picks', namespacedRecord(tracker, 'legacy.nfl_team_picks'), 'Legacy free product · before Sep 27, 2026'],
   ].filter(([, rec]) => rec);
   if (!rows.length) return '';
   return `
