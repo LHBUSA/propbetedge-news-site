@@ -3,6 +3,8 @@
  * GA4 is loaded in index.html; this module adds virtual navigation + CTA events.
  */
 
+import { intelligenceClickPayload } from './intelligence-cta.js';
+
 let installed = false;
 let lastTrackedUrl = '';
 
@@ -61,6 +63,13 @@ function handleClick(event) {
 
   const href = anchor.href || anchor.getAttribute('href') || '';
   if (!href) return;
+
+  // One event per click on a News -> Intelligence CTA (the attributes live on
+  // the anchor itself, so nested markup can never emit it twice).
+  if (anchor.hasAttribute('data-pbe-intel-cta')) {
+    const payload = intelligenceClickPayload(anchor);
+    if (payload) gtagEvent('intelligence_cta_click', payload);
+  }
 
   const ad = anchor.closest?.('[data-ad-slot]');
   if (ad) {
@@ -139,6 +148,8 @@ function destinationFor(href) {
     if (host === 'nba.propbetedge.ai') return 'nba';
     if (host === 'nhl.propbetedge.ai') return 'nhl';
     if (host === 'ufc.propbetedge.ai') return 'ufc';
+    if (host === 'wnba.propbetedge.ai') return 'wnba';
+    if (host === 'tennis.propbetedge.ai') return 'tennis';
     if (host === 'propsports.proptechusa.ai') return 'propsports';
     if (host.includes('rapidapi.com')) return 'sports_news_api';
     return host;

@@ -8,6 +8,7 @@ import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { renderArticleCard, renderSidebarStory, escapeHtml, formatRelative } from '../components/article-card.js';
 import { proxyImage } from '../ads-config.js';
+import { renderSectionHeroCta, renderSectionNavCta, renderMoreThanNewsCta } from '../intelligence-cta.js';
 import {
   organizationSchema, websiteSchema, breadcrumbSchema,
   collectionPageSchema, injectSchemas,
@@ -63,6 +64,7 @@ export async function renderSport(root, sport, requestedPage = 1) {
             <a href="/news/${s}" class="section-link ${s === sport ? 'active' : ''}">${s.toUpperCase()}</a>
           `).join('')}
           <a href="/standings/${sport}" class="section-link">Standings</a>
+          ${renderSectionNavCta(sport)}
         </div>
       </div>
 
@@ -73,10 +75,13 @@ export async function renderSport(root, sport, requestedPage = 1) {
           <p style="font-family:var(--font-serif);font-style:italic;font-size:18px;color:var(--paper-dim);max-width:680px;margin:0">${escapeHtml(tagline)}</p>
         </div>
 
+        ${renderSectionHeroCta(sport)}
+
         <div id="sport-lead-slot">${cardSkeleton(1, true)}</div>
         <div id="highlights-slot">${currentPage === 1 ? highlightsSkeleton() : ''}</div>
         <div id="rest-slot">${cardSkeleton(8)}</div>
         <div id="pagination" class="pagination"></div>
+        ${renderMoreThanNewsCta(sport, { placement: 'section_footer', pageType: 'sport_index' })}
       </div>
     </main>
     ${renderFooter()}

@@ -4,6 +4,7 @@
  */
 import { ad_header_banner, PROPBET_LINKS } from '../ads-config.js';
 import { renderScoreStripShell, mountScoreStrip } from './score-strip.js';
+import { INTELLIGENCE_SPORTS, INTELLIGENCE_ORDER, ctaAttrs } from '../intelligence-cta.js';
 
 const MLB_HR_SAMPLE_URL = 'https://mlb.propbetedge.ai/api/free-hr-sample';
 const NFL_SAMPLE_URL = 'https://nfl.propbetedge.ai/api/pbe-picks?view=free-sample';
@@ -17,48 +18,28 @@ let _fightWeekPromise = null;
 let _fightWeekCache = null;
 let _fightWeekCachedAt = 0;
 
-const INTELLIGENCE_PRODUCTS = Object.freeze([
-  {
-    key: 'mlb',
-    emoji: '⚾',
-    label: 'MLB Intelligence',
-    href: PROPBET_LINKS.picks_mlb,
-    domain: 'mlb.propbetedge.ai',
-    blurb: 'Live models, player research, props and game context',
-  },
-  {
-    key: 'nfl',
-    emoji: '🏈',
-    label: 'NFL Intelligence',
-    href: PROPBET_LINKS.picks_nfl,
-    domain: 'nfl.propbetedge.ai',
-    blurb: 'Market Board, Model Lab, simulation and live football context',
-  },
-  {
-    key: 'ufc',
-    emoji: '🥊',
-    label: 'UFC Intelligence',
-    href: PROPBET_LINKS.picks_ufc,
-    domain: 'ufc.propbetedge.ai',
-    blurb: 'Fight DNA, matchup research, rankings and fight-week intelligence',
-  },
-  {
-    key: 'wnba',
-    emoji: '🏀',
-    label: 'WNBA Intelligence',
-    href: PROPBET_LINKS.picks_wnba,
-    domain: 'wnba.propbetedge.ai',
-    blurb: 'Live games, PBE Picks, player load and WNBA intelligence',
-  },
-  {
-    key: 'nhl',
-    emoji: '🏒',
-    label: 'NHL Intelligence',
-    href: PROPBET_LINKS.picks_nhl,
-    domain: 'nhl.propbetedge.ai',
-    blurb: 'Ice Board, PBE Picks, player research and hockey intelligence',
-  },
-]);
+// Blurbs are header copy; destinations come from the one intelligence registry.
+const INTELLIGENCE_BLURBS = Object.freeze({
+  mlb: 'Live models, player research, props and game context',
+  nfl: 'Market Board, Model Lab, simulation and live football context',
+  nba: 'Player research, game context and live basketball intelligence',
+  wnba: 'Live games, PBE Picks, player load and WNBA intelligence',
+  nhl: 'Ice Board, PBE Picks, player research and hockey intelligence',
+  ufc: 'Fight DNA, matchup research, rankings and fight-week intelligence',
+  tennis: 'Live matches, player analytics and match data',
+});
+
+const INTELLIGENCE_PRODUCTS = Object.freeze(INTELLIGENCE_ORDER.map((key) => {
+  const intel = INTELLIGENCE_SPORTS[key];
+  return {
+    key,
+    emoji: intel.emoji,
+    label: `${intel.label} Intelligence`,
+    href: intel.href,
+    domain: intel.domain,
+    blurb: INTELLIGENCE_BLURBS[key],
+  };
+}));
 
 export function renderHeader() {
   const path = window.location.pathname;
@@ -151,12 +132,7 @@ export function renderHeader() {
               <div class="pbe-mobile-more-group">
                 <span class="pbe-mobile-more-label">Intelligence</span>
                 <div class="pbe-mobile-more-links">
-                  <a href="${PROPBET_LINKS.picks_mlb}" target="_blank" rel="noopener">MLB</a>
-                  <a href="${PROPBET_LINKS.picks_nfl}" target="_blank" rel="noopener">NFL</a>
-                  <a href="${PROPBET_LINKS.picks_ufc}" target="_blank" rel="noopener">UFC</a>
-                  <a href="${PROPBET_LINKS.picks_wnba}" target="_blank" rel="noopener">WNBA</a>
-                  <a href="${PROPBET_LINKS.picks_nba}" target="_blank" rel="noopener">NBA</a>
-                  <a href="${PROPBET_LINKS.picks_nhl}" target="_blank" rel="noopener">NHL</a>
+                  ${INTELLIGENCE_PRODUCTS.map(product => `<a href="${product.href}" ${ctaAttrs(INTELLIGENCE_SPORTS[product.key], { placement: 'mobile_more', pageType: pageTypeFor(path), slug: articleSlugFor(path) })}>${INTELLIGENCE_SPORTS[product.key].label}</a>`).join('')}
                 </div>
               </div>
             </div>
@@ -168,7 +144,7 @@ export function renderHeader() {
           <a href="/odds" class="nav-link edges-link ${isOdds ? 'active' : ''}">
             <span class="edges-bolt">⚡</span><span class="edges-label">Free Picks</span><span class="edges-count" id="edges-count" aria-live="polite"></span>
           </a>
-          ${renderIntelligenceSwitcher(sport)}
+          ${renderIntelligenceSwitcher(sport, pageTypeFor(path), articleSlugFor(path))}
         </div>
       </div>
     </header>
@@ -217,7 +193,7 @@ function renderStatsSwitcher(isLeaders, isStandings) {
   `;
 }
 
-function renderIntelligenceSwitcher(activeSport) {
+function renderIntelligenceSwitcher(activeSport, pageType, slug) {
   const selectedProduct = INTELLIGENCE_PRODUCTS.find(product => product.key === activeSport)
     || INTELLIGENCE_PRODUCTS.find(product => product.key === 'nfl')
     || INTELLIGENCE_PRODUCTS[0];
@@ -236,7 +212,7 @@ function renderIntelligenceSwitcher(activeSport) {
           <strong>Switch live intelligence product</strong>
         </div>
         ${INTELLIGENCE_PRODUCTS.map(product => `
-          <a class="pbe-intel-option${selectedProduct.key === product.key ? ' is-active' : ''}" href="${product.href}" target="_blank" rel="noopener" role="menuitem">
+          <a class="pbe-intel-option${selectedProduct.key === product.key ? ' is-active' : ''}" href="${product.href}" role="menuitem" ${ctaAttrs(INTELLIGENCE_SPORTS[product.key], { placement: 'header_switcher', pageType, slug })}>
             <span class="pbe-intel-option-icon" aria-hidden="true">${product.emoji}</span>
             <span class="pbe-intel-option-copy">
               <strong>${product.label}</strong>
@@ -249,6 +225,20 @@ function renderIntelligenceSwitcher(activeSport) {
       </div>
     </details>
   `;
+}
+
+// source_page_type for intelligence_cta_click.
+function pageTypeFor(path) {
+  if (path === '/' || path === '') return 'home';
+  if (/^\/news\/?$/.test(path) || /^\/news\/page\/\d+$/.test(path)) return 'news_index';
+  if (/^\/news\/[a-z]+(?:\/page\/\d+)?$/.test(path)) return 'sport_index';
+  if (/^\/news\/[a-z]+\/[^/]+$/.test(path)) return 'article';
+  const first = String(path).split('/').filter(Boolean)[0];
+  return first ? first.replace(/[^a-z0-9_-]/gi, '') : 'other';
+}
+
+function articleSlugFor(path) {
+  return pageTypeFor(path) === 'article' ? String(path).split('/').filter(Boolean)[2] || '' : '';
 }
 
 function sportPathActive(path, sport) {

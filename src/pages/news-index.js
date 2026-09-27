@@ -8,6 +8,7 @@ import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { renderArticleCard } from '../components/article-card.js';
 import { renderBreakingBanner } from '../components/breaking-banner.js';
+import { renderNetworkIntelligenceRow } from '../intelligence-cta.js';
 import {
   organizationSchema, websiteSchema, breadcrumbSchema,
   collectionPageSchema, injectSchemas,
@@ -77,6 +78,8 @@ export async function renderNewsIndex(root, requestedPage = 1) {
           <div id="latest-grid" class="article-grid fade-stagger">${cardSkeleton(PAGE_SIZE)}</div>
           <div id="pagination" class="pagination"></div>
         </section>
+
+        ${renderNetworkIntelligenceRow({ pageType: 'news_index' })}
       </div>
     </main>
     ${renderFooter()}

@@ -14,7 +14,8 @@
  *   - All indexable pages allow large image previews
  */
 
-import { next } from '@vercel/edge';
+import { next } from '@vercel/edge';
+
 import { proHeadMeta, proSocialTags, proJsonLd, proServerHtml, isCheckoutSuccess } from './src/pro-seo.js';
 import { assessArticleIntegrity, applyArticlePublicationPolicy, filterPublicArticles } from './news-integrity.js';
 import { buildEntityManifest } from './src/entity-graph/manifest.js';
@@ -28,6 +29,7 @@ import { rankRelated } from './src/entity-graph/related.js';
 import { teamQueryAbbreviations } from './src/entity-graph/entities.js';
 import { liveCastUrl } from './src/live-cast-routes.js';
 import { NETWORK_SOCIAL_IMAGE } from './src/social.js';
+import { renderServerIntelligenceLink } from './src/intelligence-cta.js';
 
 export const config = {
   matcher: [
@@ -816,6 +818,7 @@ function buildServerNewsListingHtml({ sport, page, articles, totalPages, canonic
       <p>PropBetEdge Newsroom</p>
       <h1>${escapeHtml(label)}${page > 1 ? ` — Page ${page}` : ''}</h1>
     </header>
+    ${sport ? renderServerIntelligenceLink(sport) : ''}
     <ol>${storyRows}</ol>
     <nav aria-label="News pagination">
       ${prev ? `<a rel="prev" href="${escapeAttr(prev)}">← Newer stories</a>` : ''}
@@ -997,6 +1000,7 @@ function buildServerArticleHtml(article, sport, seo, manifest, related) {
     ${hero}
     <section class="pbe-ssr-body">${bodyHtml}</section>
     ${buildServerRelatedHtml(related, sport)}
+    ${renderServerIntelligenceLink(sport)}
     <footer>
       <a href="${escapeAttr(seo.canonical)}">Permalink</a>
       ${safeHttpUrl(article.source_url) ? ` · <a href="${escapeAttr(article.source_url)}" rel="nofollow noopener">Original source</a>` : ''}
