@@ -128,8 +128,8 @@ async function resolveMeta(pathname, search = '') {
   if (pathname === '/' || pathname === '') {
     return {
       canonical: `${SITE}/`,
-      title: 'PropBetEdge — Sports News & Prop-Bet Intelligence',
-      description: 'Editorial sports journalism with AI prop-bet impact analysis. MLB, NFL, NBA, NHL.',
+      title: 'PropBetEdge — Live Sports Intelligence & Predictive Models',
+      description: 'Live sports intelligence, proprietary prediction models, Player DNA, PBEcast, news and deep analytics across MLB, NFL, NBA, WNBA, NHL, UFC and Tennis.',
       image: NETWORK_SOCIAL_IMAGE.url,
     };
   }
