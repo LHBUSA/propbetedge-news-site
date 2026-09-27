@@ -12,10 +12,62 @@ const FIRST_PARTY = { Origin:"https://propbetedge.ai", Referer:"https://propbete
 // Output classes that are never a published free pick.
 const NON_PICK_SCOPES = new Set(["tracking","validation","shadow","research","rehearsal_shadow","unpublished"]);
 
-/** Record class of a ledger entry. Only free_pick rows count toward the record. */
+// PRODUCT-VERSION BOUNDARY (ET date). Rows before it keep the product that generated them:
+//   MLB free pick = an official Algo HR selection; NFL free pick = a team pick (spread/ML/total).
+// On and after it:
+//   MLB = FEATURED PLAYER - editorial showcase, NOT an Algo pick, own record namespace, never in the free-picks record;
+//   NFL = up to two official TD Targets per slate day, own record namespace.
+// Historical rows are never rewritten; their product is derived from sport + snapshot when the snapshot predates it.
+const PRODUCT_BOUNDARY = "2026-09-28";
+const MLB_FEATURED_URL = "https://mlb.propbetedge.ai/api/free-featured-player";
+const NFL_TD_URL = "https://nfl.propbetedge.ai/api/pbe-touchdown-targets?view=free-sample";
+const PRODUCTS = {
+  boundary:PRODUCT_BOUNDARY,
+  MLB:{
+    before:{ selection_type:"algo", selection_source:"official_algo_free_sample", official_algo:true, product_version:"mlb-free-algo/legacy", record_namespace:"free_picks_record" },
+    after:{ selection_type:"featured_player", selection_source:"free_editorial_selector", official_algo:false, product_version:"mlb-free-featured-player/1.0.0", record_namespace:"free_featured_player_record", counts_toward_free_picks_record:false, max_per_day:1 },
+  },
+  NFL:{
+    before:{ selection_type:"team_pick", selection_source:"nfl_free_sample_team_picks", official:true, product_version:"nfl-free-team-picks/legacy", record_namespace:"free_picks_record" },
+    after:{ selection_type:"td_target", selection_source:"nfl_td_targets_free_sample", official:true, product_version:"nfl-free-td-targets/1.0.0", record_namespace:"free_td_target_record", max_per_slate:2 },
+  },
+};
+
+/** Structural product of a ledger row. New rows carry it in the snapshot; legacy rows derive it (never rewritten). */
+function productOf(entry:any) {
+  const snap = entry?.snapshot || {};
+  const sport = String(entry?.sport || "").toUpperCase();
+  if (snap.selection_type) {
+    return {
+      selection_type:String(snap.selection_type),
+      selection_source:snap.selection_source || null,
+      product_version:snap.product_version || null,
+      record_namespace:snap.record_namespace || "free_picks_record",
+      official_algo:snap.official_algo === true,
+      official:snap.selection_type === "featured_player" ? false : snap.official !== false,
+    };
+  }
+  if (sport === "MLB") return { ...PRODUCTS.MLB.before, official:true };
+  if (sport === "NFL") return { ...PRODUCTS.NFL.before, official_algo:false };
+  return { selection_type:"model_pick", selection_source:`${sport.toLowerCase()}_free_sample`, product_version:null, record_namespace:"free_picks_record", official_algo:false, official:true };
+}
+
+function isFeaturedPlayer(entry:any) {
+  return productOf(entry).selection_type === "featured_player";
+}
+
+function isTdTarget(entry:any) {
+  return productOf(entry).selection_type === "td_target";
+}
+
+/**
+ * Record class of a ledger entry. Only free_pick rows count toward the FREE PICKS record.
+ * free_featured_player rows are graded in their own namespace (free_featured_player_record) and never touch it.
+ */
 function recordClass(entry:any) {
   if (isNonPickOutput(entry?.snapshot || entry)) return "legacy_validation_signal";
   if (entry?.evidence?.withdrawn === true) return "withdrawn";
+  if (isFeaturedPlayer(entry)) return "free_featured_player";
   return "free_pick";
 }
 
@@ -72,6 +124,11 @@ function stableIdentity(sport:string, row:any) {
   const snap = row?.snapshot || {};
   const pickType = String(row?.pick_type || "PICK").toUpperCase();
 
+  if (s === "NFL" && snap.selection_type === "td_target") {
+    const gameId = String(snap.game_id || "").trim();
+    const playerId = String(snap.player_id || "").trim();
+    if (gameId && playerId) return `NFL|TD|${gameId}|${playerId}`;
+  }
   if (s === "MLB") {
     const gameDate = String(snap.game_date || row?.period_start || "");
     const player = String(snap.mlb_player_id || row?.source_record_id || row?.selection || "").trim().toLowerCase();
@@ -169,8 +226,8 @@ async function captureCurrent():Promise<CaptureReport> {
   const weeklyEnd = addDays(weeklyStartRaw, 6);
 
   const sources = await Promise.allSettled([
-    json("https://mlb.propbetedge.ai/api/free-hr-sample"),
-    json("https://nfl.propbetedge.ai/api/pbe-picks?view=free-sample"),
+    json(MLB_FEATURED_URL),
+    json(NFL_TD_URL),
     json("https://ufc.propbetedge.ai/api/ufc/free-sample"),
     json("https://wnba-api.propbetedge.ai/v1/pbe/free-sample"),
     Promise.allSettled([
@@ -198,9 +255,9 @@ async function captureCurrent():Promise<CaptureReport> {
     }
     keys.add(String(r.public_key));
   }
-  const nextSlot = (sport:string, period:string) => {
+  const nextSlot = (sport:string, period:string, cap = 2) => {
     const k = `${sport}|${period}`;
-    if ((active.get(k) || 0) >= 2) return null;
+    if ((active.get(k) || 0) >= cap) return null;
     const set = used.get(k) || new Set<number>();
     let i = 1;
     while (set.has(i)) i++;
@@ -208,7 +265,7 @@ async function captureCurrent():Promise<CaptureReport> {
     return i;
   };
 
-  const capture = async (sport:string, cadence:"daily"|"weekly", periodStart:string, periodEnd:string, items:any[]) => {
+  const capture = async (sport:string, cadence:"daily"|"weekly", periodStart:string, periodEnd:string, items:any[], cap = 2) => {
     const r = report[sport] = { status:"ok", offered:items.length, inserted:0, blocked_non_pick:0, blocked_unfrozen:0 };
     for (const item of items) {
       // Validation / tracking / shadow / research output is never a free pick.
@@ -221,7 +278,7 @@ async function captureCurrent():Promise<CaptureReport> {
       const rowForIdentity = { ...item, sport, cadence, period_start:itemPeriodStart, period_end:itemPeriodEnd };
       const identity = stableIdentity(sport, rowForIdentity);
       if (!item?.key || keys.has(item.key) || identities.has(identity)) continue;
-      const slot = nextSlot(sport, itemPeriodStart);
+      const slot = nextSlot(sport, itemPeriodStart, cap);
       if (!slot) continue;
 
       keys.add(item.key);
@@ -257,46 +314,70 @@ async function captureCurrent():Promise<CaptureReport> {
     console.error("tracker capture", sport, String(reason));
   };
 
+  // MLB: the Featured Player (not an Algo pick). One per ET day, captured only before its game starts,
+  // only on/after the product boundary, and only when the payload is structurally non-Algo.
   if (sources[0].status === "fulfilled") {
     const d:any = sources[0].value;
-    const raw = Array.isArray(d?.picks) ? d.picks : [d?.early_bird,d?.featured].filter(Boolean);
-    const seen = new Set<string>();
-    const items = raw.filter((p:any) => {
-      const id = String(p?.id || p?.mlb_player_id || p?.player_name || "");
-      if (!id || seen.has(id)) return false; seen.add(id); return true;
-    }).slice(0,2).map((p:any) => {
-      const gameDate = String(p.game_date || today);
-      return {
-        key:`MLB:${gameDate}:${p.id || p.mlb_player_id || p.player_name}:HR`,
-        source_record_id:p.id || null,
-        source_url:"https://mlb.propbetedge.ai/api/free-hr-sample",
-        pick_type:"HR",
-        selection:p.player_name,
-        opponent:p.opponent || null,
-        matchup:[p.team,p.opponent ? `vs ${p.opponent}` : null].filter(Boolean).join(" "),
+    const f:any = d?.featured;
+    const gameDate = String(d?.game_date || "");
+    const items = (d?.contract === "pbe-mlb-free-featured-player-v1" && d?.official_algo === false && f
+      && f.official_algo === false && f.selection_type === "featured_player" && f.featured_id && f.player_id
+      && gameDate >= PRODUCT_BOUNDARY && f.pregame === true
+      && (!f.game_start || Date.parse(f.game_start) > Date.now()))
+      ? [{
+        key:String(f.featured_id),
+        source_record_id:String(f.featured_id),
+        source_url:MLB_FEATURED_URL,
+        pick_type:"FEATURED_HR",
+        selection:f.player_name,
+        opponent:f.opponent || null,
+        matchup:[f.team_abbr, f.home_away === "away" ? "@" : "vs", f.opponent_abbr].filter(Boolean).join(" "),
+        event_start_at:f.game_start || null,
         period_start:gameDate,
         period_end:gameDate,
         published_at:d.generated_at || new Date().toISOString(),
-        snapshot:{ mlb_player_id:p.mlb_player_id, team:p.team, opponent:p.opponent, game_date:gameDate, phase:p.phase, score:p.model_score, hr_probability:p.hr_probability },
-      };
-    });
-    await capture("MLB","daily",today,today,items);
+        snapshot:{
+          selection_type:"featured_player", selection_source:"free_editorial_selector", official_algo:false,
+          product_version:d.product_version, record_namespace:"free_featured_player_record", rule_id:d.rule?.id || null,
+          mlb_player_id:f.player_id, player_image:f.player_image || null, position:f.position || null,
+          team:f.team, team_abbr:f.team_abbr, opponent:f.opponent, opponent_abbr:f.opponent_abbr, home_away:f.home_away,
+          game_date:gameDate, game_pk:f.game_pk, game_start:f.game_start || null, venue:f.venue || null,
+          opposing_pitcher:f.opposing_pitcher || null, lineup_slot:f.lineup_slot ?? null,
+          season_stats:f.season_stats || null, dna_version:f.dna_version || null, insights:f.insights || [],
+          player_dna_url:f.player_dna_url || null, official_picks_url:d.official_picks_url || null, selection:f.selection || null,
+        },
+      }]
+      : [];
+    await capture("MLB","daily",today,today,items,PRODUCTS.MLB.after.max_per_day);
   } else failed("MLB", sources[0].reason);
 
+  // NFL: up to two official, free TD Targets per slate day. Tracking-scope targets are never captured.
   if (sources[1].status === "fulfilled") {
     const d:any = sources[1].value;
-    const items = (d?.picks || []).slice(0,2).map((p:any) => ({
-      key:`NFL:${d.season}:${d.week}:${p.kickoff_ts}:${p.selection}`,
-      source_url:"https://nfl.propbetedge.ai/api/pbe-picks?view=free-sample",
-      pick_type:p.market || "GAME",
-      selection:p.selection,
-      opponent:null,
-      matchup:p.matchup?.away_team && p.matchup?.home_team ? `${p.matchup.away_team} @ ${p.matchup.home_team}` : null,
-      event_start_at:p.kickoff_ts || null,
-      published_at:p.issued_at || d.generated_at,
-      snapshot:p,
-    }));
-    await capture("NFL","weekly",weeklyStart,weeklyEnd,items);
+    const slate = String(d?.slate_date || "");
+    const items = (d?.contract === "pbe-nfl-free-td-targets-v1" && slate >= PRODUCT_BOUNDARY ? (d?.targets || []) : [])
+      .filter((t:any) => t?.selection_type === "td_target" && t?.official === true && t?.free === true
+        && String(t?.publication_scope || "").toLowerCase() === "official" && t?.target_id && t?.player_id
+        && (!t.kickoff_ts || Date.parse(t.kickoff_ts) > Date.now()))
+      .slice(0, PRODUCTS.NFL.after.max_per_slate)
+      .map((t:any) => ({
+        key:`NFL-TD:${t.target_id}`,
+        source_record_id:String(t.target_id),
+        source_url:NFL_TD_URL,
+        pick_type:"TD_TARGET",
+        selection:t.player_name,
+        opponent:t.opponent || null,
+        matchup:t.game_label || [t.team, t.home_away === "away" ? "@" : "vs", t.opponent].filter(Boolean).join(" "),
+        event_start_at:t.kickoff_ts || null,
+        period_start:String(t.slate_date || slate),
+        period_end:String(t.slate_date || slate),
+        published_at:t.issued_at || d.generated_at || new Date().toISOString(),
+        snapshot:{
+          ...t, selection_type:"td_target", selection_source:"nfl_td_targets_free_sample", official:true, free:true,
+          product_version:d.product_version || PRODUCTS.NFL.after.product_version, record_namespace:"free_td_target_record",
+        },
+      }));
+    await capture("NFL","daily",slate || today,slate || today,items,PRODUCTS.NFL.after.max_per_slate);
   } else failed("NFL", sources[1].reason);
 
   if (sources[2].status === "fulfilled") {
@@ -473,6 +554,55 @@ async function resolveMlb(entry:any) {
     result_at:entry.result === mlbResult && entry.result_at ? entry.result_at : checkedAt,
     score,
     evidence,
+  });
+}
+
+/**
+ * MLB Featured Player grading (free_featured_player_record only). Keyed on the frozen game_pk, so doubleheaders and
+ * same-name teams cannot cross. HIT = at least one HR in the official final box score; MISS = batted, no HR;
+ * VOID = no plate appearance, or the game was cancelled. Non-final / postponed / suspended stays PENDING (fail closed).
+ */
+async function resolveMlbFeatured(entry:any) {
+  const s = entry.snapshot || {};
+  const playerId = Number(s.mlb_player_id);
+  const gamePk = Number(s.game_pk);
+  if (!playerId || !gamePk) return;
+  const schedule:any = await json(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&gamePks=${gamePk}`);
+  const game = (schedule?.dates || []).flatMap((d:any) => d.games || []).find((g:any) => Number(g?.gamePk) === gamePk);
+  if (!game) return;
+  const detailedState = String(game?.status?.detailedState || "");
+  const abstractState = String(game?.status?.abstractGameState || "");
+  const cancelled = /cancel/i.test(detailedState);
+  const delayed = !cancelled && /postpon|delay|suspend|rain|weather/i.test(detailedState);
+  const final = !cancelled && !delayed && (abstractState === "Final" || /final|game over|completed/i.test(detailedState));
+  const checkedAt = new Date().toISOString();
+  const baseEvidence = {
+    provider:"MLB Stats API", record_namespace:"free_featured_player_record", game_pk:gamePk, player_id:playerId,
+    status:detailedState || null, checked_at:checkedAt,
+  };
+  if (cancelled) {
+    await patchEntry(entry.id,{ result:"VOID", result_at:entry.result === "VOID" && entry.result_at ? entry.result_at : checkedAt, score:null, evidence:{ ...baseEvidence, resolution:"game_cancelled" } });
+    return;
+  }
+  if (!final) {
+    await patchEntry(entry.id,{ result:"PENDING", result_at:null, score:null, evidence:{ ...baseEvidence, resolution:delayed ? "game_delayed_or_postponed" : "waiting_for_official_final" } });
+    return;
+  }
+  const box:any = await json(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`);
+  const player = box?.teams?.away?.players?.[`ID${playerId}`] || box?.teams?.home?.players?.[`ID${playerId}`] || null;
+  const pa = Number(player?.stats?.batting?.plateAppearances || 0);
+  const hrs = Number(player?.stats?.batting?.homeRuns || 0);
+  const awayName = game?.teams?.away?.team?.abbreviation || game?.teams?.away?.team?.name || "AWAY";
+  const homeName = game?.teams?.home?.team?.abbreviation || game?.teams?.home?.team?.name || "HOME";
+  const a = game?.teams?.away?.score, h = game?.teams?.home?.score;
+  const score = Number.isFinite(Number(a)) && Number.isFinite(Number(h)) ? `${awayName} ${a} · ${homeName} ${h}` : null;
+  const result = pa <= 0 ? "VOID" : hrs > 0 ? "WIN" : "LOSS";
+  await patchEntry(entry.id,{
+    result,
+    result_at:entry.result === result && entry.result_at ? entry.result_at : checkedAt,
+    score,
+    evidence:{ ...baseEvidence, resolution:pa <= 0 ? "did_not_bat" : "official_final", plate_appearances:pa, home_runs:hrs,
+      boxscore_url:`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore` },
   });
 }
 
@@ -736,6 +866,53 @@ async function resolveNfl(entry:any) {
   });
 }
 
+/**
+ * NFL free TD Target settlement (free_td_target_record). Reads the ONE canonical grade the TD grader wrote
+ * (nfl_prop_pick_grades, keyed by the target id) - the tracker never grades a TD target itself, so a player can never
+ * be graded twice across the free and paid surfaces, and grading semantics (offensive TD from the official final box
+ * score; did-not-play / withdrawn = void; postponed = stays open) stay exactly the grader's.
+ * A target replaced before kickoff (status superseded) is never graded: its free receipt is WITHDRAWN (void), and the
+ * replacement, if it qualifies, is captured under the next slot.
+ */
+async function resolveNflTd(entry:any) {
+  const snap = entry.snapshot || {};
+  const targetId = String(snap.target_id || entry.source_record_id || "").trim();
+  if (!targetId) return;
+  const rows = await sb(`nfl_prop_picks?id=eq.${encodeURIComponent(targetId)}&select=id,status,publication_scope,kickoff_ts,closed_at,grade:nfl_prop_pick_grades(result,final_value,graded_at,result_definition,non_offensive_td,settlement_note)`);
+  const pick = rows?.[0] || null;
+  const checkedAt = new Date().toISOString();
+  const base = { provider:"nfl_prop_pick_grades", record_namespace:"free_td_target_record", source_pick_id:targetId, checked_at:checkedAt };
+  if (!pick) {
+    await patchEntry(entry.id, { evidence:{ ...(entry.evidence || {}), ...base, match:"not_found" } });
+    return;
+  }
+  const grade = Array.isArray(pick.grade) ? pick.grade[0] : pick.grade;
+  if (!grade && String(pick.status || "").toLowerCase() === "superseded") {
+    await patchEntry(entry.id, {
+      result:"VOID",
+      result_at:checkedAt,
+      score:null,
+      evidence:{ ...(entry.evidence || {}), ...base, source_status:pick.status, withdrawn:true, withdrawn_reason:"target_replaced_before_kickoff", withdrawn_at:checkedAt, published_selection:entry.selection },
+    });
+    return;
+  }
+  if (!grade) {
+    await patchEntry(entry.id, { evidence:{ ...(entry.evidence || {}), ...base, source_status:pick.status } });
+    return;
+  }
+  const result = normalizeResult(grade.result);
+  const note = grade.settlement_note || {};
+  await patchEntry(entry.id, {
+    result,
+    result_at:grade.graded_at || checkedAt,
+    evidence:{
+      ...base, source_status:pick.status, result_definition:grade.result_definition || null,
+      offensive_tds:grade.final_value ?? null, non_offensive_td:grade.non_offensive_td ?? null,
+      participation:note.participation ?? null, void_reason:result === "VOID" ? (note.reason || note.void_reason || pick.status) : null,
+    },
+  });
+}
+
 async function resolveUfc(entry:any) {
   const snap = entry.snapshot || {};
   const pickName = String(snap.pick_name || entry.selection || "").trim();
@@ -891,9 +1068,11 @@ async function resolvePending() {
   for (const entry of rows || []) {
     if (entry?.evidence?.suppressed === true) continue;
     try {
-      if (entry.sport === "MLB") await resolveMlb(entry);
+      if (entry.sport === "MLB" && isFeaturedPlayer(entry)) await resolveMlbFeatured(entry);
+      else if (entry.sport === "MLB") await resolveMlb(entry);
       else if (entry.sport === "WNBA") await resolveWnba(entry);
       else if (entry.sport === "NHL") await resolveNhl(entry);
+      else if (entry.sport === "NFL" && isTdTarget(entry)) await resolveNflTd(entry);
       else if (entry.sport === "NFL") await resolveNfl(entry);
       else if (entry.sport === "UFC") await resolveUfc(entry);
       else await patchEntry(entry.id,{ evidence:{ ...(entry.evidence || {}), provider:"nba_free_picks_future_lane", checked_at:new Date().toISOString() } });
@@ -912,7 +1091,8 @@ async function resolvePending() {
   for (const entry of settledMlb || []) {
     if (entry?.evidence?.suppressed === true) continue;
     try {
-      await resolveMlb(entry);
+      if (isFeaturedPlayer(entry)) await resolveMlbFeatured(entry);
+      else await resolveMlb(entry);
     } catch (error) {
       console.error("tracker MLB settlement recheck", entry.id, String(error));
     }
@@ -949,13 +1129,26 @@ async function responsePayload(capture:CaptureReport = {}) {
   }
 
   const entries = [...canonical.values()]
-    .map((e:any) => ({ ...e, record_class:recordClass(e), counts_toward_record:recordClass(e) === "free_pick" }))
+    .map((e:any) => {
+      const product = productOf(e);
+      return {
+        ...e,
+        record_class:recordClass(e),
+        counts_toward_record:recordClass(e) === "free_pick",
+        selection_type:product.selection_type,
+        selection_source:product.selection_source,
+        product_version:product.product_version,
+        record_namespace:product.record_namespace,
+        official:product.official,
+        official_algo:product.official_algo,
+      };
+    })
     .sort((a:any,b:any) =>
       Date.parse(b.published_at || b.created_at || 0) - Date.parse(a.published_at || a.created_at || 0)
     );
   // Historical validation rows stay in `entries` for audit/history, but the
   // FREE PICKS record, by_sport and pending counts come from real picks only.
-  const publicPickEntries = entries.filter((e:any) => !isNonPickOutput(e.snapshot || e));
+  const publicPickEntries = entries.filter((e:any) => !isNonPickOutput(e.snapshot || e) && e.record_class !== "free_featured_player");
   const counted = publicPickEntries.filter((e:any) => ["WIN","LOSS","PUSH"].includes(e.result));
   const record = {
     wins: counted.filter((e:any) => e.result === "WIN").length,
@@ -974,19 +1167,53 @@ async function responsePayload(capture:CaptureReport = {}) {
       pending:sportEntries.filter((e:any) => e.result === "PENDING").length,
     };
   }
+  const tally = (rows:any[]) => {
+    const wins = rows.filter((e:any) => e.result === "WIN").length;
+    const losses = rows.filter((e:any) => e.result === "LOSS").length;
+    return {
+      wins, losses,
+      pushes:rows.filter((e:any) => e.result === "PUSH").length,
+      voids:rows.filter((e:any) => e.result === "VOID").length,
+      pending:rows.filter((e:any) => e.result === "PENDING").length,
+      hit_rate:wins + losses ? wins / (wins + losses) : null,
+    };
+  };
+  const seasonOf = (e:any) => String(e.period_start || "").slice(0,4);
+  const namespaced = (rows:any[]) => {
+    const seasons:Record<string,any> = {};
+    for (const y of [...new Set(rows.map(seasonOf))].filter(Boolean).sort()) seasons[y] = tally(rows.filter((e:any) => seasonOf(e) === y));
+    return { lifetime:tally(rows), by_season:seasons };
+  };
+  const featuredRows = entries.filter((e:any) => e.record_class === "free_featured_player");
+  const tdRows = publicPickEntries.filter((e:any) => e.selection_type === "td_target");
+  const records = {
+    // The FREE PICKS record (official model free picks). Never contains Featured Player rows.
+    free_picks_record:record,
+    // MLB Featured Player: engagement grading only. Not Algo, not Game Best, not the .290 record.
+    free_featured_player_record:{ sport:"MLB", product_version:PRODUCTS.MLB.after.product_version, official_algo:false, counts_toward_free_picks_record:false, ...namespaced(featuredRows) },
+    // NFL free TD Targets. Separate from legacy team picks and from the full paid TD Target record.
+    free_td_target_record:{ sport:"NFL", product_version:PRODUCTS.NFL.after.product_version, ...namespaced(tdRows) },
+    legacy:{
+      mlb_algo_free_picks:{ sport:"MLB", selection_type:"algo", before:PRODUCT_BOUNDARY, ...namespaced(publicPickEntries.filter((e:any) => e.sport === "MLB" && e.selection_type === "algo")) },
+      nfl_team_picks:{ sport:"NFL", selection_type:"team_pick", before:PRODUCT_BOUNDARY, ...namespaced(publicPickEntries.filter((e:any) => e.sport === "NFL" && e.selection_type === "team_pick")) },
+    },
+  };
   return {
     ok:true,
-    contract:"pbe-free-picks-tracker-v3",
+    contract:"pbe-free-picks-tracker-v4",
+    products:PRODUCTS,
+    records,
     epoch:EPOCH,
     generated_at:new Date().toISOString(),
     record,
-    cadence:{ weekly:["NFL","UFC"], daily:["MLB","WNBA","NHL","NBA"] },
+    cadence:{ weekly:["UFC"], daily:["MLB","NFL","WNBA","NHL","NBA"], legacy_weekly:["NFL team picks before the product boundary"] },
     by_sport:bySport,
     integrity:{
       visible_rows:visible.length,
       unique_public_picks:entries.length,
       duplicate_rows_ignored:Math.max(0, visible.length - entries.length),
       public_pick_entries:publicPickEntries.length,
+      featured_player_entries:featuredRows.length,
       excluded_non_pick_entries:entries.length - publicPickEntries.length,
       capture,
     },

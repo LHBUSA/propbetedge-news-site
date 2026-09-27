@@ -51,6 +51,50 @@ export function isSuppressed(entry) {
   return entry?.evidence?.suppressed === true;
 }
 
+// Product-version boundary (ET). Before it the MLB free pick was an official Algo HR selection and the NFL free pick
+// was a team pick. On/after it: MLB = Featured Player (editorial, NOT an Algo pick, own record namespace) and
+// NFL = up to two official TD Targets per slate day (own record namespace). Legacy rows are never relabelled.
+export const PRODUCT_BOUNDARY = '2026-09-28';
+
+/** Structural product of a ledger entry (tracker v4 sets it; older payloads are derived exactly like the tracker). */
+export function selectionType(entry) {
+  const explicit = entry?.selection_type || entry?.snapshot?.selection_type;
+  if (explicit) return String(explicit);
+  const sport = sportOf(entry);
+  if (sport === 'mlb') return 'algo';
+  if (sport === 'nfl') return 'team_pick';
+  return 'model_pick';
+}
+
+export function isFeaturedPlayer(entry) {
+  return selectionType(entry) === 'featured_player';
+}
+
+export function isTdTarget(entry) {
+  return selectionType(entry) === 'td_target';
+}
+
+/** Human product label for receipts/history. Legacy products say so. */
+export function productLabel(entry) {
+  switch (selectionType(entry)) {
+    case 'featured_player': return 'FEATURED PLAYER · NOT AN ALGO PICK';
+    case 'td_target': return 'FREE TD TARGET';
+    case 'algo': return 'ALGO HR PICK · LEGACY FREE PRODUCT';
+    case 'team_pick': return 'TEAM PICK · LEGACY FREE PRODUCT';
+    default: return 'FREE PICK';
+  }
+}
+
+/** A namespaced record from the tracker (records.<key>), or null on an older tracker. */
+export function namespacedRecord(tracker, key) {
+  const node = key.startsWith('legacy.') ? tracker?.records?.legacy?.[key.slice(7)] : tracker?.records?.[key];
+  const r = node?.lifetime;
+  if (!r) return null;
+  const wins = Number(r.wins || 0);
+  const losses = Number(r.losses || 0);
+  return { wins, losses, pushes: Number(r.pushes || 0), voids: Number(r.voids || 0), pending: Number(r.pending || 0), record: `${wins}–${losses}`, hitRate: wins + losses ? (wins / (wins + losses)) * 100 : null };
+}
+
 /** The publication class of a ledger entry or a raw feed item. */
 export function publicationScope(item) {
   const snap = item?.snapshot || item || {};
@@ -71,6 +115,8 @@ export function isNonPickOutput(item) {
  * never render as a current pick and never appear in Latest Results.
  */
 export function countsTowardRecord(entry) {
+  // The MLB Featured Player has its own record namespace and never counts toward the FREE PICKS record.
+  if (isFeaturedPlayer(entry)) return false;
   if (entry?.counts_toward_record === false && entry?.record_class !== 'withdrawn') return false;
   return !isNonPickOutput(entry);
 }
@@ -158,7 +204,7 @@ export function buildFreeBoard(tracker, now = new Date(), liveHints = new Map())
     const hint = liveHints.get(entry.public_key) || null;
     const state = entryState(entry, now, hint);
     if (state === 'SETTLED') {
-      if (!countsTowardRecord(entry)) { excluded.push({ entry, reason: 'non_pick_output' }); continue; }
+      if (!countsTowardRecord(entry) && !isFeaturedPlayer(entry)) { excluded.push({ entry, reason: 'non_pick_output' }); continue; }
       // Event date, not result_at: older MLB rows had result_at rewritten on
       // every recheck, so result_at cannot say which day a pick belonged to.
       if (eventDate(entry) === today) settledToday.push(entry);
@@ -214,7 +260,8 @@ export function buildFreeBoard(tracker, now = new Date(), liveHints = new Map())
  */
 export function latestResults(tracker, { max = 6, perSport = 2 } = {}) {
   const ts = (entry) => Date.parse(entry.result_at || entry.published_at || 0) || 0;
-  const settled = publicPickEntries(tracker)
+  // Featured Player receipts are shown (labelled) but live in their own record namespace.
+  const settled = ledgerEntries(tracker).filter((entry) => countsTowardRecord(entry) || isFeaturedPlayer(entry))
     .filter((entry) => ['WIN', 'LOSS', 'PUSH', 'VOID'].includes(upper(entry.result)))
     .sort((a, b) => String(eventDate(b) || '').localeCompare(String(eventDate(a) || '')) || ts(b) - ts(a));
   const taken = new Map();

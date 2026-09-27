@@ -22,13 +22,15 @@ import {
 } from '../schema.js';
 import {
   FREE_SPORTS, RESULT_LABELS, buildFreeBoard, checkFreePickInvariant, etDate,
-  eventDate, eventStart, isNonPickOutput, latestResults, recordSummary, sportRecord,
-  trackerEntryMatchesCard,
+  eventDate, eventStart, isFeaturedPlayer, isNonPickOutput, isTdTarget, latestResults, namespacedRecord,
+  productLabel, recordSummary, sportRecord, trackerEntryMatchesCard,
 } from '../lib/free-board.js';
 
-const MLB_HR_SAMPLE_URL = 'https://mlb.propbetedge.ai/api/free-hr-sample';
-const MLB_ODDS_CACHE_URL = 'https://propbetedge-odds-cache.sales-fd3.workers.dev';
-const NFL_SAMPLE_URL = 'https://nfl.propbetedge.ai/api/pbe-picks?view=free-sample';
+// MLB free product = Featured Player (NOT an Algo pick). NFL free product = up to two official TD Targets.
+const MLB_FEATURED_URL = 'https://mlb.propbetedge.ai/api/free-featured-player';
+const MLB_OFFICIAL_PICKS_URL = 'https://mlb.propbetedge.ai/hr-picks';
+const NFL_TD_URL = 'https://nfl.propbetedge.ai/api/pbe-touchdown-targets?view=free-sample';
+const NFL_TD_PRODUCT_URL = PROPBET_LINKS.picks_nfl;
 const UFC_SAMPLE_URL = 'https://ufc.propbetedge.ai/api/ufc/free-sample';
 const WNBA_SAMPLE_URL = 'https://wnba-api.propbetedge.ai/v1/pbe/free-sample';
 const NHL_SAMPLE_URL = 'https://nhl-api.propbetedge.ai/nhl/picks/free-sample';
@@ -116,18 +118,17 @@ async function loadAndRender() {
   }
   // The tracker GET captures the current public picks into the ledger before
   // it answers, so it runs alongside the feeds rather than after them.
-  const [tracker, mlbHr, nfl, ufc, wnba, nhl] = await Promise.allSettled([
+  const [tracker, mlb, nfl, ufc, wnba, nhl] = await Promise.allSettled([
     fetchJson(FREE_TRACKER_URL),
-    fetchJson(`${MLB_HR_SAMPLE_URL}?date=${encodeURIComponent(etDate())}`),
-    fetchJson(NFL_SAMPLE_URL),
+    fetchJson(MLB_FEATURED_URL),
+    fetchJson(NFL_TD_URL),
     fetchJson(UFC_SAMPLE_URL),
     fetchJson(WNBA_SAMPLE_URL),
     loadNhlSource(),
   ]);
 
-  const mlbOdds = await loadMlbOddsSnapshots(mlbHr);
   _lastPayload = {
-    mlb: buildMlbSource(mlbHr, mlbOdds),
+    mlb: mlb.status === 'fulfilled' ? normalizeMlbFeatured(mlb.value) : sourceFailure('mlb', mlb.reason),
     nfl: nfl.status === 'fulfilled' ? normalizeNfl(nfl.value) : sourceFailure('nfl', nfl.reason),
     ufc: ufc.status === 'fulfilled' ? normalizeUfc(ufc.value) : sourceFailure('ufc', ufc.reason),
     wnba: wnba.status === 'fulfilled' ? normalizeWnba(wnba.value) : sourceFailure('wnba', wnba.reason),
@@ -180,57 +181,38 @@ function sourceFailure(sport, error) {
 /* ------------------------------------------------------------------ feeds
  * Feed cards are enrichment + diagnostics only. They are never drawn. */
 
-function buildMlbSource(hrResult, oddsSnapshots = {}) {
-  const available = hrResult.status === 'fulfilled';
-  const data = available ? hrResult.value : {};
-  const rawPicks = Array.isArray(data?.picks)
-    ? data.picks
-    : [data?.early_bird, data?.featured].filter(Boolean);
-
-  const seen = new Set();
-  const picks = rawPicks.filter((pick) => {
-    const key = String(pick?.mlb_player_id || pick?.player_name || pick?.id || '').trim().toLowerCase();
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  }).slice(0, 2);
-
-  return {
+function normalizeMlbFeatured(data) {
+  const f = data?.featured;
+  // Structural guard: only a non-Algo Featured Player payload can enrich the MLB free card.
+  const ok = data?.contract === 'pbe-mlb-free-featured-player-v1' && data?.official_algo === false && f?.official_algo === false;
+  const cards = ok && f?.player_name ? [{
     sport: 'mlb',
-    cards: picks.map((pick) => normalizeMlbHrPick(pick, data, oddsSnapshots.batter_home_runs)).filter(Boolean),
-    generatedAt: data?.generated_at || null,
-    unavailable: !available,
-  };
-}
-
-function normalizeMlbHrPick(pick, data, oddsSnapshot) {
-  if (!pick?.player_name) return null;
-  const live = findBestMlbOffer(oddsSnapshot, 'batter_home_runs', pick.player_name, 0.5, 'Over');
-  return {
-    sport: 'mlb',
-    title: pick.player_name,
-    odds: live ? americanOdds(live.price) : null,
-    oddsLabel: live ? (live.bookTitle || live.bookKey || 'Live odds') : null,
-    lifecycle: pick.phase || null,
-    trackerPeriod: pick.game_date || data?.game_date || null,
-    trackerSourceRecordId: pick.id || null,
-    trackerPlayerId: pick.mlb_player_id ? String(pick.mlb_player_id) : null,
-    href: data?.full_product_url || PROPBET_LINKS.hr_targets || SPORTS.mlb.href,
-    media: pick.player_image ? { kind: 'portrait', images: [pick.player_image], credit: 'MLB' } : null,
-  };
+    title: f.player_name,
+    trackerKey: f.featured_id,
+    trackerPeriod: data.game_date || null,
+    trackerPlayerId: f.player_id ? String(f.player_id) : null,
+    href: f.player_dna_url || SPORTS.mlb.href,
+    media: f.player_image ? { kind: 'portrait', images: [f.player_image], credit: 'MLB' } : null,
+  }] : [];
+  return { sport: 'mlb', cards, generatedAt: data?.generated_at || null, unavailable: false, emptyState: data?.empty_state || null };
 }
 
 function normalizeNfl(data) {
-  const cards = (Array.isArray(data?.picks) ? data.picks : []).slice(0, 2).map((pick) => ({
+  const ok = data?.contract === 'pbe-nfl-free-td-targets-v1';
+  const cards = (ok && Array.isArray(data?.targets) ? data.targets : []).slice(0, 2).map((t) => ({
     sport: 'nfl',
-    title: pick.selection || 'NFL pick',
-    lifecycle: pick.lifecycle || null,
-    publication_scope: pick.publication_scope || null,
-    scope_label: pick.scope_label || null,
-    trackerEventStartAt: pick.kickoff_ts || null,
-    href: data?.full_product_url || SPORTS.nfl.href,
+    title: t.player_name || 'TD Target',
+    trackerKey: t.target_id ? `NFL-TD:${t.target_id}` : null,
+    trackerEventStartAt: t.kickoff_ts || null,
+    publication_scope: t.publication_scope || null,
+    href: data?.full_product_url || NFL_TD_PRODUCT_URL,
+    media: t.headshot_url ? { kind: 'portrait', images: [t.headshot_url], credit: 'NFL' } : null,
   }));
-  return { sport: 'nfl', cards, generatedAt: data?.generated_at || null, unavailable: false };
+  return {
+    sport: 'nfl', cards, generatedAt: data?.generated_at || null, unavailable: !ok,
+    eligibility: data?.eligibility || null, emptyState: data?.empty_state || null,
+    productUrl: data?.full_product_url || NFL_TD_PRODUCT_URL,
+  };
 }
 
 function normalizeUfc(data) {
@@ -337,13 +319,48 @@ function cardFromEntry(entry, state, payload) {
     nonPick: isNonPickOutput(entry),
   };
 
+  if (sport === 'mlb' && isFeaturedPlayer(entry)) {
+    const pitcher = snap.opposing_pitcher?.name ? `vs ${snap.opposing_pitcher.name}${snap.opposing_pitcher.hand ? ` (${snap.opposing_pitcher.hand}HP)` : ''}` : null;
+    return {
+      ...base,
+      kicker: 'MLB · FREE PLAYER PICK',
+      label: "Today's Featured Player",
+      matchup: [entry.matchup, formatDateTime(start)].filter(Boolean).join(' · '),
+      detail: [snap.position, snap.lineup_slot ? `Batting ${ordinal(snap.lineup_slot)}` : null, pitcher].filter(Boolean).join(' · '),
+      insights: (Array.isArray(snap.insights) ? snap.insights : []).slice(0, 4),
+      insightsTitle: 'Why this player is interesting today',
+      metrics: [],
+      note: 'Editorial showcase from public season, Player DNA and matchup data. Not an official Algo Pick; no model probability.',
+      media: base.media || (snap.player_image ? { kind: 'portrait', images: [snap.player_image], credit: 'MLB' } : null),
+      portrait: true,
+      ctaLabel: "See today's official Algo Picks →",
+      ctaHref: snap.official_picks_url || MLB_OFFICIAL_PICKS_URL,
+      secondary: snap.player_dna_url ? { label: 'Player DNA', href: snap.player_dna_url } : null,
+    };
+  }
+  if (sport === 'nfl' && isTdTarget(entry)) {
+    return {
+      ...base,
+      kicker: 'NFL · FREE TD TARGET',
+      label: 'Anytime TD target',
+      matchup: [entry.matchup, formatDateTime(start)].filter(Boolean).join(' · '),
+      detail: [snap.position, snap.team].filter(Boolean).join(' · '),
+      insights: (Array.isArray(snap.insights) ? snap.insights : []).slice(0, 3),
+      insightsTitle: 'Why this target',
+      metrics: [],
+      media: base.media || (snap.headshot_url ? { kind: 'portrait', images: [snap.headshot_url], credit: 'NFL' } : null),
+      portrait: true,
+      ctaLabel: 'Unlock all TD Targets →',
+      ctaHref: _lastPayload?.nfl?.productUrl || NFL_TD_PRODUCT_URL,
+    };
+  }
   if (sport === 'mlb') {
     const cached = _mediaCache.get(`mlb:${entry.selection}`);
     return {
       ...base,
-      kicker: 'MLB · HR PICK',
+      kicker: 'MLB · ALGO HR PICK (LEGACY)',
       matchup: [entry.matchup, 'To hit a home run'].filter(Boolean).join(' · '),
-      market: { value: feed?.odds || '—', note: feed?.oddsLabel || 'Price pending' },
+      market: { value: '—', note: 'Legacy free product' },
       model: probabilityPct(snap.hr_probability),
       media: base.media || cached || null,
       portrait: true,
@@ -352,7 +369,7 @@ function cardFromEntry(entry, state, payload) {
   if (sport === 'nfl') {
     return {
       ...base,
-      kicker: `NFL · ${prettyMarket(snap.market).toUpperCase() || 'GAME'} PICK`,
+      kicker: `NFL · ${prettyMarket(snap.market).toUpperCase() || 'GAME'} PICK (LEGACY)`,
       matchup: [entry.matchup, formatDateTime(start)].filter(Boolean).join(' · '),
       market: { value: americanOdds(snap.odds), note: 'At publication' },
       model: probabilityPct(snap.model_probability),
@@ -410,7 +427,7 @@ async function enrichMedia() {
   const jobs = [];
   for (const { entry } of board.current) {
     const sport = String(entry.sport || '').toLowerCase();
-    if (sport !== 'mlb' && sport !== 'ufc') continue;
+    if ((sport !== 'mlb' && sport !== 'ufc') || isFeaturedPlayer(entry)) continue;
     const key = `${sport}:${entry.selection}`;
     if (_mediaCache.has(key) || matchFeedCard(entry, _lastPayload)?.media) continue;
     _mediaCache.set(key, null);
@@ -437,7 +454,7 @@ function renderHero() {
     <header class="fp-hero">
       <h1 class="fp-hero__title">Free Picks</h1>
       <p class="fp-hero__lede">Real public calls. Permanent results.</p>
-      <p class="fp-hero__sub">Every pick shown here is frozen when published and stays in the public record.</p>
+      <p class="fp-hero__sub">MLB Featured Player, 2 free NFL TD Targets and free UFC, WNBA and NHL model picks. Every card is frozen when published and stays in the public ledger.</p>
       <div class="fp-hero__meta">
         <span id="odds-counts">Loading the public ledger…</span>
         <span class="fp-dot" aria-hidden="true">·</span>
@@ -563,11 +580,12 @@ function renderAvatar(card) {
 }
 
 function renderCard(card) {
-  const metrics = [
+  const metrics = card.metrics || [
     { label: 'Market', value: card.market?.value || '—', note: card.market?.note || '' },
     { label: 'Model', value: card.model || '—' },
   ];
-  if (card.edge) metrics.push({ label: 'Edge', value: card.edge, edge: true });
+  if (!card.metrics && card.edge) metrics.push({ label: 'Edge', value: card.edge, edge: true });
+  const insights = (card.insights || []).filter((i) => i?.label && i?.value);
   return `
     <article class="fp-card" data-sport="${escapeAttr(card.sport)}" data-state="${escapeAttr(card.tone)}" data-public-key="${escapeAttr(card.publicKey)}">
       <header class="fp-card__top">
@@ -577,10 +595,18 @@ function renderCard(card) {
       <div class="fp-card__id">
         ${renderAvatar(card)}
         <div class="fp-card__names">
+          ${card.label ? `<span class="fp-card__label">${escapeHtml(card.label)}</span>` : ''}
           <h3 class="fp-card__selection">${escapeHtml(card.selection)}</h3>
           <p class="fp-card__matchup">${escapeHtml(card.matchup || '')}</p>
+          ${card.detail ? `<p class="fp-card__detail">${escapeHtml(card.detail)}</p>` : ''}
         </div>
       </div>
+      ${insights.length ? `
+      <div class="fp-card__insights">
+        <h4>${escapeHtml(card.insightsTitle || 'Why this pick')}</h4>
+        <ul>${insights.map((i) => `<li><b>${escapeHtml(i.label)}</b><span>${escapeHtml(i.value)}</span></li>`).join('')}</ul>
+      </div>` : ''}
+      ${metrics.length ? `
       <dl class="fp-card__metrics fp-card__metrics--${metrics.length}">
         ${metrics.map((m) => `
           <div class="${m.edge ? 'is-edge' : ''}">
@@ -588,8 +614,12 @@ function renderCard(card) {
             <dd>${escapeHtml(m.value)}</dd>
             ${m.note ? `<small>${escapeHtml(m.note)}</small>` : ''}
           </div>`).join('')}
-      </dl>
-      <a class="fp-card__cta" href="${escapeAttr(card.href)}" target="_blank" rel="noopener">Open full intelligence →</a>
+      </dl>` : ''}
+      ${card.note ? `<p class="fp-card__note">${escapeHtml(card.note)}</p>` : ''}
+      <div class="fp-card__actions">
+        <a class="fp-card__cta" href="${escapeAttr(card.ctaHref || card.href)}" target="_blank" rel="noopener" data-pbe-placement="free_picks_card_${escapeAttr(card.sport)}">${escapeHtml(card.ctaLabel || 'Open full intelligence →')}</a>
+        ${card.secondary ? `<a class="fp-card__cta fp-card__cta--ghost" href="${escapeAttr(card.secondary.href)}" target="_blank" rel="noopener">${escapeHtml(card.secondary.label)}</a>` : ''}
+      </div>
     </article>
   `;
 }
@@ -604,9 +634,13 @@ function renderSportStatus(sport, board, tracker) {
     const losses = settled.filter((e) => e.result === 'LOSS').length;
     copy = `Today's ${settled.length} free ${settled.length === 1 ? 'call is' : 'calls are'} settled (${wins}–${losses}). Results are below and in the record.`;
   } else if (sport === 'mlb') {
-    copy = 'No MLB HR pick currently qualifies. The next model cycle publishes automatically if one clears the threshold.';
-  } else if (sport === 'nfl' && (feed?.cards || []).some(isNonPickOutput)) {
-    copy = 'No official NFL pick is published right now. Validation signals are not free picks.';
+    copy = feed?.emptyState?.code === 'no_games'
+      ? 'No MLB games today, so no Featured Player. It returns with the next slate.'
+      : "Today's Featured Player posts before first pitch. Official Algo Picks are members-only.";
+  } else if (sport === 'nfl') {
+    copy = feed?.eligibility?.gate_open === false
+      ? 'No qualified free TD targets yet. Free TD Targets come only from official targets, and TD Targets are still in their public tracking phase.'
+      : 'No qualified free TD targets yet. Up to two post automatically when official targets qualify for the slate.';
   } else {
     copy = `No current ${meta.label} free pick. The next published call appears here automatically.`;
   }
@@ -618,6 +652,25 @@ function renderSportStatus(sport, board, tracker) {
       <span class="fp-status__rec">${escapeHtml(rec.record)}</span>
     </div>
   `;
+}
+
+function renderNamespacedRecords(tracker) {
+  const featured = namespacedRecord(tracker, 'free_featured_player_record');
+  const td = namespacedRecord(tracker, 'free_td_target_record');
+  const mlbAlgo = namespacedRecord(tracker, 'legacy.mlb_algo_free_picks');
+  const nflTeam = namespacedRecord(tracker, 'legacy.nfl_team_picks');
+  if (!featured && !td) return '';
+  const row = (label, rec, note) => rec ? `<li><span>${escapeHtml(label)}</span><b>${escapeHtml(rec.record)}</b>${rec.pending ? `<small>${rec.pending} pending</small>` : ''}${note ? `<small>${escapeHtml(note)}</small>` : ''}</li>` : '';
+  return `
+      <div class="fp-record__products">
+        <h3>Free products · separate records</h3>
+        <ul class="fp-record__sports">
+          ${row('MLB Featured Player', featured, 'Engagement record · not an Algo record')}
+          ${row('NFL Free TD Targets', td, 'Since Sep 28, 2026')}
+          ${row('MLB Algo free picks (legacy)', mlbAlgo, 'Before Sep 28, 2026')}
+          ${row('NFL team picks (legacy)', nflTeam, 'Before Sep 28, 2026')}
+        </ul>
+      </div>`;
 }
 
 function renderRecord(tracker) {
@@ -635,6 +688,7 @@ function renderRecord(tracker) {
           return `<li><span>${SPORTS[sport].label}</span><b>${escapeHtml(s.record)}</b>${s.pending ? `<small>${s.pending} pending</small>` : ''}</li>`;
         }).join('')}
       </ul>
+      ${renderNamespacedRecords(tracker)}
       <div class="fp-record__foot">
         <a href="/odds/history">Full history →</a>
         <span>Started Sep 20, 2026 · no backfill</span>
@@ -657,7 +711,7 @@ function renderLatestResults(tracker) {
             <span class="fp-receipt__badge is-${escapeAttr(label.toLowerCase())}">${escapeHtml(label)}</span>
             <div class="fp-receipt__body">
               <b>${escapeHtml(entry.selection || 'Free pick')}</b>
-              <small>${escapeHtml([entry.sport, entry.matchup || (entry.opponent ? `vs ${entry.opponent}` : null), entry.score].filter(Boolean).join(' · '))}</small>
+              <small>${escapeHtml([entry.sport, isFeaturedPlayer(entry) || isTdTarget(entry) ? productLabel(entry).split(' · ')[0] : null, entry.matchup || (entry.opponent ? `vs ${entry.opponent}` : null), entry.score].filter(Boolean).join(' · '))}</small>
             </div>
             <time datetime="${escapeAttr(eventDate(entry) || '')}">${escapeHtml(formatDate(eventDate(entry)))}</time>
           </li>`;
@@ -672,8 +726,10 @@ function renderHowItWorks() {
     <section class="fp-section fp-how" aria-labelledby="fp-how-title">
       <h2 id="fp-how-title" class="fp-section__title">How it works</h2>
       <ul class="fp-how__list">
-        <li><b>Published by each sport's model.</b> MLB, NFL, UFC, WNBA and NHL each publish from their own model and rules. No filler picks.</li>
-        <li><b>Frozen on publication.</b> The pick, price and model number are recorded the moment a pick appears here. Only the result can change.</li>
+        <li><b>MLB Featured Player.</b> One established hitter a day, chosen from public season, Player DNA and matchup data. It is not an official Algo Pick and has its own record. Official Algo Picks are members-only.</li>
+        <li><b>NFL: 2 Free TD Targets.</b> Up to two official Touchdown Targets per slate, with their own record. Never padded: if fewer qualify, fewer are shown.</li>
+        <li><b>UFC, WNBA and NHL.</b> Each publishes from its own model and rules. No filler picks.</li>
+        <li><b>Frozen on publication.</b> Each card is recorded the moment it appears here. Only the result can change.</li>
         <li><b>Graded from official results.</b> HIT, MISS, PUSH or VOID lands in the public record automatically.</li>
       </ul>
     </section>
@@ -685,7 +741,7 @@ function renderAllAccessCta() {
     <section class="fp-cta">
       <div>
         <strong>Want the full card?</strong>
-        <span>All Access unlocks every pick, every sport, with full model context.</span>
+        <span>All Access unlocks every official Algo Pick and Game Best, the full TD Target board, probabilities, Matchup DNA and every sport's model picks.</span>
       </div>
       <a class="fp-cta__btn" href="/pro" data-pbe-placement="free_picks_all_access">See All Access</a>
       <small class="fp-cta__fine">21+ where applicable · Odds move · Model output is not a guarantee · Bet responsibly</small>
@@ -713,7 +769,9 @@ function injectEdgeSchema(cards) {
       item: {
         '@type': 'SportsEvent',
         name: `${card.selection} — ${card.matchup}`,
-        description: `PropBetEdge free ${card.sport.toUpperCase()} pick`,
+        description: card.kicker === 'MLB · FREE PLAYER PICK'
+          ? 'PropBetEdge free MLB Featured Player (editorial showcase, not an official Algo Pick)'
+          : card.kicker === 'NFL · FREE TD TARGET' ? 'PropBetEdge free NFL TD Target' : `PropBetEdge free ${card.sport.toUpperCase()} pick`,
         sport: sportName[card.sport] || card.sport.toUpperCase(),
       },
     })),
@@ -721,62 +779,15 @@ function injectEdgeSchema(cards) {
   document.head.appendChild(tag);
 }
 
-/* ------------------------------------------------------------ MLB market */
-
-async function loadMlbOddsSnapshots(hrResult) {
-  const data = hrResult.status === 'fulfilled' ? hrResult.value : null;
-  const picks = Array.isArray(data?.picks)
-    ? data.picks
-    : [data?.early_bird, data?.featured].filter(Boolean);
-  if (!picks.some((pick) => pick?.player_name)) return {};
-  try {
-    const snapshot = await fetchJson(`${MLB_ODDS_CACHE_URL}?market=batter_home_runs&limit=20`);
-    return { batter_home_runs: snapshot };
-  } catch (error) {
-    console.warn('[odds] MLB live home-run market unavailable:', error);
-    return {};
-  }
-}
-
-function findBestMlbOffer(snapshot, marketKey, playerName, expectedLine, side = 'Over') {
-  const events = Array.isArray(snapshot?.data) ? snapshot.data : [];
-  const target = normalizeMlbPlayerName(playerName);
-  const line = Number(expectedLine);
-  const hasLine = Number.isFinite(line);
-  const wantedSide = String(side || 'Over').toLowerCase();
-  const offers = [];
-
-  for (const event of events) {
-    for (const book of (event.bookmakers || [])) {
-      for (const market of (book.markets || [])) {
-        if (market.key !== marketKey) continue;
-        const selected = (market.outcomes || []).find((outcome) => {
-          if (!target || normalizeMlbPlayerName(outcome.description) !== target) return false;
-          if (String(outcome.name || '').toLowerCase() !== wantedSide) return false;
-          if (!hasLine) return true;
-          const point = Number(outcome.point);
-          return Number.isFinite(point) && Math.abs(point - line) < 0.001;
-        });
-        if (!selected || !Number.isFinite(Number(selected.price))) continue;
-        offers.push({ price: Number(selected.price), bookKey: book.key, bookTitle: book.title });
-      }
-    }
-  }
-  return offers.sort((a, b) => b.price - a.price)[0] || null;
-}
-
-function normalizeMlbPlayerName(value) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/\b(jr|sr|ii|iii|iv)\b\.?/g, '')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-    .replace(/\s+/g, ' ');
-}
 
 /* ------------------------------------------------------------ formatting */
+
+function ordinal(n) {
+  const v = Number(n);
+  const s = ['th', 'st', 'nd', 'rd'];
+  const m = v % 100;
+  return `${v}${s[(m - 20) % 10] || s[m] || s[0]}`;
+}
 
 function americanOdds(value) {
   if (value == null || value === '') return '—';

@@ -6,8 +6,8 @@ import { ad_header_banner, PROPBET_LINKS } from '../ads-config.js';
 import { renderScoreStripShell, mountScoreStrip } from './score-strip.js';
 import { INTELLIGENCE_SPORTS, INTELLIGENCE_ORDER, ctaAttrs } from '../intelligence-cta.js';
 
-const MLB_HR_SAMPLE_URL = 'https://mlb.propbetedge.ai/api/free-hr-sample';
-const NFL_SAMPLE_URL = 'https://nfl.propbetedge.ai/api/pbe-picks?view=free-sample';
+const MLB_FEATURED_URL = 'https://mlb.propbetedge.ai/api/free-featured-player';
+const NFL_TD_URL = 'https://nfl.propbetedge.ai/api/pbe-touchdown-targets?view=free-sample';
 const UFC_SAMPLE_URL = 'https://ufc.propbetedge.ai/api/ufc/free-sample';
 const WNBA_SAMPLE_URL = 'https://wnba-api.propbetedge.ai/v1/pbe/free-sample';
 const NHL_SAMPLE_URL = 'https://nhl-api.propbetedge.ai/nhl/picks/free-sample';
@@ -253,21 +253,21 @@ function inferSport(path) {
 async function fetchEdgeCount() {
   try {
     const results = await Promise.allSettled([
-      fetch(MLB_HR_SAMPLE_URL, { credentials: 'omit' }).then(r => r.ok ? r.json() : null),
-      fetch(NFL_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
+      fetch(MLB_FEATURED_URL, { credentials: 'omit' }).then(r => r.ok ? r.json() : null),
+      fetch(NFL_TD_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
       fetch(UFC_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
       fetch(WNBA_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
       fetch(NHL_SAMPLE_URL, { cache: 'no-store', credentials: 'omit' }).then(r => r.ok ? r.json() : null),
     ]);
     const body = (index) => results[index].status === 'fulfilled' ? results[index].value : null;
-    const mlbHr = body(0);
+    const mlbFeatured = body(0);
     const nfl = body(1);
     const ufc = body(2);
     const wnba = body(3)?.data || body(3);
     const nhl = body(4);
     const count =
-      Math.min(2, Array.isArray(mlbHr?.picks) ? mlbHr.picks.length : 0)
-      + Math.min(2, Array.isArray(nfl?.picks) ? nfl.picks.length : 0)
+      (mlbFeatured?.featured ? 1 : 0)
+      + Math.min(2, Array.isArray(nfl?.targets) ? nfl.targets.length : 0)
       + (ufc?.pick ? 1 : 0)
       + Math.min(2, Array.isArray(wnba?.picks) ? wnba.picks.length : 0)
       + Math.min(2, Array.isArray(nhl?.picks) ? nhl.picks.length : 0);

@@ -8,7 +8,7 @@
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { escapeHtml } from '../components/article-card.js';
-import { countsTowardRecord } from '../lib/free-board.js';
+import { countsTowardRecord, isFeaturedPlayer, isTdTarget, namespacedRecord, productLabel, selectionType } from '../lib/free-board.js';
 import {
   organizationSchema, websiteSchema, breadcrumbSchema, injectSchemas,
 } from '../schema.js';
@@ -17,7 +17,7 @@ const TRACKER_URL = 'https://tkmlnhmylqnttmnsnief.supabase.co/functions/v1/free-
 
 const SPORTS = Object.freeze({
   MLB: { emoji: '⚾', label: 'MLB', cadence: 'DAILY' },
-  NFL: { emoji: '🏈', label: 'NFL', cadence: 'WEEKLY' },
+  NFL: { emoji: '🏈', label: 'NFL', cadence: 'DAILY SLATE' },
   UFC: { emoji: '🥊', label: 'UFC', cadence: 'WEEKLY' },
   WNBA: { emoji: '🏀', label: 'WNBA', cadence: 'DAILY' },
   NHL: { emoji: '🏒', label: 'NHL', cadence: 'DAILY' },
@@ -109,7 +109,8 @@ function renderHistory(tracker) {
   const pushes = Number(record.pushes || 0);
   const pending = Number(record.pending || 0);
   const picks = entries.filter(countsTowardRecord);
-  const legacy = entries.length - picks.length;
+  const featured = entries.filter(isFeaturedPlayer);
+  const legacy = entries.length - picks.length - featured.length;
 
   return `
     <section class="free-history-summary">
@@ -122,9 +123,11 @@ function renderHistory(tracker) {
       <div class="free-history-summary-copy">
         <span class="free-history-epoch">STARTED 09/20/26 · NO MODEL-HISTORY BACKFILL</span>
         <h2>A public record built from the actual free board.</h2>
-        <p>Daily lanes: MLB, WNBA, NHL and NBA. Weekly lanes: NFL and UFC. The overall record is just the sum of those individual ledgers.</p>
+        <p>Free products since Sep 28, 2026: MLB Featured Player (one a day, not an Algo Pick, its own record) and up to 2 NFL TD Targets per slate. UFC, WNBA and NHL publish from their own models. The overall free record is the sum of the model-pick ledgers; the MLB Featured Player is never part of it.</p>
       </div>
     </section>
+
+    ${renderProductRecords(tracker)}
 
     <section class="free-history-sports">
       ${Object.keys(SPORTS).map((sport) => renderSportSummary(tracker, sport)).join('')}
@@ -166,8 +169,32 @@ function renderHistory(tracker) {
       <p>
         No model-history backfill. Documented public picks missed during capture outages may be restored and are explicitly labeled RECOVERED.
         A pick replaced before its event is never swapped: the original is marked WITHDRAWN (void, with the reason and time) and the replacement is recorded separately.
+        On Sep 28, 2026 the MLB free pick changed from an official Algo selection to the Featured Player, and the NFL free pick changed from team picks to TD Targets. Earlier rows keep the product that generated them and are labelled LEGACY FREE PRODUCT.
         Rows labeled LEGACY VALIDATION SIGNAL were shown publicly before the Free Picks contract excluded validation output; they stay here for transparency and are excluded from the Free Picks record.
       </p>
+    </section>
+  `;
+}
+
+function renderProductRecords(tracker) {
+  const rows = [
+    ['MLB Featured Player', namespacedRecord(tracker, 'free_featured_player_record'), 'Since Sep 28, 2026 · editorial showcase · not an Algo record'],
+    ['NFL Free TD Targets', namespacedRecord(tracker, 'free_td_target_record'), 'Since Sep 28, 2026 · official TD Targets only'],
+    ['MLB Algo free picks', namespacedRecord(tracker, 'legacy.mlb_algo_free_picks'), 'Legacy free product · Sep 20–27, 2026'],
+    ['NFL team picks', namespacedRecord(tracker, 'legacy.nfl_team_picks'), 'Legacy free product · before Sep 28, 2026'],
+  ].filter(([, rec]) => rec);
+  if (!rows.length) return '';
+  return `
+    <section class="free-history-sports free-history-products" aria-label="Free product records">
+      ${rows.map(([label, rec, note]) => `
+        <article class="free-history-sport">
+          <div>
+            <b>${escapeHtml(label)}</b>
+            <small>${escapeHtml(note)}</small>
+          </div>
+          <strong>${escapeHtml(rec.record)}</strong>
+          <em>${rec.pending ? `${rec.pending} pending` : (rec.wins || rec.losses) ? 'settled' : 'no picks yet'}${rec.voids ? ` · ${rec.voids} void` : ''}</em>
+        </article>`).join('')}
     </section>
   `;
 }
@@ -224,11 +251,18 @@ function renderHistoryRow(entry) {
   const provider = proofLabel(entry);
   const published = formatEt(entry.published_at);
   const settledAt = settled ? formatEt(entry.result_at) : null;
-  const legacy = !countsTowardRecord(entry);
+  const featured = isFeaturedPlayer(entry);
+  const legacy = !countsTowardRecord(entry) && !featured;
+  const type = selectionType(entry);
+  const productFlag = featured
+    ? '<span class="free-history-flag is-featured">FEATURED PLAYER · NOT AN ALGO PICK · SEPARATE RECORD</span>'
+    : isTdTarget(entry) ? '<span class="free-history-flag is-td">FREE TD TARGET · OFFICIAL</span>'
+      : (type === 'algo' || type === 'team_pick') ? `<span class="free-history-flag is-product-legacy">${escapeHtml(productLabel(entry))}</span>` : '';
   const withdrawn = entry?.evidence?.withdrawn === true;
   const recovered = entry?.evidence?.recovered === true;
   const badge = withdrawn ? 'WITHDRAWN' : result === 'WIN' ? 'HIT' : result === 'LOSS' ? 'MISS' : statusLabel;
   const flags = [
+    productFlag,
     legacy ? '<span class="free-history-flag is-legacy">LEGACY VALIDATION SIGNAL · EXCLUDED FROM FREE PICKS RECORD</span>' : '',
     withdrawn ? `<span class="free-history-flag is-withdrawn">WITHDRAWN ${escapeHtml(formatEt(entry.evidence.withdrawn_at))} · ${escapeHtml(String(entry.evidence.withdrawn_reason || '').replace(/_/g, ' '))}</span>` : '',
     recovered ? `<span class="free-history-flag is-recovered">RECOVERED ${escapeHtml(formatEt(entry.evidence.recovered_at))} · missed at capture (${escapeHtml(String(entry.evidence.capture_gap_reason || 'capture gap').replace(/_/g, ' '))})</span>` : '',
@@ -242,11 +276,11 @@ function renderHistoryRow(entry) {
     >
       <div class="free-history-row-sport">
         <span aria-hidden="true">${meta.emoji}</span>
-        <div><b>${escapeHtml(meta.label)}</b><small>${escapeHtml(meta.cadence)}</small></div>
+        <div><b>${escapeHtml(meta.label)}</b><small>${escapeHtml(String(entry.cadence || meta.cadence).toUpperCase())}</small></div>
       </div>
 
       <div class="free-history-row-pick">
-        <span>${escapeHtml(entry.pick_type || 'FREE PICK')}</span>
+        <span>${escapeHtml(featured ? 'FEATURED PLAYER · HR' : isTdTarget(entry) ? 'TD TARGET · ANYTIME TD' : entry.pick_type || 'FREE PICK')}</span>
         <strong>${escapeHtml(entry.selection || 'Recorded free pick')}</strong>
         <small>${escapeHtml(entry.matchup || entry.opponent || '')}</small>
         ${flags}

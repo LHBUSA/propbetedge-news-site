@@ -204,7 +204,7 @@ test('server record_class is honoured, withdrawn picks still count as free picks
 
 test('tracker derives the record from publicPickEntries and freezes UFC before capture', () => {
   const src = readFileSync(new URL('../supabase/functions/free-picks-tracker/index.ts', import.meta.url), 'utf8');
-  assert.match(src, /const publicPickEntries = entries\.filter\(\(e:any\) => !isNonPickOutput\(e\.snapshot \|\| e\)\)/);
+  assert.match(src, /const publicPickEntries = entries\.filter\(\(e:any\) => !isNonPickOutput\(e\.snapshot \|\| e\) && e\.record_class !== "free_featured_player"\)/);
   assert.match(src, /const counted = publicPickEntries\.filter/);
   assert.match(src, /const sportEntries = publicPickEntries\.filter/);
   assert.match(src, /frozen:String\(p\.lifecycle \|\| ""\)\.toUpperCase\(\) === "LOCKED"/);
