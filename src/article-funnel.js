@@ -42,9 +42,15 @@ export function initArticleFunnel() {
   new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true });
 }
 
+// Throttle, not debounce: the live score strip mutates the DOM every few
+// hundred ms, so a debounce that resets on each mutation never fires and the
+// article CTAs were silently never rendered.
 function schedule() {
-  clearTimeout(timer);
-  timer = setTimeout(sync, 90);
+  if (timer) return;
+  timer = setTimeout(() => {
+    timer = null;
+    sync();
+  }, 90);
 }
 
 function sync() {

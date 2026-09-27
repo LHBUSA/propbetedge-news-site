@@ -95,3 +95,9 @@ test('surfaces use the registry, not raw product URLs', () => {
   assert.match(header, /placement: 'header_switcher'/);
   assert.match(header, /placement: 'mobile_more'/);
 });
+
+test('article funnel throttles instead of debouncing (score strip mutations never starve it)', () => {
+  const src = read('../src/article-funnel.js');
+  assert.match(src, /if \(timer\) return;/);
+  assert.ok(!/clearTimeout\(timer\)/.test(src), 'a reset-on-mutation debounce never fires under the live score strip');
+});
