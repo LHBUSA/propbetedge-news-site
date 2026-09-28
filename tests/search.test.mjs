@@ -93,6 +93,13 @@ test('exact player beats a story whose headline starts with his name; his team a
   assert.ok(results.some((r) => r.type === 'story' && /Judge's Wild Card/.test(r.title)), 'tagged story is related');
 });
 
+
+test('MLB LHQ model research is searchable from the network hub', () => {
+  assert.equal(top('LHQ').href, 'https://mlb.propbetedge.ai/research/lhq');
+  assert.equal(top('long horizon hitter quality').href, 'https://mlb.propbetedge.ai/research/lhq');
+  assert.equal(top('MLB model research').href, 'https://mlb.propbetedge.ai/research/lhq');
+});
+
 test('typo tolerance: McDvaid, Mahome, Ohtnai', () => {
   assert.equal(top('McDvaid').title, 'Connor McDavid');
   assert.equal(top('Mahome').title, 'Patrick Mahomes');
