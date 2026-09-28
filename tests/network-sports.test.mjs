@@ -1,4 +1,4 @@
-// Tennis is the 7th PropBetEdge sport and is included in All Access. The root footer and /pro list every
+// Soccer is the 8th PropBetEdge sport and is included in All Access. The root footer and /pro list every
 // sport, and the one live Stripe identity (product, price, Payment Link, THEEDGE25) never changes.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -38,7 +38,7 @@ test('root footer links every PropBetEdge sport, Tennis included', () => {
   assert.ok(footer.includes('https://wnba.propbetedge.ai'), 'wnba');
 });
 
-test('Soccer is a network discovery link without changing the seven-sport All Access contract', () => {
+test('Soccer is a network discovery link and an included All Access sport', () => {
   const footer = fs.readFileSync(new URL('../src/components/footer.js', import.meta.url), 'utf8');
   assert.equal(PROPBET_LINKS.soccer, 'https://soccer.propbetedge.ai');
   assert.ok(footer.includes('${PROPBET_LINKS.soccer}'));
@@ -46,22 +46,23 @@ test('Soccer is a network discovery link without changing the seven-sport All Ac
   assert.equal(SPORTS.some((s) => s.key === 'soccer'), true, 'Soccer is included in All Access');
 });
 
-test('no fabricated Tennis Pro tier; success state says Tennis needs no sign-in; seven-sport line', async () => {
+test('Tennis and Soccer are included open intelligence surfaces; eight-sport line', async () => {
   const { buildProHtml } = await import('../src/pro-content.js');
   const html = buildProHtml();
   assert.ok(!/Tennis Pro<\/li>/.test(html), 'Tennis has no Pro tier yet');
   assert.match(html, /Tennis Intelligence, plus its Pro features as they launch/);
   assert.match(html, /One membership\. Eight sports\. Every future sport\./);
   assert.match(html, /MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer/);
-  assert.match(buildProHtml({ checkoutSuccess: true }), /Tennis is open to everyone today, no sign-in needed/);
+  assert.match(buildProHtml({ checkoutSuccess: true }), /Tennis and Soccer are open to everyone today, no sign-in needed/);
 });
 
-test('root WebSite schema lists all seven sport properties once', async () => {
+test('root WebSite schema lists all eight sport properties once', async () => {
   const { websiteSchema } = await import('../src/schema.js');
   const urls = websiteSchema().hasPart.map((p) => p.url);
   assert.equal(urls.length, 8);
-  assert.equal(new Set(urls).size, 7);
+  assert.equal(new Set(urls).size, 8);
   assert.ok(urls.includes('https://tennis.propbetedge.ai/'));
+  assert.ok(urls.includes('https://soccer.propbetedge.ai/'));
 });
 
 test('Tennis footer badge is Included (part of All Access), never a separate Free plan', () => {
