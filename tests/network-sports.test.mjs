@@ -6,10 +6,10 @@ import fs from 'node:fs';
 import { ALL_ACCESS, SPORTS } from '../src/pro-content.js';
 import { PROPBET_LINKS } from '../src/ads-config.js';
 
-const SEVEN = ['mlb', 'nfl', 'nba', 'nhl', 'wnba', 'ufc', 'tennis'];
+const EIGHT = ['mlb', 'nfl', 'nba', 'nhl', 'wnba', 'ufc', 'tennis', 'soccer'];
 
-test('All Access includes all seven PropBetEdge sports', () => {
-  assert.deepEqual(SPORTS.map((s) => s.key), SEVEN);
+test('All Access includes all eight PropBetEdge sports', () => {
+  assert.deepEqual(SPORTS.map((s) => s.key), EIGHT);
   const tennis = SPORTS.find((s) => s.key === 'tennis');
   assert.equal(tennis.url, 'https://tennis.propbetedge.ai');
   assert.equal(tennis.label, 'Tennis');
@@ -43,7 +43,7 @@ test('Soccer is a network discovery link without changing the seven-sport All Ac
   assert.equal(PROPBET_LINKS.soccer, 'https://soccer.propbetedge.ai');
   assert.ok(footer.includes('${PROPBET_LINKS.soccer}'));
   assert.match(footer, /Soccer Intelligence <span class="footer-badge">Live<\/span>/);
-  assert.equal(SPORTS.some((s) => s.key === 'soccer'), false, 'footer discovery must not silently change paid entitlements');
+  assert.equal(SPORTS.some((s) => s.key === 'soccer'), true, 'Soccer is included in All Access');
 });
 
 test('no fabricated Tennis Pro tier; success state says Tennis needs no sign-in; seven-sport line', async () => {
@@ -51,15 +51,15 @@ test('no fabricated Tennis Pro tier; success state says Tennis needs no sign-in;
   const html = buildProHtml();
   assert.ok(!/Tennis Pro<\/li>/.test(html), 'Tennis has no Pro tier yet');
   assert.match(html, /Tennis Intelligence, plus its Pro features as they launch/);
-  assert.match(html, /One membership\. Seven sports\. Every future sport\./);
-  assert.match(html, /MLB · NFL · NBA · WNBA · NHL · UFC · Tennis/);
+  assert.match(html, /One membership\. Eight sports\. Every future sport\./);
+  assert.match(html, /MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer/);
   assert.match(buildProHtml({ checkoutSuccess: true }), /Tennis is open to everyone today, no sign-in needed/);
 });
 
 test('root WebSite schema lists all seven sport properties once', async () => {
   const { websiteSchema } = await import('../src/schema.js');
   const urls = websiteSchema().hasPart.map((p) => p.url);
-  assert.equal(urls.length, 7);
+  assert.equal(urls.length, 8);
   assert.equal(new Set(urls).size, 7);
   assert.ok(urls.includes('https://tennis.propbetedge.ai/'));
 });
