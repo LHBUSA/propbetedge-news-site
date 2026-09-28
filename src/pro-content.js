@@ -30,6 +30,8 @@ export const SPORTS = Object.freeze([
   // Tennis Intelligence is open to everyone (no sign-in, no Pro tier yet): All Access members get its Pro
   // features automatically when they launch. Never list a "Tennis Pro" that does not exist.
   { key: 'tennis', label: 'Tennis', name: 'PropBetEdge Tennis', url: 'https://tennis.propbetedge.ai', glyph: '🎾', edge: 'Live scores, rankings, Tennis DNA, PBEcast', open: true },
+  // Soccer Intelligence is open today; All Access includes every future Soccer Pro feature automatically.
+  { key: 'soccer', label: 'Soccer', name: 'PropBetEdge Soccer', url: 'https://soccer.propbetedge.ai', glyph: '⚽', edge: 'Live matches, Player DNA, team intelligence, tables and PBEcast', open: true },
 ]);
 
 export const VALUE_PROPS = Object.freeze([
@@ -128,11 +130,11 @@ function hero(shareBar = '') {
           <span>Every model.</span>
           <span>Every current and future PropBetEdge Pro product.</span>
         </p>
-        <p class="pbe-pro-family"><strong>One membership. ${SPORTS.length === 7 ? 'Seven' : SPORTS.length} sports. Every future sport.</strong><span>MLB · NFL · NBA · WNBA · NHL · UFC · Tennis</span></p>
+        <p class="pbe-pro-family"><strong>One membership. ${SPORTS.length === 8 ? 'Eight' : SPORTS.length} sports. Every future sport.</strong><span>MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer</span></p>
         <div class="pbe-pro-price" aria-label="Price"><span class="pbe-pro-price-amount">$${ALL_ACCESS.priceUsd}</span><span class="pbe-pro-price-per">/ ${ALL_ACCESS.interval}</span></div>
         ${ctaButton('Get All Access', 'pbe-pro-cta-hero')}
         ${promoChip()}
-        <p class="pbe-pro-hero-fine">Includes MLB, NFL, NBA, NHL, WNBA and UFC Pro, plus PropBetEdge Tennis, today. Individual sport plans stay available; All Access is the umbrella, not a replacement.</p>
+        <p class="pbe-pro-hero-fine">Includes MLB, NFL, NBA, NHL, WNBA and UFC Pro, plus PropBetEdge Tennis and Soccer Intelligence, today. Individual sport plans stay available; All Access is the umbrella, not a replacement.</p>
         ${shareBar ? `<div class="pbe-pro-share">${shareBar}</div>` : ''}
       </div>
       ${membershipCard(false)}
@@ -147,7 +149,7 @@ function successHero(shareBar = '') {
         <h1 class="pbe-pro-title"><span class="pbe-pro-title-brand">Welcome to</span><span class="pbe-pro-title-all">All Access</span></h1>
         <p class="pbe-pro-success-lead">Your PropBetEdge All Access membership is active. Every sport in the network now recognizes the email you used at checkout.</p>
         <ol class="pbe-pro-steps">
-          <li><strong>Open any sport</strong> below and choose <em>Sign in</em>. Tennis is open to everyone today, no sign-in needed.</li>
+          <li><strong>Open any sport</strong> below and choose <em>Sign in</em>. Tennis and Soccer are open to everyone today, no sign-in needed.</li>
           <li><strong>Enter the email you used at checkout.</strong> A secure sign-in link arrives in that inbox; no password to remember.</li>
           <li><strong>Repeat once per sport.</strong> One subscription, one email, every PropBetEdge property.</li>
         </ol>
@@ -197,7 +199,7 @@ export function buildProHtml({ checkoutSuccess = false, shareBar = '' } = {}) {
           <div class="pbe-pro-plans-facts">
             <div><span class="pbe-pro-fact-k">Billing</span><span class="pbe-pro-fact-v">${priceLabel()}, cancel anytime</span></div>
             <div><span class="pbe-pro-fact-k">Access</span><span class="pbe-pro-fact-v">Secure sign-in link to your checkout email</span></div>
-            <div><span class="pbe-pro-fact-k">Coverage</span><span class="pbe-pro-fact-v">7 sports today, every future sport included</span></div>
+            <div><span class="pbe-pro-fact-k">Coverage</span><span class="pbe-pro-fact-v">8 sports today, every future sport included</span></div>
             <div><span class="pbe-pro-fact-k">Launch offer</span><span class="pbe-pro-fact-v">${esc(promoLine())}</span></div>
           </div>
         </div>
