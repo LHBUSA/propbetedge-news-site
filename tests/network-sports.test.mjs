@@ -38,6 +38,14 @@ test('root footer links every PropBetEdge sport, Tennis included', () => {
   assert.ok(footer.includes('https://wnba.propbetedge.ai'), 'wnba');
 });
 
+test('Soccer is a network discovery link without changing the seven-sport All Access contract', () => {
+  const footer = fs.readFileSync(new URL('../src/components/footer.js', import.meta.url), 'utf8');
+  assert.equal(PROPBET_LINKS.soccer, 'https://soccer.propbetedge.ai');
+  assert.ok(footer.includes('${PROPBET_LINKS.soccer}'));
+  assert.match(footer, /Soccer Intelligence <span class="footer-badge">Live<\/span>/);
+  assert.equal(SPORTS.some((s) => s.key === 'soccer'), false, 'footer discovery must not silently change paid entitlements');
+});
+
 test('no fabricated Tennis Pro tier; success state says Tennis needs no sign-in; seven-sport line', async () => {
   const { buildProHtml } = await import('../src/pro-content.js');
   const html = buildProHtml();
