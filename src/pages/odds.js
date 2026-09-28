@@ -726,7 +726,7 @@ function renderHowItWorks() {
     <section class="fp-section fp-how" aria-labelledby="fp-how-title">
       <h2 id="fp-how-title" class="fp-section__title">How it works</h2>
       <ul class="fp-how__list">
-        <li><b>MLB Featured Player.</b> One established hitter a day, chosen from public season, Player DNA and matchup data. It is not an official Algo Pick and has its own record. Official Algo Picks are members-only.</li>
+        <li><b>MLB Featured Player.</b> One established hitter a day, chosen from public season, Player DNA and matchup data. It is not an official Algo Pick: its results count in the free record and its own Featured Player record, never in any Algo record. Official Algo Picks are members-only.</li>
         <li><b>NFL: 2 Free TD Targets.</b> Up to two primary Touchdown Targets per slate, official targets first, then tracking targets while the model completes its validation window. Tracking targets are labelled and never count as official. Own record; never padded.</li>
         <li><b>UFC, WNBA and NHL.</b> Each publishes from its own model and rules. No filler picks.</li>
         <li><b>Frozen on publication.</b> Each card is recorded the moment it appears here. Only the result can change.</li>

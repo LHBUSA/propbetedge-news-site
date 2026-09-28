@@ -15,7 +15,8 @@ const NON_PICK_SCOPES = new Set(["tracking","validation","shadow","research","re
 // PRODUCT-VERSION BOUNDARY (ET date). Rows before it keep the product that generated them:
 //   MLB free pick = an official Algo HR selection; NFL free pick = a team pick (spread/ML/total).
 // On and after it:
-//   MLB = FEATURED PLAYER - editorial showcase, NOT an Algo pick, own record namespace, never in the free-picks record;
+//   MLB = FEATURED PLAYER - editorial showcase, NOT an Algo pick, own record namespace. Owner 2026-09-27: it IS a free
+//         pick shown to users, so it also counts toward the overall FREE PICKS record (never toward any Algo record);
 //   NFL = up to two official TD Targets per slate day, own record namespace.
 // Historical rows are never rewritten; their product is derived from sport + snapshot when the snapshot predates it.
 const PRODUCT_BOUNDARY = "2026-09-28";
@@ -28,7 +29,7 @@ const PRODUCTS = {
   nfl_boundary:NFL_TD_BOUNDARY,
   MLB:{
     before:{ selection_type:"algo", selection_source:"official_algo_free_sample", official_algo:true, product_version:"mlb-free-algo/legacy", record_namespace:"free_picks_record" },
-    after:{ selection_type:"featured_player", selection_source:"free_editorial_selector", official_algo:false, product_version:"mlb-free-featured-player/1.0.0", record_namespace:"free_featured_player_record", counts_toward_free_picks_record:false, max_per_day:1 },
+    after:{ selection_type:"featured_player", selection_source:"free_editorial_selector", official_algo:false, product_version:"mlb-free-featured-player/1.0.0", record_namespace:"free_featured_player_record", counts_toward_free_picks_record:true, max_per_day:1 },
   },
   NFL:{
     before:{ selection_type:"team_pick", selection_source:"nfl_free_sample_team_picks", official:true, product_version:"nfl-free-team-picks/legacy", record_namespace:"free_picks_record" },
@@ -67,7 +68,8 @@ function isTdTarget(entry:any) {
 
 /**
  * Record class of a ledger entry. Only free_pick rows count toward the FREE PICKS record.
- * free_featured_player rows are graded in their own namespace (free_featured_player_record) and never touch it.
+ * free_featured_player rows are ALSO graded in their own namespace (free_featured_player_record); they count toward the
+ * FREE PICKS record like every other published free pick, and never toward any Algo / Game Best / .290 record.
  */
 function recordClass(entry:any) {
   if (isNonPickOutput(entry?.snapshot || entry)) return "legacy_validation_signal";
@@ -1157,7 +1159,7 @@ async function responsePayload(capture:CaptureReport = {}) {
       return {
         ...e,
         record_class:recordClass(e),
-        counts_toward_record:recordClass(e) === "free_pick",
+        counts_toward_record:recordClass(e) === "free_pick" || recordClass(e) === "free_featured_player",
         selection_type:product.selection_type,
         selection_source:product.selection_source,
         product_version:product.product_version,
@@ -1171,7 +1173,7 @@ async function responsePayload(capture:CaptureReport = {}) {
     );
   // Historical validation rows stay in `entries` for audit/history, but the
   // FREE PICKS record, by_sport and pending counts come from real picks only.
-  const publicPickEntries = entries.filter((e:any) => !isNonPickOutput(e.snapshot || e) && e.record_class !== "free_featured_player");
+  const publicPickEntries = entries.filter((e:any) => !isNonPickOutput(e.snapshot || e));
   const counted = publicPickEntries.filter((e:any) => ["WIN","LOSS","PUSH"].includes(e.result));
   const record = {
     wins: counted.filter((e:any) => e.result === "WIN").length,
@@ -1210,10 +1212,10 @@ async function responsePayload(capture:CaptureReport = {}) {
   const featuredRows = entries.filter((e:any) => e.record_class === "free_featured_player");
   const tdRows = publicPickEntries.filter((e:any) => e.selection_type === "td_target");
   const records = {
-    // The FREE PICKS record (official model free picks). Never contains Featured Player rows.
+    // The FREE PICKS record: every selection actually published as a free pick (Featured Player included).
     free_picks_record:record,
     // MLB Featured Player: engagement grading only. Not Algo, not Game Best, not the .290 record.
-    free_featured_player_record:{ sport:"MLB", product_version:PRODUCTS.MLB.after.product_version, official_algo:false, counts_toward_free_picks_record:false, ...namespaced(featuredRows) },
+    free_featured_player_record:{ sport:"MLB", product_version:PRODUCTS.MLB.after.product_version, official_algo:false, counts_toward_free_picks_record:true, ...namespaced(featuredRows) },
     // NFL free TD Targets. Separate from legacy team picks and from the full paid TD Target record.
     free_td_target_record:{
       sport:"NFL", product_version:PRODUCTS.NFL.after.product_version, ...namespaced(tdRows),

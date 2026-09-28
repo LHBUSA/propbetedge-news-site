@@ -61,7 +61,7 @@ test('MLB: a Featured Player is captured with ZERO Algo picks, structurally non-
   for (const k of ['hr_probability', 'score', 'model_score', 'probability']) assert.ok(!(k in rows[0].snapshot), k);
   const e = payload.entries.find((x) => x.sport === 'MLB');
   assert.equal(e.record_class, 'free_featured_player');
-  assert.equal(e.counts_toward_record, false);
+  assert.equal(e.counts_toward_record, true, 'owner 2026-09-27: a published Featured Player counts toward the overall free record');
   assert.equal(e.official_algo, false);
   assert.equal(payload.contract, 'pbe-free-picks-tracker-v4');
   // A second, different featured payload the same day never adds a second row.
@@ -81,22 +81,18 @@ test('MLB: an Algo-shaped or post-first-pitch or pre-boundary payload is never c
   }
 });
 
-test('Featured grading never changes the free-picks / Algo records; Algo-era rows never change the featured record', async () => {
+test('Featured grading: its own record AND the overall free record move; legacy Algo-era namespace never does', async () => {
   const featuredWin = { id: 'f1', sport: 'MLB', cadence: 'daily', period_start: DAY, slot: 1, public_key: `MLB-FEATURED:${DAY}:592450`, source_record_id: `MLB-FEATURED:${DAY}:592450`, pick_type: 'FEATURED_HR', selection: 'Aaron Judge', result: 'WIN', snapshot: { selection_type: 'featured_player', official_algo: false, record_namespace: 'free_featured_player_record', mlb_player_id: 592450, game_date: DAY }, published_at: `${DAY}T12:00:00Z` };
-  const base = installFetch({ rows: [LEGACY_MLB, LEGACY_NFL] });
+  installFetch({ rows: [LEGACY_MLB, LEGACY_NFL] });
   const before = await T.responsePayload({});
-  const withFeatured = installFetch({ rows: [LEGACY_MLB, LEGACY_NFL, featuredWin] });
+  installFetch({ rows: [LEGACY_MLB, LEGACY_NFL, featuredWin] });
   const after = await T.responsePayload({});
-  assert.deepEqual(after.record, before.record, 'global free-picks record unchanged by a featured HIT');
-  assert.deepEqual(after.by_sport.MLB, before.by_sport.MLB, 'MLB free record (legacy Algo era) unchanged');
-  assert.deepEqual(after.records.legacy.mlb_algo_free_picks, before.records.legacy.mlb_algo_free_picks);
+  assert.equal(after.record.wins, before.record.wins + 1, 'overall free-picks record takes the featured HIT');
   assert.equal(after.records.free_featured_player_record.lifetime.wins, 1);
-  assert.equal(before.records.free_featured_player_record.lifetime.wins, 0);
-  // Flip the legacy Algo row: featured record must not move.
-  const flipped = installFetch({ rows: [{ ...LEGACY_MLB, result: 'LOSS' }, LEGACY_NFL, featuredWin] });
-  const flippedPayload = await T.responsePayload({});
-  assert.deepEqual(flippedPayload.records.free_featured_player_record, after.records.free_featured_player_record);
-  void base; void withFeatured; void flipped;
+  assert.deepEqual(after.records.legacy.mlb_algo_free_picks, before.records.legacy.mlb_algo_free_picks, 'legacy Algo-era namespace unchanged');
+  installFetch({ rows: [{ ...LEGACY_MLB, result: 'LOSS' }, LEGACY_NFL, featuredWin] });
+  const flipped = await T.responsePayload({});
+  assert.deepEqual(flipped.records.free_featured_player_record, after.records.free_featured_player_record, 'Algo-era rows never move the featured record');
 });
 
 test('historical Algo free picks and NFL team picks stay labelled with the product that generated them', async () => {
@@ -125,8 +121,9 @@ test('same player can be the Featured Player and an Algo pick without double cou
   installFetch({ rows: [algoSameDay, featured] });
   const p = await T.responsePayload({});
   assert.equal(p.entries.length, 2, 'distinct identities (pick_type differs), neither collapses into the other');
-  assert.equal(p.record.wins, 1, 'free-picks record counts the Algo row once');
-  assert.equal(p.records.free_featured_player_record.lifetime.wins, 1, 'featured record counts the featured row once');
+  assert.equal(p.record.wins, 2, 'two genuinely published free picks -> the overall record counts each exactly once');
+  assert.equal(p.records.free_featured_player_record.lifetime.wins, 1, 'featured record counts only the featured row');
+  assert.equal(p.records.legacy.mlb_algo_free_picks.lifetime.wins, 1, 'Algo-sourced namespace counts only the Algo row');
   assert.notEqual(T.stableIdentity('MLB', algoSameDay), T.stableIdentity('MLB', featured));
 });
 
@@ -294,4 +291,79 @@ test('owner rule: a tracking free TD result moves the OVERALL free-picks record 
   // other namespaces untouched
   assert.deepEqual(out.WIN.records.legacy.mlb_algo_free_picks, out.PENDING.records.legacy.mlb_algo_free_picks);
   assert.deepEqual(out.WIN.records.free_featured_player_record, out.PENDING.records.free_featured_player_record);
+});
+
+
+/* ---- Owner 2026-09-27: MLB Featured Player counts toward the OVERALL free record (never any Algo record) ---- */
+const featuredRow = (result, id = 'fx') => ({ id, sport: 'MLB', cadence: 'daily', period_start: DAY, public_key: `MLB-FEATURED:${DAY}:${id}`, source_record_id: `MLB-FEATURED:${DAY}:${id}`, pick_type: 'FEATURED_HR', selection: 'Aaron Judge', result, snapshot: { selection_type: 'featured_player', selection_source: 'free_editorial_selector', official_algo: false, record_namespace: 'free_featured_player_record', mlb_player_id: 592450, game_date: DAY, game_pk: 777001 }, published_at: `${DAY}T12:00:00Z` });
+const ALGO_HOSTS = /mlb-v2-api|mlb\.propbetedge\.ai\/api|rest\/v1\/(picks|mlb_v2)|rlfyavnhbngwbldebrid/;
+
+for (const [n, result, field] of [[1, 'WIN', 'wins'], [2, 'LOSS', 'losses']]) {
+  test(`${n}. Featured Player ${result} increments BOTH the Featured Player record and the overall Free Picks record`, async () => {
+    installFetch({ rows: [LEGACY_MLB, LEGACY_NFL, featuredRow('PENDING')] });
+    const before = await T.responsePayload({});
+    installFetch({ rows: [LEGACY_MLB, LEGACY_NFL, featuredRow(result)] });
+    const after = await T.responsePayload({});
+    assert.equal(after.records.free_featured_player_record.lifetime[field], before.records.free_featured_player_record.lifetime[field] + 1);
+    assert.equal(after.record[field], before.record[field] + 1);
+    assert.equal(after.records.free_picks_record[field], before.records.free_picks_record[field] + 1);
+    assert.equal(after.by_sport.MLB[field], before.by_sport.MLB[field] + 1);
+    const e = after.entries.find((x) => x.id === 'fx');
+    assert.equal(e.record_class, 'free_featured_player');
+    assert.equal(e.counts_toward_record, true);
+    assert.equal(e.official_algo, false);
+    assert.equal(e.selection_type, 'featured_player');
+  });
+}
+
+test('3. a Featured Player result never touches any Algo / Game Best / .290 record: no Algo source is read or written', async () => {
+  for (const result of ['WIN', 'LOSS']) {
+    installFetch({ rows: [LEGACY_MLB, featuredRow('PENDING')] });
+    const before = await T.responsePayload({});
+    const db = installFetch({ rows: [LEGACY_MLB, featuredRow(result)] });
+    const after = await T.responsePayload({});
+    assert.deepEqual(after.records.legacy.mlb_algo_free_picks, before.records.legacy.mlb_algo_free_picks, 'Algo-sourced free namespace unchanged');
+    assert.ok(!db.calls.some((c) => ALGO_HOSTS.test(c.url)), 'the record read never touches the MLB V2 ledger / Algo / Game Best / .290 sources');
+    const grading = installFetch({ rows: [{ ...featuredRow('PENDING'), id: 'g' }], upstream: {
+      'https://statsapi.mlb.com/api/v1/schedule': { dates: [{ games: [{ gamePk: 777001, status: { detailedState: 'Final', abstractGameState: 'Final' }, teams: { away: { team: {}, score: 1 }, home: { team: {}, score: 2 } } }] }] },
+      'https://statsapi.mlb.com/api/v1/game/777001/boxscore': { teams: { home: { players: { ID592450: { stats: { batting: { plateAppearances: 4, homeRuns: result === 'WIN' ? 1 : 0 } } } } }, away: { players: {} } } },
+    } });
+    await T.resolvePending();
+    assert.equal(grading.table[0].result, result);
+    assert.ok(!grading.calls.some((c) => ALGO_HOSTS.test(c.url)), 'featured grading reads only MLB Stats API + the free ledger');
+    assert.ok(grading.calls.filter((c) => c.method !== 'GET').every((c) => c.url.includes('pbe_free_pick_tracker')), 'the only write is the free ledger row itself');
+  }
+});
+
+test('4. NFL tracking and official free TD behaviour is unchanged by the MLB rule', async () => {
+  const snap = { selection_type: 'td_target', free: true, official: false, publication_scope: 'tracking', target_id: 'a', game_id: 'g', player_id: 'p' };
+  const trk = { id: 'trk', sport: 'NFL', period_start: DAY, public_key: 'NFL-TD:a', source_record_id: 'a', pick_type: 'TD_TARGET', selection: 'T', result: 'WIN', event_start_at: `${DAY}T20:00:00Z`, snapshot: snap };
+  const off = { ...trk, id: 'off', public_key: 'NFL-TD:b', source_record_id: 'b', selection: 'O', result: 'LOSS', snapshot: { ...snap, official: true, publication_scope: 'official', target_id: 'b', player_id: 'q' } };
+  installFetch({ rows: [trk, off, featuredRow('WIN')] });
+  const p = await T.responsePayload({});
+  assert.deepEqual([p.by_sport.NFL.wins, p.by_sport.NFL.losses], [1, 1]);
+  assert.deepEqual([p.records.free_td_target_record.by_scope.tracking.wins, p.records.free_td_target_record.by_scope.official.losses], [1, 1]);
+  assert.equal(p.entries.find((e) => e.id === 'trk').official, false);
+  assert.equal(p.entries.find((e) => e.id === 'off').official, true);
+  assert.equal(p.records.free_td_target_record.lifetime.wins, 1, 'the featured MLB row never enters the TD record');
+});
+
+test('5. historical MLB Algo free picks keep their original source/type alongside Featured Player rows', async () => {
+  installFetch({ rows: [LEGACY_MLB, featuredRow('WIN')] });
+  const p = await T.responsePayload({});
+  const legacy = p.entries.find((e) => e.id === 'legacy-mlb');
+  const feat = p.entries.find((e) => e.id === 'fx');
+  assert.deepEqual([legacy.selection_type, legacy.selection_source, legacy.official_algo, legacy.product_version, legacy.record_class], ['algo', 'official_algo_free_sample', true, 'mlb-free-algo/legacy', 'free_pick']);
+  assert.deepEqual([feat.selection_type, feat.selection_source, feat.official_algo, feat.record_class], ['featured_player', 'free_editorial_selector', false, 'free_featured_player']);
+  assert.equal(p.records.legacy.mlb_algo_free_picks.lifetime.wins, 1);
+  assert.equal(p.records.free_featured_player_record.lifetime.wins, 1);
+  assert.equal(p.by_sport.MLB.wins, 2, 'both genuinely published products are in the MLB free total, still distinguishable');
+});
+
+test('6. reading the records creates no writes', async () => {
+  const db = installFetch({ rows: [LEGACY_MLB, LEGACY_NFL, featuredRow('WIN'), featuredRow('LOSS', 'fy')] });
+  const snapshot = JSON.stringify(db.table);
+  await T.responsePayload({});
+  assert.ok(db.calls.every((c) => c.method === 'GET'));
+  assert.equal(JSON.stringify(db.table), snapshot);
 });

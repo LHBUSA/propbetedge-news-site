@@ -109,8 +109,7 @@ function renderHistory(tracker) {
   const pushes = Number(record.pushes || 0);
   const pending = Number(record.pending || 0);
   const picks = entries.filter(countsTowardRecord);
-  const featured = entries.filter(isFeaturedPlayer);
-  const legacy = entries.length - picks.length - featured.length;
+  const legacy = entries.length - picks.length;
 
   return `
     <section class="free-history-summary">
@@ -123,7 +122,7 @@ function renderHistory(tracker) {
       <div class="free-history-summary-copy">
         <span class="free-history-epoch">STARTED 09/20/26 · NO MODEL-HISTORY BACKFILL</span>
         <h2>A public record built from the actual free board.</h2>
-        <p>Free products since Sep 28, 2026: MLB Featured Player (one a day, not an Algo Pick, its own record) and up to 2 NFL TD Targets per slate. UFC, WNBA and NHL publish from their own models. The overall free record is the sum of the model-pick ledgers; the MLB Featured Player is never part of it.</p>
+        <p>Free products since Sep 28, 2026: MLB Featured Player (one a day, not an Algo Pick, its own record) and up to 2 NFL TD Targets per slate. UFC, WNBA and NHL publish from their own models. The overall free record counts every published free pick, the MLB Featured Player included; each product also keeps its own record, and no free result ever enters an Algo record.</p>
       </div>
     </section>
 

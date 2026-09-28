@@ -125,8 +125,7 @@ export function isNonPickOutput(item) {
  * never render as a current pick and never appear in Latest Results.
  */
 export function countsTowardRecord(entry) {
-  // The MLB Featured Player has its own record namespace and never counts toward the FREE PICKS record.
-  if (isFeaturedPlayer(entry)) return false;
+  // The MLB Featured Player counts like every published free pick (its own namespace is kept alongside).
   if (entry?.counts_toward_record === false && entry?.record_class !== 'withdrawn') return false;
   return !isNonPickOutput(entry);
 }
