@@ -1,7 +1,7 @@
 /* /pro — PropBetEdge All Access membership page.
  *
  * Pins the ONE live Stripe checkout (payment link + price), the $29/month
- * price, the THEEDGE25 launch offer, the seven included sports plus the
+ * price, the THEEDGE25 launch offer, the eight included sports plus the
  * future-sports promise, the ?checkout=success state, and the crawler bytes
  * Edge Middleware serves for /pro.
  *
@@ -35,7 +35,7 @@ test('the live Stripe identities are pinned and nothing else is offered', () => 
   assert.equal((html.match(/data-pbe-placement="all_access_checkout"/g) || []).length, stripeLinks.length);
 });
 
-test('hierarchy: title, statement, price, CTA, launch offer, seven sports (Tennis included), future sports', () => {
+test('hierarchy: title, statement, price, CTA, launch offer, eight sports (Tennis included), future sports', () => {
   const html = buildProHtml();
   assert.match(html, /PropBetEdge<\/span><span class="pbe-pro-title-all">All Access/);
   for (const line of ['One membership.', 'Every sport.', 'Every model.', 'Every current and future PropBetEdge Pro product.']) assert.ok(html.includes(line), line);
