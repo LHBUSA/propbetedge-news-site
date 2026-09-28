@@ -64,6 +64,7 @@ const TOOL_ROWS = [
   ['mlb-k-props', 'mlb', 'K Props', 'MLB INTELLIGENCE · STRIKEOUTS', `${MLB}/k-picks`, ['k props', 'strikeout props', 'k picks', 'strikeouts'], ['pitcher', 'ks', 'strikeout'], 5],
   ['mlb-pbecast', 'mlb', 'PBEcast · MLB', 'MLB INTELLIGENCE · LIVE GAMES', `${MLB}/pbecast`, ['pbecast', 'mlb pbecast', 'pbe cast'], ['live', 'game cast', 'pitch by pitch'], 0],
   ['mlb-track-record', 'mlb', 'Track Record · MLB', 'MLB INTELLIGENCE · TRACK RECORD', `${MLB}/track-record`, ['track record', 'mlb track record'], ['results', 'roi'], 0],
+  ['mlb-lhq-research', 'mlb', 'Model Research · MLB', 'MLB INTELLIGENCE · RESEARCH', `${MLB}/research/lhq`, ['model research', 'mlb research', 'lhq', 'long horizon hitter quality', 'hitter quality research'], ['research', 'calibration', 'brier', 'game best', 'model'], 0],
   ['mlb-best-line', 'mlb', 'Best Line · MLB', 'MLB INTELLIGENCE · MARKET', `${MLB}/best-line`, ['best line', 'mlb odds', 'mlb best line'], ['market', 'odds', 'lines', 'sportsbooks'], 0],
   ['mlb-analytics', 'mlb', 'Analytics Lab · MLB', 'MLB INTELLIGENCE · LAB', `${MLB}/analytics`, ['analytics lab', 'mlb analytics'], ['model', 'statcast', 'research'], 0],
   ['mlb-hr-simulator', 'mlb', 'HR Simulator', 'MLB INTELLIGENCE · LABS', `${MLB}/hr-simulator`, ['hr simulator', 'home run simulator'], ['simulate', 'home run'], 0],
