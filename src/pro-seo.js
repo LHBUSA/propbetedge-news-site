@@ -22,8 +22,8 @@ export const PRODUCT_ID = `${PRO_CANONICAL}#product`;
 export const OFFER_ID = `${PRO_CANONICAL}#offer`;
 export const BREADCRUMB_ID = `${PRO_CANONICAL}#breadcrumb`;
 
-export const PRO_TITLE = 'PropBetEdge All Access | 7 Sports, One Membership';
-export const PRO_DESCRIPTION = 'One $29/month membership for every PropBetEdge sport: MLB, NFL, NBA, NHL, WNBA and UFC Pro plus Tennis today, every future sport included. Proprietary prediction models, tracked and graded picks, live intelligence and PBEcast under one login.';
+export const PRO_TITLE = 'PropBetEdge All Access | 8 Sports, One Membership';
+export const PRO_DESCRIPTION = 'One $29/month membership for every PropBetEdge sport: MLB, NFL, NBA, NHL, WNBA and UFC Pro plus Tennis and Soccer today, every future sport included. Proprietary prediction models, tracked and graded picks, live intelligence and PBEcast under one login.';
 export const PRO_SUCCESS_TITLE = 'All Access is active | PropBetEdge';
 export const PRO_SUCCESS_DESCRIPTION = 'Your PropBetEdge All Access membership is active. Sign in to any sport with the email you used at checkout.';
 
@@ -35,10 +35,10 @@ export const PRO_SOCIAL_IMAGE = Object.freeze({
   type: 'image/png',
   width: 1200,
   height: 630,
-  alt: 'PropBetEdge All Access: one membership, every sport. MLB, NFL, NBA, NHL, WNBA, UFC, Tennis. $29 per month.',
+  alt: 'PropBetEdge All Access: one membership, every sport. MLB, NFL, NBA, NHL, WNBA, UFC, Tennis, Soccer. $29 per month.',
 });
 
-export const PRO_SHARE_TITLE = 'PropBetEdge All Access — MLB, NFL, NBA, NHL, WNBA, UFC and Tennis under one membership.';
+export const PRO_SHARE_TITLE = 'PropBetEdge All Access — MLB, NFL, NBA, NHL, WNBA, UFC, Tennis and Soccer under one membership.';
 
 export const ROBOTS_INDEX = 'index, follow, max-image-preview:large';
 export const ROBOTS_TRANSACTIONAL = 'noindex, follow';
@@ -142,7 +142,7 @@ export function proJsonLd() {
         '@id': PRODUCT_ID,
         name: ALL_ACCESS.name,
         alternateName: 'All Access',
-        description: 'A monthly sports intelligence membership covering every PropBetEdge sport. Includes the Pro tier of PropBetEdge MLB, NFL, NBA, NHL, WNBA and UFC, PropBetEdge Tennis, and every future PropBetEdge sport and Pro product: proprietary prediction models, tracked and graded picks, live game intelligence, PBEcast live experiences, player and matchup intelligence, with one login across the network.',
+        description: 'A monthly sports intelligence membership covering every PropBetEdge sport. Includes the Pro tier of PropBetEdge MLB, NFL, NBA, NHL, WNBA and UFC, PropBetEdge Tennis and Soccer Intelligence, and every future PropBetEdge sport and Pro product: proprietary prediction models, tracked and graded picks, live game intelligence, PBEcast live experiences, player and matchup intelligence, with one login across the network.',
         url: PRO_CANONICAL,
         image: PRO_SOCIAL_IMAGE.url,
         category: 'Sports intelligence membership',
