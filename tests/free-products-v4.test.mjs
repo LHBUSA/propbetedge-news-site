@@ -266,3 +266,32 @@ test('tracking free TD grades land in the Free TD Target record (by_scope.tracki
   assert.equal(p.records.legacy.nfl_team_picks.lifetime.wins, 0);
   assert.equal(p.products.NFL.after.product_version, 'nfl-free-td-targets/1.1.0');
 });
+
+test('owner rule: a tracking free TD result moves the OVERALL free-picks record and the tracking TD record, never official scope', async () => {
+  const snap = { selection_type: 'td_target', free: true, official: false, publication_scope: 'tracking', target_id: 'adams', game_id: 'g-den', player_id: '00-0031381' };
+  const adams = (result) => ({ id: 'adams', sport: 'NFL', cadence: 'daily', period_start: '2026-09-27', public_key: 'NFL-TD:adams', source_record_id: 'adams', pick_type: 'TD_TARGET', selection: 'Davante Adams', result, event_start_at: '2026-09-28T00:20:00Z', snapshot: { ...snap } });
+  const out = {};
+  for (const r of ['PENDING', 'WIN', 'LOSS']) {
+    const db = installFetch({ rows: [LEGACY_MLB, adams(r)] });
+    out[r] = await T.responsePayload({});
+    assert.ok(!db.calls.some((c) => c.method !== 'GET'), 'reading the record never writes anything');
+  }
+  // visible free pick, counts toward the overall record
+  const e = out.WIN.entries.find((x) => x.id === 'adams');
+  assert.equal(e.record_class, 'free_pick');
+  assert.equal(e.counts_toward_record, true);
+  assert.equal(e.official, false);
+  assert.equal(e.snapshot.publication_scope, 'tracking');
+  assert.equal(out.WIN.record.wins, out.PENDING.record.wins + 1, 'overall free-picks record: +1 win');
+  assert.equal(out.LOSS.record.losses, out.PENDING.record.losses + 1, 'overall free-picks record: +1 loss');
+  assert.equal(out.WIN.by_sport.NFL.wins, 1);
+  // tracking TD record moves; official scope never does
+  assert.equal(out.WIN.records.free_td_target_record.by_scope.tracking.wins, 1);
+  assert.equal(out.LOSS.records.free_td_target_record.by_scope.tracking.losses, 1);
+  for (const r of ['PENDING', 'WIN', 'LOSS']) {
+    assert.deepEqual(out[r].records.free_td_target_record.by_scope.official, { wins: 0, losses: 0, pushes: 0, voids: 0, pending: 0, hit_rate: null });
+  }
+  // other namespaces untouched
+  assert.deepEqual(out.WIN.records.legacy.mlb_algo_free_picks, out.PENDING.records.legacy.mlb_algo_free_picks);
+  assert.deepEqual(out.WIN.records.free_featured_player_record, out.PENDING.records.free_featured_player_record);
+});
