@@ -11,6 +11,7 @@
  */
 
 import { PROPBETEDGE_X_URL } from './social.js';
+import { ALL_ACCESS, SPORTS } from './pro-content.js';
 
 // ═════ IMAGE PROXY ═════
 export const IMG_PROXY = 'https://propbet-img-proxy.sales-fd3.workers.dev/?url=';
@@ -144,6 +145,16 @@ const NEWS_API_CAMPAIGN = {
   href: PROPBET_LINKS.api_news,
 };
 
+const ALL_ACCESS_CAMPAIGN = {
+  key: 'all_access',
+  tone: 'gold',
+  eyebrow: '✦ PROPBETEDGE ALL ACCESS',
+  headline: 'One platform. Every edge.',
+  sub: 'Advanced sports analytics, Player DNA, PBEcast, live game intelligence, matchup research, predictive models and evidence-backed news across MLB, NFL, NBA, WNBA, NHL, UFC, Tennis and Soccer.',
+  cta: `Get ${ALL_ACCESS.promoPercent}% off · ${ALL_ACCESS.promoCode}`,
+  href: '/pro',
+};
+
 const FREE_PICKS_CAMPAIGN = {
   key: 'free_picks',
   tone: 'gold',
@@ -204,6 +215,7 @@ export const BRAND_FAMILY = [
   SPORT_CAMPAIGNS.wnba,
   SPORT_CAMPAIGNS.nba,
   SPORT_CAMPAIGNS.nhl,
+  ALL_ACCESS_CAMPAIGN,
   FREE_PICKS_CAMPAIGN,
   PBECAST_CAMPAIGN,
   LEADERS_CAMPAIGN,
@@ -212,6 +224,24 @@ export const BRAND_FAMILY = [
 ];
 
 let _lastBrandKey = null;
+let _allAccessShownPath = null;
+let _allAccessShownOnPath = false;
+
+function allAccessAllowedOnCurrentPath() {
+  if (typeof window === 'undefined') return true;
+  const path = pagePath();
+  if (_allAccessShownPath !== path) {
+    _allAccessShownPath = path;
+    _allAccessShownOnPath = false;
+  }
+  return !_allAccessShownOnPath;
+}
+
+function markCampaignShown(campaign) {
+  if (campaign?.key !== ALL_ACCESS_CAMPAIGN.key || typeof window === 'undefined') return;
+  _allAccessShownPath = pagePath();
+  _allAccessShownOnPath = true;
+}
 
 function normalizeSport(rawSport) {
   const sport = String(rawSport || '').toLowerCase();
@@ -268,7 +298,13 @@ function isSelfDestination(campaign) {
 }
 
 function weightedPick(items) {
-  const eligible = items.filter((item) => item && item.campaign && item.weight > 0 && !isSelfDestination(item.campaign));
+  const eligible = items.filter((item) => (
+    item
+    && item.campaign
+    && item.weight > 0
+    && !isSelfDestination(item.campaign)
+    && (item.campaign.key !== ALL_ACCESS_CAMPAIGN.key || allAccessAllowedOnCurrentPath())
+  ));
   const fresh = eligible.filter((item) => item.campaign.key !== _lastBrandKey);
   const pool = fresh.length ? fresh : eligible;
   const total = pool.reduce((sum, item) => sum + item.weight, 0);
@@ -278,11 +314,13 @@ function weightedPick(items) {
     roll -= item.weight;
     if (roll <= 0) {
       _lastBrandKey = item.campaign.key;
+      markCampaignShown(item.campaign);
       return item.campaign;
     }
   }
   const fallback = pool[pool.length - 1].campaign;
   _lastBrandKey = fallback.key;
+  markCampaignShown(fallback);
   return fallback;
 }
 
@@ -328,6 +366,7 @@ function campaignForSlot(slotName, ctx = {}) {
 
   if (slotName === 'after_take' || slotName === 'end_of_article') {
     return weightedPick([
+      { campaign: ALL_ACCESS_CAMPAIGN, weight: 7 },
       ...(primary ? [{ campaign: primary, weight: 10 }] : LIVE_SPORT_KEYS.map((key) => ({ campaign: SPORT_CAMPAIGNS[key], weight: 3 }))),
       ...(primary ? liveSiblingInventory(sport, 1) : []),
       ...productDepth,
@@ -337,6 +376,7 @@ function campaignForSlot(slotName, ctx = {}) {
   }
 
   return weightedPick([
+    { campaign: ALL_ACCESS_CAMPAIGN, weight: 6 },
     ...(primary ? [{ campaign: primary, weight: 7 }] : LIVE_SPORT_KEYS.map((key) => ({ campaign: SPORT_CAMPAIGNS[key], weight: 2 }))),
     ...(primary ? liveSiblingInventory(sport, 1) : []),
     ...productDepth,
@@ -347,12 +387,45 @@ function campaignForSlot(slotName, ctx = {}) {
 
 export function resetAdRotation() {
   _lastBrandKey = null;
+  _allAccessShownPath = null;
+  _allAccessShownOnPath = false;
+}
+
+export function renderAllAccessArticleAd({ slotName = 'brand_slot', ctx = {}, trackedHref = '/pro' } = {}) {
+  const sport = inferredSport(ctx);
+  const photo = proxyImage(ctx?.imageUrl) || '/social/all-access-1200x630.png';
+  const sports = SPORTS.map((item) => `<span>${item.label}</span>`).join('');
+  return `
+    <aside class="pbe-aa-ad-shell" aria-label="PropBetEdge All Access promotion">
+      <a href="${trackedHref}" class="ad-block ad-brand-family ad-tone-gold pbe-aa-ad" data-ad-slot="${slotName}" data-ad-brand="${ALL_ACCESS_CAMPAIGN.key}" data-ad-sport="${sport || 'network'}">
+        <div class="pbe-aa-ad-media" aria-hidden="true">
+          <img src="${photo}" alt="" loading="lazy" decoding="async" />
+          <span class="pbe-aa-ad-shade"></span>
+        </div>
+        <div class="pbe-aa-ad-content">
+          <span class="pbe-aa-ad-eyebrow">PropBetEdge All Access · ${ALL_ACCESS.priceUsd}/${ALL_ACCESS.interval}</span>
+          <h3>One platform. Every edge.</h3>
+          <p>${ALL_ACCESS_CAMPAIGN.sub}</p>
+          <div class="pbe-aa-ad-sports" aria-label="Sports in the PropBetEdge network">${sports}</div>
+          <div class="pbe-aa-ad-offer">
+            <strong>${ALL_ACCESS.promoPercent}% OFF</strong>
+            <span>Code <b>${ALL_ACCESS.promoCode}</b></span>
+            <small>${ALL_ACCESS.promoDuration}</small>
+          </div>
+          <span class="pbe-aa-ad-cta">Explore All Access <b aria-hidden="true">→</b></span>
+        </div>
+      </a>
+    </aside>
+  `;
 }
 
 export function ad_brand_family(slotName = 'brand_slot', ctx = {}) {
   const sport = inferredSport(ctx);
   const campaign = campaignForSlot(slotName, ctx);
   const trackedHref = withUtm(campaign.href, slotName, campaign.key, sport);
+  if (campaign.key === ALL_ACCESS_CAMPAIGN.key) {
+    return renderAllAccessArticleAd({ slotName, ctx, trackedHref });
+  }
   const external = (() => {
     try { return new URL(trackedHref, window.location.origin).hostname !== window.location.hostname; } catch { return false; }
   })();
