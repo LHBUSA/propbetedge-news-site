@@ -62,7 +62,6 @@ function sync() {
 
   const slug = decodeURIComponent(window.location.pathname.split('/').filter(Boolean)[2] || '');
   syncRightRail(campaign, sport, slug);
-  syncArticleEnd(campaign, sport, slug);
   syncArticleCloser(sport, slug);
 }
 
@@ -98,31 +97,4 @@ function syncRightRail(campaign, sport, slug) {
   `;
 }
 
-function syncArticleEnd(campaign, sport, slug) {
-  let cta = document.querySelector('.article-page .picks-cta');
-
-  if (!cta) {
-    const related = document.querySelector('.article-page #related-slot');
-    if (!related) return;
-    related.insertAdjacentHTML('beforebegin', '<aside class="picks-cta" data-pbe-created-funnel="1"></aside>');
-    cta = document.querySelector('.article-page .picks-cta[data-pbe-created-funnel="1"]');
-  }
-
-  if (!cta || cta.dataset.pbeSportFunnel === `${sport}:${slug}`) return;
-  cta.dataset.pbeSportFunnel = `${sport}:${slug}`;
-
-  const secondary = campaign.secondaryHref
-    ? `<a href="${campaign.secondaryHref}" class="btn btn-ghost" target="_blank" rel="noopener">${campaign.secondaryCta}</a>`
-    : '';
-
-  cta.innerHTML = `
-    <div class="picks-cta-eyebrow">${campaign.eyebrow}</div>
-    <h3 class="picks-cta-headline">${campaign.title}</h3>
-    <p class="picks-cta-sub">${campaign.sub}</p>
-    <div class="picks-cta-buttons">
-      ${primaryButton(sport, slug, 'article_end', 'btn btn-primary')}
-      ${secondary}
-    </div>
-  `;
-}
 
