@@ -93,7 +93,7 @@ export async function renderArticle(root, sport, slug, setMeta) {
        </figure>`
     : '';
 
-  const articleContext = { sport: article.sport };
+  const articleContext = { sport: article.sport, imageUrl: article.image_url || seo.image?.url || null };
   const visualHtml = renderArticleVisuals(article, manifest);
   const bodyHtml = renderBodyWithMidAd(article, articleContext, graph, manifest, seo, visualHtml);
 
@@ -140,7 +140,7 @@ export async function renderArticle(root, sport, slug, setMeta) {
 
           ${bodyHtml}
 
-          ${ad_brand_family('end_of_article')}
+          ${ad_brand_family('end_of_article', articleContext)}
 
           ${renderPicksCTA(article)}
 
