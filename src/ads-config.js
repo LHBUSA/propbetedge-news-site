@@ -223,24 +223,90 @@ export const BRAND_FAMILY = [
   NEWS_API_CAMPAIGN,
 ];
 
+export const ALL_ACCESS_FREQUENCY_POLICY = Object.freeze({
+  maxPerDay: 3,
+  minMinutesBetween: 45,
+});
+
+const ALL_ACCESS_FREQUENCY_KEY = 'pbe_all_access_frequency_v1';
 let _lastBrandKey = null;
 let _allAccessShownPath = null;
 let _allAccessShownOnPath = false;
+let _allAccessFallbackFrequency = { day: '', count: 0, lastShownAt: 0 };
 
-function allAccessAllowedOnCurrentPath() {
+function localDayKey(now = Date.now()) {
+  const date = new Date(now);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeAllAccessFrequency(value, now = Date.now()) {
+  const today = localDayKey(now);
+  if (!value || value.day !== today) return { day: today, count: 0, lastShownAt: 0 };
+  return {
+    day: today,
+    count: Math.max(0, Number(value.count) || 0),
+    lastShownAt: Math.max(0, Number(value.lastShownAt) || 0),
+  };
+}
+
+function readAllAccessFrequency(now = Date.now()) {
+  const today = localDayKey(now);
+  if (typeof window === 'undefined') return { day: today, count: 0, lastShownAt: 0 };
+  try {
+    const raw = window.localStorage?.getItem(ALL_ACCESS_FREQUENCY_KEY);
+    return normalizeAllAccessFrequency(raw ? JSON.parse(raw) : null, now);
+  } catch {
+    _allAccessFallbackFrequency = normalizeAllAccessFrequency(_allAccessFallbackFrequency, now);
+    return { ..._allAccessFallbackFrequency };
+  }
+}
+
+function writeAllAccessFrequency(value) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage?.setItem(ALL_ACCESS_FREQUENCY_KEY, JSON.stringify(value));
+  } catch {
+    _allAccessFallbackFrequency = { ...value };
+  }
+}
+
+export function allAccessFrequencyEligible(now = Date.now()) {
+  const state = readAllAccessFrequency(now);
+  if (state.count >= ALL_ACCESS_FREQUENCY_POLICY.maxPerDay) return false;
+  const minGapMs = ALL_ACCESS_FREQUENCY_POLICY.minMinutesBetween * 60 * 1000;
+  if (state.lastShownAt && now - state.lastShownAt < minGapMs) return false;
+  return true;
+}
+
+function recordAllAccessFrequency(now = Date.now()) {
+  const state = readAllAccessFrequency(now);
+  const next = {
+    day: localDayKey(now),
+    count: Math.min(state.count + 1, ALL_ACCESS_FREQUENCY_POLICY.maxPerDay),
+    lastShownAt: now,
+  };
+  writeAllAccessFrequency(next);
+  return next;
+}
+
+function allAccessAllowedOnCurrentPath(now = Date.now()) {
   if (typeof window === 'undefined') return true;
   const path = pagePath();
   if (_allAccessShownPath !== path) {
     _allAccessShownPath = path;
     _allAccessShownOnPath = false;
   }
-  return !_allAccessShownOnPath;
+  return !_allAccessShownOnPath && allAccessFrequencyEligible(now);
 }
 
-function markCampaignShown(campaign) {
+function markCampaignShown(campaign, now = Date.now()) {
   if (campaign?.key !== ALL_ACCESS_CAMPAIGN.key || typeof window === 'undefined') return;
   _allAccessShownPath = pagePath();
   _allAccessShownOnPath = true;
+  recordAllAccessFrequency(now);
 }
 
 function normalizeSport(rawSport) {
