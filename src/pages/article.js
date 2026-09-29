@@ -142,7 +142,6 @@ export async function renderArticle(root, sport, slug, setMeta) {
 
           ${ad_brand_family('end_of_article', articleContext)}
 
-          ${renderPicksCTA(article)}
 
           <div id="related-slot"></div>
         </article>
@@ -415,40 +414,6 @@ function renderTakeCallout(article) {
   `;
 }
 
-function renderPicksCTA(article) {
-  const sportPicksMap = {
-    mlb: {
-      url: 'https://mlb.propbetedge.ai/picks',
-      label: 'MLB Picks Tonight',
-      secondaryUrl: 'https://mlb.propbetedge.ai/askalgo',
-      secondaryLabel: 'Ask The Algo',
-    },
-    nfl: {
-      url: 'https://nfl.propbetedge.ai/#picks',
-      label: 'NFL Picks This Week',
-      secondaryUrl: 'https://nfl.propbetedge.ai/#propboard',
-      secondaryLabel: 'See Live Prop Board',
-    },
-  };
-  const cta = sportPicksMap[article.sport];
-  if (!cta) return '';
-
-  const personalized = article.take?.players?.length
-    ? `Open the live ${article.sport.toUpperCase()} model card to see whether current angles involve ${escapeHtml(article.take.players.slice(0, 2).join(' & '))}.`
-    : `Open the live ${article.sport.toUpperCase()} model card for current picks and market context.`;
-
-  return `
-    <aside class="picks-cta">
-      <div class="picks-cta-eyebrow">⚡ The Same Brain</div>
-      <h3 class="picks-cta-headline">Take the story into the live model.</h3>
-      <p class="picks-cta-sub">${personalized} Recorded picks are graded against live odds.</p>
-      <div class="picks-cta-buttons">
-        <a href="${cta.url}" class="btn btn-primary" target="_blank" rel="noopener">${cta.label} →</a>
-        <a href="${cta.secondaryUrl}" class="btn btn-ghost" target="_blank" rel="noopener">${cta.secondaryLabel}</a>
-      </div>
-    </aside>
-  `;
-}
 
 /**
  * Related coverage, scored against the entity graph rather than "four more
