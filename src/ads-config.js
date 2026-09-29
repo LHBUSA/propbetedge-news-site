@@ -12,6 +12,7 @@
 
 import { PROPBETEDGE_X_URL } from './social.js';
 import { ALL_ACCESS, SPORTS } from './pro-content.js';
+import { liveCastHome, liveCastLabel } from './live-cast-routes.js';
 
 // ═════ IMAGE PROXY ═════
 export const IMG_PROXY = 'https://propbet-img-proxy.sales-fd3.workers.dev/?url=';
@@ -421,6 +422,21 @@ function liveSiblingInventory(currentSport, weight = 1) {
     .map((key) => ({ campaign: SPORT_CAMPAIGNS[key], weight }));
 }
 
+function campaignHref(campaign, sport = null) {
+  if (campaign?.key === PBECAST_CAMPAIGN.key) {
+    return liveCastHome(sport) || campaign.href;
+  }
+  return campaign?.href || '#';
+}
+
+function campaignCta(campaign, sport = null) {
+  if (campaign?.key === PBECAST_CAMPAIGN.key) {
+    const label = liveCastLabel(sport);
+    return label && label !== 'Game Center' ? `Open ${label}` : campaign.cta;
+  }
+  return campaign?.cta || 'Explore';
+}
+
 function campaignForSlot(slotName, ctx = {}) {
   const sport = inferredSport(ctx);
   const primary = sport ? SPORT_CAMPAIGNS[sport] : null;
@@ -488,7 +504,9 @@ export function renderAllAccessArticleAd({ slotName = 'brand_slot', ctx = {}, tr
 export function ad_brand_family(slotName = 'brand_slot', ctx = {}) {
   const sport = inferredSport(ctx);
   const campaign = campaignForSlot(slotName, ctx);
-  const trackedHref = withUtm(campaign.href, slotName, campaign.key, sport);
+  const destination = campaignHref(campaign, sport);
+  const trackedHref = withUtm(destination, slotName, campaign.key, sport);
+  const cta = campaignCta(campaign, sport);
   if (campaign.key === ALL_ACCESS_CAMPAIGN.key) {
     return renderAllAccessArticleAd({ slotName, ctx, trackedHref });
   }
@@ -501,7 +519,7 @@ export function ad_brand_family(slotName = 'brand_slot', ctx = {}) {
         <span class="ad-block-eyebrow">${campaign.eyebrow}</span>
         <h3 class="ad-block-headline">${campaign.headline}</h3>
         ${campaign.sub ? `<p class="ad-block-sub">${campaign.sub}</p>` : ''}
-        <span class="ad-block-cta">${campaign.cta} →</span>
+        <span class="ad-block-cta">${cta} →</span>
       </div>
     </a>
   `;
@@ -512,7 +530,8 @@ export function ad_header_banner(ctx = {}) {
   const campaign = headerCampaignForPage(ctx);
   return renderAdBanner({
     ...campaign,
-    href: withUtm(campaign.href, 'header_banner', campaign.key, sport),
+    cta: campaignCta(campaign, sport),
+    href: withUtm(campaignHref(campaign, sport), 'header_banner', campaign.key, sport),
   });
 }
 
