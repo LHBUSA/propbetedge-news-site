@@ -6,6 +6,7 @@
  */
 
 import { ad_footer_banner, PROPBET_LINKS } from '../ads-config.js';
+import { renderPreferredSource } from './preferred-source.js';
 
 export function renderFooter() {
   const year = new Date().getFullYear();
@@ -81,10 +82,7 @@ export function renderFooter() {
 
         </div>
 
-        <div class="footer-preferred-source">
-          <span class="footer-preferred-source-label">See more PropBetEdge in Google</span>
-          <div google-add-preferred-source-btn data-theme="dark"></div>
-        </div>
+        ${renderPreferredSource({ surface: 'footer' })}
 
         <div class="footer-social-bar">
           <span class="footer-social-label">Follow PropBetEdge</span>
@@ -100,9 +98,6 @@ export function renderFooter() {
         </div>
 
         <style>
-          .footer-preferred-source{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);margin:8px 0 16px}
-          .footer-preferred-source-label{font-size:12px;font-weight:800;letter-spacing:.04em;color:rgba(255,255,255,.72)}
-          @media(max-width:640px){.footer-preferred-source{align-items:flex-start;flex-direction:column}}
           .footer-mother{display:flex;flex-direction:column;gap:10px;align-items:flex-start;padding:22px 0 4px;border-top:1px solid rgba(255,255,255,.08);margin-top:8px}
           .footer-mother-network{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.4)}
           .footer-mother-badge{display:inline-block;border-radius:11px;line-height:0;transition:transform .2s ease,box-shadow .2s ease;outline:none}

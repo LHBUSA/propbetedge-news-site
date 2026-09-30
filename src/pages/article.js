@@ -21,6 +21,10 @@ import { renderRailShell, mountArticleRail } from '../components/right-rail.js';
 import { renderNotFound } from './404.js';
 import { ad_in_article_after_take, ad_in_article_mid, ad_brand_family, proxyImage } from '../ads-config.js';
 import { renderArticleVisuals, mountArticleVisuals } from '../article-visuals.js';
+import { renderPreferredSource } from '../components/preferred-source.js';
+
+const PREFERRED_SOURCE_SPORTS = new Set(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer']);
+const preferredSourceSport = (sport) => (PREFERRED_SOURCE_SPORTS.has(String(sport || '').toLowerCase()) ? String(sport).toLowerCase() : 'network');
 
 const SPORT_LABELS = { mlb: 'MLB', nfl: 'NFL', nba: 'NBA', nhl: 'NHL' };
 const SPORT_FALLBACK = { mlb: '⚾', nfl: '🏈', nba: '🏀', nhl: '🏒' };
@@ -139,6 +143,8 @@ export async function renderArticle(root, sport, slug, setMeta) {
           ${ad_in_article_after_take(articleContext)}
 
           ${bodyHtml}
+
+          ${renderPreferredSource({ surface: 'article', sport: preferredSourceSport(article.sport) })}
 
           ${ad_brand_family('end_of_article', articleContext)}
 
