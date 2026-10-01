@@ -88,7 +88,6 @@ export function renderHeader() {
           </button>
           <a href="/" class="nav-link masthead-home " aria-label="PropBetEdge home">Home</a>
           <span class="masthead-nav-divider" aria-hidden="true"></span>
-          <a href="/news" class="nav-link ${path === '/news' ? 'active' : ''}">All News</a>
           ${NEWS_PRIMARY.map(key => `<a href="${newsHref(key)}" class="nav-link ${sportPathActive(path, key) ? 'active' : ''}"${newsTargetAttrs(key)}>${INTELLIGENCE_SPORTS[key].label}</a>`).join('')}
           ${renderMoreNewsSwitcher(sport)}
           <a href="/pro" class="nav-link pbe-all-access-link ${path === '/pro' ? 'active' : ''}" data-pbe-placement="masthead_all_access">All Access</a>
