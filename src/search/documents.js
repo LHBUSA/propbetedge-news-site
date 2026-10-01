@@ -260,6 +260,115 @@ export function ufcDocsFromSitemaps({ fighters = [], events = [], fights = [] },
   return docs;
 }
 
+// ─── sitemap-backed products (Tennis, Soccer, Golf) ─────────────────────────
+
+function wordsFromSlug(value) {
+  return String(value || '')
+    .split('-')
+    .filter(Boolean)
+    .map((t) => /^[a-z]{1,3}$/i.test(t) ? t.toUpperCase() : t.charAt(0).toUpperCase() + t.slice(1))
+    .join(' ');
+}
+
+/**
+ * Turn canonical product sitemap URLs into compact search docs. This is a
+ * navigation/index layer, not a data scraper: the owning product remains the
+ * source of truth and every result links back to its canonical page.
+ */
+export function productDocsFromSitemap({ sport, site, urls = [] }) {
+  const docs = [];
+  const seen = new Set();
+  const push = (doc) => {
+    if (!doc?.href || seen.has(doc.href)) return;
+    seen.add(doc.href);
+    docs.push(doc);
+  };
+
+  for (const raw of urls) {
+    let u;
+    try { u = new URL(raw); } catch { continue; }
+    if (u.origin !== site) continue;
+    const path = u.pathname.replace(/\/+$/, '') || '/';
+    const seg = path.split('/').filter(Boolean);
+    if (!seg.length) continue;
+
+    const first = seg[0];
+    const id = seg.slice(1).join('/') || first;
+    const slug = seg.at(-1) || first;
+    const title = wordsFromSlug(slug);
+
+    if ((first === 'player' || first === 'players') && seg.length >= 2) {
+      push({
+        type: 'player', sport, id, title, subtitle: `${sport.toUpperCase()} player`,
+        href: u.href, image: null, aliases: [], keywords: [sport, 'player'],
+      });
+      continue;
+    }
+
+    if ((first === 'team' || first === 'teams') && seg.length >= 2) {
+      push({
+        type: 'team', sport, id, title, subtitle: `${sport.toUpperCase()} team`,
+        href: u.href, image: null, aliases: [], keywords: [sport, 'team'],
+      });
+      continue;
+    }
+
+    if (['tournament', 'tournaments', 'match', 'matches', 'competition', 'competitions', 'majors'].includes(first) && seg.length >= 2) {
+      push({
+        type: 'event', kind: first, sport, id, title, subtitle: `${sport.toUpperCase()} ${first.replace(/s$/, '')}`,
+        href: u.href, image: null, aliases: [], keywords: [sport, first],
+      });
+      continue;
+    }
+
+    if (first === 'course' && seg.length >= 2) {
+      push({
+        type: 'tool', sport, id: `course:${id}`, title, subtitle: 'GOLF INTELLIGENCE · COURSE',
+        label: 'GOLF INTELLIGENCE · COURSE', href: u.href, image: null,
+        aliases: [title], keywords: ['golf', 'course', 'course dna'],
+      });
+      continue;
+    }
+
+    if (first === 'news' && seg.length >= 2) {
+      push({
+        type: 'story', sport, id: `site-news:${id}`, title, subtitle: `${sport.toUpperCase()} NEWS`,
+        href: u.href, image: null, aliases: [], keywords: [sport, 'news'],
+      });
+      continue;
+    }
+  }
+  return docs;
+}
+
+/** Learn already publishes a compact, typed search manifest. Keep its own
+ * labels/aliases/keywords and only accept safe first-party URLs. */
+export function learnDocsFromManifest(payload) {
+  if (!payload || payload.schema !== 'pbe-learn-search/1' || !Array.isArray(payload.docs)) return [];
+  const out = [];
+  for (const raw of payload.docs) {
+    if (!raw?.id || !raw?.title || !raw?.href) continue;
+    let u;
+    try { u = new URL(raw.href); } catch { continue; }
+    if (u.origin !== 'https://learn.propbetedge.ai') continue;
+    out.push({
+      type: 'learn',
+      sport: raw.sport || null,
+      id: String(raw.id),
+      title: String(raw.title),
+      subtitle: String(raw.subtitle || ''),
+      href: u.href,
+      image: null,
+      aliases: Array.isArray(raw.aliases) ? raw.aliases.map(String) : [],
+      keywords: Array.isArray(raw.keywords) ? raw.keywords.map(String) : [],
+      kind: raw.kind || null,
+      label: raw.label || 'LEARN',
+      boost: Number(raw.boost) || 0,
+    });
+  }
+  return out;
+}
+
 // ─── stories (propbet-news-api) ─────────────────────────────────────────────
 
 /**
