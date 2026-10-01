@@ -19,9 +19,12 @@ const NFL = 'https://nfl.propbetedge.ai';
 const NBA = 'https://nba.propbetedge.ai';
 const NHL = 'https://nhl.propbetedge.ai';
 const WNBA = 'https://wnba.propbetedge.ai';
+const TENNIS = 'https://tennis.propbetedge.ai';
+const SOCCER = 'https://soccer.propbetedge.ai';
+const GOLF = 'https://golf.propbetedge.ai';
 
 export const SPORT_LABEL = Object.freeze({
-  mlb: 'MLB', nfl: 'NFL', nba: 'NBA', wnba: 'WNBA', nhl: 'NHL', ufc: 'UFC',
+  mlb: 'MLB', nfl: 'NFL', nba: 'NBA', wnba: 'WNBA', nhl: 'NHL', ufc: 'UFC', tennis: 'Tennis', soccer: 'Soccer', golf: 'Golf',
 });
 
 export const PRODUCT_HUBS = Object.freeze({
@@ -31,6 +34,9 @@ export const PRODUCT_HUBS = Object.freeze({
   wnba: WNBA,
   nhl: NHL,
   ufc: UFC,
+  tennis: TENNIS,
+  soccer: SOCCER,
+  golf: GOLF,
 });
 
 /**
@@ -45,6 +51,9 @@ const TOOL_ROWS = [
   ['wnba-intelligence', 'wnba', 'WNBA Intelligence', 'WNBA · LIVE INTELLIGENCE', PRODUCT_HUBS.wnba, ['wnba', 'womens basketball', 'wnba propbetedge'], ['wnbacast', 'predictions', 'props', 'players'], 20],
   ['nhl-intelligence', 'nhl', 'NHL Intelligence', 'NHL · LIVE INTELLIGENCE', PRODUCT_HUBS.nhl, ['nhl', 'hockey', 'nhl propbetedge'], ['ice board', 'pbe cast', 'picks', 'props'], 20],
   ['ufc-intelligence', 'ufc', 'UFC Intelligence', 'UFC · LIVE INTELLIGENCE', PRODUCT_HUBS.ufc, ['ufc', 'mma', 'ufc propbetedge'], ['fight dna', 'fighters', 'cards', 'rankings', 'fight week'], 20],
+  ['tennis-intelligence', 'tennis', 'Tennis Intelligence', 'TENNIS · LIVE INTELLIGENCE', PRODUCT_HUBS.tennis, ['tennis', 'atp', 'wta', 'tennis propbetedge'], ['tennis dna', 'rankings', 'players', 'tournaments', 'pbecast'], 20],
+  ['soccer-intelligence', 'soccer', 'Soccer Intelligence', 'SOCCER · LIVE INTELLIGENCE', PRODUCT_HUBS.soccer, ['soccer', 'football', 'mls', 'soccer propbetedge'], ['player dna', 'matches', 'competitions', 'tables', 'pbecast'], 20],
+  ['golf-intelligence', 'golf', 'Golf Intelligence', 'GOLF · LIVE INTELLIGENCE', PRODUCT_HUBS.golf, ['golf', 'pga', 'lpga', 'golf propbetedge'], ['player dna', 'course dna', 'courses', 'tournaments', 'pbecast'], 20],
 
   // ── UFC ───────────────────────────────────────────────────────────────────
   ['ufc-simulator', 'ufc', 'Fight Simulator', 'UFC INTELLIGENCE · LABS', `${UFC}/simulator`, ['fight simulator', 'simulator', 'ufc simulator', 'fight sim', 'mma simulator'], ['simulate', 'matchup', 'labs', 'what if'], 10],
@@ -105,6 +114,27 @@ const TOOL_ROWS = [
   ['nhl-injuries', 'nhl', 'Injuries · NHL', 'NHL INTELLIGENCE · INJURIES', `${NHL}/#/injuries`, ['injuries', 'nhl injuries'], ['status'], 0],
   ['nhl-track-record', 'nhl', 'Track Record · NHL', 'NHL INTELLIGENCE · TRACK RECORD', `${NHL}/#/track-record`, ['track record', 'nhl track record'], ['results'], 0],
 
+  // ── Tennis ────────────────────────────────────────────────────────────────
+  ['tennis-dna', 'tennis', 'Tennis DNA', 'TENNIS INTELLIGENCE · PLAYER DNA', `${TENNIS}/dna`, ['tennis dna', 'player dna', 'match dna'], ['serve', 'return', 'percentiles'], 5],
+  ['tennis-pbecast', 'tennis', 'PBEcast · Tennis', 'TENNIS INTELLIGENCE · LIVE', `${TENNIS}/pbecast`, ['tennis pbecast', 'pbecast'], ['live', 'match', 'court'], 0],
+  ['tennis-rankings', 'tennis', 'Tennis Rankings', 'TENNIS INTELLIGENCE · RANKINGS', `${TENNIS}/rankings`, ['atp rankings', 'wta rankings', 'tennis rankings'], ['rankings'], 0],
+  ['tennis-players', 'tennis', 'Tennis Players', 'TENNIS INTELLIGENCE · PLAYERS', `${TENNIS}/players`, ['tennis players', 'atp players', 'wta players'], ['players'], 0],
+  ['tennis-tournaments', 'tennis', 'Tennis Tournaments', 'TENNIS INTELLIGENCE · TOURNAMENTS', `${TENNIS}/tournaments`, ['tennis tournaments', 'atp tournaments', 'wta tournaments'], ['events', 'draws'], 0],
+
+  // ── Soccer ────────────────────────────────────────────────────────────────
+  ['soccer-pbecast', 'soccer', 'PBEcast · Soccer', 'SOCCER INTELLIGENCE · LIVE', `${SOCCER}/pbecast`, ['soccer pbecast', 'pbecast'], ['live', 'matches'], 0],
+  ['soccer-players', 'soccer', 'Soccer Player DNA', 'SOCCER INTELLIGENCE · PLAYERS', `${SOCCER}/players`, ['soccer players', 'player dna'], ['players', 'dna'], 0],
+  ['soccer-competitions', 'soccer', 'Soccer Competitions', 'SOCCER INTELLIGENCE · COMPETITIONS', `${SOCCER}/competitions`, ['soccer competitions', 'leagues'], ['premier league', 'bundesliga', 'mls'], 0],
+  ['soccer-tables', 'soccer', 'Soccer Tables', 'SOCCER INTELLIGENCE · TABLES', `${SOCCER}/tables`, ['soccer standings', 'soccer tables'], ['standings'], 0],
+  ['soccer-picks', 'soccer', 'Official Picks · Soccer', 'SOCCER INTELLIGENCE · PICKS', `${SOCCER}/picks`, ['soccer picks', 'official picks'], ['model', 'picks'], 0],
+
+  // ── Golf ──────────────────────────────────────────────────────────────────
+  ['golf-players', 'golf', 'Golf Players', 'GOLF INTELLIGENCE · PLAYERS', `${GOLF}/players`, ['golf players', 'pga players', 'lpga players'], ['player dna'], 0],
+  ['golf-courses', 'golf', 'Golf Courses', 'GOLF INTELLIGENCE · COURSES', `${GOLF}/courses`, ['golf courses', 'course dna'], ['course dna', 'venues'], 0],
+  ['golf-tournaments', 'golf', 'Golf Tournaments', 'GOLF INTELLIGENCE · TOURNAMENTS', `${GOLF}/tournaments`, ['golf tournaments', 'pga tournaments', 'lpga tournaments'], ['events', 'majors'], 0],
+  ['golf-pbecast', 'golf', 'PBEcast · Golf', 'GOLF INTELLIGENCE · PBECAST', `${GOLF}/pbecast`, ['golf pbecast', 'pbecast'], ['leaderboard', 'rounds'], 0],
+  ['golf-majors', 'golf', 'Golf Majors', 'GOLF INTELLIGENCE · MAJORS', `${GOLF}/majors`, ['golf majors', 'masters', 'us open', 'open championship', 'pga championship'], ['majors'], 0],
+
   // ── propbetedge.ai hub ────────────────────────────────────────────────────
   ['hub-home', null, 'PropBetEdge Home', 'PROPBETEDGE · FRONT PAGE', '/', ['home', 'front page', 'propbetedge'], ['my edge'], -10],
   ['hub-games', null, 'PBEcast Live Games', 'PROPBETEDGE · LIVE GAMES', '/games', ['pbecast', 'live games', 'scores', 'pbe cast', 'game center'], ['live', 'scoreboard'], 12],
@@ -151,7 +181,7 @@ export function toolById(id) {
 
 /** Empty-state rows. Real destinations, never canned "results". */
 export const EMPTY_STATE = Object.freeze({
-  live: Object.freeze(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc'].map((sport) => Object.freeze({
+  live: Object.freeze(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer', 'golf'].map((sport) => Object.freeze({
     id: `${sport}-intelligence`,
     title: SPORT_LABEL[sport],
     href: PRODUCT_HUBS[sport],
