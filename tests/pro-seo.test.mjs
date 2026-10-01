@@ -27,7 +27,7 @@ test('title and description: premium, descriptive, SERP-length, product first (n
   assert.ok(seo.PRO_TITLE.length <= 60, `title ${seo.PRO_TITLE.length} chars`);
   assert.equal(/THEEDGE25|25%/.test(seo.PRO_TITLE), false, 'the discount never leads the title');
   assert.ok(seo.PRO_DESCRIPTION.length >= 140 && seo.PRO_DESCRIPTION.length <= 300, `description ${seo.PRO_DESCRIPTION.length} chars`);
-  for (const word of ['8 sports', '$29/month', 'sports intelligence operating system', 'sport-specific analytical engines', 'tracked decisions', 'shadow research', 'PBEcast', 'future Pro product']) {
+  for (const word of ['8 Pro sports', '$29/month', 'sports intelligence operating system', 'sport-specific analytical engines', 'tracked decisions', 'shadow research', 'PBEcast', 'Golf Pro', 'Boxing Pro', 'Q1 2027']) {
     assert.ok(seo.PRO_DESCRIPTION.includes(word), word);
   }
   assert.equal(/best|#1|most accurate/i.test(seo.PRO_TITLE + seo.PRO_DESCRIPTION), false, 'no fabricated superlatives');
@@ -96,7 +96,7 @@ test('JSON-LD graph: connected WebPage -> Product -> Offer with stable @ids, bra
   assert.equal(by.WebApplication['@id'], 'https://propbetedge.ai/#sports-intelligence-os');
   assert.equal(by.WebApplication.name, 'PropBetEdge Sports Intelligence Operating System');
   assert.match(by.WebApplication.description, /autonomous sports intelligence operating system/i);
-  for (const feature of ['Continuous live sports data ingestion', 'Sport-specific prediction models and analytical engines', 'Shadow research for candidate signals and models', 'Governed promotion into production']) {
+  for (const feature of ['Pro access across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis and Soccer', 'Golf Pro and Boxing Pro planned for Q1 2027', 'Continuous live sports data ingestion', 'Sport-specific prediction models and analytical engines', 'Shadow research for candidate signals and models', 'Governed promotion into production']) {
     assert.ok(by.WebApplication.featureList.includes(feature), feature);
   }
   const text = JSON.stringify(ld);
