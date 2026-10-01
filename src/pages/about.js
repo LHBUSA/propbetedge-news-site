@@ -19,7 +19,7 @@ const SPORTS = [
 export function renderAbout(root, setMeta) {
   setMeta?.({
     title: 'About PropBetEdge — The Sports Intelligence Network',
-    description: 'PropBetEdge is a multi-sport intelligence network combining data, models, live analysis, player intelligence, public records, and original sports journalism.',
+    description: 'PropBetEdge is a nine-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
     canonical: `${SITE}/about`,
   });
 
@@ -36,7 +36,7 @@ export function renderAbout(root, setMeta) {
       '@id': `${SITE}/about#page`,
       url: `${SITE}/about`,
       name: 'About PropBetEdge',
-      description: 'PropBetEdge is a multi-sport intelligence network combining data, models, live analysis, player intelligence, public records, and original sports journalism.',
+      description: 'PropBetEdge is a nine-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
       mainEntity: { '@id': `${SITE}/#organization` },
       isPartOf: { '@id': `${SITE}/#website` },
       inLanguage: 'en-US',
