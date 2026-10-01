@@ -230,17 +230,26 @@
 }
 
 .pbe-av-evidence-card > div {
-  margin-top: 13px;
+  margin-top: 12px;
 }
 
 .pbe-av-evidence-stats {
+  min-height: 118px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
-  gap: 10px;
+  grid-template-columns: 1fr;
+  grid-auto-rows: min-content;
+  align-content: start;
+  gap: 15px;
+  padding: 0 0 13px;
+  border-bottom: 1px solid rgba(255,255,255,.065);
 }
 
 .pbe-av-evidence-stat {
   min-width: 0;
+}
+
+.pbe-av-evidence-stat + .pbe-av-evidence-stat {
+  padding-top: 1px;
 }
 
 .pbe-av-evidence-card.is-statline {
@@ -249,26 +258,15 @@
 }
 
 .pbe-av-evidence-card.is-statline .pbe-av-evidence-stats {
-  padding: 2px 0 10px;
+  min-height: 118px;
+  grid-template-columns: 1fr;
+  padding: 0 0 13px;
   border-bottom: 1px solid rgba(255,255,255,.065);
 }
 
 .pbe-av-evidence-card.is-statline .pbe-av-evidence-stat + .pbe-av-evidence-stat {
-  padding-left: 10px;
-  border-left: 1px solid rgba(255,255,255,.065);
-}
-
-.pbe-av-evidence-card.is-statline .pbe-av-evidence-stat:first-child strong {
-  font-size: clamp(32px, 4vw, 42px);
-}
-
-.pbe-av-evidence-card.is-statline p {
-  margin-top: 12px !important;
-  padding-top: 0;
-  max-width: 76ch;
-  color: var(--av-dim) !important;
-  font-size: 9.2px !important;
-  line-height: 1.45 !important;
+  padding: 0;
+  border-left: 0;
 }
 
 .pbe-av-evidence-card strong,
@@ -277,9 +275,18 @@
 }
 
 .pbe-av-evidence-card strong {
+  max-width: 100%;
   color: var(--av-paper);
-  font: 850 clamp(27px, 3vw, 35px)/.92 var(--font-sans);
+  font: 850 clamp(31px, 3.4vw, 40px)/.94 var(--font-sans);
+  font-variant-numeric: tabular-nums;
   letter-spacing: -.045em;
+  white-space: nowrap;
+}
+
+.pbe-av-evidence-stat:not(:first-child) strong {
+  font-size: clamp(22px, 2.4vw, 28px);
+  line-height: 1;
+  letter-spacing: -.035em;
 }
 
 .pbe-av-evidence-card b {
@@ -289,9 +296,14 @@
   letter-spacing: .1em;
 }
 
-.pbe-av-evidence-card p {
-  margin: auto 0 0 !important;
-  padding-top: 12px;
+.pbe-av-evidence-stat:not(:first-child) b {
+  margin-top: 5px;
+}
+
+.pbe-av-evidence-card p,
+.pbe-av-evidence-card.is-statline p {
+  margin: 13px 0 0 !important;
+  padding-top: 0;
   max-height: none !important;
   overflow: visible !important;
   display: block !important;
@@ -300,8 +312,8 @@
   text-overflow: clip !important;
   -webkit-line-clamp: unset !important;
   -webkit-box-orient: initial !important;
-  color: var(--av-faint) !important;
-  font: 500 8.6px/1.35 var(--font-sans) !important;
+  color: var(--av-dim) !important;
+  font: 500 11.5px/1.5 var(--font-sans) !important;
 }
 
 /* Availability / transaction visual */
@@ -1147,7 +1159,11 @@
   }
 
   .pbe-av-evidence-card strong {
-    font-size: 29px;
+    font-size: 34px;
+  }
+
+  .pbe-av-evidence-stat:not(:first-child) strong {
+    font-size: 24px;
   }
 
   .pbe-av-evidence-grid,
@@ -1158,11 +1174,7 @@
   }
 
   .pbe-av-evidence-card.is-statline .pbe-av-evidence-stats {
-    grid-template-columns: repeat(3, minmax(0,1fr));
-  }
-
-  .pbe-av-evidence-card.is-statline .pbe-av-evidence-stat:first-child strong {
-    font-size: 31px;
+    grid-template-columns: 1fr;
   }
 
   .pbe-av-ripple-head,
