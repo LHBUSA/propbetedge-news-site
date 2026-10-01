@@ -19,6 +19,7 @@ export const ORG_ID = `${SITE}/#organization`;
 export const WEBSITE_ID = `${SITE}/#website`;
 export const WEBPAGE_ID = `${PRO_CANONICAL}#webpage`;
 export const PRODUCT_ID = `${PRO_CANONICAL}#product`;
+export const OS_ID = `${SITE}/#sports-intelligence-os`;
 export const OFFER_ID = `${PRO_CANONICAL}#offer`;
 export const BREADCRUMB_ID = `${PRO_CANONICAL}#breadcrumb`;
 
@@ -116,7 +117,7 @@ export function proJsonLd() {
         description: PRO_DESCRIPTION,
         inLanguage: 'en-US',
         isPartOf: { '@id': WEBSITE_ID },
-        about: { '@id': PRODUCT_ID },
+        about: [{ '@id': PRODUCT_ID }, { '@id': OS_ID }],
         mainEntity: { '@id': PRODUCT_ID },
         breadcrumb: { '@id': BREADCRUMB_ID },
         primaryImageOfPage: {
@@ -145,10 +146,16 @@ export function proJsonLd() {
         description: 'A monthly membership to the PropBetEdge sports intelligence operating system. Across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis and Soccer, the system ingests live sports data, runs sport-specific analytical engines, grades official decisions, supports shadow research and governed model evolution, and powers PBEcast, player and matchup intelligence, research and every future Pro product.',
         url: PRO_CANONICAL,
         image: PRO_SOCIAL_IMAGE.url,
-        category: 'Sports intelligence membership',
+        category: 'Sports intelligence operating system membership',
         brand: { '@id': ORG_ID },
         manufacturer: { '@id': ORG_ID },
-        isRelatedTo: sportSites,
+        isRelatedTo: [{ '@id': OS_ID }, ...sportSites],
+        additionalProperty: [
+          { '@type': 'PropertyValue', name: 'Platform', value: 'Autonomous sports intelligence operating system' },
+          { '@type': 'PropertyValue', name: 'Sports', value: String(SPORTS.length) },
+          { '@type': 'PropertyValue', name: 'Model governance', value: 'Shadow research, evidence gates and governed promotion to production' },
+          { '@type': 'PropertyValue', name: 'Decision accountability', value: 'Tracked and graded official decisions with permanent records where live' },
+        ],
         mainEntityOfPage: { '@id': WEBPAGE_ID },
         offers: { '@id': OFFER_ID },
       },
