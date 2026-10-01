@@ -16,6 +16,8 @@ const EXPECTED = {
   wnba: ['https://wnba.propbetedge.ai/', 'Women’s basketball intelligence beyond the box score.'],
   ufc: ['https://ufc.propbetedge.ai/', 'Fight intelligence beyond the result.'],
   tennis: ['https://tennis.propbetedge.ai/', 'Tennis intelligence beyond the scoreline.'],
+  soccer: ['https://soccer.propbetedge.ai/', 'Soccer intelligence beyond the scoreline.'],
+  golf: ['https://golf.propbetedge.ai/', 'Golf intelligence beyond the leaderboard.'],
 };
 
 const read = (rel) => fs.readFileSync(new URL(rel, import.meta.url), 'utf8');
@@ -32,7 +34,7 @@ function anchorFrom(html, selector = 'data-pbe-intel-cta') {
   return { dataset, href, tag };
 }
 
-test('seven sports, each on its canonical intelligence URL with its own copy', () => {
+test('nine sports, each on its canonical intelligence URL with its own copy', () => {
   assert.deepEqual([...INTELLIGENCE_ORDER].sort(), Object.keys(EXPECTED).sort());
   for (const [key, [href, line]] of Object.entries(EXPECTED)) {
     assert.equal(INTELLIGENCE_SPORTS[key].href, href, key);
@@ -88,11 +90,12 @@ test('analytics emits intelligence_cta_click exactly once per anchor', () => {
 
 test('surfaces use the registry, not raw product URLs', () => {
   for (const rel of ['../src/pages/sport.js', '../src/article-funnel.js', '../src/pages/news-index.js']) {
-    assert.ok(!/https:\/\/(mlb|nfl|nba|nhl|wnba|ufc|tennis)\.propbetedge\.ai\/?['"`]/.test(read(rel)), rel);
+    assert.ok(!/https:\/\/(mlb|nfl|nba|nhl|wnba|ufc|tennis|soccer|golf)\.propbetedge\.ai\/?['"`]/.test(read(rel)), rel);
   }
   const header = read('../src/components/header.js');
   assert.match(header, /INTELLIGENCE_ORDER\.map/);
   assert.match(header, /placement: 'header_switcher'/);
+  assert.match(header, /placement: 'header_sports'/);
   assert.match(header, /placement: 'mobile_more'/);
 });
 
