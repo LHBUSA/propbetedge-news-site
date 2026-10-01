@@ -44,12 +44,15 @@ test('hierarchy: title, statement, price, CTA, launch offer, eight sports (Tenni
   assert.match(html, /25% off for as long as you stay active/);
   assert.match(html, /<code data-pbe-promo-code>THEEDGE25<\/code>/);
   assert.deepEqual(SPORTS.map(s => s.label), ['MLB', 'NFL', 'NBA', 'NHL', 'WNBA', 'UFC', 'Tennis', 'Soccer']);
-  assert.match(html, /8 sports today, every future sport included/);
-  assert.match(html, /plus PropBetEdge Tennis and Soccer Intelligence, today/);
+  assert.match(html, /8 Pro sports today · Golf \+ Boxing planned Q1 2027 · every future sport included/);
+  assert.match(html, /Includes MLB, NFL, NBA, NHL, WNBA and UFC Pro, plus PropBetEdge Tennis and Soccer Intelligence, today\.|Includes MLB, NFL, NBA, NHL, WNBA, UFC, Tennis and Soccer Pro today/);
   for (const s of SPORTS) {
     assert.match(html, new RegExp(`data-sport="${s.key}"`), s.key);
     assert.ok(html.includes(`href="${s.url}"`), `${s.label} links to its property`);
   }
+  assert.match(html, /data-sport="golf"/);
+  assert.match(html, /data-sport="boxing"/);
+  assert.match(html, /Coming Q1 2027/);
   assert.match(html, /data-sport="future"/);
   assert.match(html, /Every future sport/);
   assert.match(html, /Every new PropBetEdge sport and every new Pro product joins All Access on launch day/);
@@ -81,6 +84,8 @@ test('?checkout=success renders the premium success state and no second checkout
   assert.match(html, /membership is active/);
   assert.match(html, /Enter the email you used at checkout/);
   assert.match(html, /Manage subscription/);
+  assert.match(html, /Tennis Pro/);
+  assert.match(html, /Soccer Pro/);
   assert.equal(html.includes(LIVE.checkoutUrl), false, 'a buyer who just paid is not sold again');
   for (const s of SPORTS) assert.ok(html.includes(`href="${s.url}"`), `${s.label} reachable from the success state`);
   assert.equal(proHeadMeta({ checkoutSuccess: true }).title, 'All Access is active | PropBetEdge');
