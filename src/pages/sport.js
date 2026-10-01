@@ -8,7 +8,7 @@ import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { renderArticleCard, renderSidebarStory, escapeHtml, formatRelative } from '../components/article-card.js';
 import { proxyImage } from '../ads-config.js';
-import { renderSectionHeroCta, renderSectionNavCta, renderMoreThanNewsCta } from '../intelligence-cta.js';
+import { INTELLIGENCE_SPORTS, renderSectionHeroCta, renderSectionNavCta, renderMoreThanNewsCta } from '../intelligence-cta.js';
 import {
   organizationSchema, websiteSchema, breadcrumbSchema,
   collectionPageSchema, injectSchemas,
@@ -21,7 +21,15 @@ const SPORT_TAGLINES = {
   nba: 'Points, assists, rebounds, threes — every angle on the hardwood.',
   nhl: 'Shots on goal, goals, saves — the ice-level edge.',
 };
-const SECTIONS = ['mlb', 'nfl', 'nba', 'nhl'];
+const SECTIONS = ['mlb', 'nfl', 'nba', 'nhl', 'wnba', 'ufc', 'tennis', 'soccer', 'golf'];
+
+function newsHref(key) {
+  return INTELLIGENCE_SPORTS[key]?.newsPath || '/news';
+}
+
+function newsTargetAttrs(key) {
+  return /^https:\/\//.test(newsHref(key)) ? ' target="_blank" rel="noopener"' : '';
+}
 const PAGE_SIZE = 20;
 const HIGHLIGHTS_LIMIT = 6;
 const HIGHLIGHTS_REFRESH_MS = 15 * 60 * 1000;
@@ -61,7 +69,7 @@ export async function renderSport(root, sport, requestedPage = 1) {
         <div class="container section-bar-inner">
           <a href="/news" class="section-link">All News</a>
           ${SECTIONS.map((s) => `
-            <a href="/news/${s}" class="section-link ${s === sport ? 'active' : ''}">${s.toUpperCase()}</a>
+            <a href="${newsHref(s)}" class="section-link ${s === sport ? 'active' : ''}"${newsTargetAttrs(s)}>${INTELLIGENCE_SPORTS[s].label}</a>
           `).join('')}
           <a href="/standings/${sport}" class="section-link">Standings</a>
           ${renderSectionNavCta(sport)}
