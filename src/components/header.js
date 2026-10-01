@@ -27,6 +27,8 @@ const INTELLIGENCE_BLURBS = Object.freeze({
   nhl: 'Ice Board, PBE Picks, player research and hockey intelligence',
   ufc: 'Fight DNA, matchup research, rankings and fight-week intelligence',
   tennis: 'Live matches, player analytics and match data',
+  soccer: 'Live matches, Player DNA, competitions and match intelligence',
+  golf: 'Player DNA, Course DNA, tournaments and PBEcast',
 });
 
 const INTELLIGENCE_PRODUCTS = Object.freeze(INTELLIGENCE_ORDER.map((key) => {
@@ -76,12 +78,7 @@ export function renderHeader() {
           <a href="/" class="nav-link masthead-home " aria-label="PropBetEdge home">Home</a>
           <span class="masthead-nav-divider" aria-hidden="true"></span>
           <a href="/news" class="nav-link ${path === '/news' ? 'active' : ''}">All News</a>
-          <a href="/news/mlb" class="nav-link ${sportPathActive(path, 'mlb') ? 'active' : ''}">MLB</a>
-          <a href="/news/nfl" class="nav-link ${sportPathActive(path, 'nfl') ? 'active' : ''}">NFL</a>
-          <a href="${PROPBET_LINKS.news_ufc}" class="nav-link" target="_blank" rel="noopener">UFC</a>
-          <a href="/news/nba" class="nav-link ${sportPathActive(path, 'nba') ? 'active' : ''}">NBA</a>
-          <a href="https://wnba.propbetedge.ai" class="nav-link" target="_blank" rel="noopener">WNBA</a>
-          <a href="/news/nhl" class="nav-link ${sportPathActive(path, 'nhl') ? 'active' : ''}">NHL</a>
+          ${renderSportsSwitcher(sport, pageTypeFor(path), articleSlugFor(path))}
           <a href="/pro" class="nav-link pbe-all-access-link ${path === '/pro' ? 'active' : ''}" data-pbe-placement="masthead_all_access">All Access</a>
         </div>
         <a href="/" class="masthead-logo" aria-label="PropBetEdge home">
@@ -170,6 +167,34 @@ function renderUfcFightWeekShell() {
   `;
 }
 
+function renderSportsSwitcher(activeSport, pageType, slug) {
+  const active = Boolean(activeSport && INTELLIGENCE_SPORTS[activeSport]);
+  return `
+    <details class="pbe-sports-switcher">
+      <summary class="nav-link pbe-sports-summary ${active ? 'active' : ''}" aria-label="Open PropBetEdge sports network">
+        <span>Sports</span><span class="pbe-sports-chevron" aria-hidden="true">⌄</span>
+      </summary>
+      <div class="pbe-sports-menu" role="menu" aria-label="PropBetEdge sports network">
+        <div class="pbe-sports-menu-head">
+          <span>LIVE SPORTS NETWORK</span>
+          <strong>Choose a sport</strong>
+          <small>News, data and intelligence in one product family.</small>
+        </div>
+        <div class="pbe-sports-grid">
+          ${INTELLIGENCE_PRODUCTS.map(product => `
+            <a class="pbe-sports-option${activeSport === product.key ? ' is-active' : ''}" href="${product.href}" role="menuitem" ${ctaAttrs(INTELLIGENCE_SPORTS[product.key], { placement: 'header_sports', pageType, slug })}>
+              <span aria-hidden="true">${product.emoji}</span>
+              <strong>${INTELLIGENCE_SPORTS[product.key].label}</strong>
+              <small>Intelligence ↗</small>
+            </a>
+          `).join('')}
+        </div>
+        <a class="pbe-sports-all-news" href="/news">All Sports News <span aria-hidden="true">→</span></a>
+      </div>
+    </details>
+  `;
+}
+
 function renderStatsSwitcher(isLeaders, isStandings) {
   const active = isLeaders || isStandings;
   return `
@@ -246,7 +271,7 @@ function sportPathActive(path, sport) {
 }
 
 function inferSport(path) {
-  const match = String(path || '').match(/\/(?:news|games|leaders|team|standings|player)\/(mlb|nfl|ufc|nba|wnba|nhl)(?:\/|$)/i);
+  const match = String(path || '').match(/\/(?:news|games|leaders|team|standings|player)\/(mlb|nfl|ufc|nba|wnba|nhl|tennis|soccer|golf)(?:\/|$)/i);
   return match?.[1]?.toLowerCase() || null;
 }
 
