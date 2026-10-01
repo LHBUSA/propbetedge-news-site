@@ -149,10 +149,10 @@ const NEWS_API_CAMPAIGN = {
 const ALL_ACCESS_CAMPAIGN = {
   key: 'all_access',
   tone: 'gold',
-  eyebrow: '✦ PROPBETEDGE ALL ACCESS',
-  headline: 'One platform. Every edge.',
-  sub: 'Advanced sports analytics, Player DNA, PBEcast, live game intelligence, matchup research, predictive models and evidence-backed news across MLB, NFL, NBA, WNBA, NHL, UFC, Tennis and Soccer.',
-  cta: `Get ${ALL_ACCESS.promoPercent}% off · ${ALL_ACCESS.promoCode}`,
+  eyebrow: '✦ PROPBETEDGE ALL ACCESS · INTELLIGENCE OS',
+  headline: 'Eight sports. One autonomous intelligence system.',
+  sub: 'Live data flows in. Sport-specific engines analyze it. Official decisions are graded. New intelligence runs in shadow. Proven improvements move through governed promotion — and All Access opens the customer-facing system across MLB, NFL, NBA, WNBA, NHL, UFC, Tennis and Soccer.',
+  cta: `Get All Access · ${ALL_ACCESS.promoPercent}% off`,
   href: '/pro',
 };
 

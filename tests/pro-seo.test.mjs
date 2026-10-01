@@ -23,11 +23,11 @@ const GENERIC_LOGO = /pbe-full-\d+\.png/;
 
 /* ---------------------------------------------------------------- module */
 test('title and description: premium, descriptive, SERP-length, product first (not the coupon)', () => {
-  assert.equal(seo.PRO_TITLE, 'PropBetEdge All Access | 7 Sports, One Membership');
+  assert.equal(seo.PRO_TITLE, 'PropBetEdge All Access | Sports Intelligence OS');
   assert.ok(seo.PRO_TITLE.length <= 60, `title ${seo.PRO_TITLE.length} chars`);
   assert.equal(/THEEDGE25|25%/.test(seo.PRO_TITLE), false, 'the discount never leads the title');
   assert.ok(seo.PRO_DESCRIPTION.length >= 140 && seo.PRO_DESCRIPTION.length <= 300, `description ${seo.PRO_DESCRIPTION.length} chars`);
-  for (const word of ['MLB', 'NFL', 'NBA', 'NHL', 'WNBA', 'UFC', 'Tennis', 'future sport', '$29/month', 'prediction models', 'tracked and graded picks', 'live intelligence']) {
+  for (const word of ['8 sports', '$29/month', 'sports intelligence operating system', 'sport-specific analytical engines', 'tracked decisions', 'shadow research', 'PBEcast', 'future Pro product']) {
     assert.ok(seo.PRO_DESCRIPTION.includes(word), word);
   }
   assert.equal(/best|#1|most accurate/i.test(seo.PRO_TITLE + seo.PRO_DESCRIPTION), false, 'no fabricated superlatives');
@@ -76,13 +76,16 @@ test('JSON-LD graph: connected WebPage -> Product -> Offer with stable @ids, bra
   const ld = seo.proJsonLd();
   assert.equal(ld['@context'], 'https://schema.org');
   const by = Object.fromEntries(ld['@graph'].map((n) => [n['@type'], n]));
-  assert.deepEqual(Object.keys(by).sort(), ['BreadcrumbList', 'Offer', 'Product', 'WebPage']);
+  assert.deepEqual(Object.keys(by).sort(), ['BreadcrumbList', 'Offer', 'Product', 'WebApplication', 'WebPage']);
   assert.equal(by.WebPage['@id'], `${CANON}#webpage`); assert.equal(by.Product['@id'], `${CANON}#product`); assert.equal(by.Offer['@id'], `${CANON}#offer`); assert.equal(by.BreadcrumbList['@id'], `${CANON}#breadcrumb`);
   assert.deepEqual(by.WebPage.mainEntity, { '@id': `${CANON}#product` });
+  assert.deepEqual(by.WebPage.about, [{ '@id': `${CANON}#product` }, { '@id': 'https://propbetedge.ai/#sports-intelligence-os' }]);
   assert.deepEqual(by.WebPage.isPartOf, { '@id': 'https://propbetedge.ai/#website' });
   assert.deepEqual(by.WebPage.publisher, { '@id': 'https://propbetedge.ai/#organization' });
   assert.deepEqual(by.WebPage.breadcrumb, { '@id': `${CANON}#breadcrumb` });
   assert.deepEqual(by.Product.offers, { '@id': `${CANON}#offer` });
+  assert.equal(by.Product.category, 'Sports intelligence operating system membership');
+  assert.ok(by.Product.isRelatedTo.some((x) => x['@id'] === 'https://propbetedge.ai/#sports-intelligence-os'));
   assert.deepEqual(by.Product.brand, { '@id': 'https://propbetedge.ai/#organization' });
   assert.deepEqual(by.Product.mainEntityOfPage, { '@id': `${CANON}#webpage` });
   assert.deepEqual(by.Offer.itemOffered, { '@id': `${CANON}#product` });
@@ -90,6 +93,12 @@ test('JSON-LD graph: connected WebPage -> Product -> Offer with stable @ids, bra
   assert.equal(by.Offer.priceSpecification.unitCode, 'MON'); assert.equal(by.Offer.priceSpecification.price, '29');
   assert.equal(by.Offer.availability, 'https://schema.org/InStock');
   assert.equal(by.BreadcrumbList.itemListElement.length, 2); assert.equal(by.BreadcrumbList.itemListElement[1].item, CANON);
+  assert.equal(by.WebApplication['@id'], 'https://propbetedge.ai/#sports-intelligence-os');
+  assert.equal(by.WebApplication.name, 'PropBetEdge Sports Intelligence Operating System');
+  assert.match(by.WebApplication.description, /autonomous sports intelligence operating system/i);
+  for (const feature of ['Continuous live sports data ingestion', 'Sport-specific prediction models and analytical engines', 'Shadow research for candidate signals and models', 'Governed promotion into production']) {
+    assert.ok(by.WebApplication.featureList.includes(feature), feature);
+  }
   const text = JSON.stringify(ld);
   assert.equal(/aggregateRating|"review"|ratingValue|reviewCount|award/i.test(text), false, 'no invented ratings, reviews or awards');
   assert.equal(/21\.75/.test(text), false, 'the coupon price is never the listed price');
@@ -107,7 +116,7 @@ test('crawler HTML: one H1, descriptive sport anchors to canonical properties, r
   assert.equal((html.match(/<h1/g) || []).length, 1);
   for (const s of SPORTS) assert.ok(html.includes(`<a href="${s.url}/">${s.name}</a>`), s.name);
   assert.equal(/click here|read more/i.test(html), false);
-  for (const cat of ['Proprietary algorithms', 'Tracked, graded picks', 'Live intelligence', 'PBEcast', 'Player and matchup intelligence', 'future Pro tools']) assert.ok(html.includes(cat), cat);
+  for (const cat of ['Sport-specific analytical engines', 'Tracked, graded picks', 'Live intelligence', 'PBEcast', 'Player and matchup intelligence', 'Governed self-improvement', 'future Pro tools']) assert.ok(html.includes(cat), cat);
   assert.equal(/display:\s*none|visibility:\s*hidden|aria-hidden="true">[^<]{200,}/.test(html), false, 'nothing hidden');
   assert.ok(html.length < 6000, 'concise, mirrors the visible product');
   const success = seo.proServerHtml({ checkoutSuccess: true });
@@ -118,7 +127,7 @@ test('crawler HTML: one H1, descriptive sport anchors to canonical properties, r
 test('share UI: canonical URL only, clean product text, X / LinkedIn / Bluesky / copy / native, no query strings or Stripe URLs', () => {
   const bar = renderShareBar(seo.PRO_CANONICAL, seo.PRO_SHARE_TITLE, { compact: true, subject: 'PropBetEdge All Access' });
   assert.match(bar, /data-share-url="https:\/\/propbetedge\.ai\/pro"/);
-  assert.equal(seo.PRO_SHARE_TITLE, 'PropBetEdge All Access — MLB, NFL, NBA, NHL, WNBA, UFC and Tennis under one membership.');
+  assert.equal(seo.PRO_SHARE_TITLE, 'PropBetEdge All Access — the sports intelligence operating system across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis and Soccer.');
   assert.equal(/THEEDGE25|25%/.test(seo.PRO_SHARE_TITLE), false, 'no promo spam in share intents');
   for (const key of ['x', 'linkedin', 'bluesky', 'copy', 'native']) assert.match(bar, new RegExp(`pbe-share-btn--${key}`));
   const urls = [...bar.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
@@ -174,7 +183,7 @@ test('crawler bytes /pro: exactly one authoritative value for every head field, 
   assert.equal(status, 200);
   const once = (re) => assert.equal((head.match(re) || []).length, 1, String(re));
   for (const re of [/<title>/g, /rel="canonical"/g, /name="description"/g, /name="robots"/g, /property="og:title"/g, /property="og:description"/g, /property="og:url"/g, /property="og:image"/g, /property="og:type"/g, /property="og:site_name"/g, /property="og:locale"/g, /property="og:image:width"/g, /property="og:image:height"/g, /property="og:image:alt"/g, /name="twitter:card"/g, /name="twitter:title"/g, /name="twitter:description"/g, /name="twitter:image"/g, /name="twitter:image:alt"/g]) once(re);
-  assert.deepEqual(pick(head, /<title>([^<]*)<\/title>/g), ['PropBetEdge All Access | 7 Sports, One Membership']);
+  assert.deepEqual(pick(head, /<title>([^<]*)<\/title>/g), ['PropBetEdge All Access | Sports Intelligence OS']);
   assert.deepEqual(pick(head, /rel="canonical" href="([^"]+)"/g), [CANON]);
   assert.deepEqual(pick(head, /name="robots" content="([^"]+)"/g), ['index, follow, max-image-preview:large']);
   assert.equal(headers.get('x-robots-tag'), null);

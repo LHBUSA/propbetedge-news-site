@@ -38,14 +38,14 @@ test('the live Stripe identities are pinned and nothing else is offered', () => 
 test('hierarchy: title, statement, price, CTA, launch offer, eight sports (Tennis included), future sports', () => {
   const html = buildProHtml();
   assert.match(html, /PropBetEdge<\/span><span class="pbe-pro-title-all">All Access/);
-  for (const line of ['One membership.', 'Every sport.', 'Every model.', 'Every current and future PropBetEdge Pro product.']) assert.ok(html.includes(line), line);
+  for (const line of ['One membership.', 'Eight sports.', 'One autonomous sports intelligence operating system.', 'Every current and future PropBetEdge Pro product.']) assert.ok(html.includes(line), line);
   assert.match(html, /pbe-pro-price-amount">\$29<\/span><span class="pbe-pro-price-per">\/ month/);
   assert.match(html, />Get All Access</);
   assert.match(html, /25% off for as long as you stay active/);
   assert.match(html, /<code data-pbe-promo-code>THEEDGE25<\/code>/);
-  assert.deepEqual(SPORTS.map(s => s.label), ['MLB', 'NFL', 'NBA', 'NHL', 'WNBA', 'UFC', 'Tennis']);
-  assert.match(html, /7 sports today, every future sport included/);
-  assert.match(html, /plus PropBetEdge Tennis, today/);
+  assert.deepEqual(SPORTS.map(s => s.label), ['MLB', 'NFL', 'NBA', 'NHL', 'WNBA', 'UFC', 'Tennis', 'Soccer']);
+  assert.match(html, /8 sports today, every future sport included/);
+  assert.match(html, /plus PropBetEdge Tennis and Soccer Intelligence, today/);
   for (const s of SPORTS) {
     assert.match(html, new RegExp(`data-sport="${s.key}"`), s.key);
     assert.ok(html.includes(`href="${s.url}"`), `${s.label} links to its property`);
@@ -57,10 +57,14 @@ test('hierarchy: title, statement, price, CTA, launch offer, eight sports (Tenni
 
 test('value proposition names every promised pillar and keeps sport plans alive', () => {
   const html = buildProHtml();
-  for (const pillar of ['Proprietary algorithms', 'Tracked, graded picks', 'Live intelligence', 'PBEcast and live experiences', 'Player and matchup intelligence', 'Predictions and future Pro tools']) {
+  for (const pillar of ['Sport-specific analytical engines', 'Tracked, graded decisions', 'Continuous live intelligence', 'Shadow research and model evolution', 'PBEcast, research and live products', 'Every future sport and Pro product']) {
     assert.ok(html.includes(pillar), pillar);
   }
   assert.match(html, /Every sport\. One login\./);
+  assert.match(html, /The system behind All Access/);
+  assert.match(html, /Not eight disconnected betting pages\. One intelligence operating system\./);
+  for (const stage of ['Observe', 'Understand', 'Analyze', 'Evaluate', 'Learn', 'Promote']) assert.ok(html.includes(stage), stage);
+  assert.match(html, /Governed self-improvement/);
   assert.match(html, /Your sport plan stays exactly as it is\./);
   assert.match(html, /All Access is the premium umbrella/);
   assert.equal(promoLine(), '25% off for as long as you stay active with code THEEDGE25.');
@@ -119,7 +123,7 @@ test('crawler bytes: Edge Middleware serves /pro with title, canonical, product 
   const { renderPage } = await import('./ssr-harness.mjs');
   const { html, status } = await renderPage('/pro');
   assert.equal(status, 200);
-  assert.match(html, /<title>PropBetEdge All Access \| 7 Sports, One Membership<\/title>/);
+  assert.match(html, /<title>PropBetEdge All Access \| Sports Intelligence OS<\/title>/);
   assert.match(html, /<link rel="canonical" href="https:\/\/propbetedge\.ai\/pro"/);
   assert.match(html, /data-server-rendered="1"/);
   assert.ok(html.includes(LIVE.checkoutUrl));
