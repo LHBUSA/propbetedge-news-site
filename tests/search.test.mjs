@@ -17,7 +17,7 @@ import {
 } from '../src/search/rank.js';
 import { TOOL_DOCS, EMPTY_STATE, dictionaryTeamDocs, wnbaTeamDocs } from '../src/search/destinations.js';
 import {
-  ufcDocsFromSitemaps, wnbaDocsFromApi, compactStory, storyDoc, fighterNameFromSlug, eventTitleFromSlug,
+  ufcDocsFromSitemaps, wnbaDocsFromApi, productDocsFromSitemap, learnDocsFromManifest, compactStory, storyDoc, fighterNameFromSlug, eventTitleFromSlug,
 } from '../src/search/documents.js';
 import { createSearchController, latencyBucket } from '../src/search/client.js';
 import { TEAMS } from '../src/entity-graph/dictionary.js';
@@ -161,15 +161,46 @@ test('every tool destination is a verified, well-formed URL (hash routes where p
   for (const d of TOOL_DOCS) {
     assert.ok(!ids.has(d.id), `duplicate tool id ${d.id}`);
     ids.add(d.id);
-    assert.ok(d.href.startsWith('/') || /^https:\/\/(mlb|nfl|nba|wnba|nhl|ufc)\.propbetedge\.ai(\/|$)/.test(d.href), d.href);
+    assert.ok(d.href.startsWith('/') || /^https:\/\/(mlb|nfl|nba|wnba|nhl|ufc|tennis|soccer|golf)\.propbetedge\.ai(\/|$)/.test(d.href), d.href);
     if (/^https:\/\/(nfl|nba|nhl)\./.test(d.href) && d.href.replace(/^https:\/\/[^/]+/, '').length > 1) {
       assert.match(d.href, /\/#/, `${d.href} must use the hash route`);
     }
     assert.ok(d.label, `${d.id} has a display label`);
   }
   assert.ok(!TOOL_DOCS.some((d) => /ufc\.propbetedge\.ai\/(fight-dna|track-record)$/.test(d.href)), 'UFC /fight-dna and /track-record 404');
-  assert.deepEqual(EMPTY_STATE.live.map((d) => d.title), ['MLB', 'NFL', 'NBA', 'WNBA', 'NHL', 'UFC']);
+  assert.deepEqual(EMPTY_STATE.live.map((d) => d.title), ['MLB', 'NFL', 'NBA', 'WNBA', 'NHL', 'UFC', 'Tennis', 'Soccer', 'Golf']);
   assert.deepEqual(EMPTY_STATE.popular.map((d) => d.title), ['PBE Picks', 'PBEcast', 'Fight Simulator', 'HR Targets', 'Fight DNA']);
+});
+
+test('sitemap-backed sports and Learn manifest produce searchable first-party docs', () => {
+  const golf = productDocsFromSitemap({
+    sport: 'golf',
+    site: 'https://golf.propbetedge.ai',
+    urls: [
+      'https://golf.propbetedge.ai/player/scottie-scheffler',
+      'https://golf.propbetedge.ai/course/augusta-national',
+      'https://golf.propbetedge.ai/tournament/masters-2026',
+    ],
+  });
+  assert.equal(golf.find((d) => d.type === 'player')?.title, 'Scottie Scheffler');
+  assert.equal(golf.find((d) => d.href.includes('/course/'))?.title, 'Augusta National');
+  assert.equal(golf.find((d) => d.type === 'event')?.sport, 'golf');
+
+  const soccer = productDocsFromSitemap({
+    sport: 'soccer',
+    site: 'https://soccer.propbetedge.ai',
+    urls: ['https://soccer.propbetedge.ai/teams/bayern-munchen'],
+  });
+  assert.equal(soccer[0].type, 'team');
+  assert.equal(soccer[0].title, 'Bayern Munchen');
+
+  const learn = learnDocsFromManifest({
+    schema: 'pbe-learn-search/1',
+    docs: [{ id: 'learn-academy-golf', title: 'Golf Academy', subtitle: 'Read golf intelligence', href: 'https://learn.propbetedge.ai/golf', aliases: ['learn golf'], keywords: ['course dna'], label: 'LEARN · ACADEMY' }],
+  });
+  assert.equal(learn[0].type, 'learn');
+  assert.equal(learn[0].title, 'Golf Academy');
+  assert.equal(learnDocsFromManifest({ schema: 'wrong', docs: [] }).length, 0);
 });
 
 // ─── UFC events & fights ─────────────────────────────────────────────────────
@@ -238,6 +269,7 @@ test('parseSearchParams clamps limit and validates sport/type', () => {
   assert.equal(p({ q: 'x', limit: '3' }).limit, 3);
   assert.equal(p({ q: 'x', limit: 'abc' }).limit, 20);
   assert.equal(p({ q: 'x', sport: 'NFL' }).sport, 'nfl');
+  assert.equal(p({ q: 'x', sport: 'golf' }).sport, 'golf');
   assert.equal(p({ q: 'x', sport: 'cricket' }).sport, null);
   assert.deepEqual(p({ q: 'x', type: 'team,player,bogus' }).types, ['player', 'team']);
   assert.equal(damerauLevenshtein('mcdvaid', 'mcdavid'), 1);
@@ -540,11 +572,11 @@ test('client: keystrokes are debounced into one request', async () => {
 
 test('palette: copy, ARIA combobox/listbox semantics and keyboard contract', () => {
   const src = fs.readFileSync(new URL('../src/search-palette.js', import.meta.url), 'utf8');
-  assert.ok(src.includes('placeholder="Search players, teams, fights, stories and intelligence…"'));
+  assert.ok(src.includes('placeholder="Search players, teams, events, courses, stories, Learn and intelligence…"'));
   assert.ok(src.includes('>PropBetEdge Search<'));
   assert.ok(src.includes('Across every sport and intelligence product'));
   assert.ok(!src.includes('PBE NETWORK SEARCH'));
-  assert.ok(src.includes('Live intelligence: MLB · NFL · NBA · WNBA · NHL · UFC'));
+  assert.ok(src.includes('Live intelligence: MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf'));
   for (const needle of ['role="dialog"', 'aria-modal="true"', 'role="combobox"', 'aria-controls="${LISTBOX_ID}"', 'role="listbox"', 'role="option"', 'role="group"', 'aria-activedescendant', 'aria-selected', 'aria-live="polite"']) {
     assert.ok(src.includes(needle), `palette uses ${needle}`);
   }
@@ -566,6 +598,7 @@ test('palette: result lines make the type obvious', () => {
   assert.equal(resultLabel({ type: 'event', kind: 'event', sport: 'ufc', date: '2025-10-04T00:00:00Z' }, now).kicker, 'UFC EVENT · Oct 4, 2025');
   assert.equal(resultLabel({ type: 'tool', sport: 'ufc', label: 'UFC INTELLIGENCE · LABS' }, now).kicker, 'UFC INTELLIGENCE · LABS');
   assert.equal(resultLabel({ type: 'story', sport: 'mlb', date: '2026-09-24T20:00:00Z' }, now).kicker, 'MLB NEWS · 2h ago');
+  assert.equal(resultLabel({ type: 'learn', sport: 'golf', label: 'LEARN · ACADEMY', subtitle: 'Golf fundamentals' }, now).kicker, 'LEARN · ACADEMY');
 });
 
 // ─── client resilience (cold starts must not blind search) ───────────────────
