@@ -35,12 +35,21 @@ export const SPORTS = Object.freeze([
 ]);
 
 export const VALUE_PROPS = Object.freeze([
-  { title: 'Proprietary algorithms', body: 'Every sport runs its own PropBetEdge model, built and tuned in-house on data we own. All Access unlocks every one of them.' },
-  { title: 'Tracked, graded picks', body: 'Picks are locked before the game, graded against official results, and published to a permanent track record you can audit.' },
-  { title: 'Live intelligence', body: 'Injuries, lineups, weigh-ins, weather, venue and market moves, resolved into what actually changes tonight.' },
-  { title: 'PBEcast and live experiences', body: 'Sport-specific live surfaces that follow the game as it happens, from MLB matchup columns to NFL and NHL casts.' },
-  { title: 'Player and matchup intelligence', body: 'Player DNA, arsenal and splits, fighter records and rankings, team and matchup pages that connect every story to the numbers.' },
-  { title: 'Predictions and future Pro tools', body: 'New models, new sports and new Pro products join the network as they launch. Members get them the day they ship, no upgrade.' },
+  { title: 'Sport-specific analytical engines', body: 'Every sport runs its own PropBetEdge intelligence stack — models, DNA systems, matchup research, live context and market analysis — instead of forcing every league through one generic algorithm.' },
+  { title: 'Tracked, graded decisions', body: 'Where official model calls are live, they are locked before play, graded against official results and preserved in permanent records you can audit.' },
+  { title: 'Continuous live intelligence', body: 'Scores, play-by-play, lineups, injuries, weigh-ins, weather, rankings, transactions and market changes continuously update the state the system reasons from.' },
+  { title: 'Shadow research and model evolution', body: 'New signals and candidate models can run beside production in shadow, accumulate evidence and prove themselves without silently changing official customer-facing outputs.' },
+  { title: 'PBEcast, research and live products', body: 'The same intelligence layer becomes sport-specific live experiences, matchup desks, Player DNA, research reports, alerts and evidence-grounded content.' },
+  { title: 'Every future sport and Pro product', body: 'The operating system keeps expanding. New models, new sports and new Pro products join the network as they launch, with no separate All Access upgrade.' },
+]);
+
+export const OPERATING_SYSTEM_STAGES = Object.freeze([
+  { step: '01', label: 'Observe', title: 'Ingest live sports data', body: 'Scores, play-by-play, odds, lineups, injuries, weather, rankings, transactions and source changes flow into the network continuously.' },
+  { step: '02', label: 'Understand', title: 'Build canonical state', body: 'PropBetEdge normalizes each sport into durable game, player, team and market state so every downstream system reasons from the same evidence.' },
+  { step: '03', label: 'Analyze', title: 'Run sport-specific engines', body: 'Each league gets its own analytical stack: prediction models, DNA systems, matchup intelligence, market comparison and live-game context.' },
+  { step: '04', label: 'Evaluate', title: 'Grade official decisions', body: 'Official calls are time-stamped, outcomes are graded, records stay permanent and performance feeds calibration and research.' },
+  { step: '05', label: 'Learn', title: 'Test new intelligence in shadow', body: 'Candidate signals and models can run prospectively beside production without changing official picks, records or customer claims.' },
+  { step: '06', label: 'Promote', title: 'Ship only after evidence clears', body: 'Replay, parity, research and promotion gates decide what is ready. Better intelligence can graduate into production, but experiments do not promote themselves.' },
 ]);
 
 const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -110,6 +119,7 @@ function membershipCard(active) {
       <p class="pbe-pro-card-sub">Cancel anytime. One login across the whole network.</p>
       <ul class="pbe-pro-card-list">
         ${SPORTS.map((s) => `<li><span class="pbe-pro-check" aria-hidden="true">✓</span>${s.open ? `${s.label} Intelligence, plus its Pro features as they launch` : `${s.label} Pro`}</li>`).join('')}
+        <li><span class="pbe-pro-check" aria-hidden="true">✓</span>Governed model evolution and shadow research</li>
         <li class="pbe-pro-card-future"><span class="pbe-pro-check" aria-hidden="true">✓</span>Every future sport and Pro product</li>
       </ul>
       ${active
@@ -126,19 +136,46 @@ function hero(shareBar = '') {
         <h1 class="pbe-pro-title"><span class="pbe-pro-title-brand">PropBetEdge</span><span class="pbe-pro-title-all">All Access</span></h1>
         <p class="pbe-pro-statement">
           <span>One membership.</span>
-          <span>Every sport.</span>
-          <span>Every model.</span>
+          <span>${SPORTS.length === 8 ? 'Eight' : SPORTS.length} sports.</span>
+          <span>One autonomous sports intelligence operating system.</span>
           <span>Every current and future PropBetEdge Pro product.</span>
         </p>
-        <p class="pbe-pro-family"><strong>One membership. ${SPORTS.length === 8 ? 'Eight' : SPORTS.length} sports. Every future sport.</strong><span>MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer</span></p>
+        <p class="pbe-pro-os-intro">All Access is the customer layer of a system that continuously ingests live sports data, runs sport-specific analytical engines, evaluates its own predictions, tests new intelligence in shadow, grades official decisions and turns the results into live products, research and content — with governed promotion into production.</p>
+        <p class="pbe-pro-family"><strong>One operating system. ${SPORTS.length === 8 ? 'Eight' : SPORTS.length} sports. Every future sport.</strong><span>MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer</span></p>
         <div class="pbe-pro-price" aria-label="Price"><span class="pbe-pro-price-amount">$${ALL_ACCESS.priceUsd}</span><span class="pbe-pro-price-per">/ ${ALL_ACCESS.interval}</span></div>
         ${ctaButton('Get All Access', 'pbe-pro-cta-hero')}
         ${promoChip()}
-        <p class="pbe-pro-hero-fine">Includes MLB, NFL, NBA, NHL, WNBA and UFC Pro, plus PropBetEdge Tennis and Soccer Intelligence, today. Individual sport plans stay available; All Access is the umbrella, not a replacement.</p>
+        <p class="pbe-pro-hero-fine">Includes MLB, NFL, NBA, NHL, WNBA and UFC Pro, plus PropBetEdge Tennis and Soccer Intelligence, today. All Access is not just a bundle of sport subscriptions — it is access to the connected intelligence system underneath them.</p>
         ${shareBar ? `<div class="pbe-pro-share">${shareBar}</div>` : ''}
       </div>
       ${membershipCard(false)}
     </section>`;
+}
+
+function operatingSystemSection() {
+  return `
+      <section class="pbe-pro-section pbe-pro-os" id="intelligence-os">
+        <header class="pbe-pro-section-head pbe-pro-os-head">
+          <span class="pbe-pro-eyebrow">The system behind All Access</span>
+          <h2>Not eight disconnected betting pages. One intelligence operating system.</h2>
+          <p>PropBetEdge is built to keep working after the page loads. It observes live sports, maintains canonical state, runs sport-specific analytical engines, evaluates what happened, and feeds that evidence into the next round of research.</p>
+        </header>
+        <div class="pbe-pro-os-loop" aria-label="PropBetEdge intelligence operating system">
+          ${OPERATING_SYSTEM_STAGES.map((stage) => `
+            <article class="pbe-pro-os-stage">
+              <div class="pbe-pro-os-stage-top"><span class="pbe-pro-os-step">${stage.step}</span><span class="pbe-pro-os-label">${esc(stage.label)}</span></div>
+              <h3>${esc(stage.title)}</h3>
+              <p>${esc(stage.body)}</p>
+            </article>`).join('')}
+        </div>
+        <div class="pbe-pro-os-governance">
+          <div>
+            <span class="pbe-pro-os-governance-kicker">Governed self-improvement</span>
+            <strong>The system can learn without letting experiments rewrite production.</strong>
+          </div>
+          <p>New intelligence can be researched, replayed and run in shadow automatically. Promotion to official production remains gated by evidence, parity checks and explicit approval. That is what makes the system self-improving without making it uncontrolled.</p>
+        </div>
+      </section>`;
 }
 
 function successHero(shareBar = '') {
@@ -165,6 +202,8 @@ export function buildProHtml({ checkoutSuccess = false, shareBar = '' } = {}) {
     <div class="pbe-pro ${checkoutSuccess ? 'pbe-pro-is-success' : ''}" data-pbe-page="pro">
       ${checkoutSuccess ? successHero(shareBar) : hero(shareBar)}
 
+      ${checkoutSuccess ? '' : operatingSystemSection()}
+
       <section class="pbe-pro-section pbe-pro-sports-section" id="sports">
         <header class="pbe-pro-section-head">
           <span class="pbe-pro-eyebrow">${checkoutSuccess ? 'Your network' : 'Included today'}</span>
@@ -177,7 +216,7 @@ export function buildProHtml({ checkoutSuccess = false, shareBar = '' } = {}) {
       <section class="pbe-pro-section" id="included">
         <header class="pbe-pro-section-head">
           <span class="pbe-pro-eyebrow">What you get</span>
-          <h2>The whole edge, not one slice of it.</h2>
+          <h2>Access the system, not just the picks.</h2>
         </header>
         <ul class="pbe-pro-values">
           ${VALUE_PROPS.map((v, i) => `
@@ -207,8 +246,8 @@ export function buildProHtml({ checkoutSuccess = false, shareBar = '' } = {}) {
 
       ${checkoutSuccess ? '' : `
       <section class="pbe-pro-final">
-        <h2>Get the edge everywhere.</h2>
-        <p>${priceLabel()}. ${esc(promoLine())}</p>
+        <h2>Get the intelligence system behind every PropBetEdge sport.</h2>
+        <p>Eight sports today. Every future sport. ${priceLabel()}. ${esc(promoLine())}</p>
         ${ctaButton('Get All Access', 'pbe-pro-cta-hero')}
       </section>`}
     </div>`;
