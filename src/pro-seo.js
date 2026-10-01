@@ -22,8 +22,8 @@ export const PRODUCT_ID = `${PRO_CANONICAL}#product`;
 export const OFFER_ID = `${PRO_CANONICAL}#offer`;
 export const BREADCRUMB_ID = `${PRO_CANONICAL}#breadcrumb`;
 
-export const PRO_TITLE = 'PropBetEdge All Access | 8 Sports, One Membership';
-export const PRO_DESCRIPTION = 'One $29/month membership for every PropBetEdge sport: MLB, NFL, NBA, NHL, WNBA and UFC Pro plus Tennis and Soccer today, every future sport included. Proprietary prediction models, tracked and graded picks, live intelligence and PBEcast under one login.';
+export const PRO_TITLE = 'PropBetEdge All Access | Sports Intelligence OS';
+export const PRO_DESCRIPTION = 'All Access opens the PropBetEdge sports intelligence operating system: 8 sports, sport-specific analytical engines, live data, tracked decisions, shadow research, PBEcast and every future Pro product for $29/month.';
 export const PRO_SUCCESS_TITLE = 'All Access is active | PropBetEdge';
 export const PRO_SUCCESS_DESCRIPTION = 'Your PropBetEdge All Access membership is active. Sign in to any sport with the email you used at checkout.';
 
@@ -38,7 +38,7 @@ export const PRO_SOCIAL_IMAGE = Object.freeze({
   alt: 'PropBetEdge All Access: one membership, every sport. MLB, NFL, NBA, NHL, WNBA, UFC, Tennis, Soccer. $29 per month.',
 });
 
-export const PRO_SHARE_TITLE = 'PropBetEdge All Access — MLB, NFL, NBA, NHL, WNBA, UFC, Tennis and Soccer under one membership.';
+export const PRO_SHARE_TITLE = 'PropBetEdge All Access — the sports intelligence operating system across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis and Soccer.';
 
 export const ROBOTS_INDEX = 'index, follow, max-image-preview:large';
 export const ROBOTS_TRANSACTIONAL = 'noindex, follow';
@@ -142,7 +142,7 @@ export function proJsonLd() {
         '@id': PRODUCT_ID,
         name: ALL_ACCESS.name,
         alternateName: 'All Access',
-        description: 'A monthly sports intelligence membership covering every PropBetEdge sport. Includes the Pro tier of PropBetEdge MLB, NFL, NBA, NHL, WNBA and UFC, PropBetEdge Tennis and Soccer Intelligence, and every future PropBetEdge sport and Pro product: proprietary prediction models, tracked and graded picks, live game intelligence, PBEcast live experiences, player and matchup intelligence, with one login across the network.',
+        description: 'A monthly membership to the PropBetEdge sports intelligence operating system. Across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis and Soccer, the system ingests live sports data, runs sport-specific analytical engines, grades official decisions, supports shadow research and governed model evolution, and powers PBEcast, player and matchup intelligence, research and every future Pro product.',
         url: PRO_CANONICAL,
         image: PRO_SOCIAL_IMAGE.url,
         category: 'Sports intelligence membership',
@@ -183,7 +183,8 @@ export function proServerHtml({ checkoutSuccess = false } = {}) {
   const sports = SPORTS.map((s) => `<li><a href="${s.url}/">${s.name}</a> — ${escapeHtml(s.edge)}</li>`).join('\n        ');
   const intro = checkoutSuccess
     ? `<p>Your PropBetEdge All Access membership is active. Open any sport below and sign in with the email you used at checkout.</p>`
-    : `<p>One membership. Every sport. Every model. Every current and future PropBetEdge Pro product.</p>
+    : `<p>One membership. Eight sports. One autonomous sports intelligence operating system.</p>
+      <p>PropBetEdge continuously ingests live sports data, runs sport-specific analytical engines, evaluates and grades official decisions, tests new intelligence in shadow and promotes changes only after evidence clears production gates.</p>
       <p><strong>$${ALL_ACCESS.priceUsd} / month.</strong> Launch offer: ${ALL_ACCESS.promoPercent}% off for as long as you stay active with code <strong>${ALL_ACCESS.promoCode}</strong>.</p>
       <p><a href="${ALL_ACCESS.checkoutUrl}" rel="noopener">Get All Access</a></p>`;
   return `<main class="pbe-ssr-pro" data-server-rendered="1">
@@ -198,13 +199,14 @@ export function proServerHtml({ checkoutSuccess = false } = {}) {
         ${sports}
         <li>Every future PropBetEdge sport and Pro product, included on launch day</li>
       </ul>
-      <h2>What the membership includes</h2>
+      <h2>The intelligence operating system behind All Access</h2>
       <ul>
-        <li><strong>Proprietary algorithms</strong> — each sport runs its own PropBetEdge prediction model, built and tuned in-house.</li>
+        <li><strong>Sport-specific analytical engines</strong> — each sport runs its own models, DNA systems, matchup research and live-context stack.</li>
         <li><strong>Tracked, graded picks</strong> — picks are locked before the game, graded against official results and published to a permanent track record.</li>
         <li><strong>Live intelligence</strong> — injuries, lineups, weigh-ins, weather, venue and market moves resolved into what changes tonight.</li>
         <li><strong>PBEcast and live experiences</strong> — sport-specific live surfaces that follow the game as it happens.</li>
         <li><strong>Player and matchup intelligence</strong> — Player DNA, splits and arsenals, fighter records and rankings, team and matchup pages.</li>
+        <li><strong>Governed self-improvement</strong> — new intelligence can run in shadow, accumulate evidence and graduate into production only after promotion gates clear.</li>
         <li><strong>Predictions and future Pro tools</strong> — new models, sports and Pro products join the network as they launch.</li>
       </ul>
       <p>Individual sport plans stay available. All Access is the umbrella, not a replacement.</p>
