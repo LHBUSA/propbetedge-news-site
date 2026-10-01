@@ -387,7 +387,7 @@ async function resolveMeta(pathname, search = '') {
     return {
       canonical,
       title: 'About PropBetEdge — The Sports Intelligence Network',
-      description: 'PropBetEdge is a multi-sport intelligence network combining data, models, live analysis, player intelligence, public records, and original sports journalism.',
+      description: 'PropBetEdge is a nine-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
       image: NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildAboutSchema(canonical),
@@ -1218,7 +1218,7 @@ function buildAboutSchema(canonical) {
         '@id': `${canonical}#page`,
         url: canonical,
         name: 'About PropBetEdge',
-        description: 'PropBetEdge is a multi-sport intelligence network combining data, models, live analysis, player intelligence, public records, and original sports journalism.',
+        description: 'PropBetEdge is a nine-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
         mainEntity: { '@id': `${SITE}/#organization` },
         isPartOf: { '@id': `${SITE}/#website` },
         inLanguage: 'en-US',
@@ -1240,9 +1240,9 @@ function buildServerAboutHtml() {
     <article>
       <p>The Sports Intelligence Network</p>
       <h1>Sports are deeper than the scoreboard.</h1>
-      <p>PropBetEdge connects live sports data, proprietary analytics, player intelligence, model output, permanent records and original journalism across one multi-sport network.</p>
+      <p>PropBetEdge connects live sports data, sport-specific analytics, Player DNA, PBEcast, model output, permanent records and original journalism across one nine-sport network.</p>
       <p><strong>News is the entry point. Intelligence is the product.</strong></p>
-      <h2>Seven live sport verticals</h2>
+      <h2>Nine live sport intelligence products</h2>
       <p>
         <a href="https://mlb.propbetedge.ai/sharp-tools">MLB</a> ·
         <a href="https://nfl.propbetedge.ai/">NFL</a> ·
@@ -1250,10 +1250,12 @@ function buildServerAboutHtml() {
         <a href="https://wnba.propbetedge.ai/">WNBA</a> ·
         <a href="https://nhl.propbetedge.ai/">NHL</a> ·
         <a href="https://ufc.propbetedge.ai/">UFC</a> ·
-        <a href="https://tennis.propbetedge.ai/">Tennis</a>
+        <a href="https://tennis.propbetedge.ai/">Tennis</a> ·
+        <a href="https://soccer.propbetedge.ai/">Soccer</a> ·
+        <a href="https://golf.propbetedge.ai/">Golf</a>
       </p>
       <h2>Accountability by design</h2>
-      <p>PropBetEdge separates research from live claims, preserves missing data as missing, and keeps permanent records where models are live. Its editorial workflow uses source checks, evidence gates, human review and public standards.</p>
+      <p>PropBetEdge separates research from live claims, preserves missing data as missing, and keeps permanent records where models are live. News connects into players, teams, games, tournaments, courses and sport-specific intelligence instead of ending at the article.</p>
       <p><a href="/authors">Editorial Team</a> · <a href="/editorial-standards">Editorial Standards</a> · <a href="/pro">All Access</a></p>
       <h2>Built by PropTechUSA.ai</h2>
       <p><strong>PropBetEdge is owned, built and operated by PropTechUSA.ai.</strong> The newsroom, sports-data pipelines, models, APIs, automation and technical infrastructure operate inside the broader PropTechUSA.ai technology ecosystem.</p>
