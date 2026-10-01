@@ -11,7 +11,9 @@ const SPORTS = [
   { key: 'wnba', label: 'WNBA', icon: '🏀', href: 'https://wnba.propbetedge.ai/', line: 'WinBA, player impact, live game intelligence and WNBA-specific analytics.' },
   { key: 'nhl', label: 'NHL', icon: '🏒', href: 'https://nhl.propbetedge.ai/', line: 'Hockey intelligence, shot context, PBEcast and game-level analysis.' },
   { key: 'ufc', label: 'UFC', icon: '🥊', href: 'https://ufc.propbetedge.ai/', line: 'Fight intelligence, matchup context, model calls and accountable records.' },
-  { key: 'tennis', label: 'Tennis', icon: '🎾', href: 'https://tennis.propbetedge.ai/', line: 'Men’s and women’s tennis intelligence, Tennis DNA, rankings and match history.' },
+  { key: 'tennis', label: 'Tennis', icon: '🎾', href: 'https://tennis.propbetedge.ai/', line: 'Men’s and women’s tennis intelligence, Tennis DNA, rankings, match history and PBEcast.' },
+  { key: 'soccer', label: 'Soccer', icon: '⚽', href: 'https://soccer.propbetedge.ai/', line: 'Global soccer intelligence, Player DNA, live match context, league tables, video and PBEcast.' },
+  { key: 'golf', label: 'Golf', icon: '⛳', href: 'https://golf.propbetedge.ai/', line: 'Player DNA, Course DNA, tournament history, weather intelligence, matchups and Golf PBEcast.' },
 ];
 
 export function renderAbout(root, setMeta) {
@@ -51,7 +53,7 @@ export function renderAbout(root, setMeta) {
             <span class="about-kicker"><span class="about-live-dot" aria-hidden="true"></span>THE SPORTS INTELLIGENCE NETWORK</span>
             <h1 id="about-title">Sports are deeper than the scoreboard.</h1>
             <p class="about-dek">
-              PropBetEdge connects live sports data, proprietary analytics, player intelligence, model output,
+              PropBetEdge connects live sports data, sport-specific analytics, Player DNA, PBEcast, model output,
               permanent records and original journalism into one network built to explain <em>what is happening, why it matters, and what the data sees next.</em>
             </p>
             <div class="about-actions">
@@ -63,17 +65,17 @@ export function renderAbout(root, setMeta) {
           <aside class="about-manifesto" aria-label="PropBetEdge principles">
             <span class="about-manifesto-label">BUILT DIFFERENT</span>
             <p>We do not want to be another picks page with a few stats attached.</p>
-            <p>We build sport-specific intelligence products, keep model records public where models are live, and connect the news back to the data underneath it.</p>
+            <p>We build sport-specific intelligence products, keep model records public where models are live, and connect every newsroom back to the players, teams, courses, events and data underneath it.</p>
             <div class="about-manifesto-rule"></div>
             <strong>News is the entry point. Intelligence is the product.</strong>
           </aside>
         </section>
 
         <section class="about-proof" aria-label="Network snapshot">
-          <div><strong>7</strong><span>live sport verticals</span></div>
+          <div><strong>9</strong><span>live sport intelligence products</span></div>
           <div><strong>1</strong><span>connected intelligence network</span></div>
           <div><strong>$29</strong><span>All Access · monthly</span></div>
-          <div><strong>Public</strong><span>records where models are live</span></div>
+          <div><strong>Evidence</strong><span>provenance, records and source-backed publishing</span></div>
         </section>
 
         <section class="about-split">
@@ -88,8 +90,8 @@ export function renderAbout(root, setMeta) {
               data model, analytical language and live experience.
             </p>
             <p>
-              That is why the network includes products such as PBEcast, WinBA, Tennis DNA, sport-specific model outputs,
-              track records and player intelligence instead of one generic dashboard copied across every league.
+              That is why the network includes products such as PBEcast, Player DNA, WinBA, Tennis DNA, Course DNA, sport-specific model outputs,
+              permanent track records and player intelligence instead of one generic dashboard copied across every league.
             </p>
           </div>
         </section>
@@ -98,7 +100,7 @@ export function renderAbout(root, setMeta) {
           <header class="about-section-head">
             <div>
               <span class="about-section-kicker">THE NETWORK</span>
-              <h2 id="network-title">One brand. Seven live sports. Different intelligence for each one.</h2>
+              <h2 id="network-title">One brand. Nine live sports. Different intelligence for each one.</h2>
             </div>
             <a href="/pro">See All Access →</a>
           </header>
@@ -126,17 +128,17 @@ export function renderAbout(root, setMeta) {
             <article>
               <span>01</span>
               <h3>Own the evidence</h3>
-              <p>Ingest, normalize and preserve the underlying sports facts so the product is built on durable data instead of disposable page calls.</p>
+              <p>Ingest, normalize and preserve the underlying sports facts so every product is built on durable evidence instead of disposable page calls.</p>
             </article>
             <article>
               <span>02</span>
               <h3>Build sport-native intelligence</h3>
-              <p>Turn the data into metrics, models, player profiles, live context and visual systems designed for that sport rather than a generic template.</p>
+              <p>Turn the data into metrics, models, DNA systems, player profiles, live context and visual products designed for that sport rather than a generic template.</p>
             </article>
             <article>
               <span>03</span>
               <h3>Publish with context</h3>
-              <p>Use original journalism and permanent entity pages to explain the story, then connect readers directly into the deeper intelligence behind it.</p>
+              <p>Use original journalism and permanent entity pages to explain the story, then connect readers directly into Player DNA, matchups, courses, PBEcast and the deeper intelligence behind it.</p>
             </article>
             <article>
               <span>04</span>
@@ -194,14 +196,14 @@ export function renderAbout(root, setMeta) {
 
             <div class="about-news-copy">
               <span class="about-section-kicker about-news-kicker"><span aria-hidden="true"></span>NEWS <i>•</i> INTELLIGENCE</span>
-              <h2 id="about-news-title">The <em>newsroom</em> is the top of the funnel — not a detached blog.</h2>
+              <h2 id="about-news-title">Every <em>newsroom</em> leads into the intelligence network.</h2>
               <p>
-                A PropBetEdge story should lead somewhere useful: a player, a team, a game, a model, a PBEcast,
+                A PropBetEdge story should lead somewhere useful: a player, a team, a game, a tournament, a course, a model, a PBEcast,
                 a leaderboard or a deeper sport-specific product. The goal is to make every story an entry point into the intelligence graph.
               </p>
               <div class="about-news-action-row">
                 <a class="about-news-cta" href="/news">Explore PropBetEdge News <span aria-hidden="true">→</span></a>
-                <span class="about-news-proofline">Original reporting <i>•</i> data-linked stories <i>•</i> evidence-gated publishing</span>
+                <span class="about-news-proofline">Original reporting <i>•</i> entity-linked stories <i>•</i> charts & video <i>•</i> evidence-gated publishing</span>
               </div>
             </div>
           </div>
@@ -227,7 +229,7 @@ export function renderAbout(root, setMeta) {
 
         <section class="about-final-cta">
           <span class="about-section-kicker">GO DEEPER</span>
-          <h2>Follow the story. Open the data. Test the model. Keep the record.</h2>
+          <h2>Follow the story. Open the intelligence. Watch it live. Keep the record.</h2>
           <p>That is the idea behind PropBetEdge.</p>
           <div class="about-actions">
             <a class="about-btn about-btn-primary" href="/pro">PropBetEdge All Access <span aria-hidden="true">→</span></a>
