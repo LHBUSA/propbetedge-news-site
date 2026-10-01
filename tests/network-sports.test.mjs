@@ -42,18 +42,21 @@ test('Soccer is a network discovery link and an included All Access sport', () =
   const footer = fs.readFileSync(new URL('../src/components/footer.js', import.meta.url), 'utf8');
   assert.equal(PROPBET_LINKS.soccer, 'https://soccer.propbetedge.ai');
   assert.ok(footer.includes('${PROPBET_LINKS.soccer}'));
-  assert.match(footer, /Soccer Intelligence <span class="footer-badge">Live<\/span>/);
+  assert.match(footer, /Soccer Intelligence <span class="footer-badge">Pro<\/span>/);
   assert.equal(SPORTS.some((s) => s.key === 'soccer'), true, 'Soccer is included in All Access');
 });
 
-test('Tennis and Soccer are included open intelligence surfaces; eight-sport line', async () => {
-  const { buildProHtml } = await import('../src/pro-content.js');
+test('Tennis and Soccer are Pro; Golf and Boxing are Q1 2027 roadmap sports', async () => {
+  const { buildProHtml, UPCOMING_SPORTS } = await import('../src/pro-content.js');
   const html = buildProHtml();
-  assert.ok(!/Tennis Pro<\/li>/.test(html), 'Tennis has no Pro tier yet');
-  assert.match(html, /Tennis Intelligence, plus its Pro features as they launch/);
-  assert.match(html, /One membership\. Eight sports\. Every future sport\./);
+  assert.match(html, /Tennis Pro<\/li>/);
+  assert.match(html, /Soccer Pro<\/li>/);
+  assert.deepEqual(UPCOMING_SPORTS.map((s) => s.key), ['golf', 'boxing']);
+  assert.match(html, /Golf Pro — coming Q1 2027/);
+  assert.match(html, /Boxing Pro — coming Q1 2027/);
+  assert.match(html, /One membership\. Eight sports\./);
   assert.match(html, /MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer/);
-  assert.match(buildProHtml({ checkoutSuccess: true }), /Tennis and Soccer are open to everyone today, no sign-in needed/);
+  assert.match(buildProHtml({ checkoutSuccess: true }), /covers the Pro features across all eight live sports/);
 });
 
 test('root WebSite schema lists all eight sport properties once', async () => {
@@ -65,8 +68,8 @@ test('root WebSite schema lists all eight sport properties once', async () => {
   assert.ok(urls.includes('https://soccer.propbetedge.ai/'));
 });
 
-test('Tennis footer badge is Included (part of All Access), never a separate Free plan', () => {
+test('Tennis and Soccer footer badges are Pro', () => {
   const footer = fs.readFileSync(new URL('../src/components/footer.js', import.meta.url), 'utf8');
-  assert.match(footer, /Tennis Intelligence <span class="footer-badge">Included<\/span>/);
-  assert.doesNotMatch(footer, /Tennis[^<]*<span class="footer-badge">Free/);
+  assert.match(footer, /Tennis Intelligence <span class="footer-badge">Pro<\/span>/);
+  assert.match(footer, /Soccer Intelligence <span class="footer-badge">Pro<\/span>/);
 });
