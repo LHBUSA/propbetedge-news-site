@@ -304,6 +304,10 @@ function seededEnv() {
   const seed = {
     [KEYS.ufc]: { built_at: fresh, docs: ufc },
     [KEYS.wnba]: { built_at: fresh, docs: wnba },
+    [KEYS.tennis]: { built_at: fresh, docs: [] },
+    [KEYS.soccer]: { built_at: fresh, docs: [] },
+    [KEYS.golf]: { built_at: fresh, docs: [] },
+    [KEYS.learn]: { built_at: fresh, docs: [] },
     [KEYS.storiesManifest]: {
       months: Object.fromEntries(Object.entries(byMonth).map(([m, v]) => [m, v.length])),
       head_refreshed_at: fresh, backfill: { complete: true, completed_at: fresh },
