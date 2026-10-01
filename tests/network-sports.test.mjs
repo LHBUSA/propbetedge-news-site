@@ -51,12 +51,12 @@ test('Tennis and Soccer are Pro; Golf and Boxing are Q1 2027 roadmap sports', as
   const html = buildProHtml();
   assert.match(html, /Tennis Pro<\/li>/);
   assert.match(html, /Soccer Pro<\/li>/);
-  assert.deepEqual(UPCOMING_SPORTS.map((s) => s.key), ['golf', 'boxing']);
-  assert.match(html, /Golf Pro — coming Q1 2027/);
+  assert.deepEqual(UPCOMING_SPORTS.map((s) => s.key), ['boxing']);
+  assert.match(html, /Golf Pro<\/li>/);
   assert.match(html, /Boxing Pro — coming Q1 2027/);
-  assert.match(html, /One membership\. Eight sports\./);
-  assert.match(html, /MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer/);
-  assert.match(buildProHtml({ checkoutSuccess: true }), /covers the Pro features across all eight live sports/);
+  assert.match(html, /One membership\. Nine sports\./);
+  assert.match(html, /MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf/);
+  assert.match(buildProHtml({ checkoutSuccess: true }), /covers the Pro features across all nine live sports/);
 });
 
 test('root WebSite schema lists all eight sport properties once', async () => {
