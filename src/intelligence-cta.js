@@ -61,7 +61,7 @@ export const INTELLIGENCE_SPORTS = Object.freeze({
     domain: 'wnba.propbetedge.ai',
     line: 'Women’s basketball intelligence beyond the box score.',
     deeper: 'Explore WNBA Intelligence',
-    newsPath: null,
+    newsPath: 'https://wnba.propbetedge.ai/news',
   }),
   ufc: Object.freeze({
     key: 'ufc',
@@ -71,7 +71,7 @@ export const INTELLIGENCE_SPORTS = Object.freeze({
     domain: 'ufc.propbetedge.ai',
     line: 'Fight intelligence beyond the result.',
     deeper: 'Explore UFC Intelligence',
-    newsPath: null,
+    newsPath: 'https://ufc.propbetedge.ai/news',
   }),
   tennis: Object.freeze({
     key: 'tennis',
@@ -81,7 +81,7 @@ export const INTELLIGENCE_SPORTS = Object.freeze({
     domain: 'tennis.propbetedge.ai',
     line: 'Tennis intelligence beyond the scoreline.',
     deeper: 'Open Tennis Intelligence',
-    newsPath: null,
+    newsPath: 'https://tennis.propbetedge.ai/news',
   }),
   soccer: Object.freeze({
     key: 'soccer',
@@ -91,7 +91,7 @@ export const INTELLIGENCE_SPORTS = Object.freeze({
     domain: 'soccer.propbetedge.ai',
     line: 'Soccer intelligence beyond the scoreline.',
     deeper: 'Open Soccer Intelligence',
-    newsPath: null,
+    newsPath: 'https://soccer.propbetedge.ai/news',
   }),
   golf: Object.freeze({
     key: 'golf',
@@ -101,7 +101,7 @@ export const INTELLIGENCE_SPORTS = Object.freeze({
     domain: 'golf.propbetedge.ai',
     line: 'Golf intelligence beyond the leaderboard.',
     deeper: 'Open Golf Intelligence',
-    newsPath: null,
+    newsPath: 'https://golf.propbetedge.ai/news',
   }),
 });
 

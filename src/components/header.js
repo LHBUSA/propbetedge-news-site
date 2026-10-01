@@ -31,6 +31,17 @@ const INTELLIGENCE_BLURBS = Object.freeze({
   golf: 'Player DNA, Course DNA, tournaments and PBEcast',
 });
 
+const NEWS_PRIMARY = Object.freeze(['mlb', 'nfl', 'nba', 'nhl']);
+const NEWS_MORE = Object.freeze(['wnba', 'ufc', 'tennis', 'soccer', 'golf']);
+
+function newsHref(key) {
+  return INTELLIGENCE_SPORTS[key]?.newsPath || '/news';
+}
+
+function newsTargetAttrs(key) {
+  return /^https:\/\//.test(newsHref(key)) ? ' target="_blank" rel="noopener"' : '';
+}
+
 const INTELLIGENCE_PRODUCTS = Object.freeze(INTELLIGENCE_ORDER.map((key) => {
   const intel = INTELLIGENCE_SPORTS[key];
   return {
@@ -78,7 +89,8 @@ export function renderHeader() {
           <a href="/" class="nav-link masthead-home " aria-label="PropBetEdge home">Home</a>
           <span class="masthead-nav-divider" aria-hidden="true"></span>
           <a href="/news" class="nav-link ${path === '/news' ? 'active' : ''}">All News</a>
-          ${renderSportsSwitcher(sport, pageTypeFor(path), articleSlugFor(path))}
+          ${NEWS_PRIMARY.map(key => `<a href="${newsHref(key)}" class="nav-link ${sportPathActive(path, key) ? 'active' : ''}"${newsTargetAttrs(key)}>${INTELLIGENCE_SPORTS[key].label}</a>`).join('')}
+          ${renderMoreNewsSwitcher(sport)}
           <a href="/pro" class="nav-link pbe-all-access-link ${path === '/pro' ? 'active' : ''}" data-pbe-placement="masthead_all_access">All Access</a>
         </div>
         <a href="/" class="masthead-logo" aria-label="PropBetEdge home">
@@ -111,12 +123,7 @@ export function renderHeader() {
               <div class="pbe-mobile-more-group">
                 <span class="pbe-mobile-more-label">News</span>
                 <div class="pbe-mobile-more-links">
-                  <a href="/news/mlb">MLB</a>
-                  <a href="/news/nfl">NFL</a>
-                  <a href="${PROPBET_LINKS.news_ufc}" target="_blank" rel="noopener">UFC</a>
-                  <a href="/news/nba">NBA</a>
-                  <a href="https://wnba.propbetedge.ai" target="_blank" rel="noopener">WNBA</a>
-                  <a href="/news/nhl">NHL</a>
+                  ${[...NEWS_PRIMARY, ...NEWS_MORE].map(key => `<a href="${newsHref(key)}"${newsTargetAttrs(key)}>${INTELLIGENCE_SPORTS[key].label}</a>`).join('')}
                 </div>
               </div>
               <div class="pbe-mobile-more-group">
@@ -167,27 +174,30 @@ function renderUfcFightWeekShell() {
   `;
 }
 
-function renderSportsSwitcher(activeSport, pageType, slug) {
-  const active = Boolean(activeSport && INTELLIGENCE_SPORTS[activeSport]);
+function renderMoreNewsSwitcher(activeSport) {
+  const active = NEWS_MORE.includes(activeSport);
   return `
-    <details class="pbe-sports-switcher">
-      <summary class="nav-link pbe-sports-summary ${active ? 'active' : ''}" aria-label="Open PropBetEdge sports network">
-        <span>Sports</span><span class="pbe-sports-chevron" aria-hidden="true">⌄</span>
+    <details class="pbe-sports-switcher pbe-news-switcher">
+      <summary class="nav-link pbe-sports-summary ${active ? 'active' : ''}" aria-label="Open more PropBetEdge newsrooms">
+        <span>More News</span><span class="pbe-sports-chevron" aria-hidden="true">⌄</span>
       </summary>
-      <div class="pbe-sports-menu" role="menu" aria-label="PropBetEdge sports network">
+      <div class="pbe-sports-menu pbe-news-menu" role="menu" aria-label="More PropBetEdge newsrooms">
         <div class="pbe-sports-menu-head">
-          <span>LIVE SPORTS NETWORK</span>
-          <strong>Choose a sport</strong>
-          <small>News, data and intelligence in one product family.</small>
+          <span>SPORT NEWSROOMS</span>
+          <strong>Every sport has its own news desk</strong>
+          <small>Open the dedicated newsroom for that sport.</small>
         </div>
-        <div class="pbe-sports-grid">
-          ${INTELLIGENCE_PRODUCTS.map(product => `
-            <a class="pbe-sports-option${activeSport === product.key ? ' is-active' : ''}" href="${product.href}" role="menuitem" ${ctaAttrs(INTELLIGENCE_SPORTS[product.key], { placement: 'header_sports', pageType, slug })}>
-              <span aria-hidden="true">${product.emoji}</span>
-              <strong>${INTELLIGENCE_SPORTS[product.key].label}</strong>
-              <small>Intelligence ↗</small>
-            </a>
-          `).join('')}
+        <div class="pbe-sports-grid pbe-news-grid">
+          ${NEWS_MORE.map(key => {
+            const intel = INTELLIGENCE_SPORTS[key];
+            return `
+              <a class="pbe-sports-option${activeSport === key ? ' is-active' : ''}" href="${newsHref(key)}" role="menuitem"${newsTargetAttrs(key)}>
+                <span aria-hidden="true">${intel.emoji}</span>
+                <strong>${intel.label}</strong>
+                <small>News →</small>
+              </a>
+            `;
+          }).join('')}
         </div>
         <a class="pbe-sports-all-news" href="/news">All Sports News <span aria-hidden="true">→</span></a>
       </div>
