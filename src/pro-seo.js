@@ -24,7 +24,7 @@ export const OFFER_ID = `${PRO_CANONICAL}#offer`;
 export const BREADCRUMB_ID = `${PRO_CANONICAL}#breadcrumb`;
 
 export const PRO_TITLE = 'PropBetEdge All Access | Sports Intelligence OS';
-export const PRO_DESCRIPTION = 'All Access opens the PropBetEdge sports intelligence operating system: 8 sports, sport-specific analytical engines, live data, tracked decisions, shadow research, PBEcast and every future Pro product for $29/month.';
+export const PRO_DESCRIPTION = 'All Access opens the PropBetEdge sports intelligence operating system: 8 Pro sports today, sport-specific analytical engines, live data, tracked decisions, shadow research and PBEcast for $29/month. Golf Pro and Boxing Pro are planned for Q1 2027.';
 export const PRO_SUCCESS_TITLE = 'All Access is active | PropBetEdge';
 export const PRO_SUCCESS_DESCRIPTION = 'Your PropBetEdge All Access membership is active. Sign in to any sport with the email you used at checkout.';
 
@@ -36,7 +36,7 @@ export const PRO_SOCIAL_IMAGE = Object.freeze({
   type: 'image/png',
   width: 1200,
   height: 630,
-  alt: 'PropBetEdge All Access: one membership, every sport. MLB, NFL, NBA, NHL, WNBA, UFC, Tennis, Soccer. $29 per month.',
+  alt: 'PropBetEdge All Access: eight Pro sports today, with Golf and Boxing planned for Q1 2027. $29 per month.',
 });
 
 export const PRO_SHARE_TITLE = 'PropBetEdge All Access — the sports intelligence operating system across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis and Soccer.';
@@ -143,7 +143,7 @@ export function proJsonLd() {
         '@id': PRODUCT_ID,
         name: ALL_ACCESS.name,
         alternateName: 'All Access',
-        description: 'A monthly membership to the PropBetEdge sports intelligence operating system. Across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis and Soccer, the system ingests live sports data, runs sport-specific analytical engines, grades official decisions, supports shadow research and governed model evolution, and powers PBEcast, player and matchup intelligence, research and every future Pro product.',
+        description: 'A monthly membership to the PropBetEdge sports intelligence operating system. Includes Pro access across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis and Soccer today, with Golf Pro and Boxing Pro planned for Q1 2027. The system ingests live sports data, runs sport-specific analytical engines, grades official decisions, supports shadow research and governed model evolution, and powers PBEcast, player and matchup intelligence, research and every future Pro product.',
         url: PRO_CANONICAL,
         image: PRO_SOCIAL_IMAGE.url,
         category: 'Sports intelligence operating system membership',
@@ -152,7 +152,8 @@ export function proJsonLd() {
         isRelatedTo: [{ '@id': OS_ID }, ...sportSites],
         additionalProperty: [
           { '@type': 'PropertyValue', name: 'Platform', value: 'Autonomous sports intelligence operating system' },
-          { '@type': 'PropertyValue', name: 'Sports', value: String(SPORTS.length) },
+          { '@type': 'PropertyValue', name: 'Live Pro sports', value: String(SPORTS.length) },
+          { '@type': 'PropertyValue', name: 'Roadmap', value: 'Golf Pro and Boxing Pro planned for Q1 2027' },
           { '@type': 'PropertyValue', name: 'Model governance', value: 'Shadow research, evidence gates and governed promotion to production' },
           { '@type': 'PropertyValue', name: 'Decision accountability', value: 'Tracked and graded official decisions with permanent records where live' },
         ],
@@ -201,9 +202,11 @@ export function proServerHtml({ checkoutSuccess = false } = {}) {
       <h1>${checkoutSuccess ? 'Welcome to All Access' : 'PropBetEdge All Access'}</h1>
       ${intro}
       <h2>Every sport. One login.</h2>
-      <p>All Access unlocks the Pro tier of every PropBetEdge sport property, and every sport added next:</p>
+      <p>All Access unlocks the Pro tier across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis and Soccer today. Golf Pro and Boxing Pro are planned for Q1 2027 and join All Access at launch:</p>
       <ul>
         ${sports}
+        <li>Golf Pro — planned Q1 2027</li>
+        <li>Boxing Pro — planned Q1 2027</li>
         <li>Every future PropBetEdge sport and Pro product, included on launch day</li>
       </ul>
       <h2>The intelligence operating system behind All Access</h2>
