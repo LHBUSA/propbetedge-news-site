@@ -83,9 +83,29 @@ export const INTELLIGENCE_SPORTS = Object.freeze({
     deeper: 'Open Tennis Intelligence',
     newsPath: null,
   }),
+  soccer: Object.freeze({
+    key: 'soccer',
+    label: 'Soccer',
+    emoji: '⚽',
+    href: 'https://soccer.propbetedge.ai/',
+    domain: 'soccer.propbetedge.ai',
+    line: 'Soccer intelligence beyond the scoreline.',
+    deeper: 'Open Soccer Intelligence',
+    newsPath: null,
+  }),
+  golf: Object.freeze({
+    key: 'golf',
+    label: 'Golf',
+    emoji: '⛳',
+    href: 'https://golf.propbetedge.ai/',
+    domain: 'golf.propbetedge.ai',
+    line: 'Golf intelligence beyond the leaderboard.',
+    deeper: 'Open Golf Intelligence',
+    newsPath: null,
+  }),
 });
 
-export const INTELLIGENCE_ORDER = Object.freeze(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis']);
+export const INTELLIGENCE_ORDER = Object.freeze(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer', 'golf']);
 
 export function intelligenceFor(sport) {
   return INTELLIGENCE_SPORTS[String(sport || '').toLowerCase()] || null;
@@ -149,7 +169,7 @@ export function renderMoreThanNewsCta(sport, { placement, pageType, slug = '' })
   `;
 }
 
-/** All seven products, for pages that are not about one sport (/news). */
+/** All live products, for pages that are not about one sport (/news). */
 export function renderNetworkIntelligenceRow({ pageType = 'news_index' } = {}) {
   return `
     <nav class="pbe-intel-row" aria-label="PropBetEdge Intelligence products">

@@ -26,7 +26,8 @@ import {
 } from '../../../src/entity-hub/contract.js';
 import { refreshPlayer, refreshTeam, teamRefreshTargets } from '../../../src/entity-hub/refresh.js';
 import {
-  handleSearch, runSearchRefresh, refreshUfcIndex, refreshWnbaIndex, refreshStoriesHead, backfillStories,
+  handleSearch, runSearchRefresh, refreshUfcIndex, refreshWnbaIndex, refreshProductSitemapIndex, refreshLearnIndex, refreshStoriesHead, backfillStories,
+  TENNIS_SITE, SOCCER_SITE, GOLF_SITE, KEYS,
   SEARCH_SCHEMA,
 } from './search-service.js';
 
@@ -308,7 +309,7 @@ async function adminRefresh(request, env, ctx, origin) {
 
 /**
  * Manual search-index rebuild (initial backfill, or after an upstream fix).
- *   source = ufc | wnba | stories-head | stories-backfill
+ *   source = ufc | wnba | tennis | soccer | golf | learn | stories-head | stories-backfill
  */
 async function adminSearchRefresh(request, env, url, origin) {
   const provided = request.headers.get('X-Hub-Admin-Token') || '';
@@ -320,6 +321,10 @@ async function adminSearchRefresh(request, env, url, origin) {
   const jobs = {
     ufc: () => refreshUfcIndex(env),
     wnba: () => refreshWnbaIndex(env),
+    tennis: () => refreshProductSitemapIndex(env, { sport: 'tennis', site: TENNIS_SITE, key: KEYS.tennis }),
+    soccer: () => refreshProductSitemapIndex(env, { sport: 'soccer', site: SOCCER_SITE, key: KEYS.soccer }),
+    golf: () => refreshProductSitemapIndex(env, { sport: 'golf', site: GOLF_SITE, key: KEYS.golf }),
+    learn: () => refreshLearnIndex(env),
     'stories-head': () => refreshStoriesHead(env, { pages: Math.min(pages, 5) }),
     'stories-backfill': () => backfillStories(env, { pages }),
   };

@@ -31,8 +31,8 @@ let lastFocused = null;
 let lastTracked = '';
 let localIndex = null;
 
-const SPORT_GLYPH = { mlb: '⚾', nfl: '🏈', nba: '🏀', wnba: '🏀', nhl: '🏒', ufc: '🥊' };
-const TYPE_GLYPH = { player: '◉', team: '◆', event: '✪', tool: '⚡', story: '✦' };
+const SPORT_GLYPH = { mlb: '⚾', nfl: '🏈', nba: '🏀', wnba: '🏀', nhl: '🏒', ufc: '🥊', tennis: '🎾', soccer: '⚽', golf: '⛳' };
+const TYPE_GLYPH = { player: '◉', team: '◆', event: '✪', tool: '⚡', story: '✦', learn: '▣' };
 
 function searchApiBase() {
   if (typeof window !== 'undefined' && typeof window.PBE_SEARCH_API === 'string' && window.PBE_SEARCH_API) {
@@ -126,7 +126,7 @@ function ensurePalette() {
         <input type="search" role="combobox" autocomplete="off" autocapitalize="off" spellcheck="false"
           aria-autocomplete="list" aria-expanded="true" aria-controls="${LISTBOX_ID}" aria-haspopup="listbox"
           aria-label="Search PropBetEdge"
-          placeholder="Search players, teams, fights, stories and intelligence…" />
+          placeholder="Search players, teams, events, courses, stories, Learn and intelligence…" />
         <kbd aria-hidden="true">↵</kbd>
       </div>
       <div class="pbe-search-status" role="status" aria-live="polite"></div>
@@ -241,7 +241,7 @@ function renderEmptyState() {
       </div>
     </div>`;
   list.innerHTML = chipGroup('pbe-sg-live', 'Live intelligence', live) + chipGroup('pbe-sg-popular', 'Popular', popular);
-  status.textContent = 'Live intelligence: MLB · NFL · NBA · WNBA · NHL · UFC';
+  status.textContent = 'Live intelligence: MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf';
   selectIndex(-1);
 }
 
@@ -268,7 +268,7 @@ function renderState(state) {
   if (!options.length) {
     list.innerHTML = state.status === 'loading'
       ? '<div class="pbe-search-empty" role="presentation"><span>Searching the PropBetEdge network…</span></div>'
-      : `<div class="pbe-search-empty" role="presentation"><strong>No match for “${escapeHtml(state.query.trim())}”.</strong><span>Try a player, fighter, team, event, “Fight Simulator”, “PBE Picks” or a headline.</span></div>`;
+      : `<div class="pbe-search-empty" role="presentation"><strong>No match for “${escapeHtml(state.query.trim())}”.</strong><span>Try a player, team, fighter, tournament, course, tool, Learn topic or headline.</span></div>`;
   } else {
     list.innerHTML = groups.map((g) => `
       <div class="pbe-search-group" role="group" aria-labelledby="pbe-sg-${g.key}">
@@ -287,7 +287,7 @@ function renderState(state) {
   if (state.status === 'fallback') {
     status.textContent = 'Live search is unavailable — showing network destinations and teams.';
   } else if (state.status === 'loading') {
-    status.textContent = 'Searching players, teams, events, tools and news…';
+    status.textContent = 'Searching players, teams, events, courses, tools, Learn and news across every PropBetEdge domain…';
   } else {
     status.textContent = options.length
       ? `${options.length} result${options.length === 1 ? '' : 's'} across the PropBetEdge network`
@@ -332,6 +332,8 @@ export function resultLabel(r, now = Date.now()) {
       return { kicker: r.label || r.subtitle || `${S} INTELLIGENCE`, detail: '' };
     case 'story':
       return { kicker: `${S} NEWS${r.date ? ` · ${timeAgo(r.date, now)}` : ''}`, detail: '' };
+    case 'learn':
+      return { kicker: r.label || 'LEARN', detail: r.subtitle || '' };
     default:
       return { kicker: S, detail: r.subtitle };
   }

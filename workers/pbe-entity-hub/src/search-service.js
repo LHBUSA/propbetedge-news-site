@@ -22,7 +22,7 @@ import { allPlayers, allTeams, SUPPORTED_SPORTS, teamQueryAbbreviations, nhlTric
 import { searchDocs, toResult, parseSearchParams, prepareDoc, MIN_QUERY_LENGTH } from '../../../src/search/rank.js';
 import { TOOL_DOCS, teamDoc } from '../../../src/search/destinations.js';
 import {
-  dictionaryPlayerDocs, wnbaDocsFromApi, ufcDocsFromSitemaps, locsFromSitemap, compactStory, storyDoc,
+  dictionaryPlayerDocs, wnbaDocsFromApi, ufcDocsFromSitemaps, locsFromSitemap, productDocsFromSitemap, learnDocsFromManifest, compactStory, storyDoc,
 } from '../../../src/search/documents.js';
 import { filterPublicArticles } from '../../../news-integrity.js';
 
@@ -30,10 +30,18 @@ export const SEARCH_SCHEMA = 'pbe-search/1';
 export const NEWS_API = 'https://propbet-news-api.sales-fd3.workers.dev';
 export const WNBA_API = 'https://wnba-api.sales-fd3.workers.dev';
 export const UFC_SITE = 'https://ufc.propbetedge.ai';
+export const TENNIS_SITE = 'https://tennis.propbetedge.ai';
+export const SOCCER_SITE = 'https://soccer.propbetedge.ai';
+export const GOLF_SITE = 'https://golf.propbetedge.ai';
+export const LEARN_SITE = 'https://learn.propbetedge.ai';
 
 export const KEYS = Object.freeze({
   ufc: 'search:v2:ufc',
   wnba: 'search:v2:wnba',
+  tennis: 'search:v2:tennis',
+  soccer: 'search:v2:soccer',
+  golf: 'search:v2:golf',
+  learn: 'search:v2:learn',
   storiesManifest: 'search:v2:stories:manifest',
   storiesShard: (month) => `search:v2:stories:${month}`,
   lock: (name) => `search:v2:lock:${name}`,
@@ -102,20 +110,38 @@ async function kvJson(env, key) {
 
 async function loadEntityTier(env) {
   const base = staticDocs();
-  const [ufc, wnba] = await Promise.all([kvJson(env, KEYS.ufc), kvJson(env, KEYS.wnba)]);
-  const docs = [...base.players, ...base.teams, ...base.tools, ...(wnba?.docs || []), ...(ufc?.docs || [])];
+  const [ufc, wnba, tennis, soccer, golf, learn] = await Promise.all([
+    kvJson(env, KEYS.ufc), kvJson(env, KEYS.wnba), kvJson(env, KEYS.tennis),
+    kvJson(env, KEYS.soccer), kvJson(env, KEYS.golf), kvJson(env, KEYS.learn),
+  ]);
+  const docs = [
+    ...base.players, ...base.teams, ...base.tools,
+    ...(wnba?.docs || []), ...(ufc?.docs || []), ...(tennis?.docs || []),
+    ...(soccer?.docs || []), ...(golf?.docs || []), ...(learn?.docs || []),
+  ];
   const byHref = new Map();
   for (const d of docs) if (d.type === 'team') byHref.set(d.href, d);
   return {
     docs,
     byHref,
-    raw: { ufc: ufc ? { built_at: ufc.built_at } : null, wnba: wnba ? { built_at: wnba.built_at } : null },
+    raw: {
+      ufc: ufc ? { built_at: ufc.built_at } : null,
+      wnba: wnba ? { built_at: wnba.built_at } : null,
+      tennis: tennis ? { built_at: tennis.built_at } : null,
+      soccer: soccer ? { built_at: soccer.built_at } : null,
+      golf: golf ? { built_at: golf.built_at } : null,
+      learn: learn ? { built_at: learn.built_at } : null,
+    },
     status: {
       dictionary_players: base.players.length,
       teams: base.teams.length + (wnba?.docs || []).filter((d) => d.type === 'team').length,
       tools: base.tools.length,
       wnba: wnba ? { docs: wnba.docs.length, built_at: wnba.built_at } : null,
       ufc: ufc ? { docs: ufc.docs.length, built_at: ufc.built_at } : null,
+      tennis: tennis ? { docs: tennis.docs.length, built_at: tennis.built_at } : null,
+      soccer: soccer ? { docs: soccer.docs.length, built_at: soccer.built_at } : null,
+      golf: golf ? { docs: golf.docs.length, built_at: golf.built_at } : null,
+      learn: learn ? { docs: learn.docs.length, built_at: learn.built_at } : null,
     },
   };
 }
@@ -315,6 +341,10 @@ function scheduleLazyRefresh(env, ctx, c) {
   const jobs = [];
   if (!c.raw.ufc) jobs.push(['ufc', () => refreshUfcIndex(env)]);
   if (!c.raw.wnba) jobs.push(['wnba', () => refreshWnbaIndex(env)]);
+  if (!c.raw.tennis) jobs.push(['tennis', () => refreshProductSitemapIndex(env, { sport: 'tennis', site: TENNIS_SITE, key: KEYS.tennis })]);
+  if (!c.raw.soccer) jobs.push(['soccer', () => refreshProductSitemapIndex(env, { sport: 'soccer', site: SOCCER_SITE, key: KEYS.soccer })]);
+  if (!c.raw.golf) jobs.push(['golf', () => refreshProductSitemapIndex(env, { sport: 'golf', site: GOLF_SITE, key: KEYS.golf })]);
+  if (!c.raw.learn) jobs.push(['learn', () => refreshLearnIndex(env)]);
   if (c.storiesLoaded && !c.raw.manifest) jobs.push(['stories-head', () => refreshStoriesHead(env, { pages: 1 })]);
   for (const [name, job] of jobs) ctx.waitUntil(withLock(env, name, job).catch(() => {}));
 }
@@ -377,6 +407,46 @@ export async function refreshUfcIndex(env, { now = Date.now() } = {}) {
   // Plausibility gate: a truncated sitemap must not replace a good index.
   if (counts.fighters < 500 || counts.events < 100) return { ok: false, reason: 'implausible_sitemap', counts };
   await env.ENTITY_KV.put(KEYS.ufc, JSON.stringify({ built_at: new Date(now).toISOString(), source: `${UFC_SITE}/sitemap.xml`, counts, docs }));
+  return { ok: true, counts };
+}
+
+/** First-party product sitemap lane for Tennis, Soccer and Golf. */
+export async function refreshProductSitemapIndex(env, { sport, site, key, now = Date.now() } = {}) {
+  const xml = await fetchText(`${site}/sitemap.xml`);
+  let urls = locsFromSitemap(xml);
+  // Sitemap indexes point at child sitemaps. Follow only first-party children.
+  const children = urls.filter((u) => {
+    try { return new URL(u).origin === site && /sitemap/i.test(new URL(u).pathname); } catch { return false; }
+  });
+  if (children.length) {
+    const nested = await Promise.all(children.slice(0, 40).map((u) => fetchText(u).catch(() => '')));
+    urls = nested.flatMap(locsFromSitemap);
+  }
+  const docs = productDocsFromSitemap({ sport, site, urls });
+  const counts = {
+    docs: docs.length,
+    players: docs.filter((d) => d.type === 'player').length,
+    teams: docs.filter((d) => d.type === 'team').length,
+    events: docs.filter((d) => d.type === 'event').length,
+    stories: docs.filter((d) => d.type === 'story').length,
+    tools: docs.filter((d) => d.type === 'tool').length,
+  };
+  if (docs.length < 5) return { ok: false, reason: 'implausible_sitemap', counts };
+  await env.ENTITY_KV.put(key, JSON.stringify({
+    built_at: new Date(now).toISOString(), source: `${site}/sitemap.xml`, counts, docs,
+  }));
+  return { ok: true, counts };
+}
+
+/** Learn exposes a purpose-built compact search manifest. */
+export async function refreshLearnIndex(env, { now = Date.now() } = {}) {
+  const payload = JSON.parse(await fetchText(`${LEARN_SITE}/search-manifest.json`));
+  const docs = learnDocsFromManifest(payload);
+  const counts = { docs: docs.length };
+  if (docs.length < 20) return { ok: false, reason: 'implausible_manifest', counts };
+  await env.ENTITY_KV.put(KEYS.learn, JSON.stringify({
+    built_at: new Date(now).toISOString(), source: `${LEARN_SITE}/search-manifest.json`, counts, docs,
+  }));
   return { ok: true, counts };
 }
 
@@ -507,6 +577,10 @@ export async function runSearchRefresh(event, env) {
   await attempt('stories_backfill', () => backfillStories(env, { pages: 10 }));
   if (minute === 0 && hour % 6 === 0) await attempt('ufc', () => refreshUfcIndex(env));
   if (minute === 30 && hour % 6 === 0) await attempt('wnba', () => refreshWnbaIndex(env));
+  if (minute === 0 && hour % 3 === 0) await attempt('tennis', () => refreshProductSitemapIndex(env, { sport: 'tennis', site: TENNIS_SITE, key: KEYS.tennis }));
+  if (minute === 15 && hour % 3 === 0) await attempt('soccer', () => refreshProductSitemapIndex(env, { sport: 'soccer', site: SOCCER_SITE, key: KEYS.soccer }));
+  if (minute === 30 && hour % 3 === 0) await attempt('golf', () => refreshProductSitemapIndex(env, { sport: 'golf', site: GOLF_SITE, key: KEYS.golf }));
+  if (minute === 45 && hour % 3 === 0) await attempt('learn', () => refreshLearnIndex(env));
   await env.ENTITY_KV.put('report:search:last', JSON.stringify({ at: new Date().toISOString(), report }), { expirationTtl: 60 * 60 * 24 * 14 });
   invalidateTiers();
   return report;

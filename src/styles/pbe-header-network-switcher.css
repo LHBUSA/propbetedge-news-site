@@ -390,6 +390,122 @@
 }
 
 
+
+/* Compact Sports nav: the old flat league strip does not scale beyond six
+   sports. One slot now exposes the whole nine-sport network. */
+.pbe-sports-switcher {
+  position: relative;
+  z-index: 92;
+  flex: 0 0 auto;
+}
+.pbe-sports-switcher > summary { list-style: none; }
+.pbe-sports-switcher > summary::-webkit-details-marker { display: none; }
+.pbe-sports-summary {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.pbe-sports-chevron {
+  color: var(--gold);
+  font-size: 12px;
+  transition: transform .16s ease;
+}
+.pbe-sports-switcher[open] .pbe-sports-chevron { transform: rotate(180deg); }
+.pbe-sports-menu {
+  position: absolute;
+  top: calc(100% + 11px);
+  left: 0;
+  width: min(520px, calc(100vw - 28px));
+  overflow: hidden;
+  border: 1px solid rgba(233,199,90,.24);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(212,175,55,.10), transparent 34%),
+    rgba(13,12,10,.994);
+  box-shadow: 0 22px 64px rgba(0,0,0,.56);
+}
+.pbe-sports-menu-head {
+  display: grid;
+  gap: 4px;
+  padding: 14px 15px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.pbe-sports-menu-head > span {
+  color: var(--gold-bright);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+.pbe-sports-menu-head > strong { color: #f7f2e8; font-size: 13px; }
+.pbe-sports-menu-head > small { color: #aaa392; font-size: 9px; line-height: 1.35; }
+.pbe-sports-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: rgba(255,255,255,.055);
+}
+.pbe-sports-option {
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: center;
+  column-gap: 8px;
+  padding: 11px 12px;
+  background: #100f0c;
+  color: #f7f2e8;
+  text-decoration: none;
+}
+.pbe-sports-option > span {
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 18px;
+}
+.pbe-sports-option > strong { font-size: 11px; line-height: 1.2; }
+.pbe-sports-option > small {
+  color: rgba(233,199,90,.76);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: .05em;
+}
+.pbe-sports-option:hover,
+.pbe-sports-option:focus-visible,
+.pbe-sports-option.is-active {
+  background: rgba(212,175,55,.09);
+  outline: none;
+}
+.pbe-sports-option.is-active { box-shadow: inset 2px 0 0 var(--gold-bright); }
+.pbe-sports-all-news {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 10px 14px;
+  color: #f7f2e8;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.pbe-sports-all-news:hover,
+.pbe-sports-all-news:focus-visible { background: rgba(212,175,55,.07); outline: none; }
+
+@media (max-width: 1320px) and (min-width: 881px) {
+  .pbe-sports-summary { padding-inline: 9px !important; }
+}
+@media (max-width: 880px) {
+  .pbe-sports-switcher { display: none !important; }
+}
+@media (max-width: 560px) {
+  .pbe-sports-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 /* Compact Stats nav: Leaders + Standings share one masthead slot. */
 .pbe-stats-switcher {
   position: relative;
