@@ -8,7 +8,7 @@ import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { renderArticleCard } from '../components/article-card.js';
 import { renderBreakingBanner } from '../components/breaking-banner.js';
-import { renderNetworkIntelligenceRow } from '../intelligence-cta.js';
+import { INTELLIGENCE_SPORTS, renderNetworkIntelligenceRow } from '../intelligence-cta.js';
 import {
   organizationSchema, websiteSchema, breadcrumbSchema,
   collectionPageSchema, injectSchemas,
@@ -16,11 +16,16 @@ import {
 
 const SPORTS = [
   { key: 'all', label: 'All News', href: '/news' },
-  { key: 'mlb', label: 'MLB', href: '/news/mlb' },
-  { key: 'nfl', label: 'NFL', href: '/news/nfl' },
-  { key: 'nba', label: 'NBA', href: '/news/nba' },
-  { key: 'nhl', label: 'NHL', href: '/news/nhl' },
+  ...['mlb', 'nfl', 'nba', 'nhl', 'wnba', 'ufc', 'tennis', 'soccer', 'golf'].map((key) => ({
+    key,
+    label: INTELLIGENCE_SPORTS[key].label,
+    href: INTELLIGENCE_SPORTS[key].newsPath,
+  })),
 ];
+
+function externalAttrs(href) {
+  return /^https:\/\//.test(String(href || '')) ? ' target="_blank" rel="noopener"' : '';
+}
 
 const PAGE_SIZE = 12;
 
@@ -52,7 +57,7 @@ export async function renderNewsIndex(root, requestedPage = 1) {
       <div class="section-bar">
         <div class="container section-bar-inner">
           ${SPORTS.map((s) => `
-            <a href="${s.href}" class="section-link ${s.key === 'all' ? 'active' : ''}">${s.label}</a>
+            <a href="${s.href}" class="section-link ${s.key === 'all' ? 'active' : ''}"${externalAttrs(s.href)}>${s.label}</a>
           `).join('')}
         </div>
       </div>
