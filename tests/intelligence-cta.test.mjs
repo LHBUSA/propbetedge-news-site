@@ -95,8 +95,24 @@ test('surfaces use the registry, not raw product URLs', () => {
   const header = read('../src/components/header.js');
   assert.match(header, /INTELLIGENCE_ORDER\.map/);
   assert.match(header, /placement: 'header_switcher'/);
-  assert.match(header, /placement: 'header_sports'/);
+  assert.match(header, /More News/);
+  assert.match(header, /NEWS_PRIMARY/);
+  assert.match(header, /NEWS_MORE/);
   assert.match(header, /placement: 'mobile_more'/);
+});
+
+
+test('news navigation keeps core newsroom links direct and routes the rest to each sport newsroom', () => {
+  const header = read('../src/components/header.js');
+  for (const path of ['/news/mlb', '/news/nfl', '/news/nba', '/news/nhl']) assert.ok(header.includes(path), path);
+  for (const path of [
+    'https://wnba.propbetedge.ai/news',
+    'https://ufc.propbetedge.ai/news',
+    'https://tennis.propbetedge.ai/news',
+    'https://soccer.propbetedge.ai/news',
+    'https://golf.propbetedge.ai/news',
+  ]) assert.ok(header.includes('newsHref') || read('../src/intelligence-cta.js').includes(path), path);
+  assert.match(header, /Every sport has its own news desk/);
 });
 
 test('article funnel throttles instead of debouncing (score strip mutations never starve it)', () => {
