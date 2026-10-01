@@ -76,13 +76,16 @@ test('JSON-LD graph: connected WebPage -> Product -> Offer with stable @ids, bra
   const ld = seo.proJsonLd();
   assert.equal(ld['@context'], 'https://schema.org');
   const by = Object.fromEntries(ld['@graph'].map((n) => [n['@type'], n]));
-  assert.deepEqual(Object.keys(by).sort(), ['BreadcrumbList', 'Offer', 'Product', 'WebPage']);
+  assert.deepEqual(Object.keys(by).sort(), ['BreadcrumbList', 'Offer', 'Product', 'WebApplication', 'WebPage']);
   assert.equal(by.WebPage['@id'], `${CANON}#webpage`); assert.equal(by.Product['@id'], `${CANON}#product`); assert.equal(by.Offer['@id'], `${CANON}#offer`); assert.equal(by.BreadcrumbList['@id'], `${CANON}#breadcrumb`);
   assert.deepEqual(by.WebPage.mainEntity, { '@id': `${CANON}#product` });
+  assert.deepEqual(by.WebPage.about, [{ '@id': `${CANON}#product` }, { '@id': 'https://propbetedge.ai/#sports-intelligence-os' }]);
   assert.deepEqual(by.WebPage.isPartOf, { '@id': 'https://propbetedge.ai/#website' });
   assert.deepEqual(by.WebPage.publisher, { '@id': 'https://propbetedge.ai/#organization' });
   assert.deepEqual(by.WebPage.breadcrumb, { '@id': `${CANON}#breadcrumb` });
   assert.deepEqual(by.Product.offers, { '@id': `${CANON}#offer` });
+  assert.equal(by.Product.category, 'Sports intelligence operating system membership');
+  assert.ok(by.Product.isRelatedTo.some((x) => x['@id'] === 'https://propbetedge.ai/#sports-intelligence-os'));
   assert.deepEqual(by.Product.brand, { '@id': 'https://propbetedge.ai/#organization' });
   assert.deepEqual(by.Product.mainEntityOfPage, { '@id': `${CANON}#webpage` });
   assert.deepEqual(by.Offer.itemOffered, { '@id': `${CANON}#product` });
@@ -90,6 +93,12 @@ test('JSON-LD graph: connected WebPage -> Product -> Offer with stable @ids, bra
   assert.equal(by.Offer.priceSpecification.unitCode, 'MON'); assert.equal(by.Offer.priceSpecification.price, '29');
   assert.equal(by.Offer.availability, 'https://schema.org/InStock');
   assert.equal(by.BreadcrumbList.itemListElement.length, 2); assert.equal(by.BreadcrumbList.itemListElement[1].item, CANON);
+  assert.equal(by.WebApplication['@id'], 'https://propbetedge.ai/#sports-intelligence-os');
+  assert.equal(by.WebApplication.name, 'PropBetEdge Sports Intelligence Operating System');
+  assert.match(by.WebApplication.description, /autonomous sports intelligence operating system/i);
+  for (const feature of ['Continuous live sports data ingestion', 'Sport-specific prediction models and analytical engines', 'Shadow research for candidate signals and models', 'Governed promotion into production']) {
+    assert.ok(by.WebApplication.featureList.includes(feature), feature);
+  }
   const text = JSON.stringify(ld);
   assert.equal(/aggregateRating|"review"|ratingValue|reviewCount|award/i.test(text), false, 'no invented ratings, reviews or awards');
   assert.equal(/21\.75/.test(text), false, 'the coupon price is never the listed price');
