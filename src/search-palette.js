@@ -31,7 +31,7 @@ let lastFocused = null;
 let lastTracked = '';
 let localIndex = null;
 
-const SPORT_GLYPH = { mlb: '⚾', nfl: '🏈', nba: '🏀', wnba: '🏀', nhl: '🏒', ufc: '🥊', tennis: '🎾', soccer: '⚽', golf: '⛳' };
+const SPORT_GLYPH = { mlb: '⚾', nfl: '🏈', nba: '🏀', wnba: '🏀', nhl: '🏒', ufc: '🥊', tennis: '🎾', soccer: '⚽', golf: '⛳', f1: '🏎️' };
 const TYPE_GLYPH = { player: '◉', team: '◆', event: '✪', tool: '⚡', story: '✦', learn: '▣' };
 
 function searchApiBase() {
@@ -241,7 +241,7 @@ function renderEmptyState() {
       </div>
     </div>`;
   list.innerHTML = chipGroup('pbe-sg-live', 'Live intelligence', live) + chipGroup('pbe-sg-popular', 'Popular', popular);
-  status.textContent = 'Live intelligence: MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf';
+  status.textContent = 'Live intelligence: MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf · F1';
   selectIndex(-1);
 }
 
