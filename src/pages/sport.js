@@ -21,7 +21,7 @@ const SPORT_TAGLINES = {
   nba: 'Points, assists, rebounds, threes — every angle on the hardwood.',
   nhl: 'Shots on goal, goals, saves — the ice-level edge.',
 };
-const SECTIONS = ['mlb', 'nfl', 'nba', 'nhl', 'wnba', 'ufc', 'tennis', 'soccer', 'golf'];
+const SECTIONS = ['mlb', 'nfl', 'nba', 'nhl', 'wnba', 'ufc', 'tennis', 'soccer', 'golf', 'f1'];
 
 function newsHref(key) {
   return INTELLIGENCE_SPORTS[key]?.newsPath || '/news';
