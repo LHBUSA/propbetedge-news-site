@@ -38,7 +38,7 @@ test('the live Stripe identities are pinned and nothing else is offered', () => 
 test('hierarchy: title, statement, price, CTA, launch offer, eight sports (Tennis included), future sports', () => {
   const html = buildProHtml();
   assert.match(html, /PropBetEdge<\/span><span class="pbe-pro-title-all">All Access/);
-  for (const line of ['One membership.', 'Nine sports.', 'One autonomous sports intelligence operating system.', 'Every current and future PropBetEdge Pro product.']) assert.ok(html.includes(line), line);
+  for (const line of ['One membership.', 'Ten sports.', 'One autonomous sports intelligence operating system.', 'Every current and future PropBetEdge Pro product.']) assert.ok(html.includes(line), line);
   assert.match(html, /pbe-pro-price-amount">\$29<\/span><span class="pbe-pro-price-per">\/ month/);
   assert.match(html, />Get All Access</);
   assert.match(html, /25% off for as long as you stay active/);
