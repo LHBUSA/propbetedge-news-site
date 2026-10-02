@@ -90,3 +90,31 @@ test('no valid subject and no valid image: text-only card with no name on it', (
   assert.equal(s.team, null);
   assert.equal(s.alt, 'PropBetEdge NHL coverage');
 });
+
+test('team named by possessive city in a team-led headline wins over the opponent', () => {
+  const article = {
+    sport: 'nhl',
+    slug: 'vancouver-upset',
+    title: "Vancouver's Opening Night Upset Over Edmonton Reshuffles Tank Narratives",
+    summary: 'The Canucks beat the Oilers in overtime.',
+    body: 'Paul Cotter scored the winner for the Vancouver Canucks against the Edmonton Oilers.',
+    take: { teams: ['EDM', 'VAN'], players: ['Paul Cotter'] },
+  };
+  const s = subjectOf(article);
+  assert.equal(s.team?.name, 'Vancouver Canucks');
+  assert.equal(s.player, null); // Cotter is not named in the headline
+});
+
+test('roundup: headline names nobody and the dek names several teams, so the card names nobody', () => {
+  const article = {
+    sport: 'nfl',
+    slug: 'week-4-shadow',
+    title: 'Week 4 Shadow Reports: Early Injuries Reshape the Workload Picture',
+    summary: "With Green Bay's Reed sidelined and Miami's Achane done for the season, the Week 4 slate rewards teams willing to hunt vacated touches.",
+    body: 'Justin Jefferson and Aaron Rodgers are monitored.',
+    take: { teams: ['GB', 'TB', 'MIA', 'MIN'], players: ['Jaylin Reed', 'Mike Evans', "De'Von Achane", 'Justin Jefferson'] },
+  };
+  const s = primarySubject(article, buildEntityManifest(article));
+  assert.equal(s.player, null);
+  assert.equal(s.team, null);
+});

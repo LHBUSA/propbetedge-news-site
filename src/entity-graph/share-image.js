@@ -22,6 +22,8 @@
 
 import { SITE, SPORT_LABELS } from './constants.js';
 import { normalizeName } from './text.js';
+import { allTeams } from './entities.js';
+import { toTeamManifest } from './manifest.js';
 
 import { NETWORK_SOCIAL_IMAGE } from '../social.js';
 export const SHARE_IMAGE_WIDTH = 1200;
@@ -86,75 +88,110 @@ function personNamedAt(text, name) {
   return -1;
 }
 
-function teamNamedAt(text, team) {
-  const spellings = [team?.name, team?.location && team?.nickname ? `${team.location} ${team.nickname}` : null, team?.nickname, team?.location]
+function teamNamedAt(text, team, { cityAlone = true } = {}) {
+  const spellings = [team?.name, team?.location && team?.nickname ? `${team.location} ${team.nickname}` : null, team?.nickname, cityAlone ? team?.location : null]
     .filter((x) => x && normalizeName(x).length >= 4);
   let best = -1;
   for (const spelling of spellings) {
-    const i = text.indexOf(` ${normalizeName(spelling)} `);
-    if (i !== -1 && (best === -1 || i < best)) best = i;
+    const key = normalizeName(spelling);
+    // Possessives normalize to a trailing "s" ("Vancouver's" -> "vancouvers").
+    for (const form of [key, `${key}s`]) {
+      const i = text.indexOf(` ${form} `);
+      if (i !== -1 && (best === -1 || i < best)) best = i;
+    }
   }
   return best;
 }
 
 const tagName = (tag) => (typeof tag === 'string' ? tag : tag?.name || '');
 
+/** Matching key for a person: normalized, with generational suffixes dropped ("Kelvin Banks" = "Kelvin Banks Jr."). */
+const personKey = (name) => normalizeName(name).split(' ').filter((t) => t && !NAME_SUFFIXES.has(t)).join(' ');
+
 /**
  * The story's proven primary subject: { player, team, basis }.
  *
- * Candidates are the people the newsroom tagged (in tag order, resolved or not)
- * plus the players the manifest resolved. The subject is the candidate named
- * earliest in the headline; failing that, in the dek. When that person is not a
- * resolved player (a coach, an executive), the card gets NO player — it never
- * falls through to the next tagged person. A team is only the subject when the
- * headline or dek names it. Pure.
+ * Candidates are the people the newsroom tagged (in tag order, resolved or not),
+ * the players the manifest resolved, and the manifest's teams. Whatever the
+ * headline names first is the subject (a team-led headline hands over to the
+ * first person it names only when that person plays for a team it names); only
+ * if the headline names no candidate does the dek decide, and a dek naming
+ * several teams (a roundup) decides nothing. A named person who is not a resolved player (a coach, an
+ * executive, a rookie missing from the dictionary) gets NO player on the card —
+ * selection never falls through to another tagged person — and the team that
+ * line names, if any, carries the card instead. Pure.
  */
 export function primarySubject(article, manifest) {
   const players = Array.isArray(manifest?.players) ? manifest.players : [];
-  const teams = Array.isArray(manifest?.teams) ? manifest.teams : [];
-  const byName = new Map(players.map((p) => [normalizeName(p.name), p]));
+  const sport = String(article?.sport || manifest?.sport || '').toLowerCase();
+  const lines = [['headline', words(article?.title)], ['dek', words(article?.summary || article?.take?.summary)]];
+  const teams = withHeadlineTeams(sport, Array.isArray(manifest?.teams) ? manifest.teams : [], lines);
+  const byKey = new Map(players.map((p) => [personKey(p.name), p]));
 
   const people = [];
   const seen = new Set();
   const addPerson = (name) => {
-    const key = normalizeName(name);
+    const key = personKey(name);
     if (!key || seen.has(key)) return;
     seen.add(key);
-    people.push({ name, player: byName.get(key) || null });
+    people.push({ name, player: byKey.get(key) || null });
   };
   for (const tag of [...asList(article?.take?.players), ...asList(article?.players)]) addPerson(tagName(tag));
   for (const p of players) addPerson(p.name);
 
-  const lines = [['headline', words(article?.title)], ['dek', words(article?.summary || article?.take?.summary)]];
-
   for (const [basis, text] of lines) {
-    const named = people
-      .map((person, order) => ({ ...person, order, at: personNamedAt(text, person.name) }))
-      .filter((x) => x.at !== -1)
-      .sort((a, b) => a.at - b.at || a.order - b.order);
+    const named = [
+      ...people.map((person, order) => ({ kind: 'person', ...person, order, at: personNamedAt(text, person.name) })),
+      ...teams.map((team, order) => ({ kind: 'team', team, order: people.length + order, at: teamNamedAt(text, team) })),
+    ].filter((x) => x.at !== -1).sort((a, b) => a.at - b.at || a.order - b.order);
     if (!named.length) continue;
+    // A dek that names several teams belongs to a roundup: no single subject.
+    if (basis === 'dek' && new Set(named.filter((x) => x.kind === 'team').map((x) => x.team.name)).size > 1) break;
     const lead = named[0];
-    if (!lead.player) {
-      // The story is about someone who is not a player we can show. Do not
-      // substitute anybody else; a named team can still carry the card.
-      return { player: null, team: namedTeam(lines, teams), basis: `${basis}:non_player:${lead.name}` };
+    const lineTeams = named.filter((x) => x.kind === 'team').map((x) => x.team);
+    const teamOf = (player) => lineTeams.find((t) => t.team_id === player.team_id || t.name === player.team_name) || null;
+    if (lead.kind === 'team') {
+      // "Packers Lose Reed for Season": a team-led headline is about the first
+      // person it names when that person is a resolved player on a team the
+      // headline names. Anyone else (a coach, a rival's player) leaves the team.
+      const person = named.find((x) => x.kind === 'person');
+      const own = person?.player ? teamOf(person.player) : null;
+      if (own) return { player: person.player, team: own, basis: `${basis}:team_player` };
+      return { player: null, team: lead.team, basis: `${basis}:team` };
     }
+    if (!lead.player) return { player: null, team: lineTeams[0] || null, basis: `${basis}:non_player:${lead.name}` };
     const team = teams.find((t) => t.team_id === lead.player.team_id || t.name === lead.player.team_name) || null;
     return { player: lead.player, team, basis: `${basis}:player` };
   }
-  const team = namedTeam(lines, teams);
-  return { player: null, team, basis: team ? 'team' : 'none' };
+  return { player: null, team: null, basis: 'none' };
 }
 
-function namedTeam(lines, teams) {
-  for (const [, text] of lines) {
-    const named = teams
-      .map((team, order) => ({ team, order, at: teamNamedAt(text, team) }))
-      .filter((x) => x.at !== -1)
-      .sort((a, b) => a.at - b.at || a.order - b.order);
-    if (named.length) return named[0].team;
+/**
+ * The manifest only knows teams named in full ("Vancouver Canucks"); headlines
+ * say "Vancouver's" or "Canucks". Add same-sport teams the headline or dek name
+ * by nickname or by a city no other team in that sport shares.
+ */
+function withHeadlineTeams(sport, teams, lines) {
+  let league = [];
+  try { league = sport ? allTeams(sport) || [] : []; } catch { league = []; }
+  if (!league.length) return teams;
+  const cityCount = new Map();
+  for (const t of league) {
+    const city = normalizeName(t.location);
+    if (city) cityCount.set(city, (cityCount.get(city) || 0) + 1);
   }
-  return null;
+  const known = new Set(teams.map((t) => t.abbreviation || t.id));
+  const out = [...teams];
+  for (const t of league) {
+    if (known.has(t.abbr)) continue;
+    const entry = toTeamManifest(t);
+    const cityAlone = cityCount.get(normalizeName(t.location)) === 1;
+    if (lines.some(([, text]) => teamNamedAt(text, entry, { cityAlone }) !== -1)) {
+      out.push({ ...entry, origin: 'headline' });
+      known.add(t.abbr);
+    }
+  }
+  return out;
 }
 
 function asList(value) {
