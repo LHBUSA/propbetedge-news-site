@@ -33,6 +33,7 @@ export const UFC_SITE = 'https://ufc.propbetedge.ai';
 export const TENNIS_SITE = 'https://tennis.propbetedge.ai';
 export const SOCCER_SITE = 'https://soccer.propbetedge.ai';
 export const GOLF_SITE = 'https://golf.propbetedge.ai';
+export const F1_SITE = 'https://f1.propbetedge.ai';
 export const LEARN_SITE = 'https://learn.propbetedge.ai';
 
 export const KEYS = Object.freeze({
@@ -41,6 +42,7 @@ export const KEYS = Object.freeze({
   tennis: 'search:v2:tennis',
   soccer: 'search:v2:soccer',
   golf: 'search:v2:golf',
+  f1: 'search:v2:f1',
   learn: 'search:v2:learn',
   storiesManifest: 'search:v2:stories:manifest',
   storiesShard: (month) => `search:v2:stories:${month}`,
@@ -110,14 +112,14 @@ async function kvJson(env, key) {
 
 async function loadEntityTier(env) {
   const base = staticDocs();
-  const [ufc, wnba, tennis, soccer, golf, learn] = await Promise.all([
+  const [ufc, wnba, tennis, soccer, golf, f1, learn] = await Promise.all([
     kvJson(env, KEYS.ufc), kvJson(env, KEYS.wnba), kvJson(env, KEYS.tennis),
-    kvJson(env, KEYS.soccer), kvJson(env, KEYS.golf), kvJson(env, KEYS.learn),
+    kvJson(env, KEYS.soccer), kvJson(env, KEYS.golf), kvJson(env, KEYS.f1), kvJson(env, KEYS.learn),
   ]);
   const docs = [
     ...base.players, ...base.teams, ...base.tools,
     ...(wnba?.docs || []), ...(ufc?.docs || []), ...(tennis?.docs || []),
-    ...(soccer?.docs || []), ...(golf?.docs || []), ...(learn?.docs || []),
+    ...(soccer?.docs || []), ...(golf?.docs || []), ...(f1?.docs || []), ...(learn?.docs || []),
   ];
   const byHref = new Map();
   for (const d of docs) if (d.type === 'team') byHref.set(d.href, d);
@@ -130,6 +132,7 @@ async function loadEntityTier(env) {
       tennis: tennis ? { built_at: tennis.built_at } : null,
       soccer: soccer ? { built_at: soccer.built_at } : null,
       golf: golf ? { built_at: golf.built_at } : null,
+      f1: f1 ? { built_at: f1.built_at } : null,
       learn: learn ? { built_at: learn.built_at } : null,
     },
     status: {
@@ -141,6 +144,7 @@ async function loadEntityTier(env) {
       tennis: tennis ? { docs: tennis.docs.length, built_at: tennis.built_at } : null,
       soccer: soccer ? { docs: soccer.docs.length, built_at: soccer.built_at } : null,
       golf: golf ? { docs: golf.docs.length, built_at: golf.built_at } : null,
+      f1: f1 ? { docs: f1.docs.length, built_at: f1.built_at } : null,
       learn: learn ? { docs: learn.docs.length, built_at: learn.built_at } : null,
     },
   };
@@ -344,6 +348,7 @@ function scheduleLazyRefresh(env, ctx, c) {
   if (!c.raw.tennis) jobs.push(['tennis', () => refreshProductSitemapIndex(env, { sport: 'tennis', site: TENNIS_SITE, key: KEYS.tennis })]);
   if (!c.raw.soccer) jobs.push(['soccer', () => refreshProductSitemapIndex(env, { sport: 'soccer', site: SOCCER_SITE, key: KEYS.soccer })]);
   if (!c.raw.golf) jobs.push(['golf', () => refreshProductSitemapIndex(env, { sport: 'golf', site: GOLF_SITE, key: KEYS.golf })]);
+  if (!c.raw.f1) jobs.push(['f1', () => refreshProductSitemapIndex(env, { sport: 'f1', site: F1_SITE, key: KEYS.f1 })]);
   if (!c.raw.learn) jobs.push(['learn', () => refreshLearnIndex(env)]);
   if (c.storiesLoaded && !c.raw.manifest) jobs.push(['stories-head', () => refreshStoriesHead(env, { pages: 1 })]);
   for (const [name, job] of jobs) ctx.waitUntil(withLock(env, name, job).catch(() => {}));
@@ -580,6 +585,7 @@ export async function runSearchRefresh(event, env) {
   if (minute === 0 && hour % 3 === 0) await attempt('tennis', () => refreshProductSitemapIndex(env, { sport: 'tennis', site: TENNIS_SITE, key: KEYS.tennis }));
   if (minute === 15 && hour % 3 === 0) await attempt('soccer', () => refreshProductSitemapIndex(env, { sport: 'soccer', site: SOCCER_SITE, key: KEYS.soccer }));
   if (minute === 30 && hour % 3 === 0) await attempt('golf', () => refreshProductSitemapIndex(env, { sport: 'golf', site: GOLF_SITE, key: KEYS.golf }));
+  if (minute === 40 && hour % 3 === 0) await attempt('f1', () => refreshProductSitemapIndex(env, { sport: 'f1', site: F1_SITE, key: KEYS.f1 }));
   if (minute === 45 && hour % 3 === 0) await attempt('learn', () => refreshLearnIndex(env));
   await env.ENTITY_KV.put('report:search:last', JSON.stringify({ at: new Date().toISOString(), report }), { expirationTtl: 60 * 60 * 24 * 14 });
   invalidateTiers();
