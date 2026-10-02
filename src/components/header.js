@@ -32,7 +32,7 @@ const INTELLIGENCE_BLURBS = Object.freeze({
 });
 
 const NEWS_PRIMARY = Object.freeze(['mlb', 'nfl', 'nba', 'nhl']);
-const NEWS_MORE = Object.freeze(['wnba', 'ufc', 'tennis', 'soccer', 'golf']);
+const NEWS_MORE = Object.freeze(['wnba', 'ufc', 'tennis', 'soccer', 'golf', 'f1']);
 
 function newsHref(key) {
   return INTELLIGENCE_SPORTS[key]?.newsPath || '/news';
