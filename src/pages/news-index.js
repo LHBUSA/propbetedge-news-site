@@ -16,7 +16,7 @@ import {
 
 const SPORTS = [
   { key: 'all', label: 'All News', href: '/news' },
-  ...['mlb', 'nfl', 'nba', 'nhl', 'wnba', 'ufc', 'tennis', 'soccer', 'golf'].map((key) => ({
+  ...['mlb', 'nfl', 'nba', 'nhl', 'wnba', 'ufc', 'tennis', 'soccer', 'golf', 'f1'].map((key) => ({
     key,
     label: INTELLIGENCE_SPORTS[key].label,
     href: INTELLIGENCE_SPORTS[key].newsPath,
