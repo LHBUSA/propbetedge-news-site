@@ -96,7 +96,7 @@ test('JSON-LD graph: connected WebPage -> Product -> Offer with stable @ids, bra
   assert.equal(by.WebApplication['@id'], 'https://propbetedge.ai/#sports-intelligence-os');
   assert.equal(by.WebApplication.name, 'PropBetEdge Sports Intelligence Operating System');
   assert.match(by.WebApplication.description, /autonomous sports intelligence operating system/i);
-  for (const feature of ['Pro access across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis, Soccer and Golf', 'Golf Pro is live; Boxing Pro is planned for Q1 2027', 'Continuous live sports data ingestion', 'Sport-specific prediction models and analytical engines', 'Shadow research for candidate signals and models', 'Governed promotion into production']) {
+  for (const feature of ['Pro access across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis, Soccer, Golf and F1', 'Golf Pro is live; Boxing Pro is planned for Q1 2027', 'Continuous live sports data ingestion', 'Sport-specific prediction models and analytical engines', 'Shadow research for candidate signals and models', 'Governed promotion into production']) {
     assert.ok(by.WebApplication.featureList.includes(feature), feature);
   }
   const text = JSON.stringify(ld);
@@ -127,7 +127,7 @@ test('crawler HTML: one H1, descriptive sport anchors to canonical properties, r
 test('share UI: canonical URL only, clean product text, X / LinkedIn / Bluesky / copy / native, no query strings or Stripe URLs', () => {
   const bar = renderShareBar(seo.PRO_CANONICAL, seo.PRO_SHARE_TITLE, { compact: true, subject: 'PropBetEdge All Access' });
   assert.match(bar, /data-share-url="https:\/\/propbetedge\.ai\/pro"/);
-  assert.equal(seo.PRO_SHARE_TITLE, 'PropBetEdge All Access — the sports intelligence operating system across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis, Soccer and Golf.');
+  assert.equal(seo.PRO_SHARE_TITLE, 'PropBetEdge All Access — the sports intelligence operating system across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis, Soccer, Golf and F1.');
   assert.equal(/THEEDGE25|25%/.test(seo.PRO_SHARE_TITLE), false, 'no promo spam in share intents');
   for (const key of ['x', 'linkedin', 'bluesky', 'copy', 'native']) assert.match(bar, new RegExp(`pbe-share-btn--${key}`));
   const urls = [...bar.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
