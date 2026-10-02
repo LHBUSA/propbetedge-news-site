@@ -30,6 +30,7 @@ export const SPORTS = Object.freeze([
   { key: 'tennis', label: 'Tennis', name: 'PropBetEdge Tennis', url: 'https://tennis.propbetedge.ai', glyph: '🎾', edge: 'Tennis Pro, live scores, rankings, Tennis DNA, matchup intelligence and PBEcast' },
   { key: 'soccer', label: 'Soccer', name: 'PropBetEdge Soccer', url: 'https://soccer.propbetedge.ai', glyph: '⚽', edge: 'Soccer Pro, live matches, Player DNA, team intelligence, model research and PBEcast' },
   { key: 'golf', label: 'Golf', name: 'PropBetEdge Golf', url: 'https://golf.propbetedge.ai', glyph: '⛳', edge: 'Golf Pro, Player DNA, Course DNA, matchup intelligence, tournament history and PBEcast' },
+  { key: 'f1', label: 'F1', name: 'PropBetEdge F1', url: 'https://f1.propbetedge.ai', glyph: '🏎️', edge: 'Driver DNA, Constructor DNA, Circuit DNA, standings, matchups, weather and PBEcast', proName: 'F1 Intelligence' },
 ]);
 
 export const UPCOMING_SPORTS = Object.freeze([
@@ -130,7 +131,7 @@ function membershipCard(active) {
       <div class="pbe-pro-card-price"><span class="pbe-pro-card-amount">$${ALL_ACCESS.priceUsd}</span><span class="pbe-pro-card-per">/ ${ALL_ACCESS.interval}</span></div>
       <p class="pbe-pro-card-sub">Cancel anytime. One login across the whole network.</p>
       <ul class="pbe-pro-card-list">
-        ${SPORTS.map((s) => `<li><span class="pbe-pro-check" aria-hidden="true">✓</span>${s.label} Pro</li>`).join('')}
+        ${SPORTS.map((s) => `<li><span class="pbe-pro-check" aria-hidden="true">✓</span>${s.proName || `${s.label} Pro`}</li>`).join('')}
         <li><span class="pbe-pro-check" aria-hidden="true">✓</span>Boxing Pro — coming Q1 2027</li>
         <li><span class="pbe-pro-check" aria-hidden="true">✓</span>Governed model evolution and shadow research</li>
         <li class="pbe-pro-card-future"><span class="pbe-pro-check" aria-hidden="true">✓</span>Every future sport and Pro product</li>
@@ -149,16 +150,16 @@ function hero(shareBar = '') {
         <h1 class="pbe-pro-title"><span class="pbe-pro-title-brand">PropBetEdge</span><span class="pbe-pro-title-all">All Access</span></h1>
         <p class="pbe-pro-statement">
           <span>One membership.</span>
-          <span>${SPORTS.length === 9 ? 'Nine' : SPORTS.length} sports.</span>
+          <span>${SPORTS.length === 10 ? 'Ten' : SPORTS.length} sports.</span>
           <span>One autonomous sports intelligence operating system.</span>
           <span>Every current and future PropBetEdge Pro product.</span>
         </p>
         <p class="pbe-pro-os-intro">All Access is the customer layer of a system that continuously ingests live sports data, runs sport-specific analytical engines, evaluates its own predictions, tests new intelligence in shadow, grades official decisions and turns the results into live products, research and content — with governed promotion into production.</p>
-        <p class="pbe-pro-family"><strong>One operating system. ${SPORTS.length === 9 ? 'Nine' : SPORTS.length} sports. Every future sport.</strong><span>MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf</span></p>
+        <p class="pbe-pro-family"><strong>One operating system. ${SPORTS.length === 10 ? 'Ten' : SPORTS.length} sports. Every future sport.</strong><span>MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf · F1</span></p>
         <div class="pbe-pro-price" aria-label="Price"><span class="pbe-pro-price-amount">$${ALL_ACCESS.priceUsd}</span><span class="pbe-pro-price-per">/ ${ALL_ACCESS.interval}</span></div>
         ${ctaButton('Get All Access', 'pbe-pro-cta-hero')}
         ${promoChip()}
-        <p class="pbe-pro-hero-fine">Includes MLB, NFL, NBA, NHL, WNBA, UFC, Tennis, Soccer and Golf Pro today. Boxing Pro is planned for Q1 2027 and joins All Access at launch. All Access is not just a bundle of sport subscriptions — it is access to the connected intelligence system underneath them.</p>
+        <p class="pbe-pro-hero-fine">Includes MLB, NFL, NBA, NHL, WNBA, UFC, Tennis, Soccer and Golf Pro today, plus F1 Intelligence. Boxing Pro is planned for Q1 2027 and joins All Access at launch. All Access is not just a bundle of sport subscriptions — it is access to the connected intelligence system underneath them.</p>
         ${shareBar ? `<div class="pbe-pro-share">${shareBar}</div>` : ''}
       </div>
       ${membershipCard(false)}
@@ -170,7 +171,7 @@ function operatingSystemSection() {
       <section class="pbe-pro-section pbe-pro-os" id="intelligence-os">
         <header class="pbe-pro-section-head pbe-pro-os-head">
           <span class="pbe-pro-eyebrow">The system behind All Access</span>
-          <h2>Not nine disconnected sports products. One intelligence operating system.</h2>
+          <h2>Not ten disconnected sports products. One intelligence operating system.</h2>
           <p>PropBetEdge is built to keep working after the page loads. It observes live sports, maintains canonical state, runs sport-specific analytical engines, evaluates what happened, and feeds that evidence into the next round of research.</p>
         </header>
         <div class="pbe-pro-os-loop" aria-label="PropBetEdge intelligence operating system">
@@ -199,7 +200,7 @@ function successHero(shareBar = '') {
         <h1 class="pbe-pro-title"><span class="pbe-pro-title-brand">Welcome to</span><span class="pbe-pro-title-all">All Access</span></h1>
         <p class="pbe-pro-success-lead">Your PropBetEdge All Access membership is active. Every sport in the network now recognizes the email you used at checkout.</p>
         <ol class="pbe-pro-steps">
-          <li><strong>Open any sport</strong> below and choose <em>Sign in</em>. Your All Access membership covers the Pro features across all nine live sports.</li>
+          <li><strong>Open any sport</strong> below and choose <em>Sign in</em>. Your All Access membership covers the Pro features across all ten live sports.</li>
           <li><strong>Enter the email you used at checkout.</strong> A secure sign-in link arrives in that inbox; no password to remember.</li>
           <li><strong>Repeat once per sport.</strong> One subscription, one email, every PropBetEdge property.</li>
         </ol>
@@ -221,7 +222,7 @@ export function buildProHtml({ checkoutSuccess = false, shareBar = '' } = {}) {
         <header class="pbe-pro-section-head">
           <span class="pbe-pro-eyebrow">${checkoutSuccess ? 'Your network' : 'Included today'}</span>
           <h2>Every sport. One login.</h2>
-          <p>${checkoutSuccess ? 'Open a sport and sign in with your checkout email.' : 'All Access unlocks the Pro tier across all nine live PropBetEdge sports, including Golf. Boxing is planned for Q1 2027 and joins the membership at launch.'}</p>
+          <p>${checkoutSuccess ? 'Open a sport and sign in with your checkout email.' : 'All Access unlocks the Pro tier across all ten live PropBetEdge sports, including Golf and F1. Boxing is planned for Q1 2027 and joins the membership at launch.'}</p>
         </header>
         ${sportsGrid()}
       </section>
@@ -246,12 +247,12 @@ export function buildProHtml({ checkoutSuccess = false, shareBar = '' } = {}) {
           <div>
             <span class="pbe-pro-eyebrow">Already a member of one sport?</span>
             <h2>Your sport plan stays exactly as it is.</h2>
-            <p>Existing individual sport plans continue unchanged. All Access is the premium umbrella for people who want the whole network under one subscription and one login — including Tennis Pro, Soccer Pro and Golf Pro today, plus Boxing Pro when it launches.</p>
+            <p>Existing individual sport plans continue unchanged. All Access is the premium umbrella for people who want the whole network under one subscription and one login — including Tennis Pro, Soccer Pro, Golf Pro and F1 Intelligence today, plus Boxing Pro when it launches.</p>
           </div>
           <div class="pbe-pro-plans-facts">
             <div><span class="pbe-pro-fact-k">Billing</span><span class="pbe-pro-fact-v">${priceLabel()}, cancel anytime</span></div>
             <div><span class="pbe-pro-fact-k">Access</span><span class="pbe-pro-fact-v">Secure sign-in link to your checkout email</span></div>
-            <div><span class="pbe-pro-fact-k">Coverage</span><span class="pbe-pro-fact-v">9 Pro sports today · Boxing planned Q1 2027 · every future sport included</span></div>
+            <div><span class="pbe-pro-fact-k">Coverage</span><span class="pbe-pro-fact-v">10 live sports today · Boxing planned Q1 2027 · every future sport included</span></div>
             <div><span class="pbe-pro-fact-k">Launch offer</span><span class="pbe-pro-fact-v">${esc(promoLine())}</span></div>
           </div>
         </div>
@@ -260,7 +261,7 @@ export function buildProHtml({ checkoutSuccess = false, shareBar = '' } = {}) {
       ${checkoutSuccess ? '' : `
       <section class="pbe-pro-final">
         <h2>Get the intelligence system behind every PropBetEdge sport.</h2>
-        <p>Nine Pro sports today. Boxing planned Q1 2027. Every future sport. ${priceLabel()}. ${esc(promoLine())}</p>
+        <p>Ten live sports today. Boxing planned Q1 2027. Every future sport. ${priceLabel()}. ${esc(promoLine())}</p>
         ${ctaButton('Get All Access', 'pbe-pro-cta-hero')}
       </section>`}
     </div>`;

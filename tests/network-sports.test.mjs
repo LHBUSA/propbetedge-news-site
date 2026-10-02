@@ -55,8 +55,8 @@ test('Tennis and Soccer are Pro; Golf and Boxing are Q1 2027 roadmap sports', as
   assert.match(html, /Golf Pro<\/li>/);
   assert.match(html, /Boxing Pro — coming Q1 2027/);
   assert.match(html, /One membership\. Nine sports\./);
-  assert.match(html, /MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf/);
-  assert.match(buildProHtml({ checkoutSuccess: true }), /covers the Pro features across all nine live sports/);
+  assert.match(html, /MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf · F1/);
+  assert.match(buildProHtml({ checkoutSuccess: true }), /covers the Pro features across all ten live sports/);
 });
 
 test('root WebSite schema lists all eight sport properties once', async () => {

@@ -25,13 +25,13 @@
 import { normalizeName } from '../entity-graph/text.js';
 
 export const SEARCH_TYPES = Object.freeze(['player', 'team', 'event', 'tool', 'story', 'learn']);
-export const SEARCH_SPORTS = Object.freeze(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer', 'golf']);
+export const SEARCH_SPORTS = Object.freeze(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer', 'golf', 'f1']);
 export const MIN_QUERY_LENGTH = 2;
 export const MAX_QUERY_LENGTH = 80;
 
 // Deterministic tie-break when two docs score identically. Network order, the
 // same order the palette's "Live intelligence" row uses.
-const SPORT_ORDER = Object.freeze({ mlb: 0, nfl: 1, nba: 2, wnba: 3, nhl: 4, ufc: 5, tennis: 6, soccer: 7, golf: 8 });
+const SPORT_ORDER = Object.freeze({ mlb: 0, nfl: 1, nba: 2, wnba: 3, nhl: 4, ufc: 5, tennis: 6, soccer: 7, golf: 8, f1: 9 });
 const TYPE_ORDER = Object.freeze({ player: 0, team: 1, event: 2, tool: 3, story: 4, learn: 5 });
 
 // Words that name a league. In a multi-word query they scope and boost rather
@@ -46,6 +46,7 @@ const SPORT_WORDS = Object.freeze({
   tennis: 'tennis', atp: 'tennis', wta: 'tennis',
   soccer: 'soccer', footballsoccer: 'soccer', mls: 'soccer',
   golf: 'golf', pga: 'golf', lpga: 'golf',
+  f1: 'f1', formula1: 'f1', formulaone: 'f1',
 });
 
 const TIER = Object.freeze({

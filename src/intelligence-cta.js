@@ -103,9 +103,19 @@ export const INTELLIGENCE_SPORTS = Object.freeze({
     deeper: 'Open Golf Intelligence',
     newsPath: 'https://golf.propbetedge.ai/news',
   }),
+  f1: Object.freeze({
+    key: 'f1',
+    label: 'F1',
+    emoji: '🏎️',
+    href: 'https://f1.propbetedge.ai/',
+    domain: 'f1.propbetedge.ai',
+    line: 'Formula 1 intelligence beyond the timing screen.',
+    deeper: 'Open F1 Intelligence',
+    newsPath: 'https://f1.propbetedge.ai/news',
+  }),
 });
 
-export const INTELLIGENCE_ORDER = Object.freeze(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer', 'golf']);
+export const INTELLIGENCE_ORDER = Object.freeze(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer', 'golf', 'f1']);
 
 export function intelligenceFor(sport) {
   return INTELLIGENCE_SPORTS[String(sport || '').toLowerCase()] || null;

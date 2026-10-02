@@ -29,6 +29,7 @@ export function renderFooter() {
             <a href="${PROPBET_LINKS.tennis}" target="_blank" rel="noopener">Tennis Intelligence <span class="footer-badge">Pro</span></a>
             <a href="${PROPBET_LINKS.soccer}" target="_blank" rel="noopener">Soccer Intelligence <span class="footer-badge">Pro</span></a>
             <a href="${PROPBET_LINKS.golf}" target="_blank" rel="noopener">Golf Intelligence <span class="footer-badge">Pro</span></a>
+            <a href="https://f1.propbetedge.ai/" target="_blank" rel="noopener">F1 Intelligence <span class="footer-badge">Live</span></a>
           </div>
 
           <div class="footer-col">

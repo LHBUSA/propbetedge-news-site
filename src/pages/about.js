@@ -14,12 +14,13 @@ const SPORTS = [
   { key: 'tennis', label: 'Tennis', icon: '🎾', href: 'https://tennis.propbetedge.ai/', line: 'Men’s and women’s tennis intelligence, Tennis DNA, rankings, match history and PBEcast.' },
   { key: 'soccer', label: 'Soccer', icon: '⚽', href: 'https://soccer.propbetedge.ai/', line: 'Global soccer intelligence, Player DNA, live match context, league tables, video and PBEcast.' },
   { key: 'golf', label: 'Golf', icon: '⛳', href: 'https://golf.propbetedge.ai/', line: 'Player DNA, Course DNA, tournament history, weather intelligence, matchups and Golf PBEcast.' },
+  { key: 'f1', label: 'F1', icon: '🏎️', href: 'https://f1.propbetedge.ai/', line: 'Driver DNA, Constructor DNA, Circuit DNA, standings, race matchups, weather and F1 PBEcast.' },
 ];
 
 export function renderAbout(root, setMeta) {
   setMeta?.({
     title: 'About PropBetEdge — The Sports Intelligence Network',
-    description: 'PropBetEdge is a nine-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
+    description: 'PropBetEdge is a ten-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
     canonical: `${SITE}/about`,
   });
 
@@ -36,7 +37,7 @@ export function renderAbout(root, setMeta) {
       '@id': `${SITE}/about#page`,
       url: `${SITE}/about`,
       name: 'About PropBetEdge',
-      description: 'PropBetEdge is a nine-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
+      description: 'PropBetEdge is a ten-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
       mainEntity: { '@id': `${SITE}/#organization` },
       isPartOf: { '@id': `${SITE}/#website` },
       inLanguage: 'en-US',
@@ -72,7 +73,7 @@ export function renderAbout(root, setMeta) {
         </section>
 
         <section class="about-proof" aria-label="Network snapshot">
-          <div><strong>9</strong><span>live sport intelligence products</span></div>
+          <div><strong>10</strong><span>live sport intelligence products</span></div>
           <div><strong>1</strong><span>connected intelligence network</span></div>
           <div><strong>$29</strong><span>All Access · monthly</span></div>
           <div><strong>Evidence</strong><span>provenance, records and source-backed publishing</span></div>
@@ -100,7 +101,7 @@ export function renderAbout(root, setMeta) {
           <header class="about-section-head">
             <div>
               <span class="about-section-kicker">THE NETWORK</span>
-              <h2 id="network-title">One brand. Nine live sports. Different intelligence for each one.</h2>
+              <h2 id="network-title">One brand. Ten live sports. Different intelligence for each one.</h2>
             </div>
             <a href="/pro">See All Access →</a>
           </header>

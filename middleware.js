@@ -387,7 +387,7 @@ async function resolveMeta(pathname, search = '') {
     return {
       canonical,
       title: 'About PropBetEdge — The Sports Intelligence Network',
-      description: 'PropBetEdge is a nine-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
+      description: 'PropBetEdge is a ten-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
       image: NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildAboutSchema(canonical),
@@ -1218,7 +1218,7 @@ function buildAboutSchema(canonical) {
         '@id': `${canonical}#page`,
         url: canonical,
         name: 'About PropBetEdge',
-        description: 'PropBetEdge is a nine-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
+        description: 'PropBetEdge is a ten-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
         mainEntity: { '@id': `${SITE}/#organization` },
         isPartOf: { '@id': `${SITE}/#website` },
         inLanguage: 'en-US',
@@ -1242,7 +1242,7 @@ function buildServerAboutHtml() {
       <h1>Sports are deeper than the scoreboard.</h1>
       <p>PropBetEdge connects live sports data, sport-specific analytics, Player DNA, PBEcast, model output, permanent records and original journalism across one nine-sport network.</p>
       <p><strong>News is the entry point. Intelligence is the product.</strong></p>
-      <h2>Nine live sport intelligence products</h2>
+      <h2>Ten live sport intelligence products</h2>
       <p>
         <a href="https://mlb.propbetedge.ai/sharp-tools">MLB</a> ·
         <a href="https://nfl.propbetedge.ai/">NFL</a> ·
@@ -1252,7 +1252,8 @@ function buildServerAboutHtml() {
         <a href="https://ufc.propbetedge.ai/">UFC</a> ·
         <a href="https://tennis.propbetedge.ai/">Tennis</a> ·
         <a href="https://soccer.propbetedge.ai/">Soccer</a> ·
-        <a href="https://golf.propbetedge.ai/">Golf</a>
+        <a href="https://golf.propbetedge.ai/">Golf</a> ·
+        <a href="https://f1.propbetedge.ai/">F1</a>
       </p>
       <h2>Accountability by design</h2>
       <p>PropBetEdge separates research from live claims, preserves missing data as missing, and keeps permanent records where models are live. News connects into players, teams, games, tournaments, courses and sport-specific intelligence instead of ending at the article.</p>

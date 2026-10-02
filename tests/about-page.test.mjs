@@ -13,7 +13,7 @@ test('About V2 positions PropBetEdge as the sports intelligence network', () => 
   assert.match(about, /Accountability by design/i);
 });
 
-test('About V3 links all nine live sport intelligence products', () => {
+test('About V3 links all ten live sport intelligence products', () => {
   for (const host of [
     'mlb.propbetedge.ai',
     'nfl.propbetedge.ai',
@@ -24,6 +24,7 @@ test('About V3 links all nine live sport intelligence products', () => {
     'tennis.propbetedge.ai',
     'soccer.propbetedge.ai',
     'golf.propbetedge.ai',
+    'f1.propbetedge.ai',
   ]) {
     assert.ok(about.includes(host), host);
   }
@@ -39,6 +40,6 @@ test('About V2 has server-rendered parity for the core message and network links
 test('About V2 has dedicated responsive styles', () => {
   assert.match(css, /\.about-hero/);
   assert.match(css, /\.about-sport-grid/);
-  assert.match(css, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(css, /grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
   assert.match(css, /@media\(max-width:520px\)/);
 });

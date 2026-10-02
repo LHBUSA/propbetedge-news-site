@@ -34,7 +34,7 @@ function anchorFrom(html, selector = 'data-pbe-intel-cta') {
   return { dataset, href, tag };
 }
 
-test('nine sports, each on its canonical intelligence URL with its own copy', () => {
+test('ten sports, each on its canonical intelligence URL with its own copy', () => {
   assert.deepEqual([...INTELLIGENCE_ORDER].sort(), Object.keys(EXPECTED).sort());
   for (const [key, [href, line]] of Object.entries(EXPECTED)) {
     assert.equal(INTELLIGENCE_SPORTS[key].href, href, key);

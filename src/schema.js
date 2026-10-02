@@ -25,7 +25,7 @@ const SITE = {
   url: 'https://propbetedge.ai',
   name: 'PropBetEdge',
   parentOrg: 'PropTechUSA.ai',
-  description: 'AI-native sports newsroom and sports-intelligence network across MLB, NFL, NBA, WNBA, NHL, UFC, Tennis, Soccer and Golf.',
+  description: 'AI-native sports newsroom and sports-intelligence network across MLB, NFL, NBA, WNBA, NHL, UFC, Tennis, Soccer, Golf and Formula 1.',
   logo: 'https://propbetedge.ai/logo/pbe-full-400.png',
   logoSquare: 'https://propbetedge.ai/favicon-192.png',
   twitter: PROPBETEDGE_X_URL,
@@ -118,6 +118,7 @@ export function websiteSchema() {
       ['Tennis', 'https://tennis.propbetedge.ai/'],
       ['Soccer', 'https://soccer.propbetedge.ai/'],
       ['Golf', 'https://golf.propbetedge.ai/'],
+      ['Formula 1', 'https://f1.propbetedge.ai/'],
     ].map(([sport, url]) => ({
       '@type': 'WebSite',
       name: `PropBetEdge ${sport}`,
