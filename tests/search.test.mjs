@@ -580,7 +580,7 @@ test('palette: copy, ARIA combobox/listbox semantics and keyboard contract', () 
   assert.ok(src.includes('>PropBetEdge Search<'));
   assert.ok(src.includes('Across every sport and intelligence product'));
   assert.ok(!src.includes('PBE NETWORK SEARCH'));
-  assert.ok(src.includes('Live intelligence: MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf'));
+  assert.ok(src.includes('Live intelligence: MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf · F1'));
   for (const needle of ['role="dialog"', 'aria-modal="true"', 'role="combobox"', 'aria-controls="${LISTBOX_ID}"', 'role="listbox"', 'role="option"', 'role="group"', 'aria-activedescendant', 'aria-selected', 'aria-live="polite"']) {
     assert.ok(src.includes(needle), `palette uses ${needle}`);
   }
