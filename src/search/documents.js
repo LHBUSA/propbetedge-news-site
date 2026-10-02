@@ -297,7 +297,7 @@ export function productDocsFromSitemap({ sport, site, urls = [] }) {
     const slug = seg.at(-1) || first;
     const title = wordsFromSlug(slug);
 
-    if ((first === 'player' || first === 'players') && seg.length >= 2) {
+    if ((first === 'player' || first === 'players' || first === 'driver' || first === 'drivers') && seg.length >= 2) {
       push({
         type: 'player', sport, id, title, subtitle: `${sport.toUpperCase()} player`,
         href: u.href, image: null, aliases: [], keywords: [sport, 'player'],
@@ -305,7 +305,7 @@ export function productDocsFromSitemap({ sport, site, urls = [] }) {
       continue;
     }
 
-    if ((first === 'team' || first === 'teams') && seg.length >= 2) {
+    if ((first === 'team' || first === 'teams' || first === 'constructor' || first === 'constructors') && seg.length >= 2) {
       push({
         type: 'team', sport, id, title, subtitle: `${sport.toUpperCase()} team`,
         href: u.href, image: null, aliases: [], keywords: [sport, 'team'],
@@ -313,7 +313,7 @@ export function productDocsFromSitemap({ sport, site, urls = [] }) {
       continue;
     }
 
-    if (['tournament', 'tournaments', 'match', 'matches', 'competition', 'competitions', 'majors'].includes(first) && seg.length >= 2) {
+    if (['tournament', 'tournaments', 'match', 'matches', 'competition', 'competitions', 'majors', 'race', 'races'].includes(first) && seg.length >= 2) {
       push({
         type: 'event', kind: first, sport, id, title, subtitle: `${sport.toUpperCase()} ${first.replace(/s$/, '')}`,
         href: u.href, image: null, aliases: [], keywords: [sport, first],
@@ -326,6 +326,15 @@ export function productDocsFromSitemap({ sport, site, urls = [] }) {
         type: 'tool', sport, id: `course:${id}`, title, subtitle: 'GOLF INTELLIGENCE · COURSE',
         label: 'GOLF INTELLIGENCE · COURSE', href: u.href, image: null,
         aliases: [title], keywords: ['golf', 'course', 'course dna'],
+      });
+      continue;
+    }
+
+    if ((first === 'circuit' || first === 'circuits') && seg.length >= 2) {
+      push({
+        type: 'tool', sport, id: `circuit:${id}`, title, subtitle: 'F1 INTELLIGENCE · CIRCUIT',
+        label: 'F1 INTELLIGENCE · CIRCUIT', href: u.href, image: null,
+        aliases: [title], keywords: ['f1', 'formula 1', 'circuit', 'circuit dna'],
       });
       continue;
     }
