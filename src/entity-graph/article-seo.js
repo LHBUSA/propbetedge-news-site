@@ -13,6 +13,7 @@
 
 import { SITE, SPORT_LABELS } from './entities.js';
 import { buildShareImage } from './share-image.js';
+import { articleSubjects } from './subjects.js';
 import { compositeImage, thirdPartyImage, imageObject } from '../image-metadata.js';
 
 import { PROPBETEDGE_X_HANDLE } from '../social.js';
@@ -193,21 +194,12 @@ function articleJsonLd({
   const isTeamByline = authorName === EDITORIAL_TEAM;
   const slug = authorSlug(authorName);
 
-  // Entities the story is *about* are the ones the newsroom tagged or a
-  // persisted manifest asserted. Entities merely named in the prose are
-  // mentions. Both resolve to the exact URLs the page links to.
-  const primary = [];
-  const secondary = [];
-  for (const player of manifest?.players || []) {
-    (player.origin === 'text' ? secondary : primary).push(personNode(player));
-  }
-  for (const team of manifest?.teams || []) {
-    (team.origin === 'text' ? secondary : primary).push(teamNode(team));
-  }
-  for (const game of manifest?.games || []) primary.push(eventNode(game));
-
-  // A story with no structured tags still has a subject: its first entities.
-  if (!primary.length && secondary.length) primary.push(secondary.shift());
+  // `about` is what the headline (then the dek) proves the story is about;
+  // `mentions` are other entities the story names meaningfully. A newsroom tag
+  // alone is neither. See src/entity-graph/subjects.js.
+  const { about, mentions } = articleSubjects(article, manifest);
+  const primary = about.map(subjectNode).filter(Boolean);
+  const secondary = mentions.map(subjectNode).filter(Boolean);
 
   const newsArticle = {
     '@type': 'NewsArticle',
@@ -277,6 +269,16 @@ export function shareImageMeta(image, published) {
 function imageNodes(image, published) {
   const { primary, variants } = shareImageMeta(image, published);
   return [primary, ...variants].map((meta) => imageObject(meta));
+}
+
+function subjectNode(item) {
+  if (item.kind === 'player') return personNode(item.player);
+  if (item.kind === 'team') return teamNode(item.team);
+  if (item.kind === 'game') return eventNode(item.game);
+  // A tagged person with no PropBetEdge entity page (a coach, an executive):
+  // named, never given an invented URL or @id.
+  if (item.kind === 'person' && item.name) return { '@type': 'Person', name: item.name };
+  return null;
 }
 
 function personNode(player) {

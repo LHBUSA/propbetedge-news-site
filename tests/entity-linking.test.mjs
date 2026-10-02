@@ -378,10 +378,15 @@ test('schema about/mentions use the same URLs the page links to', () => {
   assert.equal(newsArticle.datePublished, '2026-09-21T12:00:00.000Z');
   assert.equal(newsArticle.dateModified, newsArticle.datePublished);
 
-  const schemaUrls = new Set((newsArticle.about || []).concat(newsArticle.mentions || []).map((n) => n.url));
-  for (const entity of [...manifest.players, ...manifest.teams]) {
-    assert.ok(schemaUrls.has(entity.canonical_url), `${entity.name} missing from about/mentions`);
+  // Every schema entity with a URL uses the exact canonical URL the page links
+  // to. Which entities appear is decided by src/entity-graph/subjects.js: the
+  // headline's subject is `about`; a tag named once in passing is neither.
+  const pageUrls = new Set([...manifest.players, ...manifest.teams].map((e) => e.canonical_url));
+  for (const node of (newsArticle.about || []).concat(newsArticle.mentions || [])) {
+    if (node.url) assert.ok(pageUrls.has(node.url), `${node.name} uses a URL the page does not link to`);
   }
+  assert.deepEqual((newsArticle.about || []).map((n) => n.url), [manifest.teams.find((t) => t.name === 'Toronto Raptors').canonical_url]);
+  assert.ok(!(newsArticle.mentions || []).some((n) => n.name === 'Jaden Bradley'), 'a tag named once is not a mention');
 
   assert.doesNotThrow(() => JSON.parse(JSON.stringify(seo.jsonLd)));
   // Editorial copy may legitimately contain the word "undefined"; what must
