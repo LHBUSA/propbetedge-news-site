@@ -13,6 +13,7 @@
 import { ALL_ACCESS, SPORTS } from './pro-content.js';
 
 import { PROPBETEDGE_X_HANDLE } from './social.js';
+import { ownedImage, imageObject } from './image-metadata.js';
 export const SITE = 'https://propbetedge.ai';
 export const PRO_CANONICAL = `${SITE}/pro`;
 export const ORG_ID = `${SITE}/#organization`;
@@ -120,14 +121,12 @@ export function proJsonLd() {
         about: [{ '@id': PRODUCT_ID }, { '@id': OS_ID }],
         mainEntity: { '@id': PRODUCT_ID },
         breadcrumb: { '@id': BREADCRUMB_ID },
-        primaryImageOfPage: {
-          '@type': 'ImageObject',
+        primaryImageOfPage: imageObject(ownedImage({
           url: PRO_SOCIAL_IMAGE.url,
-          contentUrl: PRO_SOCIAL_IMAGE.url,
           width: PRO_SOCIAL_IMAGE.width,
           height: PRO_SOCIAL_IMAGE.height,
           caption: PRO_SOCIAL_IMAGE.alt,
-        },
+        })),
         publisher: { '@id': ORG_ID },
       },
       {

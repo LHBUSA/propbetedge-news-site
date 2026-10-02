@@ -13,6 +13,7 @@
 
 import { SITE, SPORT_LABELS } from './entities.js';
 import { buildShareImage } from './share-image.js';
+import { compositeImage, thirdPartyImage, imageObject } from '../image-metadata.js';
 
 import { PROPBETEDGE_X_HANDLE } from '../social.js';
 const ORG_ID = `${SITE}/#organization`;
@@ -227,7 +228,7 @@ function articleJsonLd({
       url: `${SITE}/authors/${slug}`,
     },
     publisher: { '@id': ORG_ID },
-    image: imageNodes(image),
+    image: imageNodes(image, published),
   };
 
   if (published) newsArticle.datePublished = published;
@@ -256,24 +257,26 @@ function articleJsonLd({
   };
 }
 
-function imageNodes(image) {
-  const primary = {
-    '@type': 'ImageObject',
-    url: image.url,
-    contentUrl: image.url,
-    width: image.width,
-    height: image.height,
-    caption: image.alt,
+/**
+ * The article card and its aspect variants. A league card (tier 4) is pure
+ * PropBetEdge art. Tiers 1-3 composite an editorial photo, a provider
+ * headshot or a team mark whose rights PropBetEdge has no record of, so those
+ * cards carry no creator / copyright claim (see src/image-metadata.js).
+ */
+export function shareImageMeta(image, published) {
+  const parts = image.source_image ? [thirdPartyImage({ url: image.source_image })] : [];
+  const record = (url, width, height) => compositeImage({
+    url, width, height, caption: image.alt, year: published, parts,
+  });
+  return {
+    primary: record(image.url, image.width, image.height),
+    variants: (image.variants || []).map((v) => record(v.url, v.width, v.height)),
   };
-  const variants = (image.variants || []).map((variant) => ({
-    '@type': 'ImageObject',
-    url: variant.url,
-    contentUrl: variant.url,
-    width: variant.width,
-    height: variant.height,
-    caption: image.alt,
-  }));
-  return [primary, ...variants];
+}
+
+function imageNodes(image, published) {
+  const { primary, variants } = shareImageMeta(image, published);
+  return [primary, ...variants].map((meta) => imageObject(meta));
 }
 
 function personNode(player) {

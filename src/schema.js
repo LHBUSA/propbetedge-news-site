@@ -20,6 +20,7 @@
  */
 
 import { PROPBETEDGE_X_URL } from './social.js';
+import { ownedImage, thirdPartyImage, imageObject } from './image-metadata.js';
 
 const SITE = {
   url: 'https://propbetedge.ai',
@@ -73,15 +74,7 @@ export function organizationSchema() {
       name: SITE.parentOrg,
       url: 'https://proptechusa.ai',
     },
-    logo: {
-      '@type': 'ImageObject',
-      '@id': LOGO_ID,
-      url: SITE.logo,
-      contentUrl: SITE.logo,
-      width: 400,
-      height: 100,
-      caption: SITE.name,
-    },
+    logo: imageObject(ownedImage({ url: SITE.logo, width: 400, height: 100, caption: SITE.name }), { '@id': LOGO_ID }),
     image: { '@id': LOGO_ID },
     sameAs: [
       SITE.twitter,
@@ -188,13 +181,9 @@ export function newsArticleSchema(article, sport, slug) {
   };
 
   // Image — convert to ImageObject if we have one
+  // Image — the article's editorial photo is third-party; no rights claim is made for it.
   if (article.image_url) {
-    schema.image = {
-      '@type': 'ImageObject',
-      url: article.image_url,
-      contentUrl: article.image_url,
-      caption: article.title,
-    };
+    schema.image = imageObject(thirdPartyImage({ url: article.image_url, caption: article.title }));
   }
 
   // Keywords from sport + tags + prop types
@@ -241,12 +230,7 @@ export function profilePageSchema(slug, author) {
     personNode.homeLocation = { '@type': 'Place', name: author.location };
   }
   if (author.image) {
-    personNode.image = {
-      '@type': 'ImageObject',
-      url: author.image,
-      contentUrl: author.image,
-      caption: author.name,
-    };
+    personNode.image = imageObject(thirdPartyImage({ url: author.image, caption: author.name }));
   }
   const sameAs = [];
   if (author.twitter) sameAs.push(author.twitter);
