@@ -93,3 +93,11 @@ test('site-level images: logo and All Access card are owned; legacy article phot
   const legacy = newsArticleSchema({ title: 't', image_url: 'https://a.espncdn.com/x.jpg', published_at: '2026-10-01' }, 'nfl', 's').image;
   assert.equal(legacy.copyrightNotice, undefined);
 });
+
+test('Commons placeholder authors are held, never credited', () => {
+  for (const author of ['Unknown author', '[1]', 'No machine-readable author provided. X assumed (based on copyright claims).', 'PLEASE COMPLETE AUTHOR INFORMATION']) {
+    const node = imageObject(licensedImage({ url: 'u', author, license: 'CC BY 2.0' }));
+    assert.equal(node.creator, undefined, author);
+    assert.equal(node.copyrightNotice, undefined, author);
+  }
+});
