@@ -27,7 +27,7 @@ import {
 import { refreshPlayer, refreshTeam, teamRefreshTargets } from '../../../src/entity-hub/refresh.js';
 import {
   handleSearch, runSearchRefresh, refreshUfcIndex, refreshWnbaIndex, refreshProductSitemapIndex, refreshLearnIndex, refreshStoriesHead, backfillStories,
-  TENNIS_SITE, SOCCER_SITE, GOLF_SITE, KEYS,
+  TENNIS_SITE, SOCCER_SITE, GOLF_SITE, F1_SITE, KEYS,
   SEARCH_SCHEMA,
 } from './search-service.js';
 
@@ -324,6 +324,7 @@ async function adminSearchRefresh(request, env, url, origin) {
     tennis: () => refreshProductSitemapIndex(env, { sport: 'tennis', site: TENNIS_SITE, key: KEYS.tennis }),
     soccer: () => refreshProductSitemapIndex(env, { sport: 'soccer', site: SOCCER_SITE, key: KEYS.soccer }),
     golf: () => refreshProductSitemapIndex(env, { sport: 'golf', site: GOLF_SITE, key: KEYS.golf }),
+    f1: () => refreshProductSitemapIndex(env, { sport: 'f1', site: F1_SITE, key: KEYS.f1 }),
     learn: () => refreshLearnIndex(env),
     'stories-head': () => refreshStoriesHead(env, { pages: Math.min(pages, 5) }),
     'stories-backfill': () => backfillStories(env, { pages }),
