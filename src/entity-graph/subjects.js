@@ -282,8 +282,10 @@ export function articleSubjects(article, manifest) {
   const aboutTeamNames = new Set(about.filter((x) => x.kind === 'team').map((x) => x.team.name));
   for (const game of asList(manifest?.games)) {
     const item = { kind: 'game', name: game.name, game };
-    const ofSubject = [game.home?.name, game.away?.name].some((n) => n && aboutTeamNames.has(n));
-    if (ofSubject && !aboutKeys.has(entityKey(item))) { about.push(item); aboutKeys.add(entityKey(item)); }
+    // A game is a subject only when both its teams are ("Yankees Edge Red Sox in
+    // Game 2"); a player feature on one team's next opponent only mentions it.
+    const bothSides = [game.home?.name, game.away?.name].every((n) => n && aboutTeamNames.has(n));
+    if (bothSides && !aboutKeys.has(entityKey(item))) { about.push(item); aboutKeys.add(entityKey(item)); }
   }
 
   const story = ` ${[headline, dek, words(articleText(article))].join(' ')} `;

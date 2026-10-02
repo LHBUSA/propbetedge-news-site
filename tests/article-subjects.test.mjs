@@ -125,3 +125,26 @@ test('regressions: shared surnames and name-token cities', () => {
   assert.deepEqual(names(washington.about), ['Darnell Washington', 'Pittsburgh Steelers']);
   assert.ok(!names(washington.mentions).includes('Washington Commanders'));
 });
+
+test('games: about only when the story is about both teams; a one-team feature only mentions the game', async () => {
+  const { toGameManifest } = await import('../src/entity-graph/manifest.js');
+  const withGame = (article) => {
+    const manifest = buildEntityManifest(article);
+    manifest.games = [toGameManifest({ sport: article.sport, id: '401772900', home_abbr: 'CLE', away_abbr: 'PIT', name: 'Pittsburgh Steelers at Cleveland Browns' })];
+    return buildArticleSeo(article, manifest).jsonLd['@graph'][0];
+  };
+  const feature = withGame({
+    sport: 'nfl', slug: 'darnell-washington', title: "Darnell Washington Isn't Just Viral—He's the Steelers' Offensive Engine",
+    summary: "The tight end's size creates a mismatch for the Steelers' offense.", body: 'Washington caught five passes.',
+    take: { teams: ['PIT', 'CLE'], players: ['Darnell Washington'] },
+  });
+  assert.ok(!names(feature.about).includes('Pittsburgh Steelers at Cleveland Browns'));
+  assert.ok(names(feature.mentions).includes('Pittsburgh Steelers at Cleveland Browns'));
+
+  const preview = withGame({
+    sport: 'nfl', slug: 'tnf', title: 'Steelers Visit Browns With First Place on the Line',
+    summary: 'Cleveland and Pittsburgh meet on Thursday night.', body: 'The Browns host the Steelers.',
+    take: { teams: ['PIT', 'CLE'], players: [] },
+  });
+  assert.ok(names(preview.about).includes('Pittsburgh Steelers at Cleveland Browns'));
+});
