@@ -1,3 +1,4 @@
+import { feedUrl } from '../feed-url.js';
 /**
  * src/components/leaders-teaser.js — v3.12
  *
@@ -6,9 +7,7 @@
  * overlays, and trend arrows where computable.
  *
  * Public APIs (CORS open):
- *   MLB → statsapi.mlb.com
- *   NHL → api-web.nhle.com
- *   NBA → site.api.espn.com
+ *   MLB / NHL / NBA → same-origin PropSports feed gateway (/api/feed)
  */
 
 const TEASER_CONFIG = {
@@ -105,7 +104,7 @@ async function loadMlbTeaser() {
   const cats = TEASER_CONFIG.mlb;
   const season = currentMlbSeason();
   const tryYear = async (year) => Promise.all(cats.map((cat) =>
-    fetch(`https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${cat.stat}&statGroup=${cat.group}&season=${year}&limit=3`)
+    fetch(feedUrl('mlb-leaders', { cats: cat.stat, group: cat.group, season: year, limit: 3 }))
       .then((r) => r.ok ? r.json() : null)
       .catch(() => null)
   ));
@@ -155,11 +154,11 @@ async function loadNhlTeaser() {
   const cats = TEASER_CONFIG.nhl;
   const season = nhlSeasonString();
   // Try playoffs first, fall back to regular season
-  let url = `https://api-web.nhle.com/v1/skater-stats-leaders/${season}/3?categories=${cats.map((c) => c.stat).join(',')}&limit=3`;
+  let url = feedUrl('nhl-skater-leaders', { season, gameType: 3, cats: cats.map((c) => c.stat).join(','), limit: 3 });
   let data = await fetch(url).then((r) => r.ok ? r.json() : null).catch(() => null);
   let usingPlayoffs = data && cats.some((c) => data[c.stat]?.length);
   if (!usingPlayoffs) {
-    url = `https://api-web.nhle.com/v1/skater-stats-leaders/${season}/2?categories=${cats.map((c) => c.stat).join(',')}&limit=3`;
+    url = feedUrl('nhl-skater-leaders', { season, gameType: 2, cats: cats.map((c) => c.stat).join(','), limit: 3 });
     data = await fetch(url).then((r) => r.ok ? r.json() : null).catch(() => null);
   }
   if (!data) return null;
@@ -205,7 +204,7 @@ function nhlSeasonString() {
 // ─── NBA ─────────────────────────────────────────────────────────────────
 async function loadNbaTeaser() {
   const season = new Date().getFullYear();
-  const url = `https://site.api.espn.com/apis/v2/sports/basketball/nba/leaders?season=${season}&seasontype=2`;
+  const url = feedUrl('espn-leaders', { sport: 'nba', season, seasontype: 2 });
   const data = await fetch(url).then((r) => r.ok ? r.json() : null).catch(() => null);
   const categories = data?.categories || [];
   if (!categories.length) return null;

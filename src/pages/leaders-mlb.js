@@ -1,3 +1,4 @@
+import { feedUrl } from '../feed-url.js';
 /**
  * src/pages/leaders-mlb.js — /leaders/mlb
  *
@@ -461,7 +462,7 @@ async function loadActive({ silent = false } = {}) {
 async function loadBatting(body) {
   const season = currentMlbSeason();
   const tryYear = (year) => Promise.all(BATTING_CATS.map((cat) =>
-    fetch(`https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${cat.key}&statGroup=hitting&season=${year}&limit=10&_=${Date.now()}`, { cache: 'no-store' })
+    fetch(feedUrl('mlb-leaders', { cats: cat.key, group: 'hitting', season: year, limit: 10 }), { cache: 'no-store' })
       .then((r) => r.ok ? r.json() : null)
       .catch(() => null)
   ));
@@ -506,7 +507,7 @@ async function loadBatting(body) {
 async function loadPitching(body) {
   const season = currentMlbSeason();
   const tryYear = (year) => Promise.all(PITCHING_CATS.map((cat) =>
-    fetch(`https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=${cat.key}&statGroup=pitching&season=${year}&limit=10&_=${Date.now()}`, { cache: 'no-store' })
+    fetch(feedUrl('mlb-leaders', { cats: cat.key, group: 'pitching', season: year, limit: 10 }), { cache: 'no-store' })
       .then((r) => r.ok ? r.json() : null)
       .catch(() => null)
   ));
@@ -551,7 +552,7 @@ async function loadPitching(body) {
 async function loadAdvanced(body) {
   const season = currentMlbSeason();
   const tryYear = (year) => fetch(
-    `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=onBasePlusSlugging&statGroup=hitting&season=${year}&limit=50&_=${Date.now()}`,
+    feedUrl('mlb-leaders', { cats: 'onBasePlusSlugging', group: 'hitting', season: year, limit: 50 }),
     { cache: 'no-store' }
   ).then((r) => r.ok ? r.json() : null).catch(() => null);
 
@@ -570,7 +571,7 @@ async function loadAdvanced(body) {
 
   const ids = pool.slice(0, 30).map((l) => l.person?.id).filter(Boolean);
   const players = await Promise.all(ids.map(async (id) => {
-    const r = await fetch(`https://statsapi.mlb.com/api/v1/people/${id}/stats?stats=season&group=hitting&season=${useYear}&sportId=1&_=${Date.now()}`, { cache: 'no-store' })
+    const r = await fetch(feedUrl('mlb-person-season-hitting', { id, season: useYear }), { cache: 'no-store' })
       .then((r) => r.ok ? r.json() : null).catch(() => null);
     const stat = r?.stats?.[0]?.splits?.[0]?.stat;
     if (!stat) return null;

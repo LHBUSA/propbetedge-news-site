@@ -1,6 +1,7 @@
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { SPORT_CONFIG, getSportConfig, slugifyEntity } from '../sport-config.js';
+import { feedUrl } from '../feed-url.js';
 
 async function fetchJson(url) {
   const response = await fetch(url, { credentials: 'omit', cache: 'no-store' });
@@ -175,7 +176,7 @@ export async function renderStandingsPage(root, sport, setMeta) {
 
   const mount = document.getElementById('pbe-standings-root');
   try {
-    const data = await fetchJson(`https://site.api.espn.com/apis/v2/sports/${config.espnPath}/standings`);
+    const data = await fetchJson(feedUrl('espn-standings', { sport }));
     const groups = normalizeGroups(data);
     mount.innerHTML = groups.length
       ? `<div class="pbe-standings-grid">${groups.map((group) => renderGroup(group, sport)).join('')}</div>`

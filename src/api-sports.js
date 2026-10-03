@@ -1,12 +1,12 @@
+import { feedUrl } from './feed-url.js';
 /**
  * src/api-sports.js — v4
  *
- * Direct public API calls for the four-sport PropBetEdge score strip.
+ * Score-strip data through the same-origin PropSports feed gateway (/api/feed).
  * NFL now preserves ESPN team abbreviations, logos and records so the
  * shared score-strip renderer can display football teams visually.
  */
 
-const NHL_PROXY = 'https://propbetedge-cors.sales-fd3.workers.dev';
 
 function todayET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -24,7 +24,7 @@ async function fetchJson(url, opts = {}) {
 
 async function mlbScheduleRaw(date) {
   const d = date || todayET();
-  const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${d}&hydrate=probablePitcher,venue,team,linescore`;
+  const url = feedUrl('mlb-schedule', { date: d });
   const data = await fetchJson(url);
   return { date: d, games: data?.dates?.[0]?.games || [] };
 }
@@ -33,11 +33,11 @@ async function nbaScheduleRaw(date) {
   const d = date || todayESPN();
   let events = [];
   try {
-    const playoff = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${d}&seasontype=3`);
+    const playoff = await fetchJson(feedUrl('espn-scoreboard', { sport: 'nba', dates: d, seasontype: 3 }));
     events = playoff.events || [];
   } catch {}
   if (!events.length) {
-    const reg = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${d}`).catch(() => ({ events: [] }));
+    const reg = await fetchJson(feedUrl('espn-scoreboard', { sport: 'nba', dates: d })).catch(() => ({ events: [] }));
     events = reg.events || [];
   }
   const games = events.map((e) => {
@@ -68,7 +68,7 @@ async function nbaScheduleRaw(date) {
 
 async function wnbaScheduleRaw(date) {
   const d = date || todayESPN();
-  const data = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard?dates=${d}`)
+  const data = await fetchJson(feedUrl('espn-scoreboard', { sport: 'wnba', dates: d }))
     .catch(() => ({ events: [] }));
   const games = (data.events || []).map((e) => {
     const comp = e.competitions?.[0] || {};
@@ -99,7 +99,7 @@ async function wnbaScheduleRaw(date) {
 }
 
 async function nbaSummaryRaw(gameId) {
-  const summary = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${gameId}`);
+  const summary = await fetchJson(feedUrl('espn-summary', { sport: 'nba', event: gameId }));
   const comp = summary?.header?.competitions?.[0] || {};
   const competitors = comp.competitors || [];
   const home = competitors.find((c) => c.homeAway === 'home') || competitors[0] || {};
@@ -140,7 +140,7 @@ async function nbaSummaryRaw(gameId) {
 }
 
 async function nflSummaryRaw(gameId) {
-  const summary = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${gameId}`);
+  const summary = await fetchJson(feedUrl('espn-summary', { sport: 'nfl', event: gameId }));
   const comp = summary?.header?.competitions?.[0] || {};
   const competitors = comp.competitors || [];
   const home = competitors.find((c) => c.homeAway === 'home') || competitors[0] || {};
@@ -183,7 +183,7 @@ async function nflSummaryRaw(gameId) {
 }
 
 async function nhlSummaryRaw(gameId) {
-  const summary = await fetchJson(`https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/summary?event=${gameId}`);
+  const summary = await fetchJson(feedUrl('espn-summary', { sport: 'nhl', event: gameId }));
   const comp = summary?.header?.competitions?.[0] || {};
   const competitors = comp.competitors || [];
   const home = competitors.find((c) => c.homeAway === 'home') || competitors[0] || {};
@@ -225,16 +225,13 @@ async function nhlSummaryRaw(gameId) {
 }
 
 async function nhlGameRaw(gameId) {
-  const target = `https://api-web.nhle.com/v1/gamecenter/${gameId}/landing`;
-  return fetchJson(`${NHL_PROXY}/?url=${encodeURIComponent(target)}`);
+  return fetchJson(feedUrl('nhl-landing', { gameId }));
 }
 
 
 async function nhlScheduleRaw(date) {
   const d = date || todayET();
-  const target = `https://api-web.nhle.com/v1/schedule/${d}`;
-  const proxied = `${NHL_PROXY}/?url=${encodeURIComponent(target)}`;
-  const data = await fetchJson(proxied);
+  const data = await fetchJson(feedUrl('nhl-schedule', { date: d }));
   const today = (data?.gameWeek || []).find(w => w.date === d) || data?.gameWeek?.[0] || { games: [] };
   const games = (today.games || []).map((g) => ({
     id: g.id,
@@ -262,7 +259,7 @@ function recordSummary(competitor) {
 }
 
 async function nflScheduleRaw() {
-  const data = await fetchJson('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard').catch(() => ({ events: [] }));
+  const data = await fetchJson(feedUrl('espn-scoreboard', { sport: 'nfl' })).catch(() => ({ events: [] }));
   const events = data?.events || [];
   const games = events.map((e) => {
     const comp = e.competitions?.[0] || {};
@@ -299,10 +296,10 @@ export const sports = {
   nhlSchedule: (date) => nhlScheduleRaw(date),
   nflSchedule: () => nflScheduleRaw(),
 
-  mlbLinescore: (gamePk) => fetchJson(`https://statsapi.mlb.com/api/v1/game/${gamePk}/linescore`),
-  mlbBoxscore: (gamePk) => fetchJson(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`),
+  mlbLinescore: (gamePk) => fetchJson(feedUrl('mlb-linescore', { gamePk })),
+  mlbBoxscore: (gamePk) => fetchJson(feedUrl('mlb-boxscore', { gamePk })),
   async mlbPlays(gamePk, limit = 30) {
-    const data = await fetchJson(`https://statsapi.mlb.com/api/v1/game/${gamePk}/playByPlay?startIndex=0`);
+    const data = await fetchJson(feedUrl('mlb-playbyplay', { gamePk }));
     const plays = data?.allPlays || [];
     return { gamePk, total: plays.length, recent: plays.slice(-limit) };
   },

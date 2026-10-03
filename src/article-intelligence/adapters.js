@@ -25,6 +25,7 @@ import {
 import { SPORT_CONFIG } from '../sport-config.js';
 import { teamDataFromPayload } from './team-data.js';
 import { isDisplayableValue } from './evidence.js';
+import { feedUrl } from '../feed-url.js';
 
 export function currentSeason(sport, now = new Date()) {
   const year = now.getUTCFullYear();
@@ -214,7 +215,7 @@ function espnSeasonLabel(sport, row) {
 
 async function mlbPlayer(ctx, player, article) {
   const season = currentSeason('mlb');
-  const data = await fetchJson(ctx, `https://statsapi.mlb.com/api/v1/people/${encodeURIComponent(player.id)}?hydrate=stats(group=[hitting,pitching],type=[season,gameLog],season=${season},sportId=1),currentTeam`);
+  const data = await fetchJson(ctx, feedUrl('mlb-person', { id: player.id, season, view: 'article' }));
   const person = data?.people?.[0];
   if (!person) return null;
 

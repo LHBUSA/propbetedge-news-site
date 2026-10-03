@@ -1,3 +1,4 @@
+import { feedUrl } from '../feed-url.js';
 /**
  * /leaders/nhl — live-ready NHL leaderboards.
  *
@@ -197,22 +198,22 @@ async function loadAdvanced(body) {
 
 async function fetchSkaters(season) {
   const cats = SKATER_CATS.map((c) => c.key).join(',');
-  return fetchNhl(`https://api-web.nhle.com/v1/skater-stats-leaders/${season}/2?categories=${cats}&limit=10`);
+  return fetchNhl(feedUrl('nhl-skater-leaders', { season, gameType: 2, cats, limit: 10 }));
 }
 
 async function fetchGoalies(season) {
   const cats = GOALIE_CATS.map((c) => c.key).join(',');
-  return fetchNhl(`https://api-web.nhle.com/v1/goalie-stats-leaders/${season}/2?categories=${cats}&limit=10`);
+  return fetchNhl(feedUrl('nhl-goalie-leaders', { season, gameType: 2, cats, limit: 10 }));
 }
 
 async function fetchAdvanced(season) {
-  return fetchNhl(`https://api-web.nhle.com/v1/skater-stats-leaders/${season}/2?categories=points,goals,shots,timeOnIcePerGame&limit=30`);
+  return fetchNhl(feedUrl('nhl-skater-leaders', { season, gameType: 2, cats: 'points,goals,shots,timeOnIcePerGame', limit: 30 }));
 }
 
 async function fetchNhl(url) {
   try {
-    const join = url.includes('?') ? '&' : '?';
-    const response = await fetch(`${url}${join}_=${Date.now()}`, { cache: 'no-store' });
+    // no cache-buster: the gateway's short edge cache is the freshness contract (stable cache key)
+    const response = await fetch(url, { cache: 'no-store' });
     return response.ok ? response.json() : null;
   } catch {
     return null;

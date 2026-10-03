@@ -4,7 +4,7 @@
  * v3.13 Drop 1 — MLB player profile.
  *
  * Single API call:
- *   https://statsapi.mlb.com/api/v1/people/{id}?hydrate=stats(group=[hitting,pitching],type=[season,career,gameLog,vsLHP,vsRHP,homeAndAway])
+ *   /api/feed?feed=mlb-person (same-origin gateway: person + season/career/gameLog stats)
  *
  * Returns: bio, current team, season stats, career totals, full game log,
  *          vs LHP/RHP, home/away splits — all in one payload.
@@ -16,6 +16,7 @@ import {
   setPlayerMeta, fmt, escapeHtml,
 } from './player-shared.js';
 import { entityCoverageSlot, mountEntityCoverage } from '../entity-graph/entity-coverage.js';
+import { feedUrl } from '../feed-url.js';
 
 const MLB_TEAM_COLORS = {
   108:'#BA0021',109:'#A71930',110:'#DF4601',111:'#BD3039',112:'#0E3386',
@@ -31,7 +32,7 @@ export async function renderMlbPlayerPage(root, playerId, setMeta) {
 
   try {
     // Fetch person + stats in one shot
-    const url = `https://statsapi.mlb.com/api/v1/people/${playerId}?hydrate=stats(group=[hitting,pitching],type=[season,career,gameLog],season=${currentMlbSeason()},sportId=1),currentTeam`;
+    const url = feedUrl('mlb-person', { id: playerId, season: currentMlbSeason() });
     const data = await fetch(url).then((r) => r.ok ? r.json() : null);
     const person = data?.people?.[0];
 

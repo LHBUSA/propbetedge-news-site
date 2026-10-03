@@ -18,8 +18,8 @@ import {
 } from '../contract.js';
 import { resolveTeam, allPlayers } from '../../entity-graph/entities.js';
 
-export const STATS_API = 'https://statsapi.mlb.com/api/v1';
-export const PRODUCT = 'statsapi.mlb.com';
+export const STATS_API = 'https://statsapi.mlb.com/api/v1'; // upstream-host:allow (server-only: imported by workers/pbe-entity-hub, never by the browser bundle)
+export const PRODUCT = 'statsapi.mlb.com'; // upstream-host:allow (server-only: imported by workers/pbe-entity-hub, never by the browser bundle)
 
 /** Pitchers get pitching lines; everyone else gets hitting. Two-way players
  *  (Ohtani) legitimately have both, so both are carried, labelled. */
