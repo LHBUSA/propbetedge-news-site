@@ -363,3 +363,27 @@ test('speculative, projected and line-setting numbers never become evidence', ()
   };
   assert.deepEqual(extractPublishedEvidence(article), []);
 });
+
+/* ------------------------------------------------------------------ */
+/* Rank is not a stat (Rays "top-10 ERA performance" regression)        */
+/* ------------------------------------------------------------------ */
+
+test('evidence: a ranking number never becomes a metric (top-N / No. N / #N / ranked N), any sport', () => {
+  const ev = (sport, body) => extractPublishedEvidence({ sport, body }).flatMap((r) => r.metrics.map((m) => `${m.label}=${m.value}`));
+  // the exact production sentence
+  assert.deepEqual(ev('mlb', 'The Rays turned one notably undervalued reliever acquisition into a top-10 ERA performance this season.'), [], 'top-10 ERA');
+  assert.deepEqual(ev('mlb', 'He posted a top 10 ERA performance.'), [], 'top 10 ERA');
+  assert.deepEqual(ev('mlb', 'It was a bottom-10 ERA staff.'), [], 'bottom-10 ERA');
+  assert.deepEqual(ev('mlb', 'He sat in a bottom 10 ERA group.'), [], 'bottom 10 ERA');
+  assert.deepEqual(ev('mlb', 'It was the No. 10 ERA ranking in the league.'), [], 'No. 10 ERA');
+  assert.deepEqual(ev('mlb', 'They own the #10 ERA mark.'), [], '#10 ERA');
+  assert.deepEqual(ev('mlb', 'The bullpen ranked 10 ERA spots higher.'), [], 'ranked 10 ERA');
+  // legitimate rates still extract
+  assert.deepEqual(ev('mlb', 'Shane McClanahan carried a 3.24 ERA into September.'), ['ERA=3.24']);
+  assert.deepEqual(ev('mlb', 'He finished with an ERA of 2.91 in 30 starts.'), ['ERA=2.91']);
+  assert.deepEqual(ev('mlb', 'He owns a 10.00 ERA in October.'), ['ERA=10.00']);
+  // the guard is global: other sports' metrics are protected too
+  assert.deepEqual(ev('nba', 'Boston has a top-10 points differential.'), [], 'NBA top-10 points');
+  assert.deepEqual(ev('nfl', 'They own a top-5 sacks unit.'), [], 'NFL top-5 sacks');
+  assert.deepEqual(ev('nhl', 'A top-3 goals pace for the Panthers.'), [], 'NHL top-3 goals');
+});

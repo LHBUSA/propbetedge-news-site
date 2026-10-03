@@ -36,6 +36,10 @@ const GLOBAL_BEFORE_REJECT = [
   /(?:fewer than|less than|more than|greater than|at least|at most|upwards of|north of|south of|in excess of|\bnearly|\balmost|\bclose to|\baround|\broughly|\bapproximately|\babout)\s+$/i,
   /\bper\s+$/i,
   /\bsub[- ]?$/i,
+  // A rank is not a stat: "top-10 ERA", "top 10 ERA", "bottom-10 ERA", "No. 10 ERA ranking", "#10 ERA",
+  // "ranked 10 ERA spots higher", "top-five sacks unit". The number names a position in a list, never the
+  // subject's value, so it can never become an evidence card (any sport, any metric).
+  /(?:\b(?:top|bottom|ranked|ranks|ranking|rank)|\bNo\.|\bnumber|#)[ -]?$/i,
 ];
 
 // Count stats: a decimal is only legitimate as a per-game average, which is
