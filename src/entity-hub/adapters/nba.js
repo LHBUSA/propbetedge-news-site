@@ -38,7 +38,7 @@ export function relayHeaders() {
 function source(urls, observedAt) {
   return provenance({
     product: PRODUCT,
-    source: 'ESPN via NBA PropBetEdge relay',
+    source: 'ESPN via NBA PropBetEdge relay', // source-brand:allow (internal snapshot provenance; never rendered)
     source_urls: urls,
     schema: 'nba-provider/v1',
     observed_at: observedAt || new Date().toISOString(),

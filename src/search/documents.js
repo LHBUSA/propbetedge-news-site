@@ -104,7 +104,7 @@ export function wnbaDocsFromApi(payload) {
 
 const LOWER_PARTICLES = new Set(['da', 'das', 'de', 'del', 'della', 'di', 'do', 'dos', 'du', 'la', 'le', 'y', 'e']);
 const ROMAN = new Set(['ii', 'iii', 'iv']);
-const BROADCASTERS = { espn: 'ESPN', fox: 'Fox', fx: 'FX', abc: 'ABC', fuel: 'Fuel TV', versus: 'Versus', 'espn+': 'ESPN+' };
+const BROADCASTERS = { espn: 'ESPN', fox: 'Fox', fx: 'FX', abc: 'ABC', fuel: 'Fuel TV', versus: 'Versus', 'espn+': 'ESPN+' }; // source-brand:allow (TV broadcaster names)
 
 function capitalizeToken(token, index, count) {
   if (!token) return token;

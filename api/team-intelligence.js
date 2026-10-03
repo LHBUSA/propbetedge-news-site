@@ -5,6 +5,14 @@ const DEFAULT_HUB = 'https://pbe-entity-hub.sales-fd3.workers.dev';
 const ALLOWED_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl', 'wnba']);
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+// Customer source boundary (network standard "DATA · PropSports"): the public response keeps the snapshot's
+// freshness fields; the upstream lane label and endpoint URLs stay in the hub's internal provenance.
+function publicSnapshot(snapshot) {
+  if (!snapshot?.source) return snapshot;
+  const { observed_at, refreshed_at, ttl_s, stale_after_s } = snapshot.source;
+  return { ...snapshot, source: { product: 'PropSports', observed_at, refreshed_at, ttl_s, stale_after_s } };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
@@ -51,10 +59,10 @@ export default async function handler(req, res) {
           completeness: completeness(snapshot),
           readiness,
           observed_at: snapshot?.source?.observed_at || new Date().toISOString(),
-          source_product: snapshot?.source?.product || 'PropBetEdge NFL',
+          source_product: 'PropSports', // customer data brand; upstream product stays in the hub snapshot provenance
           readthrough: true,
           readthrough_sources: enriched.sources,
-          snapshot,
+          snapshot: publicSnapshot(snapshot),
         });
       } catch (error) {
         console.error('[team-intelligence] nfl readthrough failed', {
@@ -73,9 +81,9 @@ export default async function handler(req, res) {
             completeness: payload.completeness || completeness(hubSnapshot),
             readiness: teamReadiness(hubSnapshot),
             observed_at: payload.observed_at || hubSnapshot?.source?.observed_at || null,
-            source_product: payload.source_product || hubSnapshot?.source?.product || null,
+            source_product: 'PropSports', // customer data brand; upstream product stays in the hub snapshot provenance
             readthrough: false,
-            snapshot: hubSnapshot,
+            snapshot: publicSnapshot(hubSnapshot),
           });
         }
         res.setHeader('Retry-After', '60');
@@ -106,8 +114,8 @@ export default async function handler(req, res) {
       completeness: payload.completeness || completeness(hubSnapshot),
       readiness: teamReadiness(hubSnapshot),
       observed_at: payload.observed_at || hubSnapshot?.source?.observed_at || null,
-      source_product: payload.source_product || hubSnapshot?.source?.product || null,
-      snapshot: hubSnapshot,
+      source_product: 'PropSports', // customer data brand; upstream product stays in the hub snapshot provenance
+      snapshot: publicSnapshot(hubSnapshot),
     });
   } catch (error) {
     console.error('[team-intelligence] request failed', {

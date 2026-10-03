@@ -42,7 +42,7 @@ export default async function handler(req, res) {
 async function resolveTeam(meta, sport, query) {
   const url = `https://site.api.espn.com/apis/site/v2/sports/${meta.category}/${meta.league}/teams?limit=100`;
   const response = await fetch(url, { headers: { accept: 'application/json' } });
-  if (!response.ok) throw new Error(`ESPN teams ${response.status}`);
+  if (!response.ok) throw new Error(`ESPN teams ${response.status}`); // source-brand:allow (server log only, never returned)
   const data = await response.json();
   const teams = data?.sports?.[0]?.leagues?.[0]?.teams?.map((entry) => entry?.team || entry).filter(Boolean) || [];
   const team = bestNamedMatch(teams, query, ['displayName', 'shortDisplayName', 'name', 'location', 'abbreviation']);
@@ -59,7 +59,7 @@ async function resolveTeam(meta, sport, query) {
     name: team.displayName || team.shortDisplayName || query,
     abbreviation,
     image,
-    source: 'ESPN',
+    source: 'ESPN', // source-brand:allow (image credit for the resolved logo/headshot)
   };
 }
 
@@ -75,7 +75,7 @@ async function resolvePlayer(meta, sport, query) {
   searchUrl.searchParams.set('sport', meta.category);
 
   const response = await fetch(searchUrl, { headers: { accept: 'application/json' } });
-  if (!response.ok) throw new Error(`ESPN search ${response.status}`);
+  if (!response.ok) throw new Error(`ESPN search ${response.status}`); // source-brand:allow (server log only, never returned)
   const data = await response.json();
 
   const objects = [];
@@ -95,7 +95,7 @@ async function resolvePlayer(meta, sport, query) {
     name: bestLabel(candidate) || query,
     id: id || null,
     image,
-    source: 'ESPN',
+    source: 'ESPN', // source-brand:allow (image credit for the resolved logo/headshot)
   };
 }
 

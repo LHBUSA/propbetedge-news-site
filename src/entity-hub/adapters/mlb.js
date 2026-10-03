@@ -67,7 +67,7 @@ export function rosterUrl(teamId, season) {
 function source(urls, observedAt) {
   return provenance({
     product: PRODUCT,
-    source: 'MLB StatsAPI',
+    source: 'MLB StatsAPI', // source-brand:allow (internal snapshot provenance; never rendered)
     source_urls: urls,
     schema: 'mlb-statsapi/v1',
     observed_at: observedAt || new Date().toISOString(),

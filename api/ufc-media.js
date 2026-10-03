@@ -74,11 +74,11 @@ export default async function handler(req, res) {
       name: fighter.name || name,
       image_url: imageUrl,
       thumb_url: image?.thumb_url || fallbackUrl,
-      attribution_text: image?.attribution_text || (fallbackUrl ? 'Photo: ESPN' : null),
+      attribution_text: image?.attribution_text || (fallbackUrl ? 'Photo: ESPN' : null), // source-brand:allow (photo credit)
       license: image?.license || null,
       source_url: image?.source_url || (espnId ? `https://www.espn.com/mma/fighter/_/id/${espnId}` : null),
       display_policy: primaryUrl ? 'stored_asset' : 'display_only',
-      resolved_by: primaryUrl ? 'exact_fighter_primary_image' : 'exact_fighter_espn_id',
+      resolved_by: primaryUrl ? 'exact_fighter_primary_image' : 'exact_fighter_headshot_fallback',
     });
   } catch {
     return res.status(404).json({ error: 'media_not_found' });
