@@ -176,3 +176,83 @@
 @media (max-width: 360px) {
   .picks-cta a[data-pbe-intel-cta] { font-size: 10px; letter-spacing: 0.04em; }
 }
+
+/* Homepage launch: Kalshi prediction-market intelligence (src/market-pulse-launch.js).
+ * Same network surface as .pbe-intel-cta; static on first paint. The live dot
+ * slot is always reserved, so marking ACTIVE_MARKET sports never shifts layout. */
+.pbe-market-pulse {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 40px;
+  padding: 20px 22px;
+  background: linear-gradient(90deg, rgba(212, 175, 55, 0.10), rgba(20, 17, 13, 0.82) 60%);
+  border: 1px solid rgba(212, 175, 55, 0.34);
+  border-left: 3px solid var(--gold);
+  border-radius: 4px;
+  min-width: 0;
+}
+.pbe-market-pulse-title {
+  margin: 4px 0 0;
+  font-family: var(--font-serif);
+  font-size: clamp(26px, 3.2vw, 38px);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--paper);
+  overflow-wrap: anywhere;
+}
+.pbe-market-pulse-dek {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 18px;
+  line-height: 1.35;
+  color: var(--gold-bright);
+}
+.pbe-market-pulse-body {
+  margin: 0;
+  max-width: 72ch;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--paper-dim);
+}
+.pbe-market-pulse-tagline {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper);
+}
+.pbe-market-pulse-links { margin-top: 6px; }
+.pbe-market-pulse-links a { position: relative; }
+.pbe-market-pulse-live {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+  background: transparent;
+}
+.pbe-market-pulse-links a.is-market-live .pbe-market-pulse-live {
+  background: var(--gold-bright);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18);
+}
+.pbe-market-pulse-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.pbe-market-pulse-attribution {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--paper-dim);
+}
+@media (max-width: 720px) {
+  .pbe-market-pulse { padding: 16px 14px; margin-bottom: 28px; }
+  .pbe-market-pulse-dek { font-size: 16px; }
+  .pbe-market-pulse-body { font-size: 14px; }
+}

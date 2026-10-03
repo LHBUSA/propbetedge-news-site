@@ -42,6 +42,7 @@ import { renderArticleCard, renderSidebarStory, escapeHtml, escapeAttr, formatRe
 import { renderBreakingBanner } from '../components/breaking-banner.js';
 import { proxyImage } from '../ads-config.js';
 import { organizationSchema, websiteSchema, homePageSchema, injectSchemas } from '../schema.js';
+import { renderMarketPulseLaunch, mountMarketPulseLive } from '../market-pulse-launch.js';
 
 const SPORT_FALLBACK = { mlb: '⚾', nfl: '🏈', nba: '🏀', nhl: '🏒' };
 const SPORT_LABELS   = { mlb: 'Baseball', nfl: 'Football', nba: 'Basketball', nhl: 'Hockey' };
@@ -88,6 +89,9 @@ export async function renderHome(root) {
           </div>
         </section>
 
+        <!-- Kalshi prediction-market launch (static; live dots after load) -->
+        ${renderMarketPulseLaunch()}
+
         <!-- Latest grid -->
         <section class="latest-section">
           <div class="section-heading">
@@ -104,6 +108,9 @@ export async function renderHome(root) {
     </main>
     ${renderFooter()}
   `;
+
+  // Progressive enhancement only: never blocks or reshapes the static module.
+  mountMarketPulseLive(root);
 
   // Initial load
   const data = await fetchHomeData();
