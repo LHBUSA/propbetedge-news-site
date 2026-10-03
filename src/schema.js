@@ -117,7 +117,14 @@ export function websiteSchema() {
       name: `PropBetEdge ${sport}`,
       url,
       publisher: { '@id': ORG_ID },
-    })),
+    })).concat([{
+      '@type': 'WebSite',
+      '@id': 'https://predictions.propbetedge.ai/#website',
+      name: 'PropBetEdge Predictions',
+      url: 'https://predictions.propbetedge.ai/',
+      description: 'Real-world probability intelligence: independent model probabilities compared with live prediction markets, with immutable forecast records and a scored track record.',
+      publisher: { '@id': ORG_ID },
+    }]),
     inLanguage: 'en-US',
   };
 }

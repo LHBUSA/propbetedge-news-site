@@ -58,6 +58,8 @@ const TOOL_ROWS = [
   ['golf-intelligence', 'golf', 'Golf Intelligence', 'GOLF · LIVE INTELLIGENCE', PRODUCT_HUBS.golf, ['golf', 'pga', 'lpga', 'golf propbetedge'], ['player dna', 'course dna', 'courses', 'tournaments', 'pbecast'], 20],
   ['f1-intelligence', 'f1', 'F1 Intelligence', 'F1 · LIVE INTELLIGENCE', PRODUCT_HUBS.f1, ['f1', 'formula 1', 'formula one', 'f1 propbetedge'], ['driver dna', 'constructor dna', 'circuit dna', 'standings', 'races', 'pbecast'], 20],
 
+  ['predictions', null, 'PropBetEdge Predictions', 'PREDICTIONS · REAL-WORLD PROBABILITY INTELLIGENCE', 'https://predictions.propbetedge.ai/', ['predictions', 'propbetedge predictions', 'prediction markets', 'kalshi', 'forecasts', 'probability'], ['weather', 'treasury yields', 'rates', 'model vs market', 'insights', 'track record'], 20],
+
   // ── UFC ───────────────────────────────────────────────────────────────────
   ['ufc-simulator', 'ufc', 'Fight Simulator', 'UFC INTELLIGENCE · LABS', `${UFC}/simulator`, ['fight simulator', 'simulator', 'ufc simulator', 'fight sim', 'mma simulator'], ['simulate', 'matchup', 'labs', 'what if'], 10],
   ['ufc-fight-dna', 'ufc', 'Fight DNA', 'UFC INTELLIGENCE · FIGHT DNA', `${UFC}/learn/fight-dna`, ['fight dna', 'fighter dna', 'dna', 'ufc dna'], ['style', 'profile', 'metrics'], 5],
@@ -203,6 +205,7 @@ export const EMPTY_STATE = Object.freeze({
   popular: Object.freeze([
     Object.freeze({ id: 'hub-picks', title: 'PBE Picks', href: '/odds', sport: null }),
     Object.freeze({ id: 'hub-games', title: 'PBEcast', href: '/games', sport: null }),
+    Object.freeze({ id: 'predictions', title: 'Predictions', href: 'https://predictions.propbetedge.ai/', sport: null }),
     Object.freeze({ id: 'ufc-simulator', title: 'Fight Simulator', href: `${UFC}/simulator`, sport: 'ufc' }),
     Object.freeze({ id: 'mlb-hr-targets', title: 'HR Targets', href: `${MLB}/hr-picks`, sport: 'mlb' }),
     Object.freeze({ id: 'ufc-fight-dna', title: 'Fight DNA', href: `${UFC}/learn/fight-dna`, sport: 'ufc' }),

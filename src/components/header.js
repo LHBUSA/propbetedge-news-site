@@ -136,6 +136,7 @@ export function renderHeader() {
                 <span class="pbe-mobile-more-label">Intelligence</span>
                 <div class="pbe-mobile-more-links">
                   ${INTELLIGENCE_PRODUCTS.map(product => `<a href="${product.href}" ${ctaAttrs(INTELLIGENCE_SPORTS[product.key], { placement: 'mobile_more', pageType: pageTypeFor(path), slug: articleSlugFor(path) })}>${INTELLIGENCE_SPORTS[product.key].label}</a>`).join('')}
+                  <a href="https://predictions.propbetedge.ai/" data-pbe-placement="mobile_more_predictions">Predictions</a>
                 </div>
               </div>
             </div>
@@ -256,6 +257,15 @@ function renderIntelligenceSwitcher(activeSport, pageType, slug) {
             <span class="pbe-intel-option-live">LIVE ↗</span>
           </a>
         `).join('')}
+        <a class="pbe-intel-option pbe-intel-option-predictions" href="https://predictions.propbetedge.ai/" role="menuitem" data-pbe-placement="header_switcher_predictions">
+          <span class="pbe-intel-option-icon" aria-hidden="true">◎</span>
+          <span class="pbe-intel-option-copy">
+            <strong>Predictions</strong>
+            <small>Real-world probability intelligence · included in All Access</small>
+            <em>predictions.propbetedge.ai</em>
+          </span>
+          <span class="pbe-intel-option-live">LIVE ↗</span>
+        </a>
       </div>
     </details>
   `;

@@ -1255,6 +1255,7 @@ function buildServerAboutHtml() {
         <a href="https://golf.propbetedge.ai/">Golf</a> ·
         <a href="https://f1.propbetedge.ai/">F1</a>
       </p>
+      <p>Plus <a href="https://predictions.propbetedge.ai/">PropBetEdge Predictions</a> — real-world probability intelligence, included in <a href="/pro">All Access</a>.</p>
       <h2>Accountability by design</h2>
       <p>PropBetEdge separates research from live claims, preserves missing data as missing, and keeps permanent records where models are live. News connects into players, teams, games, tournaments, courses and sport-specific intelligence instead of ending at the article.</p>
       <p><a href="/authors">Editorial Team</a> · <a href="/editorial-standards">Editorial Standards</a> · <a href="/pro">All Access</a></p>

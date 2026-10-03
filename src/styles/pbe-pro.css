@@ -163,6 +163,19 @@
 .pbe-pro-sport-future > div { border-style: dashed; border-color: rgba(212,175,55,.45); background: linear-gradient(160deg, rgba(212,175,55,.10), rgba(212,175,55,.02)); }
 .pbe-pro-sport-future .pbe-pro-sport-glyph { color: var(--gold-bright); }
 
+/* PropBetEdge Predictions — a separate included product, visually distinct from the ten sport cards */
+.pbe-pro-predictions-head { margin: 26px 0 12px; font: 800 11px/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--paper-dim); }
+.pbe-pro-predictions { position: relative; display: grid; grid-template-columns: auto 1fr; column-gap: 18px; align-items: center; padding: 22px 120px 22px 22px; border-radius: 18px; text-decoration: none; color: var(--paper);
+  border: 1px solid rgba(90,162,255,.45); background: radial-gradient(600px 220px at 85% 0%, rgba(63,140,255,.18), rgba(63,140,255,0) 70%), linear-gradient(160deg, rgba(11,37,71,.85), rgba(3,12,26,.9)); transition: border-color .15s ease, transform .15s ease; }
+.pbe-pro-predictions:hover { border-color: #8cc2ff; transform: translateY(-2px); }
+.pbe-pro-predictions-glyph { font-size: 34px; line-height: 1; color: #8cc2ff; }
+.pbe-pro-predictions-copy { display: grid; gap: 4px; min-width: 0; }
+.pbe-pro-predictions-eyebrow { font: 800 11px/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: #8cc2ff; }
+.pbe-pro-predictions-copy strong { font: 800 20px/1.2 var(--font-serif); }
+.pbe-pro-predictions-copy span:last-child { font: 400 13.5px/1.55 var(--font-sans); color: var(--paper-dim); }
+.pbe-pro-family a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 640px) { .pbe-pro-predictions { padding: 46px 18px 20px; grid-template-columns: 1fr; row-gap: 10px; } }
+
 .pbe-pro-values { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 .pbe-pro-value { padding: 22px 20px 20px; border-radius: 16px; border: 1px solid var(--line); background: rgba(255,245,220,.025); }
 .pbe-pro-value-index { display: block; font: 700 11px/1 var(--font-mono); letter-spacing: .2em; color: var(--gold); margin-bottom: 14px; }
