@@ -53,3 +53,11 @@ test('network surfaces link Predictions: footer, header switcher + mobile menu, 
   assert.equal(toolById('predictions').href, `${PRED}/`);
   assert.ok(EMPTY_STATE.popular.some((p) => p.id === 'predictions'));
 });
+
+test('the server-shipped index.html WebSite graph matches src/schema.js hasPart (incl. Predictions)', () => {
+  const html = read('index.html');
+  const graph = JSON.parse(html.match(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/)[1])['@graph'];
+  const site = graph.find((n) => n['@type'] === 'WebSite');
+  assert.deepEqual(site.hasPart.map((p) => p.url), websiteSchema().hasPart.map((p) => p.url));
+  assert.equal(site.hasPart.find((p) => p.url === `${PRED}/`)['@id'], `${PRED}/#website`);
+});
