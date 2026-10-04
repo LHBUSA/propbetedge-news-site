@@ -11,6 +11,7 @@ const pages = {
     description: 'Terms governing use of the PropBetEdge sports intelligence network, including automated-access, data-use and AI-training restrictions.',
     eyebrow: 'TRUST & LEGAL',
     heading: 'Terms of Service',
+    toc: true,
     intro: 'These Terms govern PropBetEdge and its sport, news, learning, intelligence, membership and related properties. By accessing or using the network, you agree to these Terms.',
     body: `
       <div class="trust-notice"><strong>Operator:</strong> PropBetEdge is operated by Local Home Buyers LLC d/b/a PropTechUSA.ai, Saint Paul, Minnesota. PropBetEdge provides sports information, analysis, models, predictions and entertainment. It is not a sportsbook, casino, bookmaker, broker, investment adviser or financial institution, and no output guarantees a winning outcome or profit.</div>
@@ -73,6 +74,7 @@ const pages = {
     description: 'Ownership, intellectual-property, crawler, AI-training, trademark, copyright, privacy and responsible-use notices for PropBetEdge.',
     eyebrow: 'LEGAL & RIGHTS',
     heading: 'Legal',
+    toc: true,
     intro: 'Ownership, rights, crawler policy, third-party notices and legal contact information for the PropBetEdge sports intelligence network.',
     body: `
       <div class="trust-notice"><strong>Network operator:</strong> PropBetEdge is operated by Local Home Buyers LLC d/b/a PropTechUSA.ai, Saint Paul, Minnesota. These notices supplement the <a href="/terms">Terms of Service</a>.</div>
@@ -94,7 +96,7 @@ const pages = {
       <p>If you believe material on PropBetEdge infringes rights you own or control, send a detailed notice to <a href="mailto:support@proptechusa.ai">support@proptechusa.ai</a> identifying the protected work, the exact PropBetEdge URL, the material at issue, your contact information and the basis for your request. We may request additional information needed to evaluate or process the notice.</p>
 
       <h2>Privacy</h2>
-      <p>PropBetEdge is part of the PropTechUSA.ai network. General network privacy information is available in the <a href="https://proptechusa.ai/privacy" target="_blank" rel="noopener noreferrer">PropTechUSA.ai Privacy Policy</a>. Product-specific authentication, billing and analytics practices may also be described at the point where data is collected. Never send passwords, magic-login links, API keys, full payment-card numbers or government IDs in a support request.</p>
+      <p>How PropBetEdge handles personal information — memberships, sign-in, billing, analytics and cookies — is described in the <a href="/privacy">PropBetEdge Privacy Policy</a>. Never send passwords, magic-login links, API keys, full payment-card numbers or government IDs in a support request.</p>
 
       <h2>Security reports</h2>
       <p>Do not probe or test PropBetEdge systems without written authorization. If you discover a potential security issue through ordinary use, report it privately to <a href="mailto:support@proptechusa.ai">support@proptechusa.ai</a> with the affected URL, impact and reproduction details. Do not publicly disclose credentials, tokens, personal information or exploit details that could place users or systems at risk.</p>
@@ -104,6 +106,96 @@ const pages = {
 
       <h2>Legal and licensing contact</h2>
       <p>For rights, licensing, crawler authorization or legal notices, contact <a href="mailto:support@proptechusa.ai">support@proptechusa.ai</a>. For press requests, use <a href="/media">Media</a>. For account and billing issues, use <a href="/support">Support</a>.</p>
+    `,
+  },
+  privacy: {
+    title: 'Privacy Policy — PropBetEdge',
+    description: 'How PropBetEdge handles personal information: analytics, memberships and sign-in, Stripe billing, support, cookies and browser storage, and how that differs from the sports data and model records shown in the product.',
+    eyebrow: 'TRUST & PRIVACY',
+    heading: 'Privacy Policy',
+    intro: 'What PropBetEdge collects about readers and members, why, who helps us process it and the choices you have. Each section opens with a short summary; the full text beneath it is what governs.',
+    toc: true,
+    body: `
+      <div class="trust-notice"><strong>Operator:</strong> PropBetEdge is operated by Local Home Buyers LLC d/b/a PropTechUSA.ai, Saint Paul, Minnesota (“PropBetEdge”, “we”, “us”). This policy covers propbetedge.ai and the PropBetEdge sport, news, learning, predictions and membership sites that link to it. It is specific to the PropBetEdge consumer product; PropTechUSA.ai’s business data products have their own policy.</div>
+
+      <h2>What this policy covers</h2>
+      <p class="trust-summary"><span>In short</span>Personal information about you is different from the sports data, predictions and market records PropBetEdge publishes.</p>
+      <p>This policy is about <strong>information relating to you</strong> as a reader, member or customer: your account, your membership, how you use our sites and how you contact us.</p>
+      <p>It is not about the <strong>sports data shown in the product</strong> — scores, statistics, schedules, injuries, odds and market prices, athlete and team records — or about our <strong>prediction, model and market records</strong> such as picks, probabilities, grades and track records. Those are published sports information and PropBetEdge model output, not information about our users. Public information about athletes and other public figures that appears in sports coverage is handled under our <a href="/editorial-standards">Editorial Standards</a> and <a href="/legal">Legal</a> notices.</p>
+
+      <h2>Information we collect</h2>
+      <p class="trust-summary"><span>In short</span>Your email and membership details when you join, what you send us, and technical information about how our sites are used.</p>
+      <ul>
+        <li><strong>Membership and account information</strong> — the email address you use at checkout and to sign in, your membership plan and status, and the access (entitlements) it unlocks across PropBetEdge sites.</li>
+        <li><strong>Billing information</strong> — checkout and subscription management are handled by Stripe. We receive the email, plan, payment status and subscription details we need to grant and manage access. We do not receive or store your full payment-card number.</li>
+        <li><strong>Sign-in and session information</strong> — members sign in with a one-time link sent to their email instead of a password. When you sign in, a session cookie keeps you signed in and lets PropBetEdge sites check what your membership includes.</li>
+        <li><strong>Support communications</strong> — the emails you send to support, editorial or press contacts and our replies.</li>
+        <li><strong>Usage and device information</strong> — pages and articles viewed, links and features clicked, approximate engagement such as reading time and scroll depth, referring pages, browser and device type, and similar analytics described below.</li>
+        <li><strong>Security and request logs</strong> — our hosting and security systems record request information such as URL, time, user agent and referrer, including records of automated or abusive traffic.</li>
+      </ul>
+      <p>If we offer email-link reader access to articles, the email you enter is used to send the access link, and a cookie containing a one-way hash of that email (not the email itself) records that you are unlocked.</p>
+
+      <h2>How we use information</h2>
+      <ul>
+        <li>Provide PropBetEdge, sign you in and give members the access they paid for across sports and products.</li>
+        <li>Process subscriptions, renewals, cancellations and billing questions.</li>
+        <li>Answer support, editorial and press requests.</li>
+        <li>Send service messages, such as sign-in links and important membership or policy notices.</li>
+        <li>Understand which coverage, tools and pages are useful so we can improve them, mostly through aggregated analytics.</li>
+        <li>Remember preferences you set, such as followed teams and writers.</li>
+        <li>Protect the Services: detect and stop abuse, account sharing, fraud, scraping and attacks, and enforce our <a href="/terms">Terms of Service</a>.</li>
+        <li>Comply with law and respond to lawful requests.</li>
+      </ul>
+
+      <h2>Subscriptions and billing</h2>
+      <p class="trust-summary"><span>In short</span>Stripe runs checkout and the billing portal; we see what we need to manage your membership, not your card number.</p>
+      <p>All Access and other memberships are purchased through Stripe-hosted checkout, and you can manage or cancel a subscription in the Stripe billing portal linked from our footer and <a href="/support">Support</a> page. Stripe processes payment information under its own privacy policy. We keep subscription and transaction records needed for access, accounting, tax, fraud prevention and dispute handling.</p>
+
+      <h2>Service providers</h2>
+      <p class="trust-summary"><span>In short</span>We use a small set of providers to host, bill, email and measure PropBetEdge. We do not sell your personal information.</p>
+      <p>Providers that process information for us include:</p>
+      <ul>
+        <li>website hosting and edge delivery (including Vercel and Cloudflare);</li>
+        <li>payments and subscription billing (Stripe);</li>
+        <li>databases used to run memberships and product features;</li>
+        <li>transactional email for sign-in and access links;</li>
+        <li>analytics (Google Analytics).</li>
+      </ul>
+      <p>We may also disclose information when the law requires it, to protect the rights, safety and security of PropBetEdge, our members or others, or as part of a merger, acquisition, financing or sale of assets. We do not sell personal information, and we do not run third-party advertising networks or ad pixels on propbetedge.ai.</p>
+
+      <h2>Analytics, cookies and browser storage</h2>
+      <ul>
+        <li><strong>Google Analytics 4</strong> runs on PropBetEdge production sites. It sets analytics cookies on propbetedge.ai and its sport sites and records page views, clicks on links and calls to action, outbound clicks, article reading time and scroll depth, and changes to followed teams.</li>
+        <li><strong>Sign-in and access cookies</strong> keep members signed in and record access. They are necessary for paid features to work.</li>
+        <li><strong>Browser storage</strong> — your browser’s local storage keeps preferences such as followed teams, followed writers, your background scene and how often a membership promotion has been shown. This stays on your device; clearing site data removes it.</li>
+        <li><strong>Security</strong> — our edge network may set short-lived security cookies to separate people from automated traffic.</li>
+      </ul>
+      <p>You can block or delete cookies in your browser settings and use Google’s browser add-on to opt out of Google Analytics. Blocking sign-in cookies will sign you out of member features.</p>
+
+      <h2>Embedded and linked services</h2>
+      <p>Some pages load content from other services, which receive standard request information (such as your IP address and browser details) from your browser when that content loads: Google Fonts; Google’s preferred-sources tool; YouTube video embeds (article embeds use YouTube’s privacy-enhanced mode); team, league and athlete images from their publishers’ image servers or through our image service; and the Mother AI verification badge. Links to Stripe, Discord, X, LinkedIn, Bluesky, sportsbooks, prediction markets, leagues and publishers take you to services that operate under their own policies.</p>
+
+      <h2>Security</h2>
+      <p>We use encrypted connections, email sign-in links, protected session cookies, access controls and monitoring. No system is perfectly secure. Never send passwords, sign-in links, full card numbers or government IDs by email, and report suspected misuse of your account to <a href="mailto:support@proptechusa.ai">support@proptechusa.ai</a>.</p>
+
+      <h2>Retention</h2>
+      <p>We keep membership and entitlement records while your membership is active and for a reasonable period after it ends; billing and transaction records for as long as accounting, tax and legal obligations require; support correspondence for as long as needed to resolve the request and a reasonable period afterwards; and security and request logs for as long as needed to protect the Services and investigate incidents. Analytics data is kept under the retention settings of our analytics provider. When information is no longer needed, we delete or de-identify it.</p>
+
+      <h2>Your choices and rights</h2>
+      <p class="trust-summary"><span>In short</span>Depending on where you live, you can ask to see, correct, delete or export your information.</p>
+      <p>Depending on your location — including certain US states, the UK and the European Economic Area — you may have rights to access, correct, delete or receive a copy of your personal information, to object to or restrict certain processing, to withdraw consent, and not to be discriminated against for exercising these rights. To make a request, email <a href="mailto:support@proptechusa.ai">support@proptechusa.ai</a> with the subject “Privacy request” from the email address on your membership. We will verify the request and respond within the time the law requires. Deleting your information ends membership access; some records, such as billing records, may be kept where the law requires. You can also cancel a subscription at any time in the Stripe billing portal.</p>
+
+      <h2>Children</h2>
+      <p>PropBetEdge is intended for adults. It is not directed to anyone under 18, and wagering-related information is meant only for people of legal age where they live. We do not knowingly collect personal information from children. If you believe a child has given us personal information, contact us and we will delete it.</p>
+
+      <h2>International users</h2>
+      <p>PropBetEdge is operated from the United States. If you use it from elsewhere, your information will be processed in the United States and in other countries where our providers operate.</p>
+
+      <h2>Changes to this policy</h2>
+      <p>We will update this policy when our practices change. The “Last updated” date identifies the current version. For material changes, we may also notify members by email or on the site.</p>
+
+      <h2>Contact</h2>
+      <p>Privacy questions and requests: <a href="mailto:support@proptechusa.ai">support@proptechusa.ai</a>. Local Home Buyers LLC d/b/a PropTechUSA.ai, Saint Paul, Minnesota. See also the <a href="/terms">Terms of Service</a>, <a href="/legal">Legal</a> and <a href="/support">Support</a>.</p>
     `,
   },
   support: {
@@ -145,26 +237,47 @@ const pages = {
 
 const styles = `<style>
 .trust-page{padding:64px 0 84px}.trust-shell{max-width:920px}.trust-kicker{font-size:11px;font-weight:800;letter-spacing:.18em;color:var(--gold);margin-bottom:12px}.trust-page h1{font-family:var(--font-serif);font-size:clamp(42px,7vw,72px);line-height:1;letter-spacing:-.035em;margin:0 0 18px}.trust-lede{font-family:var(--font-serif);font-size:20px;line-height:1.55;color:var(--paper-dim);max-width:780px}.trust-meta{font-size:12px;color:var(--muted);margin:16px 0 34px}.trust-card{border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:clamp(22px,4vw,38px);background:rgba(255,255,255,.025)}.trust-card h2{font-size:19px;margin:30px 0 7px}.trust-card h2:first-child{margin-top:0}.trust-card p{color:var(--paper-dim);line-height:1.7}.trust-card a{color:var(--gold)}.trust-notice{border-left:3px solid var(--gold);background:rgba(233,199,90,.07);padding:14px 16px;margin:0 0 28px;color:var(--paper)}.trust-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.trust-grid section{border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:18px}.trust-grid section h2{margin:0 0 6px}.trust-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 30px}.trust-tabs a{border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:7px 11px;text-decoration:none;color:var(--paper-dim);font-size:12px}.trust-tabs a[aria-current="page"]{color:var(--gold);border-color:rgba(233,199,90,.55)}@media(max-width:680px){.trust-page{padding-top:40px}.trust-grid{grid-template-columns:1fr}}
+.trust-card h2[id]{scroll-margin-top:96px}.trust-card ul{margin:10px 0 0;padding-left:20px;color:var(--paper-dim);line-height:1.7}.trust-card li{margin:0 0 8px}.trust-card li strong,.trust-card p strong{color:var(--paper)}.trust-summary{margin:8px 0 14px;padding:10px 14px;border-left:2px solid rgba(212,175,55,.6);background:rgba(255,245,220,.035);color:var(--paper)!important;font-size:15px;line-height:1.55}.trust-summary span{margin-right:8px;font-family:var(--font-mono);font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}.trust-shell:has(.trust-layout){max-width:1140px}.trust-layout{display:grid;grid-template-columns:220px minmax(0,800px);gap:44px;align-items:start}.trust-toc{position:sticky;top:96px;max-height:calc(100vh - 120px);overflow:auto;padding-right:6px}.trust-toc-label{font-family:var(--font-mono);font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--paper-dim);margin:0 0 10px}.trust-toc ol,.trust-toc-mobile ol{list-style:none;margin:0;padding:0;counter-reset:t}.trust-toc li,.trust-toc-mobile li{counter-increment:t}.trust-toc a,.trust-toc-mobile a{display:flex;gap:10px;padding:5px 0;font-size:13px;line-height:1.4;color:var(--paper-dim);text-decoration:none}.trust-toc a::before,.trust-toc-mobile a::before{content:counter(t,decimal-leading-zero);font-family:var(--font-mono);font-size:10.5px;color:var(--gold);opacity:.8;padding-top:2px}.trust-toc a:hover,.trust-toc-mobile a:hover{color:var(--paper)}.trust-page a:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:2px}.trust-toc-mobile{display:none;margin:0 0 22px;border:1px solid rgba(255,245,220,.12);border-radius:12px;background:rgba(255,245,220,.03)}.trust-toc-mobile summary{cursor:pointer;padding:12px 16px;font-family:var(--font-mono);font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--paper-dim)}.trust-toc-mobile ol{padding:0 16px 12px}@media(max-width:1023px){.trust-layout{display:block}.trust-toc{display:none}.trust-toc-mobile{display:block}}
 </style>`;
+
+const TAB_LABELS = { privacy: 'Privacy', terms: 'Terms', legal: 'Legal', support: 'Support', media: 'Media' };
+
+// Section anchors + contents for the long legal documents (presentation only; the text is untouched).
+const slug = (text) => text.replace(/<[^>]+>/g, '').replace(/&amp;/g, 'and').replace(/^\d+\.\s*/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+function withAnchors(html) {
+  const toc = [];
+  const body = html.replace(/<h2>([\s\S]*?)<\/h2>/g, (_, label) => {
+    const id = slug(label);
+    toc.push({ id, label });
+    return `<h2 id="${id}">${label}</h2>`;
+  });
+  return { body, toc };
+}
 
 export function renderTrustPage(root, kind, setMeta) {
   const page = pages[kind];
   if (!page) return;
   const canonical = `${SITE}/${kind}`;
   setMeta?.({ title: page.title, description: page.description, canonical });
+  const { body, toc } = page.toc ? withAnchors(page.body) : { body: page.body, toc: [] };
+  const contents = toc.length ? `<ol>${toc.map((t) => `<li><a href="#${t.id}">${t.label}</a></li>`).join('')}</ol>` : '';
   root.innerHTML = `
     ${renderHeader({ mode: 'editorial' })}
     ${styles}
     <main class="trust-page">
       <div class="container trust-shell">
         <nav class="trust-tabs" aria-label="Trust and company">
-          ${['terms','legal','support','media'].map((key) => `<a href="/${key}"${key === kind ? ' aria-current="page"' : ''}>${key[0].toUpperCase() + key.slice(1)}</a>`).join('')}
+          ${['privacy','terms','legal','support','media'].map((key) => `<a href="/${key}"${key === kind ? ' aria-current="page"' : ''}>${TAB_LABELS[key]}</a>`).join('')}
         </nav>
         <div class="trust-kicker">${page.eyebrow}</div>
         <h1>${page.heading}</h1>
         <p class="trust-lede">${page.intro}</p>
         <p class="trust-meta">Effective October 4, 2026 · Last updated October 4, 2026</p>
-        <article class="trust-card">${page.body}</article>
+        ${contents ? `<details class="trust-toc-mobile"><summary>On this page · ${toc.length} sections</summary>${contents}</details>` : ''}
+        <div class="${contents ? 'trust-layout' : ''}">
+          ${contents ? `<nav class="trust-toc" aria-label="On this page"><div class="trust-toc-label">On this page</div>${contents}</nav>` : ''}
+          <article class="trust-card">${body}</article>
+        </div>
       </div>
     </main>
     ${renderHomeCloser()}

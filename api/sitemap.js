@@ -89,6 +89,7 @@ function staticSitemap() {
     '/games',
     '/pro',
     '/about',
+    '/privacy',
     '/terms',
     '/legal',
     '/support',

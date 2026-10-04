@@ -119,7 +119,7 @@ export function renderFooter({ cta = true } = {}) {
           </div>
           <div class="nf-row">
             <h4>Company &amp; Legal</h4>
-            <p>${a('/about', 'About PropBetEdge')}${a('/terms', 'Terms of Service')}${a('/legal', 'Legal')}${a('/support', 'Support')}${a('/media', 'Media')}${a('https://billing.stripe.com/p/login/cNi3cv2vY7em3lr4oj7wA00', 'Manage Subscription', 'target="_blank" rel="noopener noreferrer"')}${a('mailto:support@proptechusa.ai', 'Contact')}</p>
+            <p>${a('/about', 'About PropBetEdge')}${a('/privacy', 'Privacy Policy')}${a('/terms', 'Terms of Service')}${a('/legal', 'Legal')}${a('/support', 'Support')}${a('/media', 'Media')}${a('https://billing.stripe.com/p/login/cNi3cv2vY7em3lr4oj7wA00', 'Manage Subscription', 'target="_blank" rel="noopener noreferrer"')}${a('mailto:support@proptechusa.ai', 'Contact')}</p>
           </div>
         </div>
 

@@ -23,7 +23,7 @@ const groupOf = (href) => { const at = footer.indexOf(`href="${href}"`, footer.i
 
 test('main-site trust / legal / editorial inventory: every required link present and labelled', () => {
   const required = {
-    '/about': /About PropBetEdge/, '/terms': /Terms of Service/, '/legal': /Legal/, '/support': /Support/, '/media': /Media/,
+    '/about': /About PropBetEdge/, '/privacy': /Privacy Policy/, '/terms': /Terms of Service/, '/legal': /Legal/, '/support': /Support/, '/media': /Media/,
     '/editorial-standards': /Editorial Standards/, '/authors': /Editorial Team/,
     '/authors/justin-erickson': /Justin Erickson/, '/authors/propbetedge-editorial-team': /PropBetEdge Editorial Team/,
     '/authors/ty-whitney': /Ty Whitney/, '/authors/erik-schwartz': /Erik Schwartz/,
@@ -35,7 +35,7 @@ test('main-site trust / legal / editorial inventory: every required link present
     assert.ok(x, `missing ${href}`);
     assert.match(x.text, label, href);
   }
-  for (const h of ['/terms', '/legal', '/support', '/media', '/about']) assert.equal(groupOf(h), 'Company & Legal', h);
+  for (const h of ['/privacy', '/terms', '/legal', '/support', '/media', '/about']) assert.equal(groupOf(h), 'Company & Legal', h);
   for (const h of ['/authors', '/authors/justin-erickson', '/editorial-standards']) assert.equal(groupOf(h), 'Editorial & Trust', h);
 });
 
