@@ -6,10 +6,12 @@ import fs from 'node:fs';
 import { ALL_ACCESS, SPORTS } from '../src/pro-content.js';
 import { PROPBET_LINKS } from '../src/ads-config.js';
 
-const EIGHT = ['mlb', 'nfl', 'nba', 'nhl', 'wnba', 'ufc', 'tennis', 'soccer'];
+// Sport list comes from the vendored network registry (src/network/family.json), not a hard-coded count.
+const FAMILY = JSON.parse(fs.readFileSync(new URL('../src/network/family.json', import.meta.url), 'utf8'));
+const FAMILY_SPORTS = FAMILY.sports.map((s) => s.key);
 
-test('All Access includes all eight PropBetEdge sports', () => {
-  assert.deepEqual(SPORTS.map((s) => s.key), EIGHT);
+test('All Access includes every PropBetEdge family sport', () => {
+  assert.deepEqual([...SPORTS.map((s) => s.key)].sort(), [...FAMILY_SPORTS].sort());
   const tennis = SPORTS.find((s) => s.key === 'tennis');
   assert.equal(tennis.url, 'https://tennis.propbetedge.ai');
   assert.equal(tennis.label, 'Tennis');
@@ -59,11 +61,11 @@ test('Tennis and Soccer are Pro; Golf and Boxing are Q1 2027 roadmap sports', as
   assert.match(buildProHtml({ checkoutSuccess: true }), /covers the Pro features across all ten live sports/);
 });
 
-test('root WebSite schema lists all eight sport properties once', async () => {
+test('root WebSite schema lists every family sport property once, plus Predictions', async () => {
   const { websiteSchema } = await import('../src/schema.js');
   const urls = websiteSchema().hasPart.map((p) => p.url);
-  assert.equal(urls.length, 8);
-  assert.equal(new Set(urls).size, 8);
+  assert.equal(urls.length, FAMILY_SPORTS.length + FAMILY.products.length);
+  assert.equal(new Set(urls).size, urls.length);
   assert.ok(urls.includes('https://tennis.propbetedge.ai/'));
   assert.ok(urls.includes('https://soccer.propbetedge.ai/'));
 });
