@@ -161,7 +161,7 @@ export async function renderArticle(root, sport, slug, setMeta) {
         ${renderRailShell()}
       </div>
     </main>
-    ${renderFooter()}
+    ${renderFooter({ cta: false })}
   `;
 
   graph.mountShareBars(document);
