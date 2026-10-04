@@ -238,6 +238,7 @@ function clearAndRoute() {
   if (path === '/about') return renderAbout(root, setMeta);
 
   if (path === '/terms') return renderTrustPage(root, 'terms', setMeta);
+  if (path === '/legal') return renderTrustPage(root, 'legal', setMeta);
   if (path === '/support') return renderTrustPage(root, 'support', setMeta);
   if (path === '/media') return renderTrustPage(root, 'media', setMeta);
 

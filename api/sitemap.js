@@ -90,6 +90,7 @@ function staticSitemap() {
     '/pro',
     '/about',
     '/terms',
+    '/legal',
     '/support',
     '/media',
     '/editorial-standards',
