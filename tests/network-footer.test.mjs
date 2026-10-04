@@ -93,8 +93,11 @@ test('no duplicate directory destinations (only the band repeats All Access, API
 });
 
 test('warm palette only; preferred source + Mother badge kept; legal line; focus visible; no inline styles', () => {
-  assert.match(css, /--nf-surface: rgba\(29, 25, 20, \.92\)/, 'espresso --ink-2');
-  assert.match(css, /--nf-band: rgba\(42, 36, 28, \.9\)/, 'charcoal --ink-3');
+  assert.match(css, /--nf-surface: rgba\(29, 25, 20, \.74\)/, 'translucent espresso --ink-2 glass');
+  assert.match(css, /--nf-surface-solid: rgba\(29, 25, 20, \.95\)/, 'opaque fallback');
+  assert.match(css, /@supports \(\(backdrop-filter: blur\(1px\)\) or \(-webkit-backdrop-filter: blur\(1px\)\)\)/, 'glass only where supported');
+  assert.match(css, /-webkit-backdrop-filter: blur\(20px\) saturate\(120%\);\s+backdrop-filter: blur\(20px\) saturate\(120%\)/);
+  assert.match(css, /--nf-band: rgba\(42, 36, 28, \.55\)/, 'charcoal --ink-3');
   assert.doesNotMatch(css, /rgba\(27, 31, 40|#a9b0bd|rgba\(255, 255, 255/i, 'no navy/blue-grey or cold white');
   assert.match(footer, /data-pbe-preferred-source data-surface="footer" data-sport="network"/);
   assert.match(footer, /<img src="https:\/\/api\.mother\.proptechusa\.ai\/badge\/[^"]+\.svg"[^>]*width="236" height="48"/);
