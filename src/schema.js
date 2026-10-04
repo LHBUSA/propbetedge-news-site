@@ -221,7 +221,7 @@ export function profilePageSchema(slug, author) {
     '@type': isOrganization ? 'Organization' : 'Person',
     '@id': personId,
     name: author.name,
-    description: stripHtml(author.bio).slice(0, 500),
+    description: author.summary || stripHtml(author.bio).slice(0, 500),
     url: profileUrl,
     ...(isOrganization
       ? { memberOf: { '@id': ORG_ID } }

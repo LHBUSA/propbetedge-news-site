@@ -19,6 +19,7 @@ import { getAuthorBySlug as getEditorialAuthor, listAuthors as listEditorialAuth
 import { renderHomeCloser } from '../components/home-closer.js';
 import '../styles/home-closer.css';
 import { renderNotFound } from './404.js';
+import { renderFounderProfile } from './author-founder.js';
 import {
   organizationSchema, websiteSchema, breadcrumbSchema,
   profilePageSchema, injectSchemas,
@@ -68,6 +69,9 @@ export async function renderAuthor(root, slug, setMeta) {
       { name: author.name },
     ]),
   ], 'jsonld-author');
+
+  // Founder / technical-operator presentation: chosen by the registry field, never by slug.
+  if (author.profileVariant === 'founder' && author.founder) return renderFounderProfile(root, slug, author);
 
   // Skeleton
   root.innerHTML = `

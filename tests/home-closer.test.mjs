@@ -26,7 +26,7 @@ test('no fabricated numbers, no sport/product navigation, no promo code', () => 
 // The generic "Go deeper than the article." network CTA is suppressed on an explicit list only: the homepage (its own
 // brand closer), ARTICLES (owner P0 2026-10-04: the sport-specific MORE THAN NEWS closer from article-funnel.js does
 // that job) and the trust / author / editorial pages that already opted out. Every other page keeps it.
-const SUPPRESSED = ['home.js', 'article.js', 'author.js', 'authors.js', 'editorial-standards.js', 'trust.js'];
+const SUPPRESSED = ['home.js', 'article.js', 'author.js', 'authors.js', 'editorial-standards.js', 'trust.js', 'author-founder.js'];
 
 test('scope: generic footer CTA suppressed on the explicit list only; every other page keeps it', () => {
   assert.match(renderFooter(), /footer-cta/);

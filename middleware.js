@@ -1378,6 +1378,8 @@ function buildAuthorSchema(slug, author, canonical) {
     worksFor: isTeam ? undefined : { '@id': `${SITE}/#organization` },
     jobTitle: isTeam ? undefined : author.role,
     memberOf: isTeam ? { '@id': `${SITE}/#organization` } : undefined,
+    description: author.summary || undefined,
+    knowsAbout: isTeam || !author.expertise?.length ? undefined : [...author.expertise],
   };
 
   return {

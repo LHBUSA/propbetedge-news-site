@@ -38,6 +38,36 @@ PropBetEdge is operated within the PropTechUSA.ai organization. Justin is based 
     location: 'Saint Paul, MN',
     initials: 'JE',
     accent: 'gold',
+    // Founder / technical-operator presentation (src/pages/author-founder.js). Every line below is derived from the
+    // bio, summary and accountability copy above: no counts, no metrics, nothing that has to be re-verified monthly.
+    profileVariant: 'founder',
+    founder: Object.freeze({
+      eyebrow: 'Founder · Product Architect',
+      positioning: 'Building sports-intelligence systems where live data, predictive models, journalism and permanent records meet.',
+      facts: Object.freeze([
+        'Founder · PropBetEdge',
+        'Founder · PropTechUSA.ai',
+        'Saint Paul, Minnesota',
+        'Sports intelligence · data infrastructure · model governance',
+      ]),
+      pillars: Object.freeze([
+        Object.freeze({ title: 'Sports Intelligence', body: 'How PropBetEdge connects live sports data, models, PBEcast, editorial context and permanent records into one research surface.' }),
+        Object.freeze({ title: 'Data Infrastructure', body: 'APIs, evidence provenance, canonical identifiers, ingestion and the systems architecture that keeps every claim traceable to its source.' }),
+        Object.freeze({ title: 'Model Governance', body: 'Versioned model behavior, explicit uncertainty, predictions frozen before results are known, and model output kept separate from market prices.' }),
+      ]),
+      principles: Object.freeze([
+        Object.freeze({ title: 'Evidence over fluency', body: 'A confident sentence is not a fact. Facts need provenance.' }),
+        Object.freeze({ title: 'Never rewrite the record', body: 'Predictions and evidence stay historically inspectable after results are known.' }),
+        Object.freeze({ title: 'Models are probabilities', body: 'Output is a statement of uncertainty, not a promise.' }),
+        Object.freeze({ title: 'Build the tooling', body: 'Product and research infrastructure are part of the editorial advantage.' }),
+      ]),
+      network: Object.freeze([
+        Object.freeze({ label: 'PropBetEdge', href: '/about' }),
+        Object.freeze({ label: 'Predictions', href: 'https://predictions.propbetedge.ai/' }),
+        Object.freeze({ label: 'PropSports API', href: 'https://propsports.proptechusa.ai' }),
+        Object.freeze({ label: 'PropTechUSA.ai', href: 'https://proptechusa.ai' }),
+      ]),
+    }),
   }),
   'erik-schwartz': Object.freeze({
     name: 'Erik Schwartz',
