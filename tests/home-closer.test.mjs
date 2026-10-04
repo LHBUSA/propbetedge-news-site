@@ -31,7 +31,7 @@ const SUPPRESSED = ['home.js', 'article.js', 'author.js', 'authors.js', 'editori
 test('scope: generic footer CTA suppressed on the explicit list only; every other page keeps it', () => {
   assert.match(renderFooter(), /footer-cta/);
   assert.doesNotMatch(renderFooter({ cta: false }), /footer-cta/);
-  assert.match(renderFooter({ cta: false }), /<footer class="footer">/, 'the real footer stays');
+  assert.match(renderFooter({ cta: false }), /<footer class="footer nf">/, 'the real footer stays');
   const home = fs.readFileSync('src/pages/home.js', 'utf8');
   assert.match(home, /\$\{renderHomeCloser\(\)\}\s*<\/main>\s*\$\{renderFooter\(\{ cta: false \}\)\}/);
   for (const f of fs.readdirSync('src/pages').filter((x) => x.endsWith('.js'))) {
@@ -47,7 +47,7 @@ test('article: no generic footer CTA, real footer kept, sport-specific MORE THAN
   assert.doesNotMatch(article, /renderFooter\(\)|ad_footer_banner|footer-cta|Go deeper than the article/);
   const footer = renderFooter({ cta: false });
   assert.doesNotMatch(footer, /footer-cta|Go deeper than the article\./);
-  assert.match(footer, /<footer class="footer">/);
+  assert.match(footer, /<footer class="footer nf">/);
   const funnel = fs.readFileSync('src/article-funnel.js', 'utf8');
   assert.match(funnel, /renderMoreThanNewsCta\(sport, \{ placement: 'article_footer', pageType: 'article', slug \}\)/);
   assert.match(fs.readFileSync('src/intelligence-cta.js', 'utf8'), /<aside class="pbe-intel-closer"/);

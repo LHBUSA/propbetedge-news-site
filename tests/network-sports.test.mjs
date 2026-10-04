@@ -5,6 +5,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { ALL_ACCESS, SPORTS } from '../src/pro-content.js';
 import { PROPBET_LINKS } from '../src/ads-config.js';
+import { renderFooter } from '../src/components/footer.js';
+
+const footerHrefs = () => [...renderFooter({ cta: false }).matchAll(/<a\b[^>]*\bhref="([^"]+)"/g)].map((m) => m[1]);
 
 // Sport list comes from the vendored network registry (src/network/family.json), not a hard-coded count.
 const FAMILY = JSON.parse(fs.readFileSync(new URL('../src/network/family.json', import.meta.url), 'utf8'));
@@ -33,19 +36,18 @@ test('Stripe identity unchanged: one product, one price, one Payment Link, THEED
 });
 
 test('root footer links every PropBetEdge sport, Tennis included', () => {
-  const footer = fs.readFileSync(new URL('../src/components/footer.js', import.meta.url), 'utf8');
+  const hrefs = footerHrefs();
   assert.equal(PROPBET_LINKS.tennis, 'https://tennis.propbetedge.ai');
   for (const key of ['picks_mlb', 'picks_nfl', 'picks_nba', 'picks_nhl', 'picks_ufc', 'tennis']) {
-    assert.ok(footer.includes(`\${PROPBET_LINKS.${key}}`), key);
+    assert.ok(hrefs.includes(PROPBET_LINKS[key]), key);
   }
-  assert.ok(footer.includes('https://wnba.propbetedge.ai'), 'wnba');
+  assert.ok(hrefs.includes('https://wnba.propbetedge.ai'), 'wnba');
 });
 
 test('Soccer is a network discovery link and an included All Access sport', () => {
-  const footer = fs.readFileSync(new URL('../src/components/footer.js', import.meta.url), 'utf8');
   assert.equal(PROPBET_LINKS.soccer, 'https://soccer.propbetedge.ai');
-  assert.ok(footer.includes('${PROPBET_LINKS.soccer}'));
-  assert.match(footer, /Soccer Intelligence <span class="footer-badge">Pro<\/span>/);
+  assert.ok(footerHrefs().includes(PROPBET_LINKS.soccer));
+  assert.match(renderFooter(), /Soccer<span class="nf-sr"> Intelligence<\/span>/, 'accessible name keeps "Soccer Intelligence"');
   assert.equal(SPORTS.some((s) => s.key === 'soccer'), true, 'Soccer is included in All Access');
 });
 
@@ -72,8 +74,9 @@ test('root WebSite schema lists every family sport property once, plus Predictio
   assert.ok(urls.includes('https://soccer.propbetedge.ai/'));
 });
 
-test('Tennis and Soccer footer badges are Pro', () => {
-  const footer = fs.readFileSync(new URL('../src/components/footer.js', import.meta.url), 'utf8');
-  assert.match(footer, /Tennis Intelligence <span class="footer-badge">Pro<\/span>/);
-  assert.match(footer, /Soccer Intelligence <span class="footer-badge">Pro<\/span>/);
+test('footer: commercial model carried once by All Access, not a Pro badge on every sport', () => {
+  const html = renderFooter({ cta: false });
+  assert.doesNotMatch(html, /footer-badge">Pro</);
+  assert.match(html, /<strong>All Access<\/strong> <span class="nf-price">\$29\/mo<\/span>/);
+  assert.match(html, /PropBetEdge Predictions <span class="nf-tag">Included<\/span>/);
 });

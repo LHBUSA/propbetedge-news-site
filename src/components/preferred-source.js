@@ -43,9 +43,14 @@ function escapeAttr(value) {
 /* surface: 'footer' | 'article' | 'homepage'. The href is the working fallback,
  * so the control still does the right thing with the SDK blocked or before any
  * JS has bound. */
-export function renderPreferredSource({ surface = 'footer', sport = 'network' } = {}) {
+export function renderPreferredSource({ surface = 'footer', sport = 'network', compact = false } = {}) {
   const href = escapeAttr(preferredSourceDeeplink());
   const attrs = `href="${href}" target="_blank" rel="noopener" data-pbe-preferred-source data-surface="${escapeAttr(surface)}" data-sport="${escapeAttr(sport)}"`;
+
+  // compact: one inline control for the footer Trust & Discovery strip (same click handling + analytics surface).
+  if (compact) {
+    return `<a class="pbe-psrc-inline" ${attrs} aria-label="Add PropBetEdge as a preferred source in Google Search (opens Google)">Google Preferred Source</a>`;
+  }
 
   if (surface === 'article') {
     return `

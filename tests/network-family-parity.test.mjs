@@ -46,7 +46,7 @@ test('footer links every family sport in registry order, Predictions in its own 
   const predAt = footer.indexOf(`href="${PRED_URL}"`);
   const between = footer.slice(f1At, predAt);
   assert.match(between, /<h4[^>]*>[^<]*Intelligence<\/h4>/, 'Predictions has its own group heading');
-  assert.match(footer, /F1 Intelligence/);
+  assert.match(footer, /F1<span class="nf-sr"> Intelligence<\/span>/, 'accessible name "F1 Intelligence"');
   assert.match(footer, />PropBetEdge Predictions </);
 });
 
