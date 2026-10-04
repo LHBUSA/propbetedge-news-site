@@ -239,8 +239,9 @@ test('evidence explainers never apply a character cap across sports', () => {
 
 test('evidence card CSS explicitly forbids line-clamp and overflow clipping', () => {
   const css = fs.readFileSync(new URL('../src/styles/pbe-article-visuals.css', import.meta.url), 'utf8');
-  assert.match(css, /\.pbe-av-evidence-card p\s*\{[\s\S]*max-height:\s*none !important;/);
-  assert.match(css, /\.pbe-av-evidence-card p\s*\{[\s\S]*overflow:\s*visible !important;/);
+  // the rule is written for a selector list (`.pbe-av-evidence-card p, .pbe-av-evidence-card.is-statline p {`)
+  assert.match(css, /\.pbe-av-evidence-card p[^{]*\{[^}]*max-height:\s*none !important;/);
+  assert.match(css, /\.pbe-av-evidence-card p[^{]*\{[^}]*overflow:\s*visible !important;/);
   assert.match(css, /-webkit-line-clamp:\s*unset !important;/);
   assert.match(css, /text-overflow:\s*clip !important;/);
 });

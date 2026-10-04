@@ -12,6 +12,7 @@ const FAMILY_SPORTS = FAMILY.sports.map((s) => s.key);
 
 test('All Access includes every PropBetEdge family sport', () => {
   assert.deepEqual([...SPORTS.map((s) => s.key)].sort(), [...FAMILY_SPORTS].sort());
+  assert.equal(SPORTS.some((s) => s.key === 'predictions'), false, 'Predictions is a product, not a sport');
   const tennis = SPORTS.find((s) => s.key === 'tennis');
   assert.equal(tennis.url, 'https://tennis.propbetedge.ai');
   assert.equal(tennis.label, 'Tennis');
@@ -48,7 +49,7 @@ test('Soccer is a network discovery link and an included All Access sport', () =
   assert.equal(SPORTS.some((s) => s.key === 'soccer'), true, 'Soccer is included in All Access');
 });
 
-test('Tennis and Soccer are Pro; Golf and Boxing are Q1 2027 roadmap sports', async () => {
+test('Tennis, Soccer and Golf are Pro, F1 is live; Boxing is the Q1 2027 roadmap sport', async () => {
   const { buildProHtml, UPCOMING_SPORTS } = await import('../src/pro-content.js');
   const html = buildProHtml();
   assert.match(html, /Tennis Pro<\/li>/);
@@ -56,7 +57,7 @@ test('Tennis and Soccer are Pro; Golf and Boxing are Q1 2027 roadmap sports', as
   assert.deepEqual(UPCOMING_SPORTS.map((s) => s.key), ['boxing']);
   assert.match(html, /Golf Pro<\/li>/);
   assert.match(html, /Boxing Pro — coming Q1 2027/);
-  assert.match(html, /One membership\. Nine sports\./);
+  assert.match(html, /<span>One membership\.<\/span>\s*<span>Ten sports\.<\/span>\s*<span>All Predictions\.<\/span>/);
   assert.match(html, /MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf · F1/);
   assert.match(buildProHtml({ checkoutSuccess: true }), /covers the Pro features across all ten live sports/);
 });
@@ -66,6 +67,7 @@ test('root WebSite schema lists every family sport property once, plus Predictio
   const urls = websiteSchema().hasPart.map((p) => p.url);
   assert.equal(urls.length, FAMILY_SPORTS.length + FAMILY.products.length);
   assert.equal(new Set(urls).size, urls.length);
+  assert.ok(urls.includes('https://predictions.propbetedge.ai/'));
   assert.ok(urls.includes('https://tennis.propbetedge.ai/'));
   assert.ok(urls.includes('https://soccer.propbetedge.ai/'));
 });

@@ -18,6 +18,7 @@ const EXPECTED = {
   tennis: ['https://tennis.propbetedge.ai/', 'Tennis intelligence beyond the scoreline.'],
   soccer: ['https://soccer.propbetedge.ai/', 'Soccer intelligence beyond the scoreline.'],
   golf: ['https://golf.propbetedge.ai/', 'Golf intelligence beyond the leaderboard.'],
+  f1: ['https://f1.propbetedge.ai/', 'Formula 1 intelligence beyond the timing screen.'],
 };
 
 const read = (rel) => fs.readFileSync(new URL(rel, import.meta.url), 'utf8');
@@ -57,7 +58,7 @@ test('every CTA opens in the same tab and carries analytics attributes', () => {
   for (const a of anchors) {
     assert.ok(!/target=/.test(a), `same tab: ${a}`);
     assert.match(a, /data-pbe-intel-cta="[a-z_]+"/);
-    assert.match(a, /data-pbe-intel-sport="[a-z]+"/);
+    assert.match(a, /data-pbe-intel-sport="[a-z0-9]+"/);
   }
   assert.match(renderSectionHeroCta('nhl'), /Hockey intelligence beyond the scoreboard\./);
   assert.match(renderSectionHeroCta('nhl'), /Open NHL Intelligence/);
@@ -104,7 +105,9 @@ test('surfaces use the registry, not raw product URLs', () => {
 
 test('news navigation keeps core newsroom links direct and routes the rest to each sport newsroom', () => {
   const header = read('../src/components/header.js');
-  for (const path of ['/news/mlb', '/news/nfl', '/news/nba', '/news/nhl']) assert.ok(header.includes(path), path);
+  // core newsroom paths are defined once in the registry (newsPath) and rendered through newsHref()
+  assert.match(header, /newsHref\(key\)/);
+  for (const [key, path] of [['mlb', '/news/mlb'], ['nfl', '/news/nfl'], ['nba', '/news/nba'], ['nhl', '/news/nhl']]) assert.equal(INTELLIGENCE_SPORTS[key].newsPath, path, path);
   for (const path of [
     'https://wnba.propbetedge.ai/news',
     'https://ufc.propbetedge.ai/news',

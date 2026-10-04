@@ -129,7 +129,7 @@ async function resolveMeta(pathname, search = '') {
     return {
       canonical: `${SITE}/`,
       title: 'PropBetEdge — Live Sports Intelligence & Predictive Models',
-      description: 'Live sports intelligence, proprietary prediction models, Player DNA, PBEcast, news and deep analytics across MLB, NFL, NBA, WNBA, NHL, UFC and Tennis.',
+      description: 'Live sports intelligence, proprietary prediction models, Player DNA, PBEcast, news and deep analytics across MLB, NFL, NBA, WNBA, NHL, UFC, Tennis, Soccer, Golf and F1.',
       image: NETWORK_SOCIAL_IMAGE.url,
     };
   }

@@ -27,7 +27,7 @@ test('title and description: premium, descriptive, SERP-length, product first (n
   assert.ok(seo.PRO_TITLE.length <= 60, `title ${seo.PRO_TITLE.length} chars`);
   assert.equal(/THEEDGE25|25%/.test(seo.PRO_TITLE), false, 'the discount never leads the title');
   assert.ok(seo.PRO_DESCRIPTION.length >= 140 && seo.PRO_DESCRIPTION.length <= 300, `description ${seo.PRO_DESCRIPTION.length} chars`);
-  for (const word of ['9 Pro sports', '$29/month', 'sports intelligence operating system', 'sport-specific analytical engines', 'tracked decisions', 'shadow research', 'PBEcast', 'Golf Pro', 'Boxing Pro', 'Q1 2027']) {
+  for (const word of ['10 live sports', '$29/month', 'sports intelligence operating system', 'sport-specific analytical engines', 'tracked decisions', 'shadow research', 'PBEcast', 'Golf and F1', 'Boxing Pro', 'Q1 2027']) {
     assert.ok(seo.PRO_DESCRIPTION.includes(word), word);
   }
   assert.equal(/best|#1|most accurate/i.test(seo.PRO_TITLE + seo.PRO_DESCRIPTION), false, 'no fabricated superlatives');

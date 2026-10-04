@@ -33,7 +33,9 @@ test('About V3 links all ten live sport intelligence products', () => {
 test('About V2 has server-rendered parity for the core message and network links', () => {
   assert.match(middleware, /About PropBetEdge — The Sports Intelligence Network/);
   assert.match(middleware, /Sports are deeper than the scoreboard/);
-  assert.match(middleware, /Nine live sport intelligence products/);
+  assert.match(middleware, /Ten live sport intelligence products/);
+  assert.match(middleware, /f1\.propbetedge\.ai/);
+  assert.match(middleware, /href="https:\/\/predictions\.propbetedge\.ai\/">PropBetEdge Predictions<\/a>/);
   assert.match(middleware, /tennis\.propbetedge\.ai/);
 });
 

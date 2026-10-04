@@ -161,15 +161,15 @@ test('every tool destination is a verified, well-formed URL (hash routes where p
   for (const d of TOOL_DOCS) {
     assert.ok(!ids.has(d.id), `duplicate tool id ${d.id}`);
     ids.add(d.id);
-    assert.ok(d.href.startsWith('/') || /^https:\/\/(mlb|nfl|nba|wnba|nhl|ufc|tennis|soccer|golf)\.propbetedge\.ai(\/|$)/.test(d.href), d.href);
+    assert.ok(d.href.startsWith('/') || /^https:\/\/(mlb|nfl|nba|wnba|nhl|ufc|tennis|soccer|golf|f1|predictions)\.propbetedge\.ai(\/|$)/.test(d.href), d.href);
     if (/^https:\/\/(nfl|nba|nhl)\./.test(d.href) && d.href.replace(/^https:\/\/[^/]+/, '').length > 1) {
       assert.match(d.href, /\/#/, `${d.href} must use the hash route`);
     }
     assert.ok(d.label, `${d.id} has a display label`);
   }
   assert.ok(!TOOL_DOCS.some((d) => /ufc\.propbetedge\.ai\/(fight-dna|track-record)$/.test(d.href)), 'UFC /fight-dna and /track-record 404');
-  assert.deepEqual(EMPTY_STATE.live.map((d) => d.title), ['MLB', 'NFL', 'NBA', 'WNBA', 'NHL', 'UFC', 'Tennis', 'Soccer', 'Golf']);
-  assert.deepEqual(EMPTY_STATE.popular.map((d) => d.title), ['PBE Picks', 'PBEcast', 'Fight Simulator', 'HR Targets', 'Fight DNA']);
+  assert.deepEqual(EMPTY_STATE.live.map((d) => d.title), ['MLB', 'NFL', 'NBA', 'WNBA', 'NHL', 'UFC', 'Tennis', 'Soccer', 'Golf', 'F1']);
+  assert.deepEqual(EMPTY_STATE.popular.map((d) => d.title), ['PBE Picks', 'PBEcast', 'Predictions', 'Fight Simulator', 'HR Targets', 'Fight DNA']);
 });
 
 test('sitemap-backed sports and Learn manifest produce searchable first-party docs', () => {
@@ -307,6 +307,7 @@ function seededEnv() {
     [KEYS.tennis]: { built_at: fresh, docs: [] },
     [KEYS.soccer]: { built_at: fresh, docs: [] },
     [KEYS.golf]: { built_at: fresh, docs: [] },
+    [KEYS.f1]: { built_at: fresh, docs: [] },
     [KEYS.learn]: { built_at: fresh, docs: [] },
     [KEYS.storiesManifest]: {
       months: Object.fromEntries(Object.entries(byMonth).map(([m, v]) => [m, v.length])),

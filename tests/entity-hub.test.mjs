@@ -15,6 +15,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 import {
   validatePlayerSnapshot, validateTeamSnapshot, completeness, freshnessOf,
@@ -152,14 +153,21 @@ for (const sport of ['nhl', 'mlb', 'nba']) {
   });
 }
 
-test('nfl teams degrade to identity without the PropSports key, and never throw', async () => {
+// Since 4fbbd8c NFL team snapshots are composed from PropBetEdge-owned authorities (no PropSports key). Offline,
+// the refresh must fail closed with a reason and never throw; the key is no longer an input to the team path.
+test('nfl teams no longer need the PropSports key, and fail closed (never throw) when the read-through is unavailable', async () => {
   const target = teamRefreshTargets('nfl')[0];
-  const { snapshot, route } = await refreshTeam('nfl', target, { env: {} });
-  assert.ok(snapshot, 'a missing key must not produce a missing snapshot');
-  assert.deepEqual(validateTeamSnapshot(snapshot).problems, []);
-  assert.equal(completeness(snapshot), 'identity_only');
-  assert.match(route, /no_key/);
-  assert.equal(snapshot.roster.length, 0);
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('offline'); };
+  try {
+    const out = await refreshTeam('nfl', target, { env: {} });
+    if (out.snapshot) assert.deepEqual(validateTeamSnapshot(out.snapshot).problems, []);
+    else assert.match(out.reason || out.route || '', /nfl_team_readthrough|normalize_empty/);
+  } finally { globalThis.fetch = realFetch; }
+  const src = fs.readFileSync(new URL('../src/entity-hub/refresh.js', import.meta.url), 'utf8');
+  const teamFn = src.slice(src.indexOf('async function refreshNflTeam'), src.indexOf('async function refreshNflTeam') + 1200);
+  assert.doesNotMatch(teamFn, /PROPSPORTS|propsportsHeaders|X-API-Key/, 'team path does not use the PropSports key');
+  assert.match(teamFn, /pbe_nfl_team_readthrough_v1/);
 });
 
 test('the PropSports key is never defaulted or embedded', () => {

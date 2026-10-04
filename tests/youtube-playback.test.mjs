@@ -6,7 +6,7 @@ const sport = readFileSync(new URL('../src/pages/sport.js', import.meta.url), 'u
 const article = readFileSync(new URL('../src/pages/article.js', import.meta.url), 'utf8');
 
 test('standard sport highlight videos still play on-site', () => {
-  assert.match(sport, /youtube\\.com\\/embed/);
+  assert.match(sport, /youtube\.com\/embed/);
   assert.match(sport, /data-highlight-video-id/);
   assert.match(sport, /Play here/);
   assert.match(sport, /Playing on PropBetEdge/);
@@ -23,11 +23,17 @@ test('article YouTube media derives a privacy-enhanced on-site embed', () => {
 
 
 
-test('sport highlights use plain standard YouTube embeds without the fragile IFrame API wrapper', () => {
-  assert.match(sport, /youtube\\.com\\/embed/);
-  assert.doesNotMatch(sport, /youtube\.com\/iframe_api/);
-  assert.doesNotMatch(sport, /onYouTubeIframeAPIReady/);
-  assert.doesNotMatch(sport, /new YT\.Player/);
+// Since b0be918 the IFrame API exists for NFL ONLY (runtime restriction detection); every other sport keeps plain
+// standard embeds. The API loader and player construction must stay inside the NFL path.
+test('sport highlights use plain standard YouTube embeds; the IFrame API is confined to the NFL path', () => {
+  assert.match(sport, /youtube\.com\/embed/);
+  const nflStart = sport.indexOf('function loadNflYouTubeApi');
+  assert.ok(nflStart >= 0, 'the NFL-only API loader exists');
+  for (const re of [/youtube\.com\/iframe_api/g, /onYouTubeIframeAPIReady/g]) {
+    for (const m of sport.matchAll(re)) assert.ok(m.index > nflStart && m.index < nflStart + 2500, `${re} outside the NFL loader`);
+  }
+  const player = sport.indexOf('new YT.Player');
+  assert.ok(player > 0 && /Nfl/i.test(sport.slice(Math.max(0, sport.lastIndexOf('function ', player) - 1), player)), 'YT.Player only built in an NFL function');
   assert.match(sport, /params\.set\('origin', window\.location\.origin\)/);
 });
 
