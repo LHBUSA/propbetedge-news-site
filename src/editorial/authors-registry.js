@@ -12,62 +12,36 @@ export const AUTHOR_PROFILES = Object.freeze({
   'justin-erickson': Object.freeze({
     name: 'Justin Erickson',
     kind: 'person',
-    bylineLabel: 'Named human author',
-    role: 'Founder & CTO',
-    title: 'Founder & Chief Technology Officer, PropBetEdge',
-    summary: 'Founder and product architect of PropBetEdge, focused on sports-intelligence systems, model governance, data provenance and the connection between reporting, live data and decision tools.',
-    bio: `Justin Erickson is the founder and chief technology officer of PropBetEdge and the product architect behind its sports-intelligence network. His work sits at the intersection of sports coverage, data infrastructure, predictive systems and product design: building the systems that turn live information into research tools, model outputs, PBEcast experiences and permanent records.
+    bylineLabel: 'Founder-led named human byline',
+    role: 'Founder & CEO · Chief Architect',
+    title: 'Founder & CEO, PropTechUSA.ai · Founder & Chief Architect, PropBetEdge',
+    summary: 'Founder and operator behind PropBetEdge and the broader PropTechUSA.ai platform, responsible for product direction, data infrastructure, APIs, models, editorial systems and release standards across the sports-intelligence network.',
+    bio: `Justin Erickson is the founder and CEO of PropTechUSA.ai and the founder and chief architect of PropBetEdge. He built PropBetEdge beyond a conventional sports publication into a connected sports-intelligence network: sport-native products, live PBEcast experiences, Player DNA and other proprietary intelligence layers, predictive systems, public model records, newsroom automation, and the PropSports data and API infrastructure underneath them.
 
-His PropBetEdge byline is used for work where the technical or strategic context matters as much as the headline — product and methodology explainers, cross-sport analysis, model and market structure, and coverage that connects what happened on the field to how the platform measures it.
+His PropBetEdge byline is now reserved primarily for founder-led work where sports analysis, product architecture and operating judgment intersect — model and methodology explainers, market structure, data provenance, product and platform decisions, cross-sport analysis, and stories where the system behind the conclusion matters as much as the conclusion itself. It is not intended to make him look like a traditional beat writer.
 
-As founder, Justin is responsible for the architecture and operating principles behind PropBetEdge: source provenance, explicit uncertainty, versioned model behavior, evidence-backed publication, and preserving the historical record rather than rewriting it after results are known.
+Justin's editorial process is AI-native and engineering-led. He may use AI deeply for research organization, source comparison, data and code review, structured analysis, drafting and revision. A named Justin Erickson byline means he owns the thesis, materially directs or shapes the analysis, and stands behind the published judgment. It does not mean every sentence was manually typed by him or that software was absent from the process.
 
-PropBetEdge is operated within the PropTechUSA.ai organization. Justin is based in Saint Paul, Minnesota. His articles remain subject to the same sourcing, corrections, AI-disclosure and responsible-betting standards as every other PropBetEdge byline.`,
+That distinction is central to how he runs PropBetEdge. Editorial is not separated from the data layer by a wall of handoffs: source provenance, evidence packets, live state, model versions, track records, product behavior and publication quality are treated as one connected system. Justin is responsible for the architecture and operating principles that keep those layers aligned — including explicit uncertainty, direct-source verification where available, visible corrections, source and rights discipline, versioned model behavior, and preserving the historical record after outcomes are known.
+
+PropBetEdge operates inside PropTechUSA.ai alongside PropSports and PropData. Justin's broader role spans company strategy, data infrastructure, APIs, AI systems, product design, deployment and operating standards across those platforms. His articles remain subject to the same sourcing, corrections, disclosure and responsible-betting rules as every other PropBetEdge byline.`,
     expertise: Object.freeze([
-      'Sports-intelligence product architecture',
-      'Model governance, probability systems & market context',
-      'Data provenance, APIs & evidence-backed product design',
-      'Cross-sport strategy and decision intelligence',
+      'Sports-intelligence systems & product architecture',
+      'AI-native newsroom, editorial automation & publication systems',
+      'Data infrastructure, APIs, provenance & source governance',
+      'Model governance, probability, market structure & public track records',
+      'Cross-sport product strategy & decision intelligence',
     ]),
     credentials: Object.freeze([
-      'Founder & CTO — PropBetEdge',
-      'Founder — PropTechUSA.ai',
-      'Product architect for the PropBetEdge intelligence network',
+      'Founder & CEO — PropTechUSA.ai',
+      'Founder & Chief Architect — PropBetEdge',
+      'Builder & operator — PropSports data and API infrastructure',
+      'Product and systems lead for the PropBetEdge intelligence network',
     ]),
-    accountability: 'A named human byline. The author is accountable for the analysis and conclusions published under this name. AI and automation may assist research, organization or drafting, but they do not turn the byline into an automated persona.',
+    accountability: 'A founder-led named human byline. Justin Erickson owns the thesis, editorial judgment and conclusions published under his name. AI and automation may participate throughout research, analysis, drafting and revision; the byline is a statement of accountable direction and approval, not a claim that every word was manually written.',
     location: 'Saint Paul, MN',
     initials: 'JE',
     accent: 'gold',
-    // Founder / technical-operator presentation (src/pages/author-founder.js). Every line below is derived from the
-    // bio, summary and accountability copy above: no counts, no metrics, nothing that has to be re-verified monthly.
-    profileVariant: 'founder',
-    founder: Object.freeze({
-      eyebrow: 'Founder · Product Architect',
-      positioning: 'Building sports-intelligence systems where live data, predictive models, journalism and permanent records meet.',
-      facts: Object.freeze([
-        'Founder · PropBetEdge',
-        'Founder · PropTechUSA.ai',
-        'Saint Paul, Minnesota',
-        'Sports intelligence · data infrastructure · model governance',
-      ]),
-      pillars: Object.freeze([
-        Object.freeze({ title: 'Sports Intelligence', body: 'How PropBetEdge connects live sports data, models, PBEcast, editorial context and permanent records into one research surface.' }),
-        Object.freeze({ title: 'Data Infrastructure', body: 'APIs, evidence provenance, canonical identifiers, ingestion and the systems architecture that keeps every claim traceable to its source.' }),
-        Object.freeze({ title: 'Model Governance', body: 'Versioned model behavior, explicit uncertainty, predictions frozen before results are known, and model output kept separate from market prices.' }),
-      ]),
-      principles: Object.freeze([
-        Object.freeze({ title: 'Evidence over fluency', body: 'A confident sentence is not a fact. Facts need provenance.' }),
-        Object.freeze({ title: 'Never rewrite the record', body: 'Predictions and evidence stay historically inspectable after results are known.' }),
-        Object.freeze({ title: 'Models are probabilities', body: 'Output is a statement of uncertainty, not a promise.' }),
-        Object.freeze({ title: 'Build the tooling', body: 'Product and research infrastructure are part of the editorial advantage.' }),
-      ]),
-      network: Object.freeze([
-        Object.freeze({ label: 'PropBetEdge', href: '/about' }),
-        Object.freeze({ label: 'Predictions', href: 'https://predictions.propbetedge.ai/' }),
-        Object.freeze({ label: 'PropSports API', href: 'https://propsports.proptechusa.ai' }),
-        Object.freeze({ label: 'PropTechUSA.ai', href: 'https://proptechusa.ai' }),
-      ]),
-    }),
   }),
   'erik-schwartz': Object.freeze({
     name: 'Erik Schwartz',
