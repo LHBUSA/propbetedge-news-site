@@ -81,7 +81,9 @@ function paintFollow(button, slug) {
   const active = getFollowed().some((item) => item.slug === slug);
   button.dataset.following = active ? '1' : '0';
   button.setAttribute('aria-pressed', active ? 'true' : 'false');
-  button.textContent = active ? '✓ Following Writer' : '+ Follow Writer';
+  const author = getAuthorBySlug(slug);
+  const noun = author?.kind === 'organization' ? 'Byline' : 'Writer';
+  button.textContent = active ? `✓ Following ${noun}` : `+ Follow ${noun}`;
 }
 
 function renderDesk(author, articles, total) {
@@ -100,7 +102,7 @@ function renderDesk(author, articles, total) {
 
   return `
     <div class="pbe-author-desk-head">
-      <div><span>AUTHOR DESK</span><h2>${escapeHtml(author.name)} · current pulse</h2></div>
+      <div><span>${author.kind === "organization" ? "BYLINE DESK" : "AUTHOR DESK"}</span><h2>${escapeHtml(author.name)} · current pulse</h2></div>
       <small>Based on the latest ${Math.min(articles.length, 24)} loaded stories</small>
     </div>
     <div class="pbe-author-desk-grid">
