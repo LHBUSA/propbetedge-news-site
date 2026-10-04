@@ -22,6 +22,7 @@ import { renderNotFound } from './404.js';
 import { ad_in_article_after_take, ad_in_article_mid, ad_brand_family, proxyImage } from '../ads-config.js';
 import { renderArticleVisuals, mountArticleVisuals } from '../article-visuals.js';
 import { renderPreferredSource } from '../components/preferred-source.js';
+import { articleMarketWithin, articleMarketSlot, mountArticleMarketSlot } from '../article-market.js';
 
 const PREFERRED_SOURCE_SPORTS = new Set(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer']);
 const preferredSourceSport = (sport) => (PREFERRED_SOURCE_SPORTS.has(String(sport || '').toLowerCase()) ? String(sport).toLowerCase() : 'network');
@@ -76,6 +77,10 @@ export async function renderArticle(root, sport, slug, setMeta) {
   const article = resp.article;
   if (!article) { renderNotFound(root); return; }
 
+  // MARKET (article-market/1): only an article linked to one canonical game and first published after activation
+  // reads it; the read shares an 800 ms first-paint budget so the module is in the first render (no layout shift).
+  const market = await articleMarketWithin(article);
+
   const manifest = graph.buildEntityManifest(article);
   const seo = graph.buildArticleSeo(article, manifest);
 
@@ -99,7 +104,8 @@ export async function renderArticle(root, sport, slug, setMeta) {
 
   const articleContext = { sport: article.sport, imageUrl: article.image_url || seo.image?.url || null };
   const visualHtml = renderArticleVisuals(article, manifest);
-  const bodyHtml = renderBodyWithMidAd(article, articleContext, graph, manifest, seo, visualHtml);
+  // The market module sits with the Data Intelligence layer (after the third paragraph / after a short body).
+  const bodyHtml = renderBodyWithMidAd(article, articleContext, graph, manifest, seo, visualHtml + articleMarketSlot(article, market));
 
   root.innerHTML = `
     ${renderHeader()}
@@ -166,6 +172,7 @@ export async function renderArticle(root, sport, slug, setMeta) {
   });
 
   mountArticleVisuals(article, manifest);
+  mountArticleMarketSlot(root, article, market);
   loadRelated(article, manifest, graph);
   attachGameEntity(article, manifest, graph);
 }

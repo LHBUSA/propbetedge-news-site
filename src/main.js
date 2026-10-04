@@ -2,6 +2,7 @@ import './styles/pbe-about.css';
 import './styles/story-image-integrity.css';
 import './styles/pbe-article-media.css';
 import './styles/pbe-article-visuals.css';
+import './vendor/markets/article-market-ui.css';
 import './styles/pbe-publication-unify.css';
 import './styles/pbe-header-polish.css';
 import './styles/background-selector.css';
