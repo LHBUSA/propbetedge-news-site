@@ -10,7 +10,10 @@ const footer=fs.readFileSync(new URL('../src/components/footer.js',import.meta.u
 test('brand trust routes are canonical and discoverable',()=>{
  for(const p of ['terms','support','media']){
   assert.ok(router.includes(`path === '/${p}'`));
-  assert.ok(page.includes(`/${p}`));
+  // trust.js defines one content entry per page and builds its tab links from a key array
+  // (['terms','support','media'].map((key) => `<a href="/${key}"...`)), so assert that structure, not literal paths.
+  assert.ok(page.includes(`  ${p}: {`), `trust.js defines the ${p} page`);
+  assert.match(page, new RegExp(`\\[[^\\]]*'${p}'[^\\]]*\\]\\.map\\(\\(key\\) => \`<a href="/\\$\\{key\\}"`), `trust tabs link /${p}`);
   assert.ok(sitemap.includes(`'/${p}'`));
   assert.ok(footer.includes(`href="/${p}"`));
  }
