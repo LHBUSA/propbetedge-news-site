@@ -31,6 +31,7 @@ import { liveCastUrl } from './src/live-cast-routes.js';
 import { NETWORK_SOCIAL_IMAGE } from './src/social.js';
 import { renderServerIntelligenceLink } from './src/intelligence-cta.js';
 import { classifyAutomatedAccess } from './src/security/automated-access.js';
+import { AUTHOR_PROFILES } from './src/editorial/authors-registry.js';
 
 export const config = {
   matcher: [
@@ -49,12 +50,7 @@ const SPORT_API = {
   nhl: { category: 'hockey', league: 'nhl' },
 };
 const DEFAULT_ROBOTS = 'index, follow, max-image-preview:large';
-const AUTHOR_META = {
-  'justin-erickson': { name: 'Justin Erickson', role: 'Founder & CTO' },
-  'erik-schwartz': { name: 'Erik Schwartz', role: 'Senior Editorial Contributor' },
-  'ty-whitney': { name: 'Ty Whitney', role: 'Senior Research Analyst' },
-  'propbetedge-editorial-team': { name: 'PropBetEdge Editorial Team', role: 'Editorial Operations' },
-};
+const AUTHOR_META = AUTHOR_PROFILES;
 
 
 const LEGACY_ARTICLE_REDIRECTS = new Map([
@@ -364,7 +360,7 @@ async function resolveMeta(pathname, search = '') {
     return {
       canonical,
       title: 'Editorial Team — PropBetEdge',
-      description: 'Meet the PropBetEdge editorial team, research analysts and transparent AI-assisted editorial operation behind our sports coverage.',
+      description: 'Meet the named PropBetEdge contributors and the disclosed operational newsroom byline behind our sports journalism and intelligence coverage.',
       image: NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildAuthorsSchema(canonical),
@@ -391,7 +387,7 @@ async function resolveMeta(pathname, search = '') {
     return {
       canonical,
       title: `${author.name} — ${author.role} · PropBetEdge`,
-      description: `Articles by ${author.name} on PropBetEdge.`,
+      description: author.summary || `Articles by ${author.name} on PropBetEdge.`,
       image: NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildAuthorSchema(slug, author, canonical),
@@ -451,11 +447,15 @@ async function resolveMeta(pathname, search = '') {
 
   // Editorial standards
   if (pathname === '/editorial-standards') {
+    const canonical = `${SITE}/editorial-standards`;
     return {
-      canonical: `${SITE}/editorial-standards`,
+      canonical,
       title: 'Editorial Standards — PropBetEdge',
-      description: 'How PropBetEdge produces editorial content. AI-assisted journalism with editorial review.',
+      description: 'How PropBetEdge sources, produces, labels, corrects and preserves sports journalism, analysis, model output and AI-assisted newsroom work.',
       image: NETWORK_SOCIAL_IMAGE.url,
+      robots: DEFAULT_ROBOTS,
+      jsonLd: buildEditorialStandardsSchema(canonical),
+      ssrHtml: buildServerEditorialStandardsHtml(),
     };
   }
 
@@ -1323,8 +1323,53 @@ function buildServerAboutHtml() {
   </main>`;
 }
 
+function buildEditorialStandardsSchema(canonical) {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': `${canonical}#page`,
+        url: canonical,
+        name: 'Editorial Standards — PropBetEdge',
+        description: 'How PropBetEdge sources, produces, labels, corrects and preserves sports journalism, analysis, model output and AI-assisted newsroom work.',
+        datePublished: '2026-04-29',
+        dateModified: '2026-10-04',
+        isPartOf: { '@id': `${SITE}/#website` },
+        publisher: { '@id': `${SITE}/#organization` },
+        inLanguage: 'en-US',
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'PropBetEdge', item: `${SITE}/` },
+          { '@type': 'ListItem', position: 2, name: 'Editorial Standards', item: canonical },
+        ],
+      },
+    ],
+  };
+}
+
+function buildServerEditorialStandardsHtml() {
+  return `<main class="pbe-ssr-editorial-standards" data-server-rendered="1">
+    <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; Editorial Standards</nav>
+    <article>
+      <p>Trust · Editorial</p>
+      <h1>Editorial Standards</h1>
+      <p>Evidence before fluency. Clear bylines. Visible corrections. Models treated as probabilities, not promises.</p>
+      <h2>Publishing principles</h2>
+      <p>PropBetEdge distinguishes sourced facts, editorial analysis and model output; prefers primary evidence where available; preserves missing or conflicting data instead of inventing precision; and keeps publication history when corrections are required.</p>
+      <h2>AI, automation and bylines</h2>
+      <p>Named human authors are accountable for work published under their names. The <a href="/authors/propbetedge-editorial-team">PropBetEdge Editorial Team</a> is an operational newsroom byline, not a fictitious person, and may represent AI-assisted and automated newsroom workflows.</p>
+      <h2>Corrections and records</h2>
+      <p>Material corrections are disclosed. Publication timestamps and model or pick history are not silently rewritten after outcomes are known.</p>
+      <p><a href="/authors">Editorial Team</a> · <a href="/legal">Legal</a> · <a href="/terms">Terms</a></p>
+    </article>
+  </main>`;
+}
+
 function buildAuthorSchema(slug, author, canonical) {
-  const isTeam = slug === 'propbetedge-editorial-team';
+  const isTeam = author.kind === 'organization';
   const entity = {
     '@type': isTeam ? 'Organization' : 'Person',
     '@id': `${canonical}#author`,
@@ -1348,12 +1393,14 @@ function buildAuthorSchema(slug, author, canonical) {
 }
 
 function buildServerAuthorHtml(slug, author) {
+  const label = author.bylineLabel || (author.kind === 'organization' ? 'Operational newsroom byline' : 'Named human author');
   return `<main class="pbe-ssr-author" data-server-rendered="1">
     <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; <a href="/authors">Editorial Team</a> &rsaquo; ${escapeHtml(author.name)}</nav>
     <article>
-      <p>${escapeHtml(author.role)}</p>
+      <p>${escapeHtml(label)} · ${escapeHtml(author.role)}</p>
       <h1>${escapeHtml(author.name)}</h1>
-      <p>${escapeHtml(author.name)} contributes to PropBetEdge sports journalism and intelligence coverage.</p>
+      <p>${escapeHtml(author.summary || '')}</p>
+      <p><strong>Accountability:</strong> ${escapeHtml(author.accountability || '')}</p>
       <p><a href="/editorial-standards">Editorial Standards</a> · <a href="/authors">Full masthead</a></p>
     </article>
   </main>`;
@@ -1364,7 +1411,7 @@ function buildAuthorsSchema(canonical) {
     '@type': 'ListItem',
     position: index + 1,
     item: {
-      '@type': slug === 'propbetedge-editorial-team' ? 'Organization' : 'Person',
+      '@type': author.kind === 'organization' ? 'Organization' : 'Person',
       '@id': `${SITE}/authors/${slug}#author`,
       name: author.name,
       jobTitle: author.role,
