@@ -22,7 +22,7 @@ import { AUTHOR_PROFILES } from '../editorial/authors-registry.js';
 import { INTELLIGENCE_SPORTS, INTELLIGENCE_ORDER } from '../intelligence-cta.js';
 import { RESEARCH_PAGES } from '../research/registry.js';
 import { PUBLIC_APIS, API_DOCS_URL } from '../network/public-apis.js';
-import FAMILY from '../network/family.json' with { type: 'json' };
+import FAMILY from '../network/family.js';
 
 // The network's established storefront (LHBUSA/UFC web/lib/network.ts NETWORK.store — "the network's only live
 // checkout today"); propbetedge.ai/store has not shipped.

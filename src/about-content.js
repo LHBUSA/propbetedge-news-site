@@ -13,7 +13,7 @@
  * never add or describe a sport/product that the registries do not.
  */
 
-import FAMILY from './network/family.json' with { type: 'json' };
+import FAMILY from './network/family.js';
 import { SPORTS as PRO_SPORTS, PREDICTIONS, ALL_ACCESS, UPCOMING_SPORTS, OPERATING_SYSTEM_STAGES } from './pro-content.js';
 import { INTELLIGENCE_SPORTS } from './intelligence-cta.js';
 import { researchPage } from './research/registry.js';
