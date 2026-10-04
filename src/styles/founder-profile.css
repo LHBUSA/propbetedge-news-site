@@ -1,13 +1,14 @@
 /* Founder / technical-operator profile (src/pages/author-founder.js). Scoped under .fdr (".fp-" is the free-picks namespace).
  * Editorial, not SaaS: thin gold rules, strong type, minimal cards, no gradients-as-decoration. */
 
-.fdr { --fdr-rule: rgba(212, 175, 55, .28); padding-bottom: 64px; background: rgba(12, 10, 8, .88); }
+/* No page backdrop: the site background stays visible (owner 2026-10-04). */
+.fdr { --fdr-rule: rgba(212, 175, 55, .28); padding-bottom: 64px; }
 .fdr a { color: inherit; text-decoration: none; }
 .fdr a:focus-visible, .fdr button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 2px; }
 .fdr ul, .fdr ol { list-style: none; margin: 0; padding: 0; }
 
 /* ── Hero ─────────────────────────────────────────────────────────────── */
-.fdr-hero { border-bottom: 1px solid var(--line); background: rgba(15, 13, 10, .82); }
+.fdr-hero { border-bottom: 1px solid var(--line); }
 .fdr-hero-inner { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 56px; align-items: start; padding-top: 64px; padding-bottom: 56px; }
 .fdr-mark {
   position: relative; width: 220px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;

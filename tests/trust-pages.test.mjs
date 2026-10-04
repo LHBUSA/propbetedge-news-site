@@ -5,7 +5,8 @@ import fs from 'node:fs';
 const router=fs.readFileSync(new URL('../src/router.js',import.meta.url),'utf8');
 const page=fs.readFileSync(new URL('../src/pages/trust.js',import.meta.url),'utf8');
 const sitemap=fs.readFileSync(new URL('../api/sitemap.js',import.meta.url),'utf8');
-const footer=fs.readFileSync(new URL('../src/components/footer.js',import.meta.url),'utf8');
+const { renderFooter } = await import('../src/components/footer.js');
+const footer=renderFooter({ cta: false });
 const robots=fs.readFileSync(new URL('../api/robots.js',import.meta.url),'utf8');
 
 test('brand trust routes are canonical and discoverable',()=>{

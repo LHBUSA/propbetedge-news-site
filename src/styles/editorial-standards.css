@@ -2,7 +2,8 @@
  * Editorial, not SaaS: narrow prose measure, thin gold rules, a few structured diagrams, minimal cards/pills.
  * Everything reads in order with CSS disabled (plain headings, lists and definition lists). */
 
-.es { background: rgba(12, 10, 8, .9); padding-bottom: 72px; }
+/* No page backdrop: the site background stays visible (owner 2026-10-04). */
+.es { padding-bottom: 72px; }
 .es a { color: var(--gold); text-decoration: none; }
 .es a:hover { text-decoration: underline; }
 .es a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 2px; }

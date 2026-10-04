@@ -117,7 +117,7 @@ test('wiring: router, styles, header pill, footer link, sitemap and Edge Middlew
   const css = read('src/styles/pbe-mobile-cleanup.css');
   assert.match(css, /\.pbe-mobile-all-access::before \{[\s\S]*content: 'All Access'/);
   assert.match(css, /\.pbe-mobile-all-access\.active::before/);
-  assert.match(read('src/components/footer.js'), /href="\/pro" class="nf-member-line"><strong>All Access<\/strong>/);
+  assert.match(read('src/components/footer.js'), /href="\/pro" class="nf-feature"><strong>All Access<\/strong>/);
   assert.match(read('api/sitemap.js'), /'\/pro',/);
   const mw = read('middleware.js');
   assert.match(mw, /if \(pathname === '\/pro'\) \{/);
