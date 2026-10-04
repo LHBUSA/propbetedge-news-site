@@ -214,7 +214,7 @@ export function newsArticleSchema(article, sport, slug) {
 // ════════════════════════════════════════════════════════════════════════
 export function profilePageSchema(slug, author) {
   const profileUrl = `${SITE.url}/authors/${slug}`;
-  const personId = `${profileUrl}#person`;
+  const personId = `${profileUrl}#author`;
 
   const isOrganization = author.kind === 'organization';
   const personNode = {
