@@ -38,6 +38,8 @@ test('editorial standards reflect the current network and transparent automation
   assert.match(standards, /MLB, NFL, NBA, WNBA, NHL, UFC, Tennis, Soccer, Golf and F1/);
   assert.match(standards, /operational newsroom byline, not a fictitious person/);
   assert.match(standards, /do <strong>not<\/strong> claim that a human manually writes or reviews every sentence/);
+  assert.match(standards, /Founder-led analysis/);
+  assert.match(standards, /every sentence was manually typed/);
   assert.match(standards, /Models are probabilistic/);
   assert.match(standards, /Publication timestamps/);
   assert.match(standards, /1-800-GAMBLER/);
@@ -61,4 +63,16 @@ test('crawler-visible editorial pages use the canonical registry and SSR policy 
   assert.match(middleware, /buildServerEditorialStandardsHtml/);
   assert.match(middleware, /dateModified: '2026-10-04'/);
   assert.match(middleware, /operational newsroom byline, not a fictitious person/i);
+  assert.match(middleware, /founder and CEO of PropTechUSA\.ai and founder and chief architect of PropBetEdge/i);
+});
+
+test('Justin Erickson profile reflects founder-led AI-native accountability', () => {
+  const justin = AUTHOR_PROFILES['justin-erickson'];
+  assert.equal(justin.role, 'Founder & CEO · Chief Architect');
+  assert.match(justin.title, /Founder & CEO, PropTechUSA\.ai/);
+  assert.match(justin.summary, /data infrastructure, APIs, models, editorial systems/i);
+  assert.match(justin.bio, /not intended to make him look like a traditional beat writer/i);
+  assert.match(justin.bio, /AI-native and engineering-led/i);
+  assert.match(justin.accountability, /owns the thesis, editorial judgment and conclusions/i);
+  assert.match(justin.accountability, /not a claim that every word was manually written/i);
 });
