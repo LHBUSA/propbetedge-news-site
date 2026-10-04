@@ -79,10 +79,10 @@ test('reads go through the same-origin rewrite with the ORIGINAL publication tim
 });
 
 test('vendored client is byte-identical to propbetedge-workers client at the pinned SHA', () => {
-  assert.equal(ARTICLE_MARKET_CLIENT_PIN, '9d887f3');
+  assert.equal(ARTICLE_MARKET_CLIENT_PIN, '8d3b73f');
   const sha = (f) => createHash('sha256').update(fs.readFileSync(new URL(`../src/vendor/markets/${f}`, import.meta.url))).digest('hex');
-  assert.equal(sha('article-market-ui.js'), '6d9e875beb080ed84e5b4806c41392c1990402b91b2dc40528f4d0bb53e4d3c6');
-  assert.equal(sha('article-market-ui.css'), 'cfe70d8ca4cb90715e28ff73d71ece09d1066f86e3b317e08c49a1058c888737');
+  assert.equal(sha('article-market-ui.js'), '2149e2854142657a554ef119533680c77657f0d2b1ea8406fe4de711e4fbe635');
+  assert.equal(sha('article-market-ui.css'), '60c223f6afbe32059ea272aeaff648759c254f3494106c41822afaf328c7aa4e');
   // kalshi-market-ui.js re-vendored at propbetedge-workers 64ca257 (one-sided book at $0/$1 keeps the full card; no fake mid)
   assert.equal(sha('kalshi-market-ui.js'), '639f834c27bffed519d37eea4066d3b31e5699f7215d6ea5c07e23c2591ccc48');
 });
