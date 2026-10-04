@@ -39,7 +39,7 @@ test('main-site trust / legal / editorial inventory: every required link present
   for (const h of ['/authors', '/authors/justin-erickson', '/editorial-standards']) assert.equal(groupOf(h), 'Editorial & Trust', h);
 });
 
-test('commercial band: Explore All Access, Explore APIs, Store', () => {
+test('commercial band: Explore All Access, Explore APIs, UFC Store', () => {
   const b = anchors(band);
   assert.deepEqual(b.filter((x) => /nf-action/.test(band.slice(band.indexOf(`href="${x.href}"`) - 40, band.indexOf(`href="${x.href}"`) + 60)) || true).map((x) => x.href).slice(0, 3), ['/pro', '/developers', STORE_URL]);
   assert.match(band, /class="nf-action nf-action--primary">Explore All Access</);
@@ -52,6 +52,12 @@ test('Network renders the registry (All Access + Predictions prominent, News, Le
   assert.match(directory, /class="nf-hero-name">All Access<\/span><span class="nf-hero-price">\$29\/mo/);
   assert.match(directory, /PropBetEdge Predictions<\/span><span class="nf-tag">Included with All Access<\/span>/);
   assert.equal(STORE_URL, 'https://ufc.propbetedge.ai/store');
+  // The destination is the UFC storefront, so the label says so; a bare "Store" would imply a network store.
+  const storeLinks = all.filter((x) => x.href === STORE_URL);
+  assert.ok(storeLinks.length >= 1);
+  for (const x of storeLinks) assert.equal(x.text, 'UFC Store');
+  assert.ok(!all.some((x) => x.text === 'Store'), 'no bare "Store" label');
+  assert.ok(!all.some((x) => /^\/store/.test(x.href)), 'no placeholder /store route');
 });
 
 test('Sports render family.json; Newsrooms render INTELLIGENCE_SPORTS.newsPath for all ten sports', () => {

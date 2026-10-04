@@ -1,4 +1,5 @@
 import { assessArticleIntegrity, filterIntegritySafeArticles } from '../news-integrity.js';
+import { isPromotionalHero } from './editorial/promo-creative.js';
 
 const API_BASE = 'https://propbet-news-api.sales-fd3.workers.dev';
 
@@ -104,14 +105,13 @@ function isHouseBrandImageUrl(raw) {
 // A house logo is branding, not editorial photography. Treat it exactly like a
 // missing image so the media-backfill layer can recover contextual player/team
 // imagery or use the restrained sport fallback instead.
+// Promotional/advertising creative (sportsbook or prediction-market offers) is never editorial hero media either
+// (src/editorial/promo-creative.js); same treatment as a house logo.
 function normalizeArticleImage(article) {
   if (!article) return article;
-  if (!isHouseBrandImageUrl(article.image_url)) return article;
-  return {
-    ...article,
-    image_url: null,
-    _image_url_rejected: 'house_brand_asset',
-  };
+  if (isHouseBrandImageUrl(article.image_url)) return { ...article, image_url: null, _image_url_rejected: 'house_brand_asset' };
+  if (isPromotionalHero(article)) return { ...article, image_url: null, _image_url_rejected: 'promotional_creative' };
+  return article;
 }
 
 function normalizeArticleList(data, { maxAgeMs = null, limit = null } = {}) {

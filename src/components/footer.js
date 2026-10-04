@@ -12,7 +12,7 @@
  * destination. Features (PBEcast, HR Targets, K Props, Ask The Algo...) are never "Products" and MLB tools do
  * not sit under global Research. The full trust/editorial/author inventory belongs on this site (the compact
  * "no individual authors" policy is for sport subdomains only). Each directory destination appears once; the
- * brand band's three commercial actions intentionally repeat All Access, APIs and Store.
+ * brand band's three commercial actions intentionally repeat All Access, APIs and the UFC Store.
  * Warm palette only. Styles: src/styles/network-footer.css.
  */
 
@@ -24,8 +24,9 @@ import { RESEARCH_PAGES } from '../research/registry.js';
 import { PUBLIC_APIS, API_DOCS_URL } from '../network/public-apis.js';
 import FAMILY from '../network/family.js';
 
-// The network's established storefront (LHBUSA/UFC web/lib/network.ts NETWORK.store — "the network's only live
-// checkout today"); propbetedge.ai/store has not shipped.
+// The network's only live storefront is the UFC store (LHBUSA/UFC web/lib/network.ts NETWORK.store). It is labelled
+// "UFC Store" (owner 2026-10-04): a bare "Store" on the main site would imply a PropBetEdge network store, which
+// does not exist yet. Never add a placeholder /store route; relabel when a real network storefront ships.
 export const STORE_URL = 'https://ufc.propbetedge.ai/store';
 
 // Named editorial identities, in masthead order; names come from the canonical byline registry.
@@ -64,7 +65,7 @@ export function renderFooter({ cta = true } = {}) {
           <div class="nf-band-actions">
             <a href="/pro" class="nf-action nf-action--primary">Explore All Access</a>
             <a href="/developers" class="nf-action">Explore APIs</a>
-            <a href="${STORE_URL}" class="nf-action" ${EXT}>Store</a>
+            <a href="${STORE_URL}" class="nf-action" ${EXT}>UFC Store</a>
           </div>
           <div class="nf-social">
             <a href="${PROPBET_LINKS.discord}" class="nf-social-link" target="_blank" rel="noopener" aria-label="Discord">${SVG(DISCORD_PATH)}</a>
@@ -81,7 +82,7 @@ export function renderFooter({ cta = true } = {}) {
             <ul>
               <li>${a('/', 'PropBetEdge News')}</li>
               <li>${a(learn.url, learn.name)}</li>
-              <li>${a(STORE_URL, 'Store', 'data-nf-dup="band"')}</li>
+              <li>${a(STORE_URL, 'UFC Store', 'data-nf-dup="band"')}</li>
             </ul>
           </section>
 

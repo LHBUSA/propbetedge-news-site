@@ -35,6 +35,10 @@ import { AUTHOR_PROFILES } from './src/editorial/authors-registry.js';
 import { researchPage, researchSubpages, RESEARCH_NOT_PUBLISHED, RESEARCH_UPDATED } from './src/research/registry.js';
 import { PUBLIC_APIS } from './src/network/public-apis.js';
 import { aboutModel, ABOUT_META } from './src/about-content.js';
+import { isPromotionalHero } from './src/editorial/promo-creative.js';
+
+// Promotional/advertising creative is never editorial hero media (src/editorial/promo-creative.js): treat as missing.
+const withoutPromotionalHero = (a) => (a && isPromotionalHero(a) ? { ...a, image_url: null } : a);
 
 export const config = {
   matcher: [
@@ -211,7 +215,7 @@ async function resolveMeta(pathname, search = '') {
       }
       if (res.ok) {
         const data = await res.json();
-        const article = applyArticlePublicationPolicy(data.article);
+        const article = withoutPromotionalHero(applyArticlePublicationPolicy(data.article));
         if (!article && data.article) {
           return notFoundMeta(pathname, 'Article unavailable');
         }
@@ -734,7 +738,7 @@ async function loadRelatedCandidates(article, manifest, requestPath) {
       if (!row?.slug || seen.has(row.slug)) continue;
       if (sport && String(row.sport || '').toLowerCase() !== sport) continue;
       seen.add(row.slug);
-      pool.push(row);
+      pool.push(withoutPromotionalHero(row));
     }
   }
   return pool;
@@ -782,7 +786,7 @@ async function buildNewsListingMeta({ sport = null, page = 1 }) {
     return notFoundMeta(requestPath, 'News page not found');
   }
 
-  const articles = filterPublicArticles(data?.articles || []);
+  const articles = filterPublicArticles(data?.articles || []).map(withoutPromotionalHero);
   if (page > 1 && !articles.length && data?.hasMore === false) {
     return notFoundMeta(requestPath, 'News page not found');
   }
