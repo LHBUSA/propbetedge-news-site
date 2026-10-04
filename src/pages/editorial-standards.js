@@ -118,6 +118,8 @@ export function editorialStandardsHtml() {
               <div><h3>AI cannot make unsupported facts true</h3><ul class="es-list es-list--tight es-list--no"><li>Unsupported names</li><li>Unsupported numbers</li><li>Invented quotes</li><li>Unsupported injuries</li><li>Invented precision</li></ul></div>
             </div>
             <p>Automation does not lower the factual standard. Unsupported specifics should be withheld, model output should not be laundered into reported fact, and a system should fail closed when required evidence is unavailable. <strong>If required evidence is missing, the expected behavior is to hold — not to fill in the blank.</strong></p>
+            <p>We do not use “human reviewed” as a blanket marketing claim. Some work receives direct named-human authorship and judgment; some work is produced by the operational newsroom; some surfaces are deterministic data or model products rather than journalism. The label and byline should tell the reader which is which.</p>
+            <p>Live state and archival claims are not the same thing. Scores, lineups, prices and market states can update in a live module while the historical claims in a published story remain tied to the evidence and timestamps available at publication time.</p>
           </section>
 
           <section class="es-sec" id="bylines" aria-labelledby="h-bylines">
@@ -126,7 +128,7 @@ export function editorialStandardsHtml() {
               <div class="es-byline">
                 <p class="es-k">Named human</p>
                 <ul class="es-names">${named.map((a) => `<li><a href="/authors/${esc(a.slug || authorSlug(a.name))}">${esc(a.name)}</a></li>`).join('')}</ul>
-                <p>The named person is accountable for the analysis and conclusions published under that name. AI tools may assist research, organization, checking or drafting.</p>
+                <p>The named person is accountable for the thesis, analysis and conclusions published under that name. AI tools may participate throughout research, organization, source comparison, data or code review, drafting and revision. A named byline is a statement of accountable judgment — not a claim that every sentence was manually typed.</p>
               </div>
               <div class="es-byline es-byline--org">
                 <p class="es-k">Operational newsroom</p>
@@ -135,6 +137,11 @@ export function editorialStandardsHtml() {
               </div>
             </div>
             <p>Every current byline has a permanent profile on the <a href="/authors">Editorial Team</a> page. Named people are represented as people. The PropBetEdge Editorial Team is represented as an organizational editorial operation. We do not create fictional human identities to make automated work appear human-authored.</p>
+            <div class="es-founder-rule">
+              <p class="es-k">Founder-led analysis · Justin Erickson</p>
+              <p><a href="/authors/justin-erickson">Justin Erickson</a> is the founder and CEO of PropTechUSA.ai and the founder and chief architect of PropBetEdge. His byline is reserved primarily for work where sports analysis, product architecture and operating judgment intersect — including model and methodology explainers, market structure, data provenance, product decisions and cross-sport analysis.</p>
+              <p>A Justin Erickson byline means he owns the thesis, materially directs or shapes the analysis, and stands behind the published judgment. AI may assist deeply; the byline does <strong>not</strong> mean every sentence was manually typed by him.</p>
+            </div>
             <p>If a contributor relationship changes, archival journalism is not automatically deleted. Where reattribution is necessary, the canonical URL and original publication history should remain intact rather than turning an authorship change into a silent rewrite of the archive.</p>
           </section>
 
@@ -152,6 +159,8 @@ export function editorialStandardsHtml() {
               <li><strong>Official calls and editorial ideas are not interchangeable.</strong> When a product distinguishes an official model pick from a featured player, editorial showcase, research output or shadow result, we preserve that distinction.</li>
               <li><strong>Results stay with the call.</strong> Where PropBetEdge maintains a public or product track record, losses remain visible and historical outcomes are not backfilled to create a better-looking record.</li>
               <li><strong>Market data is time-sensitive.</strong> Prices, odds and prediction-market states can move rapidly. Time of observation matters, and a later price should not be presented as though it were available when an earlier call was made.</li>
+              <li><strong>Model state matters.</strong> Research, shadow, validated, official and production states are not interchangeable. Editorial language must respect the model's actual state at the time of the claim.</li>
+              <li><strong>Market price and model probability are separate unless a disclosed methodology says otherwise.</strong> A benchmark or consensus price should not be silently laundered into an independent-model claim.</li>
             </ul>
             <div class="es-states">
               <p class="es-k">Model state</p>
@@ -183,6 +192,7 @@ export function editorialStandardsHtml() {
               <div><dt>Material correction</dt><dd>Material corrections — including errors that change the thesis, a pick, a model interpretation or a consequential factual claim — should receive a visible correction or update notice.</dd></div>
               <div><dt>Model / pick grading</dt><dd>Model and pick history should not be rewritten after outcomes are known. Corrections to data or grading should be traceable rather than silently replacing the past.</dd></div>
               <div><dt>Original publication time</dt><dd>Publication timestamps should not be moved simply because a story was corrected. The original publication event remains part of the record.</dd></div>
+              <div><dt>Live modules</dt><dd>A current score, market or live-data module may update in place while the story's historical evidence and decision-time context remain preserved.</dd></div>
             </dl>
             <p class="es-rule"><strong>Correction is not deletion of history.</strong></p>
             <div class="es-report">
@@ -230,7 +240,7 @@ export function editorialStandardsHtml() {
 
             <h3 class="es-h3" id="ownership">Ownership &amp; editorial responsibility</h3>
             <p>PropBetEdge is operated by Local Home Buyers LLC d/b/a PropTechUSA.ai. PropBetEdge's newsroom, sports-intelligence products, data systems, APIs, models and automation operate within the broader PropTechUSA.ai technology organization.</p>
-            <p>Editorial standards govern what PropBetEdge publishes. Product ownership and infrastructure do not change the obligation to distinguish sourced fact, analysis, model output and promotion.</p>
+            <p>Editorial, live data, model governance, product behavior and source provenance operate inside one connected system by design. That integration does not change the obligation to distinguish sourced fact, analysis, model output and promotion — it makes that distinction more important.</p>
             <p class="es-links"><a href="/about">About PropBetEdge</a> · <a href="/authors">Editorial Team</a> · <a href="/legal">Legal</a> · <a href="/terms">Terms of Service</a></p>
             <p class="es-living">These standards are living. Material changes are dated. Last updated: ${UPDATED_LABEL}.</p>
           </section>
@@ -244,7 +254,7 @@ export function editorialStandardsHtml() {
 export async function renderEditorialStandards(root, setMeta) {
   setMeta?.({
     title: 'Editorial Standards — PropBetEdge',
-    description: 'How PropBetEdge sources, produces, labels, corrects and preserves sports journalism, analysis, model output and AI-assisted newsroom work.',
+    description: 'How PropBetEdge sources, produces, labels, corrects and preserves reporting, founder-led analysis, AI-assisted newsroom work and model output.',
     canonical: 'https://propbetedge.ai/editorial-standards',
   });
 
@@ -261,7 +271,7 @@ export async function renderEditorialStandards(root, setMeta) {
       '@id': 'https://propbetedge.ai/editorial-standards#webpage',
       url: 'https://propbetedge.ai/editorial-standards',
       name: 'Editorial Standards',
-      description: 'How PropBetEdge sources, produces, labels, corrects and preserves sports journalism, analysis, model output and AI-assisted newsroom work.',
+      description: 'How PropBetEdge sources, produces, labels, corrects and preserves reporting, founder-led analysis, AI-assisted newsroom work and model output.',
       inLanguage: 'en-US',
       isPartOf: { '@id': 'https://propbetedge.ai/#website' },
       publisher: { '@id': 'https://propbetedge.ai/#organization' },
