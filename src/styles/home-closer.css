@@ -1,0 +1,216 @@
+/* Homepage brand closer — research-terminal / editorial. Near-black panel, faint approved stadium texture,
+   gold only as emphasis. Desktop: statement left, decision pipeline right. Mobile: one vertical sequence.
+   Fixed structure (no data, no late content) => no layout shift. Motion: one slow pulse on the pipeline rail,
+   off under prefers-reduced-motion. */
+.pbe-closer {
+  --pc-gold: #d4af37;
+  --pc-ink: #0b0d12;
+  --pc-paper: #f3efe6;
+  --pc-dim: rgba(243, 239, 230, 0.66);
+  --pc-line: rgba(212, 175, 55, 0.28);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--pc-ink);
+  color: var(--pc-paper);
+  padding: clamp(56px, 8vw, 112px) 0;
+  margin-top: 48px;
+  border-top: 1px solid rgba(212, 175, 55, 0.18);
+}
+.pbe-closer__bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(120% 90% at 85% 10%, rgba(212, 175, 55, 0.10), transparent 55%),
+    linear-gradient(180deg, rgba(11, 13, 18, 0.80), rgba(11, 13, 18, 0.96) 70%),
+    url('/backgrounds/pbe/stadium-night.webp') center / cover no-repeat;
+  filter: saturate(0.6);
+}
+.pbe-closer__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-areas: 'copy pipe' 'close pipe';
+  column-gap: clamp(32px, 6vw, 96px);
+  row-gap: 0;
+  align-items: center;
+}
+.pbe-closer__copy { grid-area: copy; min-width: 0; align-self: end; }
+.pbe-closer__pipewrap { grid-area: pipe; }
+.pbe-closer__close { grid-area: close; min-width: 0; align-self: start; }
+.pbe-closer__eyebrow {
+  margin: 0 0 18px;
+  font: 600 12px/1 var(--font-mono, ui-monospace, Menlo, Consolas, monospace);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--pc-gold);
+}
+.pbe-closer__h {
+  margin: 0;
+  font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+  font-weight: 700;
+  font-size: clamp(36px, 5.2vw, 72px);
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  color: var(--pc-paper);
+  text-wrap: balance;
+}
+.pbe-closer__h em { display: block; font-style: italic; color: var(--pc-gold); }
+.pbe-closer__body {
+  margin: 26px 0 0;
+  max-width: 34em;
+  font-family: var(--font-sans, Inter, system-ui, sans-serif);
+  font-size: clamp(16px, 1.35vw, 18px);
+  line-height: 1.65;
+  color: var(--pc-dim);
+}
+.pbe-closer__vow {
+  margin: 22px 0 0;
+  padding-left: 14px;
+  border-left: 2px solid var(--pc-gold);
+  font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+  font-style: italic;
+  font-size: clamp(17px, 1.5vw, 20px);
+  line-height: 1.45;
+  color: var(--pc-paper);
+  text-wrap: balance;
+}
+.pbe-closer__ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 34px; }
+.pbe-closer__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 4px;
+  font: 700 13px/1 var(--font-mono, ui-monospace, Menlo, Consolas, monospace);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.pbe-closer__cta span { transition: transform 0.2s ease; }
+.pbe-closer__cta:hover span, .pbe-closer__cta:focus-visible span { transform: translateX(3px); }
+.pbe-closer__cta--primary { background: var(--pc-gold); color: #111; border: 1px solid var(--pc-gold); }
+.pbe-closer__cta--primary:hover, .pbe-closer__cta--primary:focus-visible { background: #e6c45a; }
+.pbe-closer__cta--ghost { color: var(--pc-paper); border: 1px solid rgba(243, 239, 230, 0.32); }
+.pbe-closer__cta--ghost:hover, .pbe-closer__cta--ghost:focus-visible { border-color: var(--pc-gold); color: var(--pc-gold); }
+.pbe-closer__cta:focus-visible { outline: 2px solid var(--pc-gold); outline-offset: 3px; }
+
+/* The pipeline: a vertical rail with four nodes; a single gold pulse travels down it. */
+.pbe-closer__pipewrap { position: relative; min-width: 0; }
+.pbe-closer__pipe {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 40px;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.pbe-closer__pipe::before {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 28px;
+  bottom: 28px;
+  width: 1px;
+  background: linear-gradient(180deg, var(--pc-line), var(--pc-gold) 50%, var(--pc-line));
+}
+.pbe-closer__rail {
+  position: absolute;
+  left: 10px;
+  top: 28px;
+  bottom: 28px;
+  width: 7px;
+  overflow: hidden;
+  pointer-events: none;
+}
+/* a full-height layer carrying the dot at its top: translateY(100%) = exactly the rail length (transform only) */
+.pbe-closer__rail::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -7px;
+  width: 7px;
+  height: 100%;
+  background: radial-gradient(circle at 3.5px 3.5px, var(--pc-gold) 3px, transparent 3.6px) no-repeat;
+  filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.7));
+  animation: pbe-closer-pulse 6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes pbe-closer-pulse {
+  0% { transform: translateY(0); opacity: 0; }
+  8% { opacity: 1; }
+  92% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+.pbe-closer__stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: 'n body' 'n tag';
+  column-gap: 16px;
+  row-gap: 8px;
+  padding: 18px 20px;
+  border: 1px solid rgba(243, 239, 230, 0.10);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
+}
+.pbe-closer__node {
+  position: absolute;
+  left: -31px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--pc-ink);
+  border: 1px solid var(--pc-gold);
+}
+.pbe-closer__n {
+  grid-area: n;
+  font: 600 11px/1.6 var(--font-mono, ui-monospace, Menlo, Consolas, monospace);
+  letter-spacing: 0.12em;
+  color: var(--pc-gold);
+}
+.pbe-closer__stage-body { grid-area: body; min-width: 0; }
+.pbe-closer__t {
+  margin: 0;
+  font: 800 15px/1.2 var(--font-mono, ui-monospace, Menlo, Consolas, monospace);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--pc-paper);
+}
+.pbe-closer__s {
+  margin: 6px 0 0;
+  font-family: var(--font-sans, Inter, system-ui, sans-serif);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--pc-dim);
+}
+.pbe-closer__tag {
+  grid-area: tag;
+  justify-self: start;
+  font: 600 10px/1 var(--font-mono, ui-monospace, Menlo, Consolas, monospace);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(212, 175, 55, 0.85);
+  padding: 5px 7px;
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: 3px;
+}
+
+@media (max-width: 900px) {
+  /* one column, sales order: statement -> pipeline -> vow -> CTAs */
+  .pbe-closer__inner { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'copy' 'pipe' 'close'; row-gap: 40px; }
+  .pbe-closer__vow { margin-top: 0; }
+}
+@media (max-width: 480px) {
+  .pbe-closer__ctas { flex-direction: column; }
+  .pbe-closer__cta { justify-content: space-between; }
+  .pbe-closer__stage { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pbe-closer__rail { display: none; }
+  .pbe-closer__cta, .pbe-closer__cta span { transition: none; }
+}

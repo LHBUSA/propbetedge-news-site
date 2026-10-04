@@ -38,6 +38,8 @@
 import { api } from '../api.js';
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
+import { renderHomeCloser } from '../components/home-closer.js';
+import '../styles/home-closer.css';
 import { renderArticleCard, renderSidebarStory, escapeHtml, escapeAttr, formatRelative } from '../components/article-card.js';
 import { renderBreakingBanner } from '../components/breaking-banner.js';
 import { proxyImage } from '../ads-config.js';
@@ -105,8 +107,9 @@ export async function renderHome(root) {
         <!-- Per-sport rails -->
         <div id="sport-rails"></div>
       </div>
+      ${renderHomeCloser()}
     </main>
-    ${renderFooter()}
+    ${renderFooter({ cta: false })}
   `;
 
   // Progressive enhancement only: never blocks or reshapes the static module.

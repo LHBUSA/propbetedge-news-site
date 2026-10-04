@@ -8,10 +8,12 @@
 import { ad_footer_banner, PROPBET_LINKS } from '../ads-config.js';
 import { renderPreferredSource } from './preferred-source.js';
 
-export function renderFooter() {
+// cta=false: the homepage renders its own brand closer (components/home-closer.js) instead of the generic
+// network CTA; every other page keeps the default.
+export function renderFooter({ cta = true } = {}) {
   const year = new Date().getFullYear();
   return `
-    ${ad_footer_banner()}
+    ${cta ? ad_footer_banner() : ''}
 
     <footer class="footer">
       <div class="container">
