@@ -1354,16 +1354,25 @@ function buildServerEditorialStandardsHtml() {
   return `<main class="pbe-ssr-editorial-standards" data-server-rendered="1">
     <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; Editorial Standards</nav>
     <article>
-      <p>Trust · Editorial</p>
+      <p>Trust · Editorial · Last updated October 4, 2026</p>
       <h1>Editorial Standards</h1>
-      <p>Evidence before fluency. Clear bylines. Visible corrections. Models treated as probabilities, not promises.</p>
-      <h2>Publishing principles</h2>
+      <p>Evidence before fluency. Every reported fact, model output and editorial conclusion should be traceable to what supported it at publication time.</p>
+      <h2>Our standard</h2>
       <p>PropBetEdge distinguishes sourced facts, editorial analysis and model output; prefers primary evidence where available; preserves missing or conflicting data instead of inventing precision; and keeps publication history when corrections are required.</p>
+      <h2>Sources</h2>
+      <p>Preferred order: primary or official evidence, then direct reporting, then structured data providers with provider and timestamp provenance, then attributed secondary context. Conflicting sources are represented as uncertainty or publication is held.</p>
       <h2>AI, automation and bylines</h2>
-      <p>Named human authors are accountable for work published under their names. The <a href="/authors/propbetedge-editorial-team">PropBetEdge Editorial Team</a> is an operational newsroom byline, not a fictitious person, and may represent AI-assisted and automated newsroom workflows.</p>
+      <p>PropBetEdge uses AI and automation in its newsroom. AI may assist discovery, organization, extraction, drafting and checking; it cannot make unsupported names, numbers, quotes or injuries true, and missing evidence means a story is held. Named human authors are accountable for work published under their names. The <a href="/authors/propbetedge-editorial-team">PropBetEdge Editorial Team</a> is an operational newsroom byline, not a fictitious person, and may represent AI-assisted and automated newsroom workflows.</p>
+      <h2>Models and markets</h2>
+      <p>Models are probabilistic. Observed facts, derived PBE metrics, editorial analysis and market observations are distinct; a market price does not become model truth by disagreeing with PBE. Losses stay visible and historical calls are not backfilled.</p>
+      <h2>What prevents a story from publishing</h2>
+      <p>Publication may be withheld when required evidence or an integrity check fails. When evidence and prose disagree, evidence wins.</p>
       <h2>Corrections and records</h2>
-      <p>Material corrections are disclosed. Publication timestamps and model or pick history are not silently rewritten after outcomes are known.</p>
-      <p><a href="/authors">Editorial Team</a> · <a href="/legal">Legal</a> · <a href="/terms">Terms</a></p>
+      <p>Material corrections are disclosed. Publication timestamps and model or pick history are not silently rewritten after outcomes are known. Correction is not deletion of history. Report an issue: <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a>.</p>
+      <h2>Responsible betting</h2>
+      <p>PropBetEdge is not a sportsbook; no model or pick guarantees profit. Gambling problem? Call or text 1-800-GAMBLER.</p>
+      <p>PropBetEdge is operated by Local Home Buyers LLC d/b/a PropTechUSA.ai.</p>
+      <p><a href="/authors">Editorial Team</a> · <a href="/about">About</a> · <a href="/legal">Legal</a> · <a href="/terms">Terms</a></p>
     </article>
   </main>`;
 }

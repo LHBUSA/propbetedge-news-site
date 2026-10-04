@@ -46,11 +46,10 @@ test('editorial standards reflect the current network and transparent automation
   assert.doesNotMatch(standards, /September 2, 2026/);
 });
 
-test('editorial and byline pages use the current homepage closer, not the stale generic footer CTA', () => {
-  for (const source of [standards, authorPage, authorsPage]) {
-    assert.match(source, /renderHomeCloser\(\)/);
-    assert.match(source, /renderFooter\(\{ cta: false \}\)/);
-  }
+test('byline pages use the current homepage closer; Editorial Standards closes with accountability; none use the generic CTA', () => {
+  for (const source of [authorPage, authorsPage]) assert.match(source, /renderHomeCloser\(\)/);
+  assert.doesNotMatch(standards, /renderHomeCloser/, 'standards ends on accountability, not a sales closer');
+  for (const source of [standards, authorPage, authorsPage]) assert.match(source, /renderFooter\(\{ cta: false \}\)/);
   assert.match(authorPage, /BYLINE ACCOUNTABILITY/);
   assert.match(authorsPage, /named contributors/i);
   assert.match(authorsPage, /operational bylines/i);
