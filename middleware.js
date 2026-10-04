@@ -34,6 +34,7 @@ import { classifyAutomatedAccess } from './src/security/automated-access.js';
 import { AUTHOR_PROFILES } from './src/editorial/authors-registry.js';
 import { researchPage, researchSubpages, RESEARCH_NOT_PUBLISHED, RESEARCH_UPDATED } from './src/research/registry.js';
 import { PUBLIC_APIS } from './src/network/public-apis.js';
+import { aboutModel, ABOUT_META } from './src/about-content.js';
 
 export const config = {
   matcher: [
@@ -421,8 +422,8 @@ async function resolveMeta(pathname, search = '') {
     const canonical = `${SITE}/about`;
     return {
       canonical,
-      title: 'About PropBetEdge — The Sports Intelligence Network',
-      description: 'PropBetEdge is a ten-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
+      title: ABOUT_META.title,
+      description: ABOUT_META.description,
       image: NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildAboutSchema(canonical),
@@ -1302,7 +1303,7 @@ function buildAboutSchema(canonical) {
         '@id': `${canonical}#page`,
         url: canonical,
         name: 'About PropBetEdge',
-        description: 'PropBetEdge is a ten-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
+        description: ABOUT_META.description,
         mainEntity: { '@id': `${SITE}/#organization` },
         isPartOf: { '@id': `${SITE}/#website` },
         inLanguage: 'en-US',
@@ -1319,36 +1320,26 @@ function buildAboutSchema(canonical) {
 }
 
 function buildServerAboutHtml() {
+  const m = aboutModel();
+  const link = (href, label) => `<a href="${escapeAttr(href)}">${escapeHtml(label)}</a>`;
   return `<main class="pbe-ssr-about" data-server-rendered="1">
     <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; About</nav>
     <article>
-      <p>The Sports Intelligence Network</p>
-      <h1>Sports are deeper than the scoreboard.</h1>
-      <p>PropBetEdge connects live sports data, sport-specific analytics, Player DNA, PBEcast, model output, permanent records and original journalism across one nine-sport network.</p>
-      <p><strong>News is the entry point. Intelligence is the product.</strong></p>
-      <h2>Ten live sport intelligence products</h2>
-      <p>
-        <a href="https://mlb.propbetedge.ai/sharp-tools">MLB</a> ·
-        <a href="https://nfl.propbetedge.ai/">NFL</a> ·
-        <a href="https://nba.propbetedge.ai/">NBA</a> ·
-        <a href="https://wnba.propbetedge.ai/">WNBA</a> ·
-        <a href="https://nhl.propbetedge.ai/">NHL</a> ·
-        <a href="https://ufc.propbetedge.ai/">UFC</a> ·
-        <a href="https://tennis.propbetedge.ai/">Tennis</a> ·
-        <a href="https://soccer.propbetedge.ai/">Soccer</a> ·
-        <a href="https://golf.propbetedge.ai/">Golf</a> ·
-        <a href="https://f1.propbetedge.ai/">F1</a>
-      </p>
-      <p>Plus <a href="https://predictions.propbetedge.ai/">PropBetEdge Predictions</a> — real-world probability intelligence, included in <a href="/pro">All Access</a>.</p>
-      <h2>Accountability by design</h2>
-      <p>PropBetEdge separates research from live claims, preserves missing data as missing, and keeps permanent records where models are live. News connects into players, teams, games, tournaments, courses and sport-specific intelligence instead of ending at the article.</p>
-      <p><a href="/authors">Editorial Team</a> · <a href="/editorial-standards">Editorial Standards</a> · <a href="/pro">All Access</a></p>
-      <h2>Built by PropTechUSA.ai</h2>
-      <p><strong>PropBetEdge is owned, built and operated by PropTechUSA.ai.</strong> The newsroom, sports-data pipelines, models, APIs, automation and technical infrastructure operate inside the broader PropTechUSA.ai technology ecosystem.</p>
-      <h2>Contact</h2>
-      <p>Editorial: <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a><br>
-      Business: <a href="mailto:hello@proptechusa.ai">hello@proptechusa.ai</a><br>
-      Press: <a href="mailto:press@proptechusa.ai">press@proptechusa.ai</a></p>
+      <h1>A connected sports intelligence operating system.</h1>
+      <p>${escapeHtml(ABOUT_META.description)}</p>
+      <h2>How the company fits together</h2>
+      <ul>${m.layers.map((l) => `<li><strong>${escapeHtml(l.name)}</strong> — ${escapeHtml(l.role)}</li>`).join('')}</ul>
+      <h2>The operating loop</h2>
+      <ol>${m.stages.map((st) => `<li><strong>${escapeHtml(st.label)}</strong> — ${escapeHtml(st.body)}</li>`).join('')}</ol>
+      <h2>${m.sportCount} live sports</h2>
+      <ul>${m.sports.map((sp) => `<li>${link(sp.url, `PropBetEdge ${sp.label}`)} — ${escapeHtml(sp.line)}</li>`).join('')}</ul>
+      <h2>Intelligence products</h2>
+      <p>${link(m.predictions.url, m.predictions.name)} — ${escapeHtml(m.predictions.line)}</p>
+      <p>${link(m.allAccess.href, 'All Access')} — ${escapeHtml(m.allAccess.price)}: every live sport plus ${escapeHtml(m.predictions.name)}.</p>
+      ${m.upcoming.length ? `<p>In development: ${m.upcoming.map((u) => `${escapeHtml(u.label)} (${escapeHtml(u.eta)})`).join(', ')}.</p>` : ''}
+      <h2>How we keep it honest</h2>
+      <p>${m.trust.map(escapeHtml).join(' ')}</p>
+      <p><a href="/editorial-standards">Editorial Standards</a> · <a href="/research">Research</a> · <a href="/authors">Editorial Team</a> · <a href="/developers">Developers</a> · <a href="/terms">Terms</a> · <a href="/legal">Legal</a></p>
     </article>
   </main>`;
 }

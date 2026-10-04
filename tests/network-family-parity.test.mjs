@@ -87,9 +87,10 @@ test('schema.js hasPart and index.html static JSON-LD == family sports + Predict
   assert.equal(orgs[0]['@id'], family.organization);
 });
 
-test('About crawler HTML lists the ten family sports and Predictions separately', () => {
-  const mw = read('middleware.js');
-  const block = mw.slice(mw.indexOf('<h2>Ten live sport intelligence products</h2>'), mw.indexOf('<h2>Accountability by design</h2>'));
-  const hosts = [...block.matchAll(/href="https:\/\/([a-z0-9]+)\.propbetedge\.ai\//g)].map((m) => m[1]);
-  assert.deepEqual(hosts, [...family.sports.map((s) => s.key), 'predictions']);
+test('About (page + crawler HTML) renders the ten family sports and Predictions separately', async () => {
+  const { aboutModel } = await import('../src/about-content.js');
+  const m = aboutModel();
+  assert.deepEqual(m.sports.map((s) => s.key), family.sports.map((s) => s.key));
+  assert.equal(m.predictions.url, PRED_URL);
+  assert.match(read('middleware.js'), /const m = aboutModel\(\);/);
 });

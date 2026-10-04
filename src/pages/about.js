@@ -1,257 +1,122 @@
+/**
+ * /about — the company and network explanation. A presentation layer over canonical network truth:
+ * src/about-content.js composes family.json, pro-content.js, intelligence-cta.js and the research registry, and
+ * this page only lays it out. No sport, product, price or URL is written here. Quiet editorial header; main-site
+ * footer. Styles: src/styles/about.css (.ab-*), warm palette only.
+ */
+
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { organizationSchema, websiteSchema, breadcrumbSchema, injectSchemas } from '../schema.js';
+import { aboutModel, ABOUT_META } from '../about-content.js';
 
 const SITE = 'https://propbetedge.ai';
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ext = 'target="_blank" rel="noopener"';
+const isExt = (h) => /^https?:\/\//.test(h) && !h.startsWith(SITE);
 
-const SPORTS = [
-  { key: 'mlb', label: 'MLB', icon: '⚾', href: 'https://mlb.propbetedge.ai/sharp-tools', line: 'Models, props, player intelligence and the MLB PBEcast experience.' },
-  { key: 'nfl', label: 'NFL', icon: '🏈', href: 'https://nfl.propbetedge.ai/', line: 'Game intelligence, player context, Touchdown Targets and live football analysis.' },
-  { key: 'nba', label: 'NBA', icon: '🏀', href: 'https://nba.propbetedge.ai/', line: 'Basketball intelligence, player analytics and model-driven game context.' },
-  { key: 'wnba', label: 'WNBA', icon: '🏀', href: 'https://wnba.propbetedge.ai/', line: 'WinBA, player impact, live game intelligence and WNBA-specific analytics.' },
-  { key: 'nhl', label: 'NHL', icon: '🏒', href: 'https://nhl.propbetedge.ai/', line: 'Hockey intelligence, shot context, PBEcast and game-level analysis.' },
-  { key: 'ufc', label: 'UFC', icon: '🥊', href: 'https://ufc.propbetedge.ai/', line: 'Fight intelligence, matchup context, model calls and accountable records.' },
-  { key: 'tennis', label: 'Tennis', icon: '🎾', href: 'https://tennis.propbetedge.ai/', line: 'Men’s and women’s tennis intelligence, Tennis DNA, rankings, match history and PBEcast.' },
-  { key: 'soccer', label: 'Soccer', icon: '⚽', href: 'https://soccer.propbetedge.ai/', line: 'Global soccer intelligence, Player DNA, live match context, league tables, video and PBEcast.' },
-  { key: 'golf', label: 'Golf', icon: '⛳', href: 'https://golf.propbetedge.ai/', line: 'Player DNA, Course DNA, tournament history, weather intelligence, matchups and Golf PBEcast.' },
-  { key: 'f1', label: 'F1', icon: '🏎️', href: 'https://f1.propbetedge.ai/', line: 'Driver DNA, Constructor DNA, Circuit DNA, standings, race matchups, weather and F1 PBEcast.' },
-];
+export function aboutHtml(m = aboutModel()) {
+  return `
+    ${renderHeader({ mode: 'editorial' })}
+    <main class="ab">
+      <header class="ab-hero">
+        <div class="ab-wrap">
+          <p class="ab-eyebrow">About PropBetEdge</p>
+          <h1 class="ab-title">A connected sports intelligence operating system.</h1>
+          <p class="ab-lede">PropBetEdge observes live sports, keeps one canonical state of every game, player and market, runs sport-specific models and DNA systems, freezes official calls before outcomes, and publishes intelligence and journalism connected back to the evidence — across ${m.sportCount} live sports and PropBetEdge Predictions.</p>
+          <nav class="ab-actions" aria-label="About actions">
+            <a class="ab-btn ab-btn--primary" href="${esc(m.allAccess.href)}">Explore All Access</a>
+            <a class="ab-btn" href="/research">How the intelligence is built</a>
+            <a class="ab-btn" href="/editorial-standards">Editorial Standards</a>
+          </nav>
+        </div>
+      </header>
+
+      <section class="ab-section ab-architecture" aria-labelledby="ab-arch-h">
+        <div class="ab-wrap ab-two">
+          <div>
+            <h2 id="ab-arch-h" class="ab-h2">How the company fits together</h2>
+            <p class="ab-copy">Three layers, one architecture. Customers use PropBetEdge; the data and engineering underneath it are built and run by the same organization.</p>
+          </div>
+          <ol class="ab-layers">${m.layers.map((l) => `<li><span class="ab-layer-name">${esc(l.name)}</span><span class="ab-layer-role">${esc(l.role)}</span></li>`).join('')}</ol>
+        </div>
+      </section>
+
+      <section class="ab-section ab-loop" aria-labelledby="ab-loop-h">
+        <div class="ab-wrap">
+          <h2 id="ab-loop-h" class="ab-h2">The operating loop</h2>
+          <ol class="ab-stages">${m.stages.map((s, i) => `<li><span class="ab-stage-n">${String(i + 1).padStart(2, '0')}</span><span class="ab-stage-k">${esc(s.label)}</span><span class="ab-stage-t">${esc(s.title)}</span><span class="ab-stage-b">${esc(s.body)}</span></li>`).join('')}</ol>
+          <p class="ab-more"><a href="/research/intelligence-systems">Intelligence systems →</a> <a href="/research/model-governance">Model governance →</a></p>
+        </div>
+      </section>
+
+      <section class="ab-section ab-network" aria-labelledby="ab-net-h">
+        <div class="ab-wrap">
+          <h2 id="ab-net-h" class="ab-h2">${m.sportCount} live sports, each with its own intelligence</h2>
+          <ul class="ab-sports">${m.sports.map((s) => `<li><a href="${esc(s.url)}" ${ext}><span class="ab-sport-label"><span aria-hidden="true">${esc(s.glyph)}</span> ${esc(s.label)}</span><span class="ab-sport-line">${esc(s.line)}</span></a>${s.newsPath ? `<a class="ab-sport-news" href="${esc(s.newsPath)}"${isExt(s.newsPath) ? ` ${ext}` : ''}>${esc(s.label)} newsroom</a>` : ''}</li>`).join('')}</ul>
+          ${m.upcoming.length ? `<p class="ab-upcoming">In development: ${m.upcoming.map((u) => `<strong>${esc(u.label)}</strong> (${esc(u.eta)}) — ${esc(u.line)}`).join(' ')}</p>` : ''}
+        </div>
+      </section>
+
+      <section class="ab-section ab-products" aria-label="Predictions and All Access">
+        <div class="ab-wrap ab-two">
+          <a class="ab-product" href="${esc(m.predictions.url)}" ${ext}>
+            <span class="ab-product-k">Intelligence product</span>
+            <span class="ab-product-name">${esc(m.predictions.name)}</span>
+            <span class="ab-product-tag">${esc(m.predictions.tagline)}</span>
+            <span class="ab-product-line">${esc(m.predictions.line)}</span>
+          </a>
+          <a class="ab-product ab-product--access" href="${esc(m.allAccess.href)}">
+            <span class="ab-product-k">Membership</span>
+            <span class="ab-product-name">All Access <span class="ab-price">${esc(m.allAccess.price)}</span></span>
+            <span class="ab-product-line">Every live sport intelligence product plus ${esc(m.predictions.name)}, in one membership. New sports and Pro products join as they launch.</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="ab-section ab-newsroom" aria-labelledby="ab-news-h">
+        <div class="ab-wrap ab-two">
+          <div>
+            <h2 id="ab-news-h" class="ab-h2">An AI-native newsroom with named accountability</h2>
+            <p class="ab-copy">Every sport has its own newsroom, connected to the same evidence, entity pages and live products as the intelligence. Named contributors are accountable for their bylines; the PropBetEdge Editorial Team byline identifies disclosed newsroom systems, never a fictitious person.</p>
+            <p class="ab-more"><a href="/news">All sports news →</a> <a href="/authors">Editorial Team →</a></p>
+          </div>
+          <div class="ab-trust">
+            <h2 class="ab-kicker">How we keep it honest</h2>
+            <ul>${m.trust.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
+            <p class="ab-trust-links"><a href="/editorial-standards">Editorial Standards</a> · <a href="/research">Research</a> · <a href="/authors">Editorial Team</a> · <a href="/terms">Terms</a> · <a href="/legal">Legal</a></p>
+          </div>
+        </div>
+      </section>
+
+      <section class="ab-section ab-builders" aria-labelledby="ab-dev-h">
+        <div class="ab-wrap ab-two">
+          <h2 id="ab-dev-h" class="ab-h2">Build on the platform</h2>
+          <p class="ab-copy">The PropSports data platform underneath PropBetEdge is available to developers as documented commercial APIs. <a href="/developers">Explore the APIs →</a></p>
+        </div>
+      </section>
+    </main>
+    ${renderFooter({ cta: false })}
+  `;
+}
 
 export function renderAbout(root, setMeta) {
-  setMeta?.({
-    title: 'About PropBetEdge — The Sports Intelligence Network',
-    description: 'PropBetEdge is a ten-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
-    canonical: `${SITE}/about`,
-  });
-
+  setMeta?.({ title: ABOUT_META.title, description: ABOUT_META.description, canonical: `${SITE}/about` });
   injectSchemas([
     organizationSchema(),
     websiteSchema(),
-    breadcrumbSchema([
-      { name: 'Home', url: '/' },
-      { name: 'About PropBetEdge' },
-    ]),
+    breadcrumbSchema([{ name: 'Home', url: '/' }, { name: 'About PropBetEdge' }]),
     {
       '@context': 'https://schema.org',
       '@type': 'AboutPage',
       '@id': `${SITE}/about#page`,
       url: `${SITE}/about`,
       name: 'About PropBetEdge',
-      description: 'PropBetEdge is a ten-sport intelligence network combining live data, sport-specific analytics, Player DNA, PBEcast, permanent records and original sports journalism.',
+      description: ABOUT_META.description,
       mainEntity: { '@id': `${SITE}/#organization` },
       isPartOf: { '@id': `${SITE}/#website` },
       inLanguage: 'en-US',
     },
   ], 'jsonld-about');
-
-  root.innerHTML = `
-    ${renderHeader({ mode: 'editorial' })}
-    <main class="about-v2">
-      <div class="container">
-
-        <section class="about-hero" aria-labelledby="about-title">
-          <div class="about-hero-copy">
-            <span class="about-kicker"><span class="about-live-dot" aria-hidden="true"></span>THE SPORTS INTELLIGENCE NETWORK</span>
-            <h1 id="about-title">Sports are deeper than the scoreboard.</h1>
-            <p class="about-dek">
-              PropBetEdge connects live sports data, sport-specific analytics, Player DNA, PBEcast, model output,
-              permanent records and original journalism into one network built to explain <em>what is happening, why it matters, and what the data sees next.</em>
-            </p>
-            <div class="about-actions">
-              <a class="about-btn about-btn-primary" href="/pro">Explore All Access <span aria-hidden="true">→</span></a>
-              <a class="about-btn about-btn-ghost" href="/news">Read the newsroom <span aria-hidden="true">→</span></a>
-            </div>
-          </div>
-
-          <aside class="about-manifesto" aria-label="PropBetEdge principles">
-            <span class="about-manifesto-label">BUILT DIFFERENT</span>
-            <p>We do not want to be another picks page with a few stats attached.</p>
-            <p>We build sport-specific intelligence products, keep model records public where models are live, and connect every newsroom back to the players, teams, courses, events and data underneath it.</p>
-            <div class="about-manifesto-rule"></div>
-            <strong>News is the entry point. Intelligence is the product.</strong>
-          </aside>
-        </section>
-
-        <section class="about-proof" aria-label="Network snapshot">
-          <div><strong>10</strong><span>live sport intelligence products</span></div>
-          <div><strong>1</strong><span>connected intelligence network</span></div>
-          <div><strong>$29</strong><span>All Access · monthly</span></div>
-          <div><strong>Evidence</strong><span>provenance, records and source-backed publishing</span></div>
-        </section>
-
-        <section class="about-split">
-          <div>
-            <span class="about-section-kicker">WHAT WE ARE BUILDING</span>
-            <h2>A sports intelligence layer, not a skin on top of scores.</h2>
-          </div>
-          <div class="about-copy">
-            <p>
-              Each PropBetEdge sport is allowed to become its own product. Baseball does not need to look like football.
-              Tennis should not be forced into a basketball template. Fighting, hockey and women’s basketball each deserve their own
-              data model, analytical language and live experience.
-            </p>
-            <p>
-              That is why the network includes products such as PBEcast, Player DNA, WinBA, Tennis DNA, Course DNA, sport-specific model outputs,
-              permanent track records and player intelligence instead of one generic dashboard copied across every league.
-            </p>
-          </div>
-        </section>
-
-        <section class="about-network" aria-labelledby="network-title">
-          <header class="about-section-head">
-            <div>
-              <span class="about-section-kicker">THE NETWORK</span>
-              <h2 id="network-title">One brand. Ten live sports. Different intelligence for each one.</h2>
-            </div>
-            <a href="/pro">See All Access →</a>
-          </header>
-          <div class="about-sport-grid">
-            ${SPORTS.map((sport) => `
-              <a class="about-sport-card about-sport-${sport.key}" href="${sport.href}">
-                <span class="about-sport-icon" aria-hidden="true">${sport.icon}</span>
-                <span class="about-sport-meta">PROPBETEDGE · ${sport.label}</span>
-                <strong>${sport.label} Intelligence</strong>
-                <p>${sport.line}</p>
-                <span class="about-sport-open">Open ${sport.label} <span aria-hidden="true">→</span></span>
-              </a>
-            `).join('')}
-          </div>
-        </section>
-
-        <section class="about-system" aria-labelledby="system-title">
-          <header class="about-section-head">
-            <div>
-              <span class="about-section-kicker">HOW IT WORKS</span>
-              <h2 id="system-title">The intelligence has a spine.</h2>
-            </div>
-          </header>
-          <div class="about-system-grid">
-            <article>
-              <span>01</span>
-              <h3>Own the evidence</h3>
-              <p>Ingest, normalize and preserve the underlying sports facts so every product is built on durable evidence instead of disposable page calls.</p>
-            </article>
-            <article>
-              <span>02</span>
-              <h3>Build sport-native intelligence</h3>
-              <p>Turn the data into metrics, models, DNA systems, player profiles, live context and visual products designed for that sport rather than a generic template.</p>
-            </article>
-            <article>
-              <span>03</span>
-              <h3>Publish with context</h3>
-              <p>Use original journalism and permanent entity pages to explain the story, then connect readers directly into Player DNA, matchups, courses, PBEcast and the deeper intelligence behind it.</p>
-            </article>
-            <article>
-              <span>04</span>
-              <h3>Keep the record</h3>
-              <p>Where a model is live, lock the call before the event, grade it after the result and preserve the record instead of rewriting history.</p>
-            </article>
-          </div>
-        </section>
-
-        <section class="about-accountability">
-          <div class="about-accountability-copy">
-            <span class="about-section-kicker">ACCOUNTABILITY BY DESIGN</span>
-            <h2>Research, prediction and journalism are not the same thing.</h2>
-            <p>
-              PropBetEdge separates experimental work from live product claims. A metric can be useful before a model is ready.
-              A model can be in validation before it deserves a public recommendation. Missing data is shown as missing instead of silently becoming zero.
-            </p>
-            <p>
-              Our editorial workflow combines automation with source checks, evidence gates and public standards.
-              That same philosophy runs through the intelligence products: preserve provenance, label uncertainty and keep the record.
-            </p>
-            <div class="about-inline-links">
-              <a href="/editorial-standards">Editorial Standards →</a>
-              <a href="/authors">Editorial Team →</a>
-            </div>
-          </div>
-          <div class="about-accountability-stack" aria-label="Accountability principles">
-            <div><span>01</span><strong>Evidence before narrative</strong></div>
-            <div><span>02</span><strong>Research labeled as research</strong></div>
-            <div><span>03</span><strong>Missing data stays missing</strong></div>
-            <div><span>04</span><strong>Track records stay permanent</strong></div>
-          </div>
-        </section>
-
-        <section class="about-news" aria-labelledby="about-news-title">
-          <div class="about-news-shell">
-            <div class="about-news-brand" aria-hidden="true">
-              <div class="about-news-brand-frame">
-                <span class="about-news-brand-edge about-news-brand-edge--tl"></span>
-                <span class="about-news-brand-edge about-news-brand-edge--br"></span>
-                <img
-                  src="/logo/pbe-full-400.png"
-                  srcset="/logo/pbe-full-200.png 200w, /logo/pbe-full-400.png 400w, /logo/pbe-full-600.png 600w"
-                  sizes="(max-width: 760px) 190px, 260px"
-                  alt=""
-                  class="about-news-logo"
-                  width="600"
-                  height="600"
-                  loading="lazy"
-                  decoding="async"
-                >
-                <span class="about-news-brand-line">NEWS <i>•</i> DATA <i>•</i> INTELLIGENCE</span>
-              </div>
-            </div>
-
-            <div class="about-news-copy">
-              <span class="about-section-kicker about-news-kicker"><span aria-hidden="true"></span>NEWS <i>•</i> INTELLIGENCE</span>
-              <h2 id="about-news-title">Every <em>newsroom</em> leads into the intelligence network.</h2>
-              <p>
-                A PropBetEdge story should lead somewhere useful: a player, a team, a game, a tournament, a course, a model, a PBEcast,
-                a leaderboard or a deeper sport-specific product. The goal is to make every story an entry point into the intelligence graph.
-              </p>
-              <div class="about-news-action-row">
-                <a class="about-news-cta" href="/news">Explore PropBetEdge News <span aria-hidden="true">→</span></a>
-                <span class="about-news-proofline">Original reporting <i>•</i> entity-linked stories <i>•</i> charts & video <i>•</i> evidence-gated publishing</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="about-parent">
-          <div>
-            <span class="about-section-kicker">BUILT BY PROPTECHUSA.AI</span>
-            <h2>One engineering organization behind the network.</h2>
-          </div>
-          <div class="about-copy">
-            <p>
-              <strong>PropBetEdge is owned, built and operated by PropTechUSA.ai.</strong> The newsroom, models, sports-data pipelines,
-              automation, APIs and technical infrastructure are developed inside the broader PropTechUSA.ai technology ecosystem.
-            </p>
-            <p>
-              PropTechUSA.ai also operates <a href="https://propdata.proptechusa.ai" target="_blank" rel="noopener">PropData</a>,
-              its property-intelligence infrastructure, and <a href="https://propsports.proptechusa.ai" target="_blank" rel="noopener">PropSports</a>,
-              the sports-data infrastructure behind parts of the PropBetEdge network.
-            </p>
-          </div>
-        </section>
-
-        <section class="about-final-cta">
-          <span class="about-section-kicker">GO DEEPER</span>
-          <h2>Follow the story. Open the intelligence. Watch it live. Keep the record.</h2>
-          <p>That is the idea behind PropBetEdge.</p>
-          <div class="about-actions">
-            <a class="about-btn about-btn-primary" href="/pro">PropBetEdge All Access <span aria-hidden="true">→</span></a>
-            <a class="about-btn about-btn-ghost" href="/news">Latest intelligence <span aria-hidden="true">→</span></a>
-          </div>
-        </section>
-
-        <section class="about-contact" id="contact">
-          <div>
-            <span class="about-section-kicker">CONTACT</span>
-            <h2>Talk to PropBetEdge.</h2>
-          </div>
-          <div class="about-contact-grid">
-            <a href="mailto:editorial@proptechusa.ai"><span>Editorial</span><strong>editorial@proptechusa.ai</strong></a>
-            <a href="mailto:hello@proptechusa.ai"><span>Business</span><strong>hello@proptechusa.ai</strong></a>
-            <a href="mailto:press@proptechusa.ai"><span>Press</span><strong>press@proptechusa.ai</strong></a>
-          </div>
-        </section>
-
-      </div>
-    </main>
-    ${renderFooter()}
-  `;
+  root.innerHTML = aboutHtml();
 }

@@ -1,4 +1,4 @@
-import './styles/pbe-about.css';
+import './styles/about.css';
 import './styles/story-image-integrity.css';
 import './styles/pbe-article-media.css';
 import './styles/pbe-article-visuals.css';

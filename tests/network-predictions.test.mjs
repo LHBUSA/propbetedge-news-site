@@ -50,7 +50,11 @@ test('network surfaces link Predictions: footer, header switcher + mobile menu, 
   const header = read('src/components/header.js');
   assert.match(header, /pbe-intel-option-predictions" href="https:\/\/predictions\.propbetedge\.ai\/"/);
   assert.match(header, /data-pbe-placement="mobile_more_predictions">Predictions</);
-  assert.match(read('middleware.js'), /href="https:\/\/predictions\.propbetedge\.ai\/">PropBetEdge Predictions<\/a>/);
+  // About crawler HTML renders the canonical About model (src/about-content.js), which carries Predictions.
+  const { aboutModel } = await import('../src/about-content.js');
+  assert.equal(aboutModel().predictions.url, 'https://predictions.propbetedge.ai/');
+  assert.equal(aboutModel().predictions.name, 'PropBetEdge Predictions');
+  assert.match(read('middleware.js'), /link\(m\.predictions\.url, m\.predictions\.name\)/);
   assert.equal(toolById('predictions').href, `${PRED}/`);
   assert.ok(EMPTY_STATE.popular.some((p) => p.id === 'predictions'));
 });
