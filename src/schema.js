@@ -216,24 +216,29 @@ export function profilePageSchema(slug, author) {
   const profileUrl = `${SITE.url}/authors/${slug}`;
   const personId = `${profileUrl}#person`;
 
+  const isOrganization = author.kind === 'organization';
   const personNode = {
-    '@type': 'Person',
+    '@type': isOrganization ? 'Organization' : 'Person',
     '@id': personId,
     name: author.name,
-    jobTitle: author.title || author.role,
     description: stripHtml(author.bio).slice(0, 500),
     url: profileUrl,
-    worksFor: { '@id': ORG_ID },
-    knowsAbout: author.expertise || [],
+    ...(isOrganization
+      ? { memberOf: { '@id': ORG_ID } }
+      : {
+          jobTitle: author.title || author.role,
+          worksFor: { '@id': ORG_ID },
+          knowsAbout: author.expertise || [],
+        }),
   };
 
-  if (author.credentials && author.credentials.length) {
+  if (!isOrganization && author.credentials && author.credentials.length) {
     personNode.hasCredential = author.credentials.map((c) => ({
       '@type': 'EducationalOccupationalCredential',
       name: c,
     }));
   }
-  if (author.location) {
+  if (!isOrganization && author.location) {
     personNode.homeLocation = { '@type': 'Place', name: author.location };
   }
   if (author.image) {
