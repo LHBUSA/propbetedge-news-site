@@ -1615,3 +1615,44 @@
 @media (prefers-reduced-motion: reduce) {
   .pbe-av-team-slot i { animation: none; }
 }
+
+/* Single published fact: one horizontal strip (index · value/label · sentence).
+   No dashboard min-heights, so Verified Live Context starts right underneath. */
+.pbe-article-visuals .pbe-av-evidence-card.is-single {
+  min-height: 0;
+  padding: 13px 16px;
+  display: grid;
+  grid-template-columns: auto minmax(84px, max-content) minmax(0, 1fr);
+  align-items: center;
+  column-gap: 16px;
+}
+.pbe-article-visuals .pbe-av-evidence-card.is-single > div { margin-top: 0; }
+.pbe-article-visuals .pbe-av-evidence-card.is-single .pbe-av-evidence-stats {
+  min-height: 0;
+  padding: 0 16px 0 0;
+  border-bottom: 0;
+  border-right: 1px solid rgba(255,255,255,.08);
+  align-self: stretch;
+  align-content: center;
+}
+.pbe-article-visuals .pbe-av-evidence-card.is-single b { white-space: normal; max-width: 26ch; line-height: 1.25; }
+.pbe-article-visuals .pbe-av-evidence-card.is-single p {
+  margin: 0 !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+@media (max-width: 640px) {
+  .pbe-article-visuals .pbe-av-evidence-card.is-single {
+    min-height: 0;
+    padding: 12px 13px;
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 9px;
+    column-gap: 12px;
+  }
+  .pbe-article-visuals .pbe-av-evidence-card.is-single .pbe-av-evidence-stats {
+    padding: 0;
+    border-right: 0;
+  }
+  .pbe-article-visuals .pbe-av-evidence-card.is-single b { max-width: none; }
+  .pbe-article-visuals .pbe-av-evidence-card.is-single p { grid-column: 1 / -1; }
+}

@@ -364,6 +364,34 @@ export function evidenceLabel(label, value) {
   return label;
 }
 
+// Spelled-out names for the single-fact strip, where there is room for words.
+const LONG_LABELS = {
+  G: ['GOALS', 'goals?'], A: ['ASSISTS', 'assists?'], PTS: ['POINTS', 'points?'],
+  SV: ['SAVES', 'saves?'], SOG: ['SHOTS ON GOAL', 'shots?(?:\\s+on\\s+goal)?'], GA: ['GOALS ALLOWED', 'goals?'],
+  REB: ['REBOUNDS', 'rebounds?'], AST: ['ASSISTS', 'assists?'], STL: ['STEALS', 'steals?'], BLK: ['BLOCKS', 'blocks?'],
+  HR: ['HOME RUNS', 'home runs?|homers?'], RBI: ['RBI', 'RBIs?|runs batted in'], K: ['STRIKEOUTS', 'strikeouts?'],
+  TD: ['TOUCHDOWNS', 'touchdowns?|TDs?'], REC: ['RECEPTIONS', 'receptions?|catches'],
+};
+const QUALIFIER = /^\s+(at even strength|on the power play|short[- ]?handed|in the (?:first|second|third) period|in overtime)\b/i;
+
+/**
+ * A fuller label for a lone evidence metric. Uses only words the article itself
+ * places right after the metric's number ("six goals at even strength"); never invents.
+ */
+export function evidenceLongLabel(label, value, sentence = '') {
+  const short = evidenceLabel(label, value);
+  const entry = LONG_LABELS[label];
+  if (!entry) return short;
+  const [name, noun] = entry;
+  const numeric = evidenceNumber(value);
+  const words = Object.keys(WORD_NUMBERS).filter((w) => WORD_NUMBERS[w] === numeric);
+  const tokens = [String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), ...words].join('|');
+  const m = new RegExp(`(?:^|[^\\w.])(?:${tokens})\\s+(?:${noun})\\b`, 'i').exec(String(sentence));
+  if (!m) return name;
+  const q = QUALIFIER.exec(String(sentence).slice(m.index + m[0].length));
+  return q ? `${name} ${q[1].toUpperCase().replace(/-/g, ' ')}` : name;
+}
+
 /** A metric value is displayable only if it is a real, finite, non-placeholder value. */
 export function isDisplayableValue(value) {
   const text = String(value ?? '').trim();

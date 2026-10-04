@@ -830,3 +830,33 @@ test('default NFL article scene uses the football-native gridiron asset', () => 
   assert.match(nflRule, /gridiron-gold\.webp/);
   assert.doesNotMatch(nflRule, /stadium-night\.webp/);
 });
+
+test('one published fact renders as a compact strip with a spelled-out label, never a dashboard card', () => {
+  const sentence = 'Colorado scored six goals at even strength and zero on the power play — the opposite of what the scoreline might suggest.';
+  const article = {
+    id: 'avs-even-strength',
+    sport: 'nhl',
+    title: 'Colorado wins it at five-on-five',
+    body: sentence,
+    take: { impact_score: 4, prop_types: ['goals'] },
+  };
+  const manifest = { teams: [{ name: 'Colorado Avalanche', abbreviation: 'COL', path: '/team/nhl/colorado-avalanche' }] };
+  const html = renderArticleVisuals(article, manifest);
+  assert.equal((html.match(/data-pbe-quant="evidence"/g) || []).length, 1);
+  assert.match(html, /class="pbe-av-evidence-card is-single"/);
+  assert.match(html, /<strong>6<\/strong>\s*<b>GOALS AT EVEN STRENGTH<\/b>/);
+  assert.ok(html.includes('the opposite of what the scoreline might suggest'), 'full sentence kept');
+
+  const css = fs.readFileSync(new URL('../src/styles/pbe-article-visuals.css', import.meta.url), 'utf8');
+  const single = css.slice(css.indexOf('.pbe-av-evidence-card.is-single {'));
+  assert.match(single, /^[^}]*min-height:\s*0;/, 'strip reserves no dashboard height');
+  assert.match(single, /\.is-single \.pbe-av-evidence-stats \{[^}]*min-height:\s*0;/);
+});
+
+test('two or more evidence groups keep the multi-card grid (no strip)', () => {
+  const body = 'He scored 2 goals in the first period. Later the goalie made 31 saves to close it out.';
+  const html = renderArticleVisuals({ id: 'two-ev', sport: 'nhl', title: 'Two facts', body, take: { impact_score: 3 } }, { teams: [] });
+  const cards = (html.match(/data-pbe-quant="evidence"/g) || []).length;
+  assert.ok(cards >= 2, `expected 2+ cards, got ${cards}`);
+  assert.doesNotMatch(html, /is-single/);
+});

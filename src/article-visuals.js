@@ -17,6 +17,7 @@
 import {
   extractPublishedEvidence,
   evidenceLabel,
+  evidenceLongLabel,
   evidenceSentenceAround,
   evidenceContextKey,
   isDisplayableValue,
@@ -654,12 +655,14 @@ function renderEvidence(rows) {
     <div class="pbe-av-evidence-grid" data-count="${Math.min(rows.length, 4)}">
       ${rows.map((row, idx) => {
         const statline = row.metrics.length > 1;
-        return `<div class="pbe-av-evidence-card${statline ? ' is-statline' : ''}" data-pbe-quant="evidence">
+        // One verified fact is a strip, not a dashboard card: no reserved height to fill.
+        const single = rows.length === 1 && !statline;
+        return `<div class="pbe-av-evidence-card${statline ? ' is-statline' : ''}${single ? ' is-single' : ''}" data-pbe-quant="evidence">
           <span class="pbe-av-evidence-index">${String(idx + 1).padStart(2, '0')}</span>
           <div class="pbe-av-evidence-stats">
             ${row.metrics.map((metric) => `<span class="pbe-av-evidence-stat">
               <strong>${esc(metric.value)}</strong>
-              <b>${esc(evidenceLabel(metric.label, metric.value))}</b>
+              <b>${esc(single ? evidenceLongLabel(metric.label, metric.value, row.context) : evidenceLabel(metric.label, metric.value))}</b>
             </span>`).join('')}
           </div>
           <p>${esc(row.context)}</p>
