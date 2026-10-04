@@ -395,6 +395,22 @@ async function resolveMeta(pathname, search = '') {
     };
   }
 
+  // Brand trust / company pages.
+  if (pathname === '/terms' || pathname === '/support' || pathname === '/media') {
+    const meta = {
+      '/terms': ['Terms of Service — PropBetEdge', 'High-level terms governing use of the PropBetEdge sports intelligence network.'],
+      '/support': ['Support — PropBetEdge', 'Account, billing, access, technical and data support for PropBetEdge.'],
+      '/media': ['Media — PropBetEdge', 'Press, interview, commentary and brand information for PropBetEdge.'],
+    }[pathname];
+    return {
+      canonical: `${SITE}${pathname}`,
+      title: meta[0],
+      description: meta[1],
+      image: NETWORK_SOCIAL_IMAGE.url,
+      robots: DEFAULT_ROBOTS,
+    };
+  }
+
   // Editorial standards
   if (pathname === '/editorial-standards') {
     return {
