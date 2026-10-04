@@ -78,5 +78,5 @@ test('footer: commercial model carried once by All Access, not a Pro badge on ev
   const html = renderFooter({ cta: false });
   assert.doesNotMatch(html, /footer-badge">Pro</);
   assert.match(html, /<strong>All Access<\/strong> <span class="nf-price">\$29\/mo<\/span>/);
-  assert.match(html, /PropBetEdge Predictions <span class="nf-tag">Included<\/span>/);
+  assert.match(html, /PropBetEdge Predictions <span class="nf-tag">Included with All Access<\/span>/);
 });

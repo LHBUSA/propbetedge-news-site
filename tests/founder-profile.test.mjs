@@ -24,7 +24,9 @@ test('content comes from the canonical registry: positioning, facts, pillars, pr
   assert.deepEqual(f.principles.map((p) => p.title), ['Evidence over fluency', 'Never rewrite the record', 'Models are probabilities', 'Build the tooling']);
   const text = JSON.stringify(f) + justin.bio + justin.summary;
   assert.doesNotMatch(text, /\d+\+|Workers|books|records? (in|on) file|TB|GB|million/i, 'no ageing metrics');
-  assert.equal(justin.image, undefined, 'no portrait unless an approved real photo exists');
+  // Owner-approved real portrait (same photo as justinerickson.co), self-hosted at the declared sizes.
+  assert.equal(justin.image, '/authors/justin-erickson-960.jpg');
+  for (const u of [...justin.imageSet.jpg, ...justin.imageSet.webp]) assert.ok(fs.existsSync(new URL(`../public${u}`, import.meta.url)), u);
 });
 
 test('page structure: hero, what I build, principles, accountability, expertise grid, latest work, network; footer without generic CTA', async () => {
@@ -57,6 +59,8 @@ test('schema: ProfilePage -> Person with registry description + knowsAbout; oper
   assert.equal(s.mainEntity['@type'], 'Person');
   assert.equal(s.mainEntity.description, justin.summary, 'same sentence as the page meta, not a truncated bio');
   assert.deepEqual(s.mainEntity.knowsAbout, [...justin.expertise]);
+  assert.equal(s.mainEntity.image.url, 'https://propbetedge.ai/authors/justin-erickson-960.jpg');
+  assert.equal(s.mainEntity.image.copyrightNotice, '© 2026 PropBetEdge', 'self-hosted author image follows the owned-image contract');
   assert.equal(profilePageSchema('propbetedge-editorial-team', AUTHOR_PROFILES['propbetedge-editorial-team']).mainEntity['@type'], 'Organization');
   const mw = read('middleware.js');
   assert.match(mw, /description: author\.summary \|\| undefined,/);

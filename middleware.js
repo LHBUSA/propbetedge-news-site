@@ -1389,6 +1389,7 @@ function buildAuthorSchema(slug, author, canonical) {
     memberOf: isTeam ? { '@id': `${SITE}/#organization` } : undefined,
     description: author.summary || undefined,
     knowsAbout: isTeam || !author.expertise?.length ? undefined : [...author.expertise],
+    image: !isTeam && author.image?.startsWith('/') ? `${SITE}${author.image}` : undefined,
   };
 
   return {

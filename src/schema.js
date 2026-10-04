@@ -242,7 +242,9 @@ export function profilePageSchema(slug, author) {
     personNode.homeLocation = { '@type': 'Place', name: author.location };
   }
   if (author.image) {
-    personNode.image = imageObject(thirdPartyImage({ url: author.image, caption: author.name }));
+    const selfHosted = author.image.startsWith('/');
+    const meta = { url: selfHosted ? `${SITE.url}${author.image}` : author.image, caption: author.name, width: author.imageWidth, height: author.imageHeight };
+    personNode.image = imageObject(selfHosted ? ownedImage(meta) : thirdPartyImage(meta));
   }
   const sameAs = [];
   if (author.twitter) sameAs.push(author.twitter);

@@ -64,7 +64,7 @@ export function renderFooter({ cta = true } = {}) {
               <h4>Sports</h4>
               <ul class="nf-sports">${sports}</ul>
               <h4 class="nf-subhead">Intelligence</h4>
-              <ul><li><a href="https://predictions.propbetedge.ai/" ${EXT} class="nf-feature">PropBetEdge Predictions <span class="nf-tag">Included</span></a></li></ul>
+              <ul><li><a href="https://predictions.propbetedge.ai/" ${EXT} class="nf-feature">PropBetEdge Predictions <span class="nf-tag">Included with All Access</span></a></li></ul>
             </div>
 
             <div class="nf-group">

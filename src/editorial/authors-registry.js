@@ -38,6 +38,11 @@ PropBetEdge is operated within the PropTechUSA.ai organization. Justin is based 
     location: 'Saint Paul, MN',
     initials: 'JE',
     accent: 'gold',
+    // Owner-supplied portrait (same photo as justinerickson.co), self-hosted; 1:1, 480/960 JPEG + WebP.
+    image: '/authors/justin-erickson-960.jpg',
+    imageSet: Object.freeze({ jpg: ['/authors/justin-erickson-480.jpg', '/authors/justin-erickson-960.jpg'], webp: ['/authors/justin-erickson-480.webp', '/authors/justin-erickson-960.webp'] }),
+    imageWidth: 960,
+    imageHeight: 960,
     // Founder / technical-operator presentation (src/pages/author-founder.js). Every line below is derived from the
     // bio, summary and accountability copy above: no counts, no metrics, nothing that has to be re-verified monthly.
     profileVariant: 'founder',

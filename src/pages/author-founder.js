@@ -26,7 +26,7 @@ export function founderProfileHtml(slug, author) {
     <main class="fdr" data-profile-variant="founder">
       <header class="fdr-hero">
         <div class="container fdr-hero-inner">
-          <div class="fdr-mark" aria-hidden="true"><span>${escapeHtml(author.initials)}</span></div>
+          ${founderPortrait(author)}
           <div class="fdr-hero-copy">
             <p class="fdr-eyebrow">${escapeHtml(f.eyebrow)}</p>
             <h1 class="fdr-name">${escapeHtml(author.name)}</h1>
@@ -85,6 +85,17 @@ export function founderProfileHtml(slug, author) {
     </main>
     ${renderFooter({ cta: false })}
   `;
+}
+
+// The real portrait when the registry has one (owner-supplied, self-hosted); the initials mark otherwise.
+function founderPortrait(author) {
+  const set = author.imageSet;
+  if (!author.image || !set) return `<div class="fdr-mark" aria-hidden="true"><span>${escapeHtml(author.initials)}</span></div>`;
+  const srcset = (list) => list.map((u, i) => `${escapeAttr(u)} ${i ? 960 : 480}w`).join(', ');
+  return `<figure class="fdr-mark fdr-mark--photo"><picture>
+            <source type="image/webp" srcset="${srcset(set.webp)}" sizes="(max-width: 760px) 120px, (max-width: 1024px) 160px, 220px" />
+            <img src="${escapeAttr(set.jpg[0])}" srcset="${srcset(set.jpg)}" sizes="(max-width: 760px) 120px, (max-width: 1024px) 160px, 220px" alt="${escapeAttr(author.name)}" width="${author.imageWidth || 960}" height="${author.imageHeight || 960}" decoding="async" fetchpriority="high" />
+          </picture></figure>`;
 }
 
 export async function renderFounderProfile(root, slug, author) {
