@@ -1,13 +1,16 @@
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
-import { listAuthors } from './author.js';
+import { listNamedAuthors, listOperationalBylines } from '../editorial/authors-registry.js';
+import { renderHomeCloser } from '../components/home-closer.js';
+import '../styles/home-closer.css';
 
 export function renderAuthorsIndex(root, setMeta) {
-  const authors = listAuthors();
+  const authors = listNamedAuthors();
+  const operational = listOperationalBylines();
 
   setMeta?.({
     title: 'Editorial Team — PropBetEdge',
-    description: 'Meet the PropBetEdge editorial team, research analysts and AI-assisted editorial operation behind our sports news and intelligence coverage.',
+    description: 'Meet the named PropBetEdge contributors and the disclosed operational newsroom byline behind our sports journalism and intelligence coverage.',
     canonical: 'https://propbetedge.ai/authors',
   });
 
@@ -19,21 +22,39 @@ export function renderAuthorsIndex(root, setMeta) {
           <div class="author-info">
             <span class="author-role-eyebrow">PROPBETEDGE MASTHEAD</span>
             <h1 class="author-name">Editorial Team</h1>
-            <p class="author-title">Human expertise, quantitative research and transparent AI-assisted editorial operations.</p>
+            <p class="author-title">Named contributors, clear accountability, and an operational AI-assisted byline that is never presented as a person.</p>
           </div>
         </header>
 
         <section class="author-bio-section">
           <div class="author-bio">
-            <p>PropBetEdge publishes sports journalism and sports-intelligence coverage across MLB, NFL, NBA and NHL. Every byline below resolves to a permanent profile with coverage areas, methodology context and a connected article portfolio.</p>
-            <p>Our AI-assisted editorial workflow and human-review standards are documented publicly in the <a href="/editorial-standards">Editorial Standards</a>.</p>
+            <p>PropBetEdge separates named human authors from the operational newsroom byline. Named contributors have permanent profiles, defined coverage areas and explicit accountability. The PropBetEdge Editorial Team is disclosed as an organizational byline for newsroom systems and automation — not as a fictitious person.</p>
+            <p>Our sourcing, AI-use, corrections, conflicts, model-language and publication-integrity rules are documented publicly in the <a href="/editorial-standards">Editorial Standards</a>.</p>
+          </div>
+
+          <div class="section-heading pbe-operational-heading">
+            <h2>Operational bylines</h2>
+            <span class="section-meta">Disclosed newsroom systems</span>
+          </div>
+          <div class="pbe-authors-index-grid pbe-authors-index-grid--ops">
+            ${operational.map((author) => `
+              <a class="pbe-author-index-card pbe-author-index-card--ops" href="/authors/${escapeAttr(author.slug)}">
+                <div class="author-avatar author-avatar-${escapeAttr(author.accent || 'algo')}">${escapeHtml(author.initials || initials(author.name))}</div>
+                <div>
+                  <span class="author-role-eyebrow">${escapeHtml(author.bylineLabel || author.role)}</span>
+                  <h2>${escapeHtml(author.name)}</h2>
+                  <p>${escapeHtml(author.summary || author.title || author.role)}</p>
+                  <span class="pbe-author-index-open">Read how this byline works →</span>
+                </div>
+              </a>
+            `).join('')}
           </div>
         </section>
 
         <section class="author-articles-section">
           <div class="section-heading">
             <h2>Current masthead</h2>
-            <span class="section-meta">${authors.length} editorial entities</span>
+            <span class="section-meta">${authors.length} named contributors</span>
           </div>
           <div class="pbe-authors-index-grid">
             ${authors.map((author) => `
@@ -52,7 +73,7 @@ export function renderAuthorsIndex(root, setMeta) {
         </section>
       </div>
       <style>
-        .pbe-authors-index-hero{margin-bottom:28px}
+        .pbe-authors-index-hero{margin-bottom:28px}.pbe-operational-heading{margin-top:34px}.pbe-authors-index-grid--ops{grid-template-columns:1fr}.pbe-author-index-card--ops{background:linear-gradient(135deg,rgba(212,175,55,.08),rgba(255,255,255,.82))}
         .pbe-authors-index-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
         .pbe-author-index-card{display:flex;gap:18px;padding:22px;border:1px solid rgba(20,17,13,.12);border-radius:18px;background:rgba(255,255,255,.82);color:inherit;text-decoration:none;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
         .pbe-author-index-card:hover{transform:translateY(-2px);box-shadow:0 18px 50px rgba(20,17,13,.09);border-color:rgba(212,175,55,.55)}
@@ -63,7 +84,8 @@ export function renderAuthorsIndex(root, setMeta) {
         @media(max-width:760px){.pbe-authors-index-grid{grid-template-columns:1fr}.pbe-author-index-card{padding:18px}}
       </style>
     </main>
-    ${renderFooter()}
+    ${renderHomeCloser()}
+    ${renderFooter({ cta: false })}
   `;
 }
 
