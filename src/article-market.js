@@ -17,7 +17,7 @@
 import { articleMarketModule, mountArticleMarket } from './vendor/markets/article-market-ui.js';
 
 export const ARTICLE_MARKET_ACTIVATED_AT = '2026-10-04T14:31:40Z';
-export const ARTICLE_MARKET_CLIENT_PIN = '8d3b73f';
+export const ARTICLE_MARKET_CLIENT_PIN = '3f7345e';
 export const ARTICLE_MARKET_BASE = '/api/markets';
 export const ARTICLE_MARKET_REFRESH_MS = 30_000;
 export const ARTICLE_MARKET_FIRST_PAINT_MS = 800;
