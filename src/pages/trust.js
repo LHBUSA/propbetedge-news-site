@@ -12,7 +12,7 @@ const pages = {
     eyebrow: 'TRUST & LEGAL',
     heading: 'Terms of Service',
     intro: 'These Terms govern PropBetEdge and its sport, news, learning, intelligence, membership and related properties. By accessing or using the network, you agree to these Terms.',
-    body: \`
+    body: `
       <div class="trust-notice"><strong>Operator:</strong> PropBetEdge is operated by Local Home Buyers LLC d/b/a PropTechUSA.ai, Saint Paul, Minnesota. PropBetEdge provides sports information, analysis, models, predictions and entertainment. It is not a sportsbook, casino, bookmaker, broker, investment adviser or financial institution, and no output guarantees a winning outcome or profit.</div>
 
       <h2>1. Acceptance, scope and eligibility</h2>
@@ -66,7 +66,7 @@ const pages = {
 
       <h2>17. Contact</h2>
       <p>Questions about these Terms, authorized automated access, licensing or rights requests can be sent to <a href="mailto:support@proptechusa.ai">support@proptechusa.ai</a>. Editorial corrections can be sent to <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a>. See the <a href="/legal">Legal</a> page for rights, crawler and trademark notices.</p>
-    \`,
+    `,
   },
   legal: {
     title: 'Legal — PropBetEdge',
@@ -74,7 +74,7 @@ const pages = {
     eyebrow: 'LEGAL & RIGHTS',
     heading: 'Legal',
     intro: 'Ownership, rights, crawler policy, third-party notices and legal contact information for the PropBetEdge sports intelligence network.',
-    body: \`
+    body: `
       <div class="trust-notice"><strong>Network operator:</strong> PropBetEdge is operated by Local Home Buyers LLC d/b/a PropTechUSA.ai, Saint Paul, Minnesota. These notices supplement the <a href="/terms">Terms of Service</a>.</div>
 
       <h2>Ownership and protected material</h2>
@@ -104,7 +104,7 @@ const pages = {
 
       <h2>Legal and licensing contact</h2>
       <p>For rights, licensing, crawler authorization or legal notices, contact <a href="mailto:support@proptechusa.ai">support@proptechusa.ai</a>. For press requests, use <a href="/media">Media</a>. For account and billing issues, use <a href="/support">Support</a>.</p>
-    \`,
+    `,
   },
   support: {
     title: 'Support — PropBetEdge',
@@ -119,7 +119,7 @@ const pages = {
         <section><h2>Site or app issue</h2><p>Send the page URL, device/browser, what you clicked, what happened and a screenshot when useful. If a hard refresh changes the result, tell us that too.</p></section>
         <section><h2>Data or model issue</h2><p>Include the sport, event or player, date, page and exact number or statement that looks wrong. Clear reproduction details help us separate source latency from a product bug.</p></section>
       </div>
-      <h2>Contact support</h2><p>Email <a href="mailto:hello@proptechusa.ai">hello@proptechusa.ai</a> for account, membership, billing and general product support. For editorial corrections or newsroom questions, email <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a>.</p>
+      <h2>Contact support</h2><p>Email <a href="mailto:support@proptechusa.ai">support@proptechusa.ai</a> for account, membership, billing and general product support. For editorial corrections or newsroom questions, email <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a>.</p>
       <div class="trust-notice"><strong>Security:</strong> never send passwords, API keys, magic-login links, full card numbers, government IDs or other sensitive credentials by email or in a public community channel.</div>
       <h2>Responsible play</h2><p>PropBetEdge is an intelligence platform, not a sportsbook. If gambling is causing harm or feels difficult to control, stop wagering and seek support. In the United States, call or text <strong>1-800-GAMBLER</strong>.</p>
     `,
