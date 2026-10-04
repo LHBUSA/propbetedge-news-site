@@ -6,6 +6,7 @@
 import { api } from '../api.js';
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
+import { isLiveRoot } from '../route-integrity.js';
 import { renderArticleCard, renderSidebarStory, escapeHtml, formatRelative } from '../components/article-card.js';
 import { proxyImage } from '../ads-config.js';
 import { INTELLIGENCE_SPORTS, renderSectionHeroCta, renderSectionNavCta, renderMoreThanNewsCta } from '../intelligence-cta.js';
@@ -99,6 +100,7 @@ export async function renderSport(root, sport, requestedPage = 1) {
     api.newsBySport(sport, PAGE_SIZE, currentPage).catch(() => ({ articles: [] })),
     currentPage === 1 ? fetchHighlights(sport).catch(() => null) : Promise.resolve(null),
   ]);
+  if (!isLiveRoot(root)) return; // navigated away while loading: never write into a later route
   // Defense in depth: a sport section may only render rows whose canonical
   // sport matches the route, even if an upstream view/regression ever leaks.
   const articles = (data.articles || []).filter(

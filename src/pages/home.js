@@ -38,6 +38,7 @@
 import { api } from '../api.js';
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
+import { isLiveRoot } from '../route-integrity.js';
 import { renderHomeCloser } from '../components/home-closer.js';
 import '../styles/home-closer.css';
 import { renderArticleCard, renderSidebarStory, escapeHtml, escapeAttr, formatRelative } from '../components/article-card.js';
@@ -117,6 +118,7 @@ export async function renderHome(root) {
 
   // Initial load
   const data = await fetchHomeData();
+  if (!isLiveRoot(root)) return; // navigated away while loading: never write into a later route
   populateHome(data, { animate: false });
   injectHomePageSchema(data.homepage.articles || []);
 

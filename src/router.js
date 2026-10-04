@@ -45,6 +45,7 @@ import { renderFreePicksHistory } from './pages/free-picks-history.js';
 import { renderTeamPage } from './pages/team.js';
 import { renderStandingsPage } from './pages/standings.js';
 import { liveCastUrl } from './live-cast-routes.js';
+import { freshRouteRoot, initDeploymentWatch, deploymentIsStale, checkDeployment } from './route-integrity.js';
 
 import { NETWORK_SOCIAL_IMAGE } from './social.js';
 const VALID_SPORTS = new Set(['mlb', 'nfl', 'nba', 'nhl']);
@@ -105,7 +106,8 @@ function clearAndRoute() {
   stopSportLifecycle();
 
   const path = window.location.pathname.replace(/\/+$/, '') || '/';
-  const root = document.getElementById('app');
+  // A new #app per route: a renderer still awaiting data for the previous route writes into a detached node.
+  const root = freshRouteRoot();
   window.scrollTo({ top: 0, behavior: 'instant' });
 
   if (path === '/' || path === '') {
@@ -288,8 +290,11 @@ export function navigate(href) {
     }
     href = href.replace(/^https:\/\/propbetedge\.ai/, '');
   }
+  // This tab is running a retired bundle: load the destination from the server instead of rendering it with old code.
+  if (deploymentIsStale()) { window.location.assign(href); return; }
   window.history.pushState({}, '', href);
   clearAndRoute();
+  checkDeployment();
 }
 
 export function initRouter() {
@@ -309,7 +314,11 @@ export function initRouter() {
     navigate(href);
   });
 
-  window.addEventListener('popstate', clearAndRoute);
+  window.addEventListener('popstate', () => {
+    if (deploymentIsStale()) { window.location.reload(); return; }
+    clearAndRoute();
+  });
+  initDeploymentWatch();
   clearAndRoute();
 }
 

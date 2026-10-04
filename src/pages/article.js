@@ -19,10 +19,11 @@ import { renderFooter } from '../components/footer.js';
 import { renderArticleCard, escapeHtml, formatRelative } from '../components/article-card.js';
 import { renderRailShell, mountArticleRail } from '../components/right-rail.js';
 import { renderNotFound } from './404.js';
-import { ad_in_article_after_take, ad_in_article_mid, ad_brand_family, proxyImage } from '../ads-config.js';
+import { ad_in_article_after_take, ad_in_article_mid, proxyImage } from '../ads-config.js';
 import { renderArticleVisuals, mountArticleVisuals } from '../article-visuals.js';
 import { renderPreferredSource } from '../components/preferred-source.js';
 import { articleMarketWithin, articleMarketSlot, mountArticleMarketSlot } from '../article-market.js';
+import { isLiveRoot } from '../route-integrity.js';
 
 const PREFERRED_SOURCE_SPORTS = new Set(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer']);
 const preferredSourceSport = (sport) => (PREFERRED_SOURCE_SPORTS.has(String(sport || '').toLowerCase()) ? String(sport).toLowerCase() : 'network');
@@ -62,6 +63,7 @@ export async function renderArticle(root, sport, slug, setMeta) {
   try {
     [resp, graph] = await Promise.all([api.article(slug), loadEntityGraph()]);
   } catch (e) {
+    if (!isLiveRoot(root)) return;
     if (String(e.message).includes('404')) {
       renderNotFound(root);
       return;
@@ -74,12 +76,15 @@ export async function renderArticle(root, sport, slug, setMeta) {
     return;
   }
 
+  // The visitor navigated away while the story loaded: never paint (or mount) into a later route.
+  if (!isLiveRoot(root)) return;
   const article = resp.article;
   if (!article) { renderNotFound(root); return; }
 
   // MARKET (article-market/1): only an article linked to one canonical game and first published after activation
   // reads it; the read shares an 800 ms first-paint budget so the module is in the first render (no layout shift).
   const market = await articleMarketWithin(article);
+  if (!isLiveRoot(root)) return;
 
   const manifest = graph.buildEntityManifest(article);
   const seo = graph.buildArticleSeo(article, manifest);
@@ -152,8 +157,6 @@ export async function renderArticle(root, sport, slug, setMeta) {
 
           ${renderPreferredSource({ surface: 'article', sport: preferredSourceSport(article.sport) })}
 
-          ${ad_brand_family('end_of_article', articleContext)}
-
 
           <div id="related-slot"></div>
         </article>
@@ -173,8 +176,8 @@ export async function renderArticle(root, sport, slug, setMeta) {
 
   mountArticleVisuals(article, manifest);
   mountArticleMarketSlot(root, article, market);
-  loadRelated(article, manifest, graph);
-  attachGameEntity(article, manifest, graph);
+  loadRelated(article, manifest, graph, root);
+  attachGameEntity(article, manifest, graph, root);
 }
 
 /**
@@ -248,11 +251,12 @@ function renderUpdatedStamp(seo) {
  * Attach the matchup entity once it resolves. Deliberately after paint: a game
  * chip is worth one extra request, never a delay in front of the story.
  */
-async function attachGameEntity(article, manifest, graph) {
+async function attachGameEntity(article, manifest, graph, root) {
   try {
     const enriched = await graph.enrichManifestWithGame(article, manifest, { timeoutMs: 2500 });
+    if (!isLiveRoot(root)) return; // the visitor moved on: never chip another story
     if (!enriched?.games?.length) return;
-    const slot = document.getElementById('in-this-story-slot');
+    const slot = root.querySelector('#in-this-story-slot');
     if (!slot) return;
     slot.innerHTML = graph.renderInThisStory(enriched);
   } catch { /* a missing game chip is not a page error */ }
@@ -433,7 +437,7 @@ function renderTakeCallout(article) {
  * stories from this sport". Candidates come from structured entity queries
  * first, with the league feed as a backstop.
  */
-async function loadRelated(article, manifest, graph) {
+async function loadRelated(article, manifest, graph, root) {
   try {
     const player = (manifest.players || []).find((p) => p.origin !== 'text') || (manifest.players || [])[0];
     const team = (manifest.teams || []).find((t) => t.origin !== 'text') || (manifest.teams || [])[0];
@@ -457,7 +461,8 @@ async function loadRelated(article, manifest, graph) {
     }
 
     const related = graph.rankRelated(article, manifest, candidates, { limit: 6 });
-    const slot = document.getElementById('related-slot');
+    if (!isLiveRoot(root)) return; // never write this story's related list into a later route
+    const slot = root.querySelector('#related-slot');
     if (!slot) return;
 
     const explore = (related.explore || [])

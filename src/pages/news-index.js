@@ -6,6 +6,7 @@
 import { api } from '../api.js';
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
+import { isLiveRoot } from '../route-integrity.js';
 import { renderArticleCard } from '../components/article-card.js';
 import { renderBreakingBanner } from '../components/breaking-banner.js';
 import { INTELLIGENCE_SPORTS, renderNetworkIntelligenceRow } from '../intelligence-cta.js';
@@ -98,6 +99,7 @@ export async function renderNewsIndex(root, requestedPage = 1) {
     api.newsBySport('nba', 4).catch(() => ({ articles: [] })),
     api.newsBySport('nhl', 4).catch(() => ({ articles: [] })),
   ]);
+  if (!isLiveRoot(root)) return; // navigated away while loading: never write into a later route
 
   injectSchemas([
     organizationSchema(),
