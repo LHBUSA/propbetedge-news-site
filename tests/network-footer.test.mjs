@@ -65,10 +65,12 @@ test('all ten sports, every established destination kept, no duplicate destinati
   assert.deepEqual(dupes, [], 'each destination appears once');
 });
 
-test('visual contract: layered navy/charcoal (not near-black), readable link colors, preferred source + Mother badge kept', () => {
-  assert.match(css, /--nf-surface: rgba\(27, 31, 40, \.9\)/);
+test('visual contract: warm palette only (espresso/charcoal/parchment from main.css tokens), stepped surfaces, no new hue', () => {
+  assert.match(css, /--nf-surface: rgba\(29, 25, 20, \.92\)/, 'espresso --ink-2');
+  assert.match(css, /--nf-band: rgba\(42, 36, 28, \.9\)/, 'charcoal --ink-3');
+  assert.doesNotMatch(css, /rgba\(27, 31, 40|#a9b0bd|rgba\(255, 255, 255/i, 'no navy/blue-grey or cold white');
   assert.doesNotMatch(css, /background: #0[0-9a-f]{5};/i, 'no near-black slab');
-  assert.match(css, /--nf-text: #e7e3dc/);
+  assert.match(css, /--nf-text: var\(--paper-2\)/);
   assert.match(footer, /data-pbe-preferred-source data-surface="footer" data-sport="network"/);
   assert.match(footer, /<img src="https:\/\/api\.mother\.proptechusa\.ai\/badge\/[^"]+\.svg"[^>]*width="236" height="48"/);
   assert.match(footer, /Bet responsibly · 21\+ · Gambling Problem\? Call 1-800-GAMBLER/);

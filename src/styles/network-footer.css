@@ -1,15 +1,16 @@
 /* propbetedge.ai main-site footer (src/components/footer.js).
- * Layered navy/charcoal surfaces (the site's navy ink + white-alpha panels), readable contrast, restrained gold,
- * thin structure. Never a black void. Scoped under .nf so legacy .footer-* rules in main.css never reach it. */
+ * Warm editorial palette ONLY (main.css tokens): espresso surface (--ink-2), charcoal band (--ink-3), warm
+ * cream-alpha panels, parchment/cream text, warm grey secondary, restrained gold. Hierarchy comes from stepped
+ * warm dark values, never a new hue and never one flat black. Scoped under .nf. */
 
 .footer.nf {
-  --nf-surface: rgba(27, 31, 40, .9);        /* lifted navy-charcoal, clearly above the page */
-  --nf-band: rgba(255, 255, 255, .045);      /* brand band: one layer up */
-  --nf-panel: rgba(255, 255, 255, .025);     /* group panels: subtle depth */
-  --nf-rule: rgba(255, 255, 255, .09);
+  --nf-surface: rgba(29, 25, 20, .92);       /* --ink-2 espresso, a clear step above the --ink page */
+  --nf-band: rgba(42, 36, 28, .9);           /* --ink-3 charcoal: the brand band, one step up again */
+  --nf-panel: rgba(255, 245, 220, .035);     /* warm cream-alpha panels (the site's own panel recipe) */
+  --nf-rule: var(--line);                    /* rgba(255, 245, 220, .10) */
   --nf-gold-rule: rgba(212, 175, 55, .45);
-  --nf-text: #e7e3dc;                        /* primary links */
-  --nf-muted: #a9b0bd;                       /* secondary text, still comfortably readable */
+  --nf-text: var(--paper-2);                 /* parchment #e8e1d4: primary links */
+  --nf-muted: var(--paper-dim);              /* warm grey #b8b3a8: secondary, comfortably readable */
   margin-top: 72px;
   padding: 0;
   background: var(--nf-surface);
@@ -31,21 +32,21 @@
   border-radius: 0 0 8px 8px;
 }
 .nf-logo { display: block; height: 46px; width: auto; }
-.nf-statement { margin: 0; font-family: var(--font-serif); font-size: 19px; line-height: 1.35; color: #f3efe8; }
+.nf-statement { margin: 0; font-family: var(--font-serif); font-size: 19px; line-height: 1.35; color: var(--paper); }
 .nf-social { display: flex; gap: 4px; }
 .nf-social-link { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 6px; color: var(--nf-muted); transition: color .15s, background-color .15s; }
-.nf-social-link:hover { color: #fff; background: rgba(255, 255, 255, .07); }
+.nf-social-link:hover { color: var(--paper); background: rgba(255, 245, 220, .07); }
 
 /* ── Directory ──────────────────────────────────────────────────────────── */
 .nf-nav { display: grid; grid-template-columns: minmax(0, 1.25fr) repeat(6, minmax(0, 1fr)); gap: 12px; }
-.nf-group { min-width: 0; padding: 16px 16px 12px; background: var(--nf-panel); border: 1px solid rgba(255, 255, 255, .05); border-radius: 6px; }
+.nf-group { min-width: 0; padding: 16px 16px 12px; background: var(--nf-panel); border: 1px solid rgba(255, 245, 220, .06); border-radius: 6px; }
 .nf-group h4 {
   margin: 0 0 12px; padding-bottom: 9px; border-bottom: 1px solid var(--nf-gold-rule);
   font-family: var(--font-mono); font-size: 10.5px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--gold);
 }
 .nf-group li a { display: inline-block; padding: 4px 0; font-family: var(--font-sans); font-size: 13.5px; line-height: 1.4; color: var(--nf-text); transition: color .15s; }
 .nf-group li a:hover { color: var(--gold); }
-.nf-group li a strong { font-weight: 700; color: #fff; }
+.nf-group li a strong { font-weight: 700; color: var(--paper); }
 .nf-sports { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 12px; }
 .nf-price { margin-left: 4px; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; color: var(--gold); }
 .nf-tag { display: block; margin-top: 2px; font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); }
