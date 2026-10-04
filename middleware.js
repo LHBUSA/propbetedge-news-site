@@ -451,7 +451,7 @@ async function resolveMeta(pathname, search = '') {
     return {
       canonical,
       title: 'Editorial Standards — PropBetEdge',
-      description: 'How PropBetEdge sources, produces, labels, corrects and preserves sports journalism, analysis, model output and AI-assisted newsroom work.',
+      description: 'How PropBetEdge sources, produces, labels, corrects and preserves reporting, founder-led analysis, AI-assisted newsroom work and model output.',
       image: NETWORK_SOCIAL_IMAGE.url,
       robots: DEFAULT_ROBOTS,
       jsonLd: buildEditorialStandardsSchema(canonical),
@@ -1332,7 +1332,7 @@ function buildEditorialStandardsSchema(canonical) {
         '@id': `${canonical}#page`,
         url: canonical,
         name: 'Editorial Standards — PropBetEdge',
-        description: 'How PropBetEdge sources, produces, labels, corrects and preserves sports journalism, analysis, model output and AI-assisted newsroom work.',
+        description: 'How PropBetEdge sources, produces, labels, corrects and preserves reporting, founder-led analysis, AI-assisted newsroom work and model output.',
         datePublished: '2026-04-29',
         dateModified: '2026-10-04',
         isPartOf: { '@id': `${SITE}/#website` },
@@ -1356,19 +1356,21 @@ function buildServerEditorialStandardsHtml() {
     <article>
       <p>Trust · Editorial · Last updated October 4, 2026</p>
       <h1>Editorial Standards</h1>
-      <p>Evidence before fluency. Every reported fact, model output and editorial conclusion should be traceable to what supported it at publication time.</p>
+      <p>Evidence before fluency. Accountability without pretending AI is absent. Every reported fact, model output and editorial conclusion should be traceable to what supported it at publication time.</p>
       <h2>Our standard</h2>
-      <p>PropBetEdge distinguishes sourced facts, editorial analysis and model output; prefers primary evidence where available; preserves missing or conflicting data instead of inventing precision; and keeps publication history when corrections are required.</p>
+      <p>PropBetEdge distinguishes sourced facts, editorial analysis, model output and promotion; prefers primary evidence where available; preserves missing or conflicting data instead of inventing precision; and keeps publication history when corrections are required.</p>
       <h2>Sources</h2>
       <p>Preferred order: primary or official evidence, then direct reporting, then structured data providers with provider and timestamp provenance, then attributed secondary context. Conflicting sources are represented as uncertainty or publication is held.</p>
       <h2>AI, automation and bylines</h2>
-      <p>PropBetEdge uses AI and automation in its newsroom. AI may assist discovery, organization, extraction, drafting and checking; it cannot make unsupported names, numbers, quotes or injuries true, and missing evidence means a story is held. Named human authors are accountable for work published under their names. The <a href="/authors/propbetedge-editorial-team">PropBetEdge Editorial Team</a> is an operational newsroom byline, not a fictitious person, and may represent AI-assisted and automated newsroom workflows.</p>
+      <p>PropBetEdge uses AI and automation in its newsroom and does not use “human reviewed” as a blanket claim. AI may assist discovery, organization, extraction, source comparison, data and code review, drafting and checking; it cannot make unsupported names, numbers, quotes or injuries true, and missing evidence means a story is held. Named human bylines identify accountable judgment, not a claim that every sentence was manually typed. The <a href="/authors/propbetedge-editorial-team">PropBetEdge Editorial Team</a> is an operational newsroom byline, not a fictitious person.</p>
+      <h2>Founder-led analysis</h2>
+      <p><a href="/authors/justin-erickson">Justin Erickson</a> is the founder and CEO of PropTechUSA.ai and founder and chief architect of PropBetEdge. His byline is used primarily where sports analysis, product architecture, data provenance, model governance and operating judgment intersect. AI may assist deeply; the byline means he owns the thesis and published judgment.</p>
       <h2>Models and markets</h2>
-      <p>Models are probabilistic. Observed facts, derived PBE metrics, editorial analysis and market observations are distinct; a market price does not become model truth by disagreeing with PBE. Losses stay visible and historical calls are not backfilled.</p>
+      <p>Models are probabilistic. Observed facts, derived PBE metrics, editorial analysis and market observations are distinct; model state matters; a market benchmark should not be silently presented as independent model output; losses stay visible and historical calls are not backfilled.</p>
       <h2>What prevents a story from publishing</h2>
       <p>Publication may be withheld when required evidence or an integrity check fails. When evidence and prose disagree, evidence wins.</p>
       <h2>Corrections and records</h2>
-      <p>Material corrections are disclosed. Publication timestamps and model or pick history are not silently rewritten after outcomes are known. Correction is not deletion of history. Report an issue: <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a>.</p>
+      <p>Material corrections are disclosed. Publication timestamps and model or pick history are not silently rewritten after outcomes are known. Live score, market or data modules may update while the story's historical evidence remains preserved. Correction is not deletion of history. Report an issue: <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a>.</p>
       <h2>Responsible betting</h2>
       <p>PropBetEdge is not a sportsbook; no model or pick guarantees profit. Gambling problem? Call or text 1-800-GAMBLER.</p>
       <p>PropBetEdge is operated by Local Home Buyers LLC d/b/a PropTechUSA.ai.</p>
