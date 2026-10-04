@@ -7,14 +7,17 @@
  *         /authors/ty-whitney
  *         /authors/propbetedge-editorial-team
  *
- * Strong E-E-A-T signal for Google: real authors with role, bio, and article portfolio.
- * Each profile is a structured Person entity that links back to NewsArticle author fields.
+ * Permanent byline profiles with role, methodology, accountability and article portfolio.
+ * Named contributors are Person entities. The operational newsroom byline is an Organization entity.
  */
 
 import { api } from '../api.js';
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { renderArticleCard, escapeHtml, escapeAttr } from '../components/article-card.js';
+import { getAuthorBySlug as getEditorialAuthor, listAuthors as listEditorialAuthors, authorSlug as editorialAuthorSlug } from '../editorial/authors-registry.js';
+import { renderHomeCloser } from '../components/home-closer.js';
+import '../styles/home-closer.css';
 import { renderNotFound } from './404.js';
 import {
   organizationSchema, websiteSchema, breadcrumbSchema,
@@ -23,123 +26,19 @@ import {
 
 // ─── Author registry ────────────────────────────────────────────────────
 // Single source of truth for each author's identity. Slug → full profile.
-const AUTHORS = {
-  'justin-erickson': {
-    name: 'Justin Erickson',
-    role: 'Founder & CTO',
-    title: 'Founder & Chief Technology Officer, PropBetEdge',
-    bio: `Justin Erickson is the founder and chief architect of PropBetEdge — the first AI-native sports newsroom and prop-bet intelligence platform of its kind. A self-taught full-stack engineer based in Saint Paul, Minnesota, he has built and shipped over 230 production Cloudflare Workers across sports analytics, real estate technology, and AI infrastructure, including the Poisson-based fair-value odds model that powers PropBetEdge's daily picks and the editorial pipeline that publishes 100+ original prop-bet articles per day at a fraction of traditional newsroom cost.
-
-Justin's coverage spans all four major sports with a focus on systemic edges — the kind of plays that emerge when lineup changes ripple across multiple prop markets, when front-office moves reshape long-tail futures, or when AI-assisted research surfaces angles that traditional handicapping misses entirely. His thesis: the future of sports analysis belongs to operators who can fuse domain expertise with the technical fluency to build their own tooling.
-
-Beyond PropBetEdge, Justin is the founder and CEO of LocalHomeBuyersUSA, a nationwide real estate investment operation, and PropTechUSA.ai, the parent company behind PropData (165M+ property records) and a growing portfolio of AI-native platforms. He has authored 20+ books spanning technology, real estate strategy, and the philosophy of AI consciousness — including the white papers <em>The Third Kind of Mind</em> and <em>Lost in the Mirror</em>, which have been cited in early academic discussion of AI cognition.
-
-When he writes about sports, the lens is always the same: where is the market mispricing systematic information, and what tools can surface that edge faster than anyone else?`,
-    expertise: [
-      'Cross-sport prop-bet strategy & systemic market edges',
-      'AI-driven sports analytics infrastructure',
-      'Quantitative model design & fair-value odds',
-      'Lineup, roster, and front-office ripple effects',
-    ],
-    credentials: [
-      'Founder & CTO, PropBetEdge',
-      'Founder, PropTechUSA.ai',
-      'Author of 20+ books on technology, real estate & AI',
-      'Architect of 230+ production Cloudflare Workers',
-    ],
-    location: 'Saint Paul, MN',
-    initials: 'JE',
-    accent: 'gold',
-  },
-  'erik-schwartz': {
-    name: 'Erik Schwartz',
-    role: 'Senior Editorial — Hockey, Football & Baseball',
-    title: 'Senior Editorial Contributor, PropBetEdge',
-    bio: `Erik Schwartz is a senior editorial contributor at PropBetEdge covering NHL, NFL, and MLB — and the lead voice on hockey across the masthead. His NHL coverage is the deepest on the staff: line-shuffle implications for shots-on-goal markets, goaltender form trends across back-to-backs, special-teams matchups that move power-play-points props, and the kind of late-warmup news (a top-six winger reassigned to the fourth line, a starter pulled for "maintenance," a third pair suddenly skating top-pair minutes) that reshapes lines hours before puck drop but rarely surfaces in a national headline.
-
-On football, Erik focuses on snap-share volatility and target-tree shifts — the second-order roster math that emerges after a Wednesday practice report, a Friday designation, or a midweek transaction. While most NFL coverage chases the injury headline itself, his angle is the workload realignment that follows: who absorbs the targets, who picks up the early-down snaps, and which prop markets are slowest to reprice the change. On baseball, he writes strikeout props, hitter total bases, and the bullpen-usage gymnastics that turn a "safe" over into a coin flip in the seventh.
-
-Erik also contributes select NBA coverage during the regular season, focusing on rotation-driven prop volatility on heavy-slate nights — when bookmakers spread their attention thin and analytical edges open up across multiple props simultaneously. His cross-sport range makes him the editorial workload anchor on weeks when one league's news cycle goes quiet and another spikes.
-
-Articles published under Erik's byline combine breaking-news editorial response with prop-market translation — taking the headlines other outlets stop at and pushing them one layer deeper to the actual betting implications. Methodology is transparent, AI-assisted research is disclosed, and every take stands on cited sources.`,
-    expertise: [
-      'NHL line combinations, goaltender form & special-teams matchups',
-      'NFL snap-share, target-tree & late-week workload realignment',
-      'MLB strikeout props & bullpen-usage forecasting',
-      'Multi-sport breaking news → prop market translation',
-    ],
-    credentials: [
-      'Senior Editorial Contributor — PropBetEdge',
-      'Lead voice on NHL editorial coverage',
-      'Multi-sport coverage across NHL, NFL, MLB & select NBA',
-    ],
-    initials: 'ES',
-    accent: 'gold',
-  },
-  'ty-whitney': {
-    name: 'Ty Whitney',
-    role: 'Senior Research Analyst & Data Scientist',
-    title: 'Senior Research Analyst, PropBetEdge',
-    bio: `Ty Whitney is a Senior Research Analyst at PropBetEdge, joining the editorial team to anchor the platform's quantitative coverage across MLB, NFL, NBA, and NHL. He brings years of heavy data-science and applied research experience from the technology sector — the kind of background that produces rigorous model-builders rather than narrative-first analysts — paired with a lifelong obsession with sports that started long before he ever ran a regression on a player projection. The combination is the rarer-than-it-should-be middle ground that makes him a natural fit for the masthead.
-
-Most quants who migrate into sports come in cold to the games themselves; most sports writers who reach for data lean on whatever a spreadsheet template happens to surface. Ty's lane is the work that sits between those two failure modes: pulling features from primary data sources, validating signal against noise, stress-testing models against out-of-sample seasons, and then translating the output into prop-market angles a reader can act on without needing a graduate degree in statistics. The result is coverage that holds up under scrutiny — the math is real, the sourcing is clean, and the takeaway is something a bettor can use the same night.
-
-His coverage emphasizes the analytical bedrock most outlets skip — the regressions, base rates, and predictive frameworks underneath any defensible pick. On MLB, that's situational modeling for hitter and pitcher props that goes beyond season averages into matchup-specific expected outcomes. On NFL, it's snap-share trend analysis and target-share predictive modeling that moves before Wednesday's injury report does. On NBA, lineup-level efficiency and pace-adjusted scoring projections. On NHL, shot-share modeling and goaltender form quantification. Across all four sports, the same lens: where does the data say the market is wrong, and how confident should a reader actually be in that read?
-
-Ty's belief: the prop-bet market is not efficient, but it's nowhere near as inefficient as the influencer ecosystem will tell you. The real edges are smaller than most public analysis admits, and finding them takes more rigor than most are willing to put in. Articles under Ty's byline reflect that work — and PropBetEdge readers are the ones who benefit from it.`,
-    expertise: [
-      'Quantitative prop modeling & predictive analytics',
-      'Multi-sport feature engineering & signal validation',
-      'Backtesting, out-of-sample testing & model calibration',
-      'Translating model output into actionable prop-market reads',
-    ],
-    credentials: [
-      'Senior Research Analyst — PropBetEdge',
-      'Years of data-science & applied research experience in tech',
-      'Multi-sport quantitative coverage across MLB, NFL, NBA, NHL',
-      'Background bridging statistical research and sports analysis',
-    ],
-    initials: 'TW',
-    accent: 'algo',
-  },
-  'propbetedge-editorial-team': {
-    name: 'PropBetEdge Editorial Team',
-    role: 'AI-Assisted Editorial',
-    title: 'PropBetEdge Editorial Operations',
-    bio: `The PropBetEdge Editorial Team is the hybrid human-and-AI editorial operation that publishes original prop-bet analysis daily across MLB, NFL, NBA, and NHL. Articles published under this byline are produced through our proprietary editorial pipeline — a system that combines real-time source-fetching from established sports outlets, AI-assisted drafting calibrated to the prop-bet implications of each story, and human editorial review on the strategic angles, picks, and market reads.
-
-Our editorial methodology is intentionally transparent. Every article published under this byline goes through three phases: (1) source identification and verification against the original reporting, (2) AI-assisted drafting with a structured editorial framework focused on prop-bet impact, and (3) human review on the strategic conclusions, betting angles, and any data citations. We disclose AI assistance openly because we believe readers deserve to know how their information is produced — and because we believe the future of sports media is hybrid, not adversarial, when done with rigor.
-
-This byline covers the rapid-response volume work that no single human can produce in real time: breaking injury news with prop-impact analysis within minutes of the wire report, post-game implication coverage on yesterday's games, and the kind of cross-sport editorial response that keeps PropBetEdge readers ahead of the market. For deeper takes, daily picks, and signature columns, articles are published under the bylines of our human staff: <a href="/authors/justin-erickson">Justin Erickson</a>, <a href="/authors/erik-schwartz">Erik Schwartz</a>, and <a href="/authors/ty-whitney">Ty Whitney</a>.
-
-Our standards: <a href="/editorial-standards">read our editorial standards</a>.`,
-    expertise: [
-      'Cross-sport prop-bet impact analysis',
-      'Real-time editorial response to breaking news',
-      'AI-assisted research with human editorial oversight',
-      'Source verification & transparent methodology',
-    ],
-    credentials: [
-      'Hybrid human-AI editorial operation',
-      'Daily volume coverage across MLB, NFL, NBA, NHL',
-      'Transparent AI-assistance disclosure on every article',
-    ],
-    initials: 'PE',
-    accent: 'algo',
-  },
-};
+const AUTHORS = Object.fromEntries(listEditorialAuthors().map(({ slug, ...profile }) => [slug, profile]));
 
 // Convert a name like "Justin Erickson" → "justin-erickson"
 export function authorSlug(name) {
-  return (name || '').toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+  return editorialAuthorSlug(name);
 }
 
 export function getAuthorBySlug(slug) {
-  return AUTHORS[slug] || null;
+  return getEditorialAuthor(slug);
 }
 
 export function listAuthors() {
-  return Object.entries(AUTHORS).map(([slug, profile]) => ({ slug, ...profile }));
+  return listEditorialAuthors();
 }
 
 export async function renderAuthor(root, slug, setMeta) {
@@ -152,13 +51,13 @@ export async function renderAuthor(root, slug, setMeta) {
   if (setMeta) {
     setMeta({
       title: `${author.name} — ${author.role} · PropBetEdge`,
-      description: stripHtml(author.bio).slice(0, 160),
+      description: author.summary || stripHtml(author.bio).slice(0, 160),
       canonical: `https://propbetedge.ai/authors/${slug}`,
     });
   }
 
-  // Inject Person JSON-LD for E-E-A-T signal
-  // 🆕 v3.9.6: Rich schema — ProfilePage wrapping Person + breadcrumbs + org + website
+  // Inject the canonical ProfilePage schema. Named authors resolve to Person;
+  // the operational newsroom byline resolves to Organization.
   injectSchemas([
     organizationSchema(),
     websiteSchema(),
@@ -185,7 +84,7 @@ export async function renderAuthor(root, slug, setMeta) {
         </header>
 
         <section class="author-bio-section">
-          <div class="author-bio">${formatBioParagraphs(author.bio)}</div>
+          <div class="author-bio">${formatBioParagraphs(author.bio)}<div class="author-accountability"><span>BYLINE ACCOUNTABILITY</span><p>${escapeHtml(author.accountability || "")}</p></div></div>
           <aside class="author-sidebar">
             ${author.credentials && author.credentials.length ? `
               <div class="author-credentials">
@@ -226,7 +125,8 @@ export async function renderAuthor(root, slug, setMeta) {
         </section>
       </div>
     </main>
-    ${renderFooter()}
+    ${renderHomeCloser()}
+    ${renderFooter({ cta: false })}
   `;
 
   // Fetch articles by this author
