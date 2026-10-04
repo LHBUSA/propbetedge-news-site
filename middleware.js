@@ -1414,9 +1414,11 @@ function buildAuthorsSchema(canonical) {
       '@type': author.kind === 'organization' ? 'Organization' : 'Person',
       '@id': `${SITE}/authors/${slug}#author`,
       name: author.name,
-      jobTitle: author.role,
       url: `${SITE}/authors/${slug}`,
-      worksFor: { '@id': `${SITE}/#organization` },
+      description: author.summary,
+      ...(author.kind === 'organization'
+        ? { memberOf: { '@id': `${SITE}/#organization` } }
+        : { jobTitle: author.role, worksFor: { '@id': `${SITE}/#organization` } }),
     },
   }));
 
@@ -1440,7 +1442,7 @@ function buildServerAuthorsHtml() {
   const rows = Object.entries(AUTHOR_META).map(([slug, author]) => `
     <li>
       <h2><a href="/authors/${escapeAttr(slug)}">${escapeHtml(author.name)}</a></h2>
-      <p>${escapeHtml(author.role)}</p>
+      <p>${escapeHtml(author.bylineLabel || author.role)} · ${escapeHtml(author.role)}</p>
     </li>
   `).join('');
 
@@ -1448,7 +1450,8 @@ function buildServerAuthorsHtml() {
     <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; Editorial Team</nav>
     <article>
       <h1>PropBetEdge Editorial Team</h1>
-      <p>Meet the people and editorial operation behind PropBetEdge sports journalism and intelligence.</p>
+      <p>Meet the named contributors and the disclosed operational newsroom byline behind PropBetEdge sports journalism and intelligence.</p>
+      <p>Named authors are represented as people. The PropBetEdge Editorial Team is an organizational byline for newsroom systems and automation, not a fictitious person.</p>
       <ul>${rows}</ul>
       <p><a href="/editorial-standards">Read our Editorial Standards</a></p>
     </article>
