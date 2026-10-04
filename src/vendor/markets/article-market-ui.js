@@ -11,6 +11,16 @@
  * only for comparable venues; related markets show their own path under "RULES DIFFER"; LIVE only <= 150 s
  * ("Updated X ago" otherwise; an unchanged price says "unchanged since"); movement after publication is timing only,
  * never attributed to the story. Ineligible / nothing observed -> renders nothing (no empty state).
+ *
+ * PBE CONTEXT (opts.pbeContext, optional, host-hydrated): sport-native PBE intelligence that is NOT the official
+ * Algo-vs-Market record (packet.pbe stays that record, sealed and untouched). Only read when the packet has no
+ * official PBE decision; omitted -> the module renders exactly as before. Shape (docs/POST_EVENT_MARKET_RESULT.md):
+ *   { scope: 'VALIDATION' | 'TRACKING' | 'NONE', access: 'full' | 'locked',
+ *     game_signals: [{ display, price, probability, market, lifecycle, before_kickoff, scope_label }],   // [0] = lead
+ *     td_targets:   [{ rank: 'PRIMARY' | 'SECONDARY', name, probability }],
+ *     cta: { href, label } }                                                                            // locked only
+ * Never compared numerically with a venue here (a pregame decision vs an in-play price is not a comparison), never
+ * blended, never relabelled official. A locked context names nothing: no team, player, line, price or probability.
  */
 import { ageLabel } from './kalshi-market-ui.js'
 
@@ -104,9 +114,42 @@ function resultTable(packet) {
 // PBE closing strip. The visible "PBE" mark is decorative (aria-hidden); screen readers get the "PBE: " prefix.
 const pbeMark = '<span class="am__pbeid" aria-hidden="true">PBE</span>'
 const noCall = (packet) => (packet.pbe_status === 'NO_PBE_DECISION' ? `<div class="am__pbe am__pbe--none">${pbeMark}<p class="am__pbeh"><span class="am__sr">PBE: </span><b>No official call</b> on this event</p></div>` : '')
-function pbeBlock(packet) {
+
+// Non-official PBE context (see header). Absent -> the original no-call strip, byte for byte.
+const pct = (p) => `${Math.round(Number(p) * 1000) / 10}%`
+const american = (n) => (n == null || n === '' || !Number.isFinite(Number(n)) ? '' : Number(n) > 0 ? `+${Number(n)}` : `${Number(n)}`)
+const CTX_TITLE = { VALIDATION: 'PBE live validation', TRACKING: 'PBE tracking' }
+const CTX_FOOT = '<p class="am__ctxf">Validation/tracking scope · not the Official Track Record</p>'
+const signalTerms = (s) => [s.display, american(s.price)].filter(Boolean).join(' ')
+function lockLine(s) {
+  if (s.lifecycle === 'LOCKED' || s.lifecycle === 'FINAL') return s.before_kickoff === false ? 'Locked at kickoff' : 'Locked before kickoff'
+  if (s.lifecycle === 'ACTIVE') return 'Pre-game decision · can be replaced until kickoff'
+  return null
+}
+const scopeWord = (s) => String(s.scope_label || '').replace(/^PBE\s+/i, '').toLowerCase() || null
+function contextBlock(packet, ctx) {
+  if (ctx === undefined || ctx === null) return noCall(packet)
+  const scope = String(ctx.scope || 'NONE').toUpperCase()
+  const title = CTX_TITLE[scope]
+  if (!title) return `<div class="am__pbe am__pbe--none">${pbeMark}<p class="am__pbeh"><span class="am__sr">PBE: </span><b>No PBE decision</b> on this event</p></div>`
+  if (ctx.access !== 'full') {
+    const what = scope === 'VALIDATION' ? 'PBE live validation intelligence' : 'PBE tracking intelligence'
+    const cta = ctx.cta?.href ? `<a class="am__ctxcta" href="${esc(ctx.cta.href)}">${esc(ctx.cta.label || 'Unlock')}</a>` : ''
+    return `<div class="am__pbe am__pbe--ctx am__pbe--locked">${pbeMark}<div class="am__pbeb"><h4>${esc(title)}</h4><p class="am__pbeh"><span class="am__sr">PBE: </span>${esc(what)} exists for this game</p>${cta}${CTX_FOOT}</div></div>`
+  }
+  const signals = (Array.isArray(ctx.game_signals) ? ctx.game_signals : []).filter((s) => s && s.display && Number.isFinite(Number(s.probability)))
+  const targets = (Array.isArray(ctx.td_targets) ? ctx.td_targets : []).filter((t) => t && t.name && Number.isFinite(Number(t.probability)))
+  if (!signals.length && !targets.length) return noCall(packet)
+  const [lead, ...rest] = signals
+  const leadSub = lead ? [lockLine(lead), scopeWord(lead)].filter(Boolean).join(' · ') : ''
+  const leadHtml = lead ? `<p class="am__pbeh"><span class="am__sr">PBE: </span><b>${esc(signalTerms(lead))}</b> · <b>PBE ${esc(pct(lead.probability))}</b></p>${leadSub ? `<p class="am__ctxs">${esc(leadSub)}</p>` : ''}` : ''
+  const related = rest.length ? `<ul class="am__ctxl">${rest.map((s) => `<li><span>Other game signal</span><span>${esc(signalTerms(s))} · PBE ${esc(pct(s.probability))}</span></li>`).join('')}</ul>` : ''
+  const td = targets.length ? `<h4 class="am__ctxh">TD targets</h4><ul class="am__ctxl">${targets.map((t) => `<li><span>${esc(String(t.rank || '').toUpperCase())} · ${esc(t.name)}</span><span>${esc(pct(t.probability))}</span></li>`).join('')}</ul>` : ''
+  return `<div class="am__pbe am__pbe--ctx">${pbeMark}<div class="am__pbeb"><h4>${esc(title)}</h4>${leadHtml}${related}${td}${CTX_FOOT}</div></div>`
+}
+function pbeBlock(packet, ctx) {
   const p = packet.pbe
-  if (!p) return noCall(packet)
+  if (!p) return contextBlock(packet, ctx)
   const lines = packet.venues.map((v) => {
     if (!v.comparable_to_pbe) return `<li><span>${esc(v.venue_label)}</span><span class="am__na">${esc(venueTag(v) || 'Not comparable')} · not scored</span></li>`
     const c = v.pbe_vs_venue
@@ -118,7 +161,7 @@ function pbeBlock(packet) {
   return `<div class="am__pbe">${pbeMark}<div class="am__pbeb"><h4>PBE vs market</h4><p class="am__pbeh"><b>PBE ${esc(Math.round(p.probability * 1000) / 10)}%</b> on ${esc(selectionName(packet))} · locked ${esc(time(p.lock_at))} · <span class="am__g am__g--${esc(String(p.grade || 'pending').toLowerCase())}">${esc(grade)}</span></p><ul>${lines}</ul></div></div>`
 }
 
-function liveTable(payload) {
+function liveTable(payload, ctx) {
   const { packet, live } = payload
   const vs = live.venues.filter((v) => v.outcomes.some((o) => o.current))
   if (!vs.length) return ''
@@ -131,7 +174,7 @@ function liveTable(payload) {
   const firstRow = `<tr class="am__sub"><th scope="row">Since first observed</th>${vs.map((v) => { const o = v.outcomes.find((x) => x.role === focus); return `<td>${o?.since_first_bp != null ? esc(signed(o.since_first_bp)) : '<span class="am__na">—</span>'}</td>` }).join('')}</tr>`
   const fresh = `<tr class="am__sub"><th scope="row">Checked</th>${vs.map((v) => { const o = v.outcomes.find((x) => x.role === focus) || v.outcomes[0]; return `<td data-am-age="${esc(o.checked_at || '')}">${o.freshness === 'LIVE' ? '<span class="am__live">LIVE</span>' : esc(`Updated ${ageLabel(o.age_s)}`)}</td>` }).join('')}</tr>`
   const pbeNow = packet.pbe ? vs.map((v) => (v.pbe_now ? `<li><span>${esc(pv.get(`${v.venue}|${v.venue_market_id ?? ''}`)?.venue_label || v.venue)} now</span><span>PBE ${esc(pts(v.pbe_now.divergence_now_pts))}</span></li>` : '')).join('') : ''
-  const pbe = !packet.pbe ? noCall(packet) : packet.pbe ? `<div class="am__pbe">${pbeMark}<div class="am__pbeb"><p class="am__pbeh"><b>PBE ${esc(Math.round(packet.pbe.probability * 1000) / 10)}%</b> on ${esc(selectionName(packet))}</p>${pbeNow ? `<ul>${pbeNow}</ul>` : ''}</div></div>` : ''
+  const pbe = !packet.pbe ? contextBlock(packet, ctx) : packet.pbe ? `<div class="am__pbe">${pbeMark}<div class="am__pbeb"><p class="am__pbeh"><b>PBE ${esc(Math.round(packet.pbe.probability * 1000) / 10)}%</b> on ${esc(selectionName(packet))}</p>${pbeNow ? `<ul>${pbeNow}</ul>` : ''}</div></div>` : ''
   return `<div class="am__tw"><table class="am__t">${cols(vs.length)}<thead><tr><th></th>${head}</tr></thead><tbody>${priceRows}${pubRow}${firstRow}${fresh}</tbody></table></div>${pbe}`
 }
 
@@ -191,13 +234,13 @@ function fieldLive(payload, v, focus) {
   return `${fieldHead(v, focused)}<div class="am__tw"><table class="am__t am__t--field"><thead><tr><th></th>${head}</tr></thead><tbody>${body}${fresh}</tbody></table></div>${moreLine(v, more)}`
 }
 
-export function articleMarketModule(payload, { placement = 'article', focus = null } = {}) {
+export function articleMarketModule(payload, { placement = 'article', focus = null, pbeContext = null } = {}) {
   if (!payload?.eligible || !payload.packet || !payload.live || payload.packet.packet_state === 'NO_MARKET_OBSERVED') return ''
   const { packet, live } = payload
   const result = live.mode === 'MARKET_RESULT'
   const fv = packet.venues.find((v) => v.field)
-  if (fv) return fieldModule(payload, fv, { placement, focus, result })
-  const body = result ? resultTable(packet) + pbeBlock(packet) : liveTable(payload)
+  if (fv) return fieldModule(payload, fv, { placement, focus, result, pbeContext })
+  const body = result ? resultTable(packet) + pbeBlock(packet, pbeContext) : liveTable(payload, pbeContext)
   if (!body) return ''
   const title = result ? 'The market result' : 'Live market watch'
   const tag = result ? (packet.packet_state === 'FINAL' ? 'Settled' : 'Awaiting venue settlement') : live.in_play ? 'In-play prices' : 'Pre-event prices'
@@ -210,11 +253,11 @@ export function articleMarketModule(payload, { placement = 'article', focus = nu
   return `<section class="am am--${result ? 'result' : 'live'}" data-am-placement="${esc(placement)}" data-am-sha="${esc(packet.sha256)}" aria-label="${esc(title)}"><header class="am__hd"><h3>${esc(title)}</h3><span class="am__tag am__tag--${tagState}">${esc(tag)}</span></header>${body}<ul class="am__notes">${notes}</ul></section>`
 }
 
-function fieldModule(payload, fv, { placement, focus, result }) {
+function fieldModule(payload, fv, { placement, focus, result, pbeContext = null }) {
   const { packet, live } = payload
   const table = result ? fieldResult(packet, fv, focus) : fieldLive(payload, fv, focus)
   if (!table) return ''
-  const body = table + (packet.pbe ? '' : noCall(packet))
+  const body = table + (packet.pbe ? '' : contextBlock(packet, pbeContext))
   const title = result ? 'The market result' : 'Live market watch'
   const tag = result ? (packet.packet_state === 'FINAL' ? 'Settled' : 'Awaiting venue settlement') : live.in_play ? 'In-play prices' : 'Pre-event prices'
   const tagState = result ? (packet.packet_state === 'FINAL' ? 'settled' : 'pending') : live.in_play ? 'inplay' : 'pre'
@@ -228,14 +271,17 @@ function fieldModule(payload, fv, { placement, focus, result }) {
 }
 
 // Progressive enhancement. opts: { base (REQUIRED, the product's same-origin path, e.g. '/api/markets'), sport, eventId, publishedAt, initial (embedded payload), refreshMs, fetchImpl,
-//   focus (optional, FIELD events only: the article's participants as canonical ids — golf-api player slug / f1-api driver id) }.
+//   focus (optional, FIELD events only: the article's participants as canonical ids — golf-api player slug / f1-api driver id),
+//   pbeContext (optional: the context object, or a function returning the current one — see header) }.
+// The returned stop() also carries stop.repaint(): re-render the last payload now (e.g. once the host's PBE context lands).
 // The host should reserve the module's height server-side when the article is eligible (zero CLS). A FINAL packet is
 // rendered once and never refetched (it is the article's permanent record).
-export function mountArticleMarket(host, { base, sport, eventId, publishedAt, initial = null, refreshMs = 30000, fetchImpl = (...a) => globalThis.fetch(...a), focus = null } = {}) {
+export function mountArticleMarket(host, { base, sport, eventId, publishedAt, initial = null, refreshMs = 30000, fetchImpl = (...a) => globalThis.fetch(...a), focus = null, pbeContext = null } = {}) {
   if (!host || !base || !sport || !eventId || !publishedAt) return () => {} // base required: products read through their own same-origin rewrite
   let timer = null, visible = true, stopped = false, last = initial, lastAt = initial ? Date.now() : 0
   const fq = [...focusRoles(focus)].map((r) => r.slice(2)).join(',')
-  const paint = (p) => { const html = articleMarketModule(p, { focus }); if (html !== host.innerHTML) host.innerHTML = html }
+  const ctx = () => (typeof pbeContext === 'function' ? pbeContext() : pbeContext)
+  const paint = (p) => { const html = articleMarketModule(p, { focus, pbeContext: ctx() }); if (html !== host.innerHTML) host.innerHTML = html }
   const frozen = (p) => p?.packet?.packet_state === 'FINAL' && p?.live?.mode === 'MARKET_RESULT'
   if (initial) paint(initial)
   const tick = async () => {
@@ -257,5 +303,6 @@ export function mountArticleMarket(host, { base, sport, eventId, publishedAt, in
   if (!initial) tick()
   timer = setInterval(tick, refreshMs)
   function stop() { stopped = true; clearInterval(timer); io?.disconnect(); if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis) }
+  stop.repaint = () => { if (!stopped && last) paint(last) }
   return stop
 }

@@ -13,11 +13,16 @@
 // - Read through the exact same-origin rewrite /api/markets/v1/article-market/<sport>/:id (vercel.json). The browser
 //   never calls a venue or the Worker host.
 // - Nothing eligible / no market observed / a failed read -> nothing rendered (no placeholder, no empty state).
-// Vendored client: src/vendor/markets/* = propbetedge-workers 9d887f3 workers/propsports-markets/client, UNCHANGED.
+// - NFL: the module's PBE line is the OFFICIAL record (none for NFL), so the NFL product's own per-game PBE context
+//   (validation signals + TD targets, entitlement decided by the NFL server) is read in parallel and passed as the
+//   client's separate pbeContext (src/article-pbe-context.js). It never touches the public /api/markets read.
+// Vendored client: src/vendor/markets/* = propbetedge-workers workers/propsports-markets/client at
+// ARTICLE_MARKET_CLIENT_PIN, UNCHANGED.
 import { articleMarketModule, mountArticleMarket } from './vendor/markets/article-market-ui.js';
+import { loadNflPbeContext } from './article-pbe-context.js';
 
 export const ARTICLE_MARKET_ACTIVATED_AT = '2026-10-04T14:31:40Z';
-export const ARTICLE_MARKET_CLIENT_PIN = '3f7345e';
+export const ARTICLE_MARKET_CLIENT_PIN = 'd2a920a';
 export const ARTICLE_MARKET_BASE = '/api/markets';
 export const ARTICLE_MARKET_REFRESH_MS = 30_000;
 export const ARTICLE_MARKET_FIRST_PAINT_MS = 800;
@@ -58,43 +63,58 @@ export async function loadArticleMarket(ev, fetchImpl = (...x) => globalThis.fet
   }
 }
 
-/** Load-time read sharing a first-paint budget. { now } = payload in time; { pending } = a late answer still coming. */
-export async function articleMarketWithin(a, budgetMs = ARTICLE_MARKET_FIRST_PAINT_MS, fetchImpl) {
-  const ev = articleMarketEvent(a);
-  if (!ev) return { now: null, pending: null };
-  const frozen = frozenArticleMarket(a);
-  if (frozen) return { now: frozen, pending: null };
-  const p = loadArticleMarket(ev, fetchImpl);
+/** Resolves to the promise's value, or undefined once the budget is spent. */
+async function within(p, budgetMs) {
   let timer;
   const late = new Promise((resolve) => { timer = setTimeout(() => resolve(undefined), budgetMs); });
-  const now = await Promise.race([p, late]);
+  const v = await Promise.race([p, late]);
   clearTimeout(timer);
-  return now === undefined ? { now: null, pending: p } : { now, pending: null };
+  return v;
 }
 
-export const articleMarketHtml = (payload) => (payload ? articleMarketModule(payload, { placement: 'news-article' }) : '');
+/**
+ * Load-time read sharing a first-paint budget. { now } = payload in time; { pending } = a late answer still coming.
+ * NFL also carries { pbe, pbePending }: the NFL PBE context, read in parallel under the same budget.
+ */
+export async function articleMarketWithin(a, budgetMs = ARTICLE_MARKET_FIRST_PAINT_MS, fetchImpl, { pbeFetchImpl } = {}) {
+  const ev = articleMarketEvent(a);
+  if (!ev) return { now: null, pending: null };
+  const ctxP = ev.sport === 'nfl' ? loadNflPbeContext(ev.eventId, pbeFetchImpl) : null;
+  const frozen = frozenArticleMarket(a);
+  const p = frozen ? Promise.resolve(frozen) : loadArticleMarket(ev, fetchImpl);
+  const [now, pbe] = await Promise.all([within(p, budgetMs), ctxP ? within(ctxP, budgetMs) : null]);
+  const out = now === undefined ? { now: null, pending: p } : { now, pending: null };
+  if (ctxP) Object.assign(out, pbe === undefined ? { pbe: null, pbePending: ctxP } : { pbe, pbePending: null });
+  return out;
+}
+
+export const articleMarketHtml = (payload, pbeContext = null) => (payload ? articleMarketModule(payload, { placement: 'news-article', pbeContext }) : '');
 
 /** The slot: present only for an eligible article; empty (zero height) when the read had nothing to show. */
 export function articleMarketSlot(a, mk) {
-  return articleMarketEvent(a) ? `<div class="art-market" data-art-market>${articleMarketHtml(mk?.now)}</div>` : '';
+  return articleMarketEvent(a) ? `<div class="art-market" data-art-market>${articleMarketHtml(mk?.now, mk?.pbe)}</div>` : '';
 }
 
 /**
  * After render. First paint already holds the module when the read beat the budget; a late answer is inserted only
  * while the slot is below the viewport (no visible layout shift). Then ~30 s refresh while visible (client rules).
  */
-export function mountArticleMarketSlot(root, a, { now = null, pending = null } = {}) {
+export function mountArticleMarketSlot(root, a, { now = null, pending = null, pbe = null, pbePending = null } = {}) {
   const slot = root?.querySelector?.('[data-art-market]');
   const ev = articleMarketEvent(a);
   if (!slot || !ev) return () => {};
-  const start = (initial) => mountArticleMarket(slot, { base: ARTICLE_MARKET_BASE, sport: ev.sport, eventId: ev.eventId, publishedAt: ev.publishedAt, initial, refreshMs: ARTICLE_MARKET_REFRESH_MS });
-  if (now) return start(now);
-  if (!pending) return () => {};
+  let ctx = pbe;
   let stop = () => {};
-  pending.then((late) => {
-    if (!late || !slot.isConnected) return;
-    if (slot.getBoundingClientRect().top < window.innerHeight) return; // would shift what the reader sees: skip
-    stop = start(late);
-  });
+  const start = (initial) => { stop = mountArticleMarket(slot, { base: ARTICLE_MARKET_BASE, sport: ev.sport, eventId: ev.eventId, publishedAt: ev.publishedAt, initial, refreshMs: ARTICLE_MARKET_REFRESH_MS, pbeContext: () => ctx }); };
+  // A late NFL context replaces only the PBE strip inside an already-rendered module (or waits for the market read).
+  pbePending?.then((late) => { if (late) { ctx = late; stop.repaint?.(); } });
+  if (now) start(now);
+  else if (pending) {
+    pending.then((late) => {
+      if (!late || !slot.isConnected) return;
+      if (slot.getBoundingClientRect().top < window.innerHeight) return; // would shift what the reader sees: skip
+      start(late);
+    });
+  }
   return () => stop();
 }

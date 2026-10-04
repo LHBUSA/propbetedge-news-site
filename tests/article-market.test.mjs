@@ -69,20 +69,22 @@ test('reads go through the same-origin rewrite with the ORIGINAL publication tim
   assert.equal(await loadArticleMarket(articleMarketEvent(article()), async () => new Response('x', { status: 502 })), null);
   assert.equal(await loadArticleMarket(articleMarketEvent(article()), async () => { throw new Error('offline'); }), null);
   assert.equal(await loadArticleMarket(articleMarketEvent(article()), async () => new Response(JSON.stringify({ eligible: false, reason: 'PRE_ACTIVATION_ARTICLE' }), { status: 200 })), null);
-  const mk = await articleMarketWithin(article({ event: null }), 50, ok);
+  const offline = { pbeFetchImpl: async () => { throw new Error('offline'); } };
+  const mk = await articleMarketWithin(article({ event: null }), 50, ok, offline);
   assert.deepEqual(mk, { now: null, pending: null }, 'ineligible: no request at all');
   assert.equal(seen.length, 1);
-  const slow = await articleMarketWithin(article(), 10, () => new Promise((r) => setTimeout(() => r(new Response(JSON.stringify(payload))), 60)));
+  const slow = await articleMarketWithin(article(), 10, () => new Promise((r) => setTimeout(() => r(new Response(JSON.stringify(payload))), 60)), offline);
   assert.equal(slow.now, null);
   assert.ok(slow.pending, 'a late answer is handed to mount, which only fills a slot below the viewport');
   assert.equal((await slow.pending).sport, 'nfl');
 });
 
 test('vendored client is byte-identical to propbetedge-workers client at the pinned SHA', () => {
-  assert.equal(ARTICLE_MARKET_CLIENT_PIN, '3f7345e');
+  assert.equal(ARTICLE_MARKET_CLIENT_PIN, 'd2a920a');
   const sha = (f) => createHash('sha256').update(fs.readFileSync(new URL(`../src/vendor/markets/${f}`, import.meta.url))).digest('hex');
-  assert.equal(sha('article-market-ui.js'), '2149e2854142657a554ef119533680c77657f0d2b1ea8406fe4de711e4fbe635');
-  assert.equal(sha('article-market-ui.css'), '582c879d9a634caa467f31896c928bf854fc16579a1565091bb5b0093ee0505c');
+  // d2a920a: optional non-official pbeContext (NFL validation / TD targets); output without it is byte-identical
+  assert.equal(sha('article-market-ui.js'), '2f6c6eab53f5372268d0feec5153ad1157c5c5aaf23dfe0775afcff3a649d297');
+  assert.equal(sha('article-market-ui.css'), '08f1d740a976bbf0bf7fcd193a5b2ca9419955a23959936b484e6161d31caf2d');
   // kalshi-market-ui.js re-vendored at propbetedge-workers 64ca257 (one-sided book at $0/$1 keeps the full card; no fake mid)
   assert.equal(sha('kalshi-market-ui.js'), '639f834c27bffed519d37eea4066d3b31e5699f7215d6ea5c07e23c2591ccc48');
 });

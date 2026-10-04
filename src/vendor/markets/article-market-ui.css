@@ -110,3 +110,14 @@
 .am--field p.am__focus { display: block; font-size: 14px; font-weight: 600; color: var(--am-dim); }
 .am--field .am__focus a { color: var(--am-accent); font-weight: 800; text-decoration: none; }
 .am--field .am__focus a:hover, .am--field .am__focus a:focus-visible { text-decoration: underline; }
+
+/* Non-official PBE context (pbeContext): validation / tracking intelligence, never the official record. */
+.am__pbe--ctx .am__pbeb > h4 { color: var(--am-accent); }
+.am p.am__ctxs { margin: 3px 0 0; font-family: inherit; font-size: 12px; line-height: 1.4; color: var(--am-faint); overflow-wrap: normal; }
+.am__pbe h4.am__ctxh { margin: 12px 0 2px; }
+.am__pbe ul.am__ctxl { margin-top: 6px; }
+.am__ctxl li span:last-child { color: var(--am-ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+.am p.am__ctxf { margin: 10px 0 0; font-family: inherit; font-size: 11px; line-height: 1.4; color: var(--am-faint); overflow-wrap: normal; }
+.am a.am__ctxcta { display: inline-block; margin-top: 10px; padding: 7px 12px; border-radius: 8px; border: 1px solid rgba(212,175,55,.38);
+  background: rgba(212,175,55,.10); color: var(--pbe-gold, #d4af37); font: 700 11px/1.2 var(--am-mono); letter-spacing: .08em; text-transform: uppercase; text-decoration: none; }
+.am a.am__ctxcta:hover, .am a.am__ctxcta:focus-visible { background: rgba(212,175,55,.18); }
