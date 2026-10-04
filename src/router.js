@@ -22,6 +22,7 @@ import { renderAuthor } from './pages/author.js';
 import { renderAuthorsIndex } from './pages/authors.js';
 import { renderEditorialStandards } from './pages/editorial-standards.js';
 import { renderAbout } from './pages/about.js';
+import { renderTrustPage } from './pages/trust.js';
 import { renderPro } from './pages/pro.js';
 import { renderNotFound } from './pages/404.js';
 import { renderGamesHub } from './pages/games-hub.js';
@@ -235,6 +236,10 @@ function clearAndRoute() {
   if (path === '/pro') return renderPro(root, setMeta);
 
   if (path === '/about') return renderAbout(root, setMeta);
+
+  if (path === '/terms') return renderTrustPage(root, 'terms', setMeta);
+  if (path === '/support') return renderTrustPage(root, 'support', setMeta);
+  if (path === '/media') return renderTrustPage(root, 'media', setMeta);
 
   if (path === '/editorial-standards') return renderEditorialStandards(root, setMeta);
 
