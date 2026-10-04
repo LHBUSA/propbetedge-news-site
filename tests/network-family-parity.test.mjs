@@ -33,21 +33,21 @@ test('vendored family.json is the canonical registry shape', () => {
   assert.ok(family.retired_hosts.includes('hub.propbetedge.ai'));
 });
 
-test('footer links every family sport in registry order, Predictions in its own group after the sports', () => {
+test('footer links every family sport in registry order, Predictions in its own Network group (never a sport)', () => {
   const { footer, hrefs } = footerHrefs();
   const sportHrefs = hrefs.filter((h) => SPORT_URLS.includes(slash(h)));
   assert.deepEqual(sportHrefs.map(slash), SPORT_URLS, 'sports set + order match family.json');
   assert.equal(hrefs.filter((h) => h === F1_URL).length, 1, 'exactly one canonical F1 anchor');
   assert.equal(hrefs.filter((h) => h === PRED_URL).length, 1, 'exactly one canonical Predictions anchor');
   assert.equal(hrefs.filter((h) => /predictions\.propbetedge\.ai/.test(h)).length, 1);
-  assert.equal(hrefs.filter((h) => /f1\.propbetedge\.ai/.test(h)).length, 1);
-  // Predictions sits under its own heading, never inside the sport list.
-  const f1At = footer.indexOf(`href="${F1_URL}"`);
-  const predAt = footer.indexOf(`href="${PRED_URL}"`);
-  const between = footer.slice(f1At, predAt);
-  assert.match(between, /<h4[^>]*>[^<]+<\/h4>/, 'Predictions has its own group heading, outside the sport list');
+  assert.equal(hrefs.filter((h) => /^https:\/\/f1\.propbetedge\.ai\/?$/.test(h)).length, 1, 'one F1 intelligence anchor (its newsroom is separate)');
+  // Predictions sits in its own group (Network, owner 2026-10-04), never inside the sport list.
+  const groupOf = (href) => { const at = footer.indexOf(`href="${href}"`); const h = [...footer.slice(0, at).matchAll(/<h4[^>]*>([^<]+)<\/h4>/g)].pop(); return h ? h[1] : null; };
+  assert.equal(groupOf(F1_URL), 'Sports');
+  assert.notEqual(groupOf(PRED_URL), 'Sports', 'Predictions is never a sport');
+  assert.equal(groupOf(PRED_URL), 'Network');
   assert.match(footer, /F1<span class="nf-sr"> Intelligence<\/span>/, 'accessible name "F1 Intelligence"');
-  assert.match(footer, />PropBetEdge Predictions </);
+  assert.match(footer, />PropBetEdge Predictions</, 'product name, not a sport label');
 });
 
 test('footer network links: PropBetEdge home, All Access, Learn; no retired hosts, no http://', () => {

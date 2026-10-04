@@ -32,6 +32,8 @@ import { NETWORK_SOCIAL_IMAGE } from './src/social.js';
 import { renderServerIntelligenceLink } from './src/intelligence-cta.js';
 import { classifyAutomatedAccess } from './src/security/automated-access.js';
 import { AUTHOR_PROFILES } from './src/editorial/authors-registry.js';
+import { researchPage, researchSubpages, RESEARCH_NOT_PUBLISHED, RESEARCH_UPDATED } from './src/research/registry.js';
+import { PUBLIC_APIS } from './src/network/public-apis.js';
 
 export const config = {
   matcher: [
@@ -456,6 +458,34 @@ async function resolveMeta(pathname, search = '') {
       robots: DEFAULT_ROBOTS,
       jsonLd: buildEditorialStandardsSchema(canonical),
       ssrHtml: buildServerEditorialStandardsHtml(),
+    };
+  }
+
+  // Research (src/research/registry.js) and Developers (src/network/public-apis.js): same registries as the client.
+  const rPage = researchPage(pathname);
+  if (rPage) {
+    const canonical = `${SITE}${rPage.path}`;
+    return {
+      canonical,
+      title: `${rPage.title} — PropBetEdge Research`,
+      description: rPage.description,
+      image: NETWORK_SOCIAL_IMAGE.url,
+      robots: DEFAULT_ROBOTS,
+      jsonLd: { '@context': 'https://schema.org', '@type': 'WebPage', '@id': `${canonical}#webpage`, url: canonical, name: rPage.title, description: rPage.description, inLanguage: 'en-US', dateModified: RESEARCH_UPDATED.iso, isPartOf: { '@id': `${SITE}/#website` }, publisher: { '@id': `${SITE}/#organization` } },
+      ssrHtml: buildServerResearchHtml(rPage),
+    };
+  }
+  if (pathname === '/developers') {
+    const canonical = `${SITE}/developers`;
+    const description = 'Build on the data platform underneath PropBetEdge: the PropSports API, the UFC Intelligence API and the PropBetEdge Sports News API.';
+    return {
+      canonical,
+      title: 'Developers — PropBetEdge sports data & intelligence APIs',
+      description,
+      image: NETWORK_SOCIAL_IMAGE.url,
+      robots: DEFAULT_ROBOTS,
+      jsonLd: { '@context': 'https://schema.org', '@type': 'WebPage', '@id': `${canonical}#webpage`, url: canonical, name: 'Developers', description, inLanguage: 'en-US', isPartOf: { '@id': `${SITE}/#website` }, publisher: { '@id': `${SITE}/#organization` } },
+      ssrHtml: buildServerDevelopersHtml(),
     };
   }
 
@@ -1376,6 +1406,26 @@ function buildServerEditorialStandardsHtml() {
       <p>PropBetEdge is operated by Local Home Buyers LLC d/b/a PropTechUSA.ai.</p>
       <p><a href="/authors">Editorial Team</a> · <a href="/about">About</a> · <a href="/legal">Legal</a> · <a href="/terms">Terms</a></p>
     </article>
+  </main>`;
+}
+
+function buildServerResearchHtml(page) {
+  const secs = page.sections.map((sec) => `<h2>${escapeHtml(sec.h)}</h2>${sec.steps ? `<ol>${sec.steps.map(([k, v]) => `<li><strong>${escapeHtml(k)}</strong> — ${escapeHtml(v)}</li>`).join('')}</ol>` : sec.body.map((p) => `<p>${escapeHtml(p)}</p>`).join('')}`).join('');
+  const nav = researchSubpages().map((p) => `<a href="${p.path}">${escapeHtml(p.label)}</a>`).join(' · ');
+  return `<main class="pbe-ssr-research" data-server-rendered="1">
+    <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; <a href="/research">Research</a>${page.slug ? ` &rsaquo; ${escapeHtml(page.label)}` : ''}</nav>
+    <article><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.lede)}</p>${secs}
+      <h2>What we do not publish</h2><ul>${RESEARCH_NOT_PUBLISHED.map((x) => `<li>${escapeHtml(x)}</li>`).join('')}</ul>
+      <p>${nav} · <a href="/editorial-standards">Editorial Standards</a> · <a href="/developers">Developers</a></p></article>
+  </main>`;
+}
+
+function buildServerDevelopersHtml() {
+  return `<main class="pbe-ssr-developers" data-server-rendered="1">
+    <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; Developers</nav>
+    <article><h1>Build on the platform underneath PropBetEdge</h1>
+      ${PUBLIC_APIS.map((a) => `<h2>${escapeHtml(a.name)}</h2><p>${escapeHtml(a.summary)} ${escapeHtml(a.access)}</p><p><a href="${escapeAttr(a.href)}">${escapeHtml(a.footerLabel)}</a></p>`).join('')}
+      <p><a href="/research">Research</a> · <a href="/editorial-standards">Editorial Standards</a></p></article>
   </main>`;
 }
 

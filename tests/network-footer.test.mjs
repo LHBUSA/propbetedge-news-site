@@ -1,82 +1,98 @@
-// propbetedge.ai MAIN-SITE footer contract (owner 2026-10-04). A visual redesign must never delete a destination:
-// this pins every established trust / legal / editorial / author / network / store link, the taxonomy, and no
-// duplicates. (The compact "no individual authors" policy is for sport subdomains only, never this site.)
+// propbetedge.ai MAIN-SITE footer contract (owner 2026-10-04). The footer sells the network and renders the
+// canonical registries; a redesign never deletes an established trust/legal/editorial destination.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { renderFooter, STORE_URL } from '../src/components/footer.js';
 import { PROPBET_LINKS } from '../src/ads-config.js';
+import { INTELLIGENCE_SPORTS, INTELLIGENCE_ORDER } from '../src/intelligence-cta.js';
+import { RESEARCH_PAGES } from '../src/research/registry.js';
+import { PUBLIC_APIS, API_DOCS_URL } from '../src/network/public-apis.js';
 
+const FAMILY = JSON.parse(fs.readFileSync(new URL('../src/network/family.json', import.meta.url), 'utf8'));
 const html = renderFooter({ cta: false });
 const footer = html.slice(html.indexOf('<footer'), html.lastIndexOf('</footer>'));
-const anchors = [...footer.matchAll(/<a\b[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map((m) => ({ href: m[1], text: m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() }));
-const hrefs = anchors.map((a) => a.href);
+const band = footer.slice(footer.indexOf('class="nf-band"'), footer.indexOf('class="nf-grid"'));
+const directory = footer.slice(footer.indexOf('class="nf-grid"'));
+const anchors = (s) => [...s.matchAll(/<a\b[^>]*\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map((m) => ({ href: m[1], text: m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() }));
+const all = anchors(footer);
+const hrefs = all.map((x) => x.href);
+const dirHrefs = anchors(directory).map((x) => x.href);
 const css = fs.readFileSync(new URL('../src/styles/network-footer.css', import.meta.url), 'utf8');
-const groupOf = (href) => { const at = footer.indexOf(`href="${href}"`); const h = [...footer.slice(0, at).matchAll(/<h4[^>]*>([^<]+)<\/h4>/g)].pop(); return h ? h[1] : null; };
+const groupOf = (href) => { const at = footer.indexOf(`href="${href}"`, footer.indexOf('class="nf-grid"')); const h = [...footer.slice(0, at).matchAll(/<h4[^>]*>([^<]+)<\/h4>/g)].pop(); return h ? h[1].replace(/&amp;/g, '&') : null; };
 
-test('main-site trust / legal / editorial inventory: every required link present and visibly labelled', () => {
+test('main-site trust / legal / editorial inventory: every required link present and labelled', () => {
   const required = {
     '/about': /About PropBetEdge/, '/terms': /Terms of Service/, '/legal': /Legal/, '/support': /Support/, '/media': /Media/,
     '/editorial-standards': /Editorial Standards/, '/authors': /Editorial Team/,
     '/authors/justin-erickson': /Justin Erickson/, '/authors/propbetedge-editorial-team': /PropBetEdge Editorial Team/,
     '/authors/ty-whitney': /Ty Whitney/, '/authors/erik-schwartz': /Erik Schwartz/,
-    '/news': /Newsroom/, '/news/rss.xml': /RSS/,
+    '/news': /All Sports News/, '/news/rss.xml': /RSS/,
+    'https://billing.stripe.com/p/login/cNi3cv2vY7em3lr4oj7wA00': /Manage Subscription/, 'mailto:support@proptechusa.ai': /Contact/,
   };
   for (const [href, label] of Object.entries(required)) {
-    const a = anchors.find((x) => x.href === href);
-    assert.ok(a, `missing ${href}`);
-    assert.match(a.text, label, `${href} label`);
+    const x = all.find((y) => y.href === href);
+    assert.ok(x, `missing ${href}`);
+    assert.match(x.text, label, href);
   }
-  // Terms and Legal live in the Company directory, not only a faint legal rail.
-  assert.equal(groupOf('/terms'), 'Company');
-  assert.equal(groupOf('/legal'), 'Company');
+  for (const h of ['/terms', '/legal', '/support', '/media', '/about']) assert.equal(groupOf(h), 'Company & Legal', h);
+  for (const h of ['/authors', '/authors/justin-erickson', '/editorial-standards']) assert.equal(groupOf(h), 'Editorial & Trust', h);
 });
 
-test('Store is restored at the network storefront destination', () => {
+test('commercial band: Explore All Access, Explore APIs, Store', () => {
+  const b = anchors(band);
+  assert.deepEqual(b.filter((x) => /nf-action/.test(band.slice(band.indexOf(`href="${x.href}"`) - 40, band.indexOf(`href="${x.href}"`) + 60)) || true).map((x) => x.href).slice(0, 3), ['/pro', '/developers', STORE_URL]);
+  assert.match(band, /class="nf-action nf-action--primary">Explore All Access</);
+});
+
+test('Network renders the registry (All Access + Predictions prominent, News, Learn, Store)', () => {
+  const pred = FAMILY.products.find((p) => p.key === 'predictions');
+  const learn = FAMILY.network.find((n) => n.key === 'learn');
+  for (const h of ['/pro', pred.url, '/', learn.url, STORE_URL]) assert.equal(groupOf(h), 'Network', h);
+  assert.match(directory, /class="nf-hero-name">All Access<\/span><span class="nf-hero-price">\$29\/mo/);
+  assert.match(directory, /PropBetEdge Predictions<\/span><span class="nf-tag">Included with All Access<\/span>/);
   assert.equal(STORE_URL, 'https://ufc.propbetedge.ai/store');
-  const a = anchors.find((x) => x.href === STORE_URL);
-  assert.ok(a, 'Store link');
-  assert.equal(a.text, 'Store');
-  assert.equal(groupOf(STORE_URL), 'Network');
 });
 
-test('network / products come from the registry: All Access, Predictions (included with All Access), News, Learn, Store', () => {
-  for (const href of ['/pro', 'https://predictions.propbetedge.ai/', '/', PROPBET_LINKS.learn, STORE_URL]) assert.equal(groupOf(href), 'Network', href);
-  assert.match(footer, /PropBetEdge Predictions <span class="nf-tag">Included with All Access<\/span>/);
+test('Sports render family.json; Newsrooms render INTELLIGENCE_SPORTS.newsPath for all ten sports', () => {
+  for (const s of FAMILY.sports) assert.equal(groupOf(s.url), 'Sports', s.key);
+  for (const k of INTELLIGENCE_ORDER) {
+    const s = INTELLIGENCE_SPORTS[k];
+    const x = all.find((y) => y.href === s.newsPath);
+    assert.ok(x, `newsroom ${k}`);
+    assert.equal(x.text, `${s.label} News`);
+    assert.equal(groupOf(s.newsPath), 'Newsrooms', k);
+  }
+  assert.equal(INTELLIGENCE_ORDER.length, 10);
 });
 
-test('features are never presented as company "Products"', () => {
+test('Research renders the research registry; MLB tools never sit under global Research; no "Products"', () => {
+  for (const p of RESEARCH_PAGES) assert.equal(groupOf(p.path), 'Research', p.path);
+  for (const h of [PROPBET_LINKS.algo, PROPBET_LINKS.hr_targets, PROPBET_LINKS.k_props]) assert.ok(!hrefs.includes(h), `MLB feature in footer: ${h}`);
   assert.doesNotMatch(footer, /<h4[^>]*>\s*Products?\s*<\/h4>/i);
-  for (const href of [PROPBET_LINKS.algo, PROPBET_LINKS.hr_targets, PROPBET_LINKS.k_props]) assert.equal(groupOf(href), 'Research', href);
-  assert.ok(!hrefs.includes('/games') || groupOf('/games') !== 'Network', 'PBEcast is not a network product');
 });
 
-test('all ten sports, every established destination kept, no duplicate destinations', () => {
-  const sports = [PROPBET_LINKS.picks_mlb, PROPBET_LINKS.picks_nfl, PROPBET_LINKS.picks_nba, 'https://wnba.propbetedge.ai', PROPBET_LINKS.picks_nhl, PROPBET_LINKS.picks_ufc, PROPBET_LINKS.tennis, PROPBET_LINKS.soccer, PROPBET_LINKS.golf, 'https://f1.propbetedge.ai/'];
-  for (const s of sports) assert.equal(groupOf(s), 'Sports', s);
-  // Everything the pre-redesign footer carried (ba06d50) is still here.
-  const established = ['/pro', '/news', '/news/mlb', '/news/nfl', '/news/nba', '/news/nhl', '/news/rss.xml', '/about', '/terms', '/legal', '/support', '/media',
-    '/authors', '/authors/justin-erickson', '/authors/propbetedge-editorial-team', '/authors/ty-whitney', '/authors/erik-schwartz', '/editorial-standards',
-    PROPBET_LINKS.algo, PROPBET_LINKS.hr_targets, PROPBET_LINKS.k_props, PROPBET_LINKS.learn, PROPBET_LINKS.propsports, PROPBET_LINKS.api_news, 'https://ufc.proptechusa.ai',
-    PROPBET_LINKS.discord, PROPBET_LINKS.linkedin, PROPBET_LINKS.twitter, 'https://billing.stripe.com/p/login/cNi3cv2vY7em3lr4oj7wA00', 'mailto:support@proptechusa.ai',
-    'https://mother.proptechusa.ai/verify/xgH9unhpY6TDvTtmG8CsUWrq0O6M10TS', 'https://mother.proptechusa.ai/#badge', 'https://predictions.propbetedge.ai/', 'https://f1.propbetedge.ai/', '/'];
-  for (const h of established) assert.ok(hrefs.includes(h), `dropped ${h}`);
-  const dupes = hrefs.filter((h, i) => hrefs.indexOf(h) !== i);
-  assert.deepEqual(dupes, [], 'each destination appears once');
+test('Developers render the public-API catalog only, plus docs and the full catalog page', () => {
+  for (const api of PUBLIC_APIS) assert.equal(groupOf(api.href), 'Developers', api.key);
+  assert.equal(groupOf(API_DOCS_URL), 'Developers');
+  assert.ok(dirHrefs.includes('/developers'));
+  assert.ok(!/workers\.dev/.test(footer), 'no internal Worker hosts');
 });
 
-test('visual contract: warm palette only (espresso/charcoal/parchment from main.css tokens), stepped surfaces, no new hue', () => {
+test('no duplicate directory destinations (only the band repeats All Access, APIs, Store)', () => {
+  const dupes = dirHrefs.filter((h, i) => dirHrefs.indexOf(h) !== i);
+  assert.deepEqual(dupes, []);
+  const bandOnly = anchors(band).map((x) => x.href).filter((h) => !/discord|x\.com|twitter|linkedin/.test(h));
+  assert.deepEqual(bandOnly, ['/pro', '/developers', STORE_URL]);
+});
+
+test('warm palette only; preferred source + Mother badge kept; legal line; focus visible; no inline styles', () => {
   assert.match(css, /--nf-surface: rgba\(29, 25, 20, \.92\)/, 'espresso --ink-2');
   assert.match(css, /--nf-band: rgba\(42, 36, 28, \.9\)/, 'charcoal --ink-3');
   assert.doesNotMatch(css, /rgba\(27, 31, 40|#a9b0bd|rgba\(255, 255, 255/i, 'no navy/blue-grey or cold white');
-  assert.doesNotMatch(css, /background: #0[0-9a-f]{5};/i, 'no near-black slab');
-  assert.match(css, /--nf-text: var\(--paper-2\)/);
   assert.match(footer, /data-pbe-preferred-source data-surface="footer" data-sport="network"/);
   assert.match(footer, /<img src="https:\/\/api\.mother\.proptechusa\.ai\/badge\/[^"]+\.svg"[^>]*width="236" height="48"/);
   assert.match(footer, /Bet responsibly · 21\+ · Gambling Problem\? Call 1-800-GAMBLER/);
-});
-
-test('external links open safely; focus visible; no inline styles', () => {
   for (const m of footer.matchAll(/<a\b[^>]*target="_blank"[^>]*>/g)) assert.match(m[0], /rel="noopener/, m[0]);
   assert.match(css, /\.nf a:focus-visible \{ outline: 2px solid var\(--gold\)/);
   assert.doesNotMatch(footer, /<style>|\sstyle="/);

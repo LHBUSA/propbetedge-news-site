@@ -21,6 +21,8 @@ import { renderArticle } from './pages/article.js';
 import { renderAuthor } from './pages/author.js';
 import { renderAuthorsIndex } from './pages/authors.js';
 import { renderEditorialStandards } from './pages/editorial-standards.js';
+import { renderResearch } from './pages/research.js';
+import { renderDevelopers } from './pages/developers.js';
 import { renderAbout } from './pages/about.js';
 import { renderTrustPage } from './pages/trust.js';
 import { renderPro } from './pages/pro.js';
@@ -243,6 +245,9 @@ function clearAndRoute() {
   if (path === '/media') return renderTrustPage(root, 'media', setMeta);
 
   if (path === '/editorial-standards') return renderEditorialStandards(root, setMeta);
+
+  if (path === '/research' || path.startsWith('/research/')) { if (renderResearch(root, path, setMeta)) return; }
+  if (path === '/developers') return renderDevelopers(root, setMeta);
 
   const teamMatch = path.match(/^\/team\/([a-z]+)\/([\w-]+)$/);
   if (teamMatch) {

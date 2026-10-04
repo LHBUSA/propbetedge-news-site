@@ -25,6 +25,7 @@ import './styles/pbe-preferred-source.css';
 import './styles/network-footer.css';
 import './styles/founder-profile.css';
 import './styles/editorial-standards.css';
+import './styles/research.css';
 import { initBackgroundSelector } from './background-selector.js';
 import { initNflLaunchPriority } from './nfl-launch-priority.js';
 import { initSiteEnhancements } from './site-enhancements.js';

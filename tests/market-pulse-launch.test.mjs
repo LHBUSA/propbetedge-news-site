@@ -58,7 +58,7 @@ test('links every network sport on its verified domain', () => {
   for (const [, href, sport] of links) assert.equal(href, DOMAINS[sport], sport);
   assert.deepEqual(links.map((l) => l[2]).sort(), Object.keys(DOMAINS).sort());
   // Domains match the root footer/header network links.
-  const network = read('../src/ads-config.js') + read('../src/components/footer.js') + read('../src/components/header.js');
+  const network = read('../src/ads-config.js') + read('../src/network/family.json') + read('../src/components/header.js');
   for (const href of Object.values(DOMAINS)) {
     assert.ok(network.includes(new URL(href).origin), href);
   }

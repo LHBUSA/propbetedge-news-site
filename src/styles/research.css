@@ -1,0 +1,46 @@
+/* Research + Developers pages: extend the Editorial Standards trust-center system (.es-*). Warm tokens only. */
+
+/* Research loop diagram */
+.rs-loop { counter-reset: rs; margin: 6px 0 4px !important; }
+.rs-loop li { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 18px; padding: 14px 0; border-bottom: 1px solid var(--line); font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--paper-2); }
+.rs-loop-k { font-family: var(--font-serif); font-size: 21px; color: var(--gold); }
+
+/* Research area cards (index) */
+.rs-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 4px !important; }
+.rs-cards a { position: relative; display: block; height: 100%; padding: 22px 24px 26px; background: rgba(42, 36, 28, .6); border-top: 2px solid var(--gold); color: var(--paper); text-decoration: none !important; }
+.rs-cards a:hover { background: rgba(42, 36, 28, .85); }
+.rs-card-t { display: block; margin-bottom: 8px; font-family: var(--font-serif); font-size: 22px; color: var(--paper); }
+.rs-card-d { display: block; font-family: var(--font-sans); font-size: 15px; line-height: 1.6; color: var(--paper-dim); }
+.rs-card-go { position: absolute; right: 20px; top: 22px; color: var(--gold); }
+.rs-scope .es-list li::before { background: var(--paper-faint); }
+.es-toc a[aria-current="page"] { border-left-color: var(--gold); color: var(--gold); }
+
+/* Developers */
+.dv-body { padding-top: 48px; }
+.dv-catalog { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.dv-api { display: flex; flex-direction: column; padding: 28px 28px 24px; background: rgba(29, 25, 20, .88); border-top: 2px solid var(--gold); }
+.dv-api-name { margin: 0 0 12px; font-family: var(--font-serif); font-size: 26px; line-height: 1.15; color: var(--paper); }
+.dv-api-sum { margin: 0 0 18px; font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--paper-2); }
+.dv-label { margin: 0 0 8px; font-family: var(--font-mono); font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--gold); }
+.dv-coverage { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 18px !important; }
+.dv-coverage a { font-family: var(--font-sans); font-size: 15px; color: var(--paper); }
+.dv-access { margin: 0 0 20px; font-family: var(--font-sans); font-size: 14.5px; line-height: 1.6; color: var(--paper-dim); }
+.dv-access .dv-label { display: block; }
+.dv-links { display: flex; flex-wrap: wrap; gap: 8px; margin: auto 0 0; }
+.dv-btn { display: inline-block; padding: 9px 14px; border: 1px solid var(--line-strong); border-radius: 4px; font-family: var(--font-sans); font-size: 13.5px; font-weight: 600; color: var(--paper) !important; text-decoration: none !important; }
+.dv-btn:hover { border-color: var(--gold); color: var(--gold-bright) !important; }
+.dv-btn--primary { background: var(--gold); border-color: var(--gold); color: #17120a !important; }
+.dv-btn--primary:hover { background: var(--gold-bright); color: #17120a !important; }
+.dv-h2 { margin: 0 0 20px; font-family: var(--font-serif); font-size: clamp(28px, 2.6vw, 36px); color: var(--paper); }
+.dv-how, .dv-contact { margin-top: 56px; padding: 36px 0 0; border-top: 1px solid var(--line); }
+.dv-points { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 40px; margin-bottom: 18px !important; }
+.dv-points li { font-family: var(--font-sans); font-size: 16px; line-height: 1.65; color: var(--paper-2); }
+.dv-points strong { color: var(--paper); }
+.dv-contact p { max-width: 70ch; font-family: var(--font-sans); font-size: 16px; line-height: 1.7; color: var(--paper-2); }
+
+@media (max-width: 1024px) { .dv-catalog { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 680px) {
+  .rs-cards, .dv-points { grid-template-columns: minmax(0, 1fr); }
+  .rs-loop li { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .dv-api { padding: 22px 20px; }
+}

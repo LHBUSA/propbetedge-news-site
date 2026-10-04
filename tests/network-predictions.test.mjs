@@ -44,8 +44,9 @@ test('/pro says ten sports + Predictions, shows a Predictions product card, and 
   assert.equal(ALL_ACCESS.priceUsd, 29);
 });
 
-test('network surfaces link Predictions: footer, header switcher + mobile menu, About crawler HTML, search', () => {
-  assert.match(read('src/components/footer.js'), /href="https:\/\/predictions\.propbetedge\.ai\/"[^>]*>PropBetEdge Predictions/);
+test('network surfaces link Predictions: footer, header switcher + mobile menu, About crawler HTML, search', async () => {
+  const { renderFooter } = await import('../src/components/footer.js');
+  assert.match(renderFooter({ cta: false }), /href="https:\/\/predictions\.propbetedge\.ai\/"[^>]*><span class="nf-hero-name">PropBetEdge Predictions/);
   const header = read('src/components/header.js');
   assert.match(header, /pbe-intel-option-predictions" href="https:\/\/predictions\.propbetedge\.ai\/"/);
   assert.match(header, /data-pbe-placement="mobile_more_predictions">Predictions</);
