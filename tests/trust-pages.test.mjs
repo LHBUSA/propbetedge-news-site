@@ -40,7 +40,7 @@ test('robots keeps discovery crawlers open while training crawlers are blocked',
    assert.ok(robots.includes(`'User-agent: ${bot}'`), `${bot} has an explicit discovery rule`);
  }
  for(const bot of ['GPTBot','ClaudeBot','Google-Extended','CCBot','Bytespider','meta-externalagent','Applebot-Extended']){
-   const block=new RegExp(`User-agent: ${bot.replace(/[.*+?^$\{\}()|[\\]\\\\]/g,'\\$&')}[\\s\\S]{0,100}Disallow: /`);
+   const block=new RegExp(`User-agent: ${bot}[\\s\\S]{0,100}Disallow: /`);
    assert.match(robots,block,`${bot} is blocked from model-development crawling`);
  }
  assert.match(robots,/User-agent: \*'[\s\S]*Allow: \/'[\s\S]*Disallow: \/api\//);
