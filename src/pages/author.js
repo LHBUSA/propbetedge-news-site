@@ -7,8 +7,8 @@
  *         /authors/ty-whitney
  *         /authors/propbetedge-editorial-team
  *
- * Strong E-E-A-T signal for Google: real authors with role, bio, and article portfolio.
- * Each profile is a structured Person entity that links back to NewsArticle author fields.
+ * Permanent byline profiles with role, methodology, accountability and article portfolio.
+ * Named contributors are Person entities. The operational newsroom byline is an Organization entity.
  */
 
 import { api } from '../api.js';
@@ -51,13 +51,13 @@ export async function renderAuthor(root, slug, setMeta) {
   if (setMeta) {
     setMeta({
       title: `${author.name} — ${author.role} · PropBetEdge`,
-      description: stripHtml(author.bio).slice(0, 160),
+      description: author.summary || stripHtml(author.bio).slice(0, 160),
       canonical: `https://propbetedge.ai/authors/${slug}`,
     });
   }
 
-  // Inject Person JSON-LD for E-E-A-T signal
-  // 🆕 v3.9.6: Rich schema — ProfilePage wrapping Person + breadcrumbs + org + website
+  // Inject the canonical ProfilePage schema. Named authors resolve to Person;
+  // the operational newsroom byline resolves to Organization.
   injectSchemas([
     organizationSchema(),
     websiteSchema(),
