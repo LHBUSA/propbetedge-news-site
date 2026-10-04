@@ -42,3 +42,11 @@ test('wired where articles enter the site: client normalizer and the Edge crawle
   assert.match(mw, /pool\.push\(withoutPromotionalHero\(row\)\);/);
   assert.match(mw, /filterPublicArticles\(data\?\.articles \|\| \[\]\)\.map\(withoutPromotionalHero\)/);
 });
+
+test('canonical rule is hash-pinned: the newsroom enrich Worker vendors this exact file', async () => {
+  // propbetedge-workers workers/propbet-news-enrich/src/promo-creative.js is a byte-identical copy (its own test pins
+  // the same hash). Changing this file means: re-vendor into the Worker, update both pins, redeploy propbet-news-enrich.
+  const { createHash } = await import('node:crypto');
+  const sha = createHash('sha256').update(fs.readFileSync(new URL('../src/editorial/promo-creative.js', import.meta.url))).digest('hex');
+  assert.equal(sha, '2481f515319070e233661b4fee665e187b2cc39742db161d0f8b59e2e851fc37');
+});
