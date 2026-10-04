@@ -66,6 +66,7 @@ export function renderFooter({ cta = true } = {}) {
             <h4>✍️ Editorial</h4>
             <a href="/about"><strong>About PropBetEdge</strong></a>
             <a href="/terms">Terms</a>
+            <a href="/legal">Legal</a>
             <a href="/support">Support</a>
             <a href="/media">Media</a>
             <a href="/authors"><strong>Editorial Team</strong></a>
