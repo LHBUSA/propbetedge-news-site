@@ -45,7 +45,7 @@ export function renderAbout(root, setMeta) {
   ], 'jsonld-about');
 
   root.innerHTML = `
-    ${renderHeader()}
+    ${renderHeader({ mode: 'editorial' })}
     <main class="about-v2">
       <div class="container">
 

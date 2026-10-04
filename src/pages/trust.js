@@ -153,7 +153,7 @@ export function renderTrustPage(root, kind, setMeta) {
   const canonical = `${SITE}/${kind}`;
   setMeta?.({ title: page.title, description: page.description, canonical });
   root.innerHTML = `
-    ${renderHeader()}
+    ${renderHeader({ mode: 'editorial' })}
     ${styles}
     <main class="trust-page">
       <div class="container trust-shell">

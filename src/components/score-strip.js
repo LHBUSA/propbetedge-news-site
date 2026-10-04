@@ -615,6 +615,11 @@ function gameSignature(g) {
 /* ─────────────────────────────────────────────────────────────────────────
  * TILE HTML
  * ────────────────────────────────────────────────────────────────────────*/
+// The loop copy for the marquee: aria-hidden, not focusable, marked so updates and tests can tell it apart.
+export function marqueeClone(tilesHtml) {
+  return String(tilesHtml).replace(/<a class="pss-tile"/g, '<a class="pss-tile pss-tile--clone" aria-hidden="true" tabindex="-1" data-pss-clone="1"');
+}
+
 function tileHTML(g) {
   const accent = SPORT_ACCENTS[g.sport] || '#94a3b8';
   const sportTag = SPORT_BADGE[g.sport] || '';
@@ -811,7 +816,7 @@ function paint() {
     if (!wrap) return;
     const overflows = railEl.scrollWidth > wrap.clientWidth + 4;
     if (overflows) {
-      railEl.innerHTML = tiles + tiles;
+      railEl.innerHTML = tiles + marqueeClone(tiles);
       railEl.classList.add('pss-marquee-on');
     }
   });

@@ -15,7 +15,7 @@ export function renderAuthorsIndex(root, setMeta) {
   });
 
   root.innerHTML = `
-    ${renderHeader()}
+    ${renderHeader({ mode: 'editorial' })}
     <main class="pbe-intelligence-page">
       <div class="container author-page">
         <header class="author-hero pbe-authors-index-hero">

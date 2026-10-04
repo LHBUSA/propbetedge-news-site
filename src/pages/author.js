@@ -75,7 +75,7 @@ export async function renderAuthor(root, slug, setMeta) {
 
   // Skeleton
   root.innerHTML = `
-    ${renderHeader()}
+    ${renderHeader({ mode: 'editorial' })}
     <main>
       <div class="container author-page">
         <header class="author-hero">

@@ -45,7 +45,7 @@ export function editorialStandardsHtml() {
   const named = listNamedAuthors();
   const desks = listOperationalBylines();
   return `
-    ${renderHeader()}
+    ${renderHeader({ mode: 'editorial' })}
     <main class="es">
       <header class="es-hero">
         <div class="container es-hero-inner">

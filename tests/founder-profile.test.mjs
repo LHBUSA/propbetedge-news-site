@@ -29,8 +29,20 @@ test('content comes from the canonical registry: positioning, facts, pillars, pr
   for (const u of [...justin.imageSet.jpg, ...justin.imageSet.webp]) assert.ok(fs.existsSync(new URL(`../public${u}`, import.meta.url)), u);
 });
 
-test('page structure: hero, what I build, principles, accountability, expertise grid, latest work, network; footer without generic CTA', async () => {
-  for (const s of ['class="fdr-hero"', 'What I build', 'Operating principles', 'Named human byline', 'Read Editorial Standards →', 'class="fdr-cap"', 'id="latest-work"', 'Across the network']) assert.ok(founderSrc.includes(s), s);
+test('page structure: hero (identity | what I work on) -> About -> accountability -> Latest work -> network; no numbered deck', async () => {
+  const mod = await import('../src/pages/author-founder.js');
+  globalThis.window ??= { location: { pathname: '/authors/justin-erickson', search: '', hostname: 'propbetedge.ai' }, matchMedia: () => ({ matches: false }) };
+  globalThis.document = { querySelector: () => null, getElementById: () => null };
+  const html = mod.founderProfileHtml('justin-erickson', justin);
+  const main = html.slice(html.indexOf('<main class="fdr"'), html.indexOf('</main>'));
+  const order = ['class="fdr-hero"', 'id="fdr-domains-h"', 'id="fdr-about-h"', 'id="fdr-acc-h"', 'id="latest-work"', 'id="fdr-net-h"'].map((s) => main.indexOf(s));
+  assert.ok(order.every((v, i) => v >= 0 && (i === 0 || v > order[i - 1])), `section order ${order}`);
+  const hero = main.slice(main.indexOf('class="fdr-hero"'), main.indexOf('id="fdr-about-h"'));
+  assert.equal((hero.replace(/alt="[^"]*"/g, '').match(/Justin Erickson/g) || []).length, 1, 'hero names him once (the h1)');
+  assert.equal((hero.match(/<li>/g) || []).length >= 2 && (hero.match(/Founder/g) || []).length, 2, 'the two titles, stated once each');
+  assert.doesNotMatch(main, /What I build|Operating principles|fdr-n>\d\d|<span>0[1-5]<\/span>/, 'no numbered founder-deck chapters');
+  assert.match(main, /Read Editorial Standards →/);
+  assert.match(founderSrc, /renderHeader\(\{ mode: 'editorial' \}\)/, 'quiet institutional header');
   assert.match(founderSrc, /\$\{renderFooter\(\{ cta: false \}\)\}/);
   assert.doesNotMatch(founderSrc, /renderHomeCloser|import '[^']*\.css'/);
   assert.match(read('src/main.js'), /import '\.\/styles\/founder-profile\.css';/);

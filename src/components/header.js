@@ -54,7 +54,13 @@ const INTELLIGENCE_PRODUCTS = Object.freeze(INTELLIGENCE_ORDER.map((key) => {
   };
 }));
 
-export function renderHeader() {
+// mode 'editorial': institutional / editorial pages (About, authors, masthead, Editorial Standards, Terms, Legal,
+// Media, Support) render the masthead and navigation only — no live-score strip, no sport campaign banner, no
+// UFC Fight Week rail — so the reader sees the page they asked for immediately. Sports pages keep the full chrome.
+export const EDITORIAL_HEADER_MODE = 'editorial';
+
+export function renderHeader({ mode = 'sports' } = {}) {
+  const editorial = mode === EDITORIAL_HEADER_MODE;
   const path = window.location.pathname;
   const isLive = path === '/games' || path.startsWith('/games/');
   const isLeaders = path === '/leaders' || path.startsWith('/leaders/');
@@ -78,9 +84,9 @@ export function renderHeader() {
   }
 
   return `
-    ${renderScoreStripShell()}
-    ${ad_header_banner(sport ? { sport } : {})}
-    <header class="masthead">
+    ${editorial ? '' : renderScoreStripShell()}
+    ${editorial ? '' : ad_header_banner(sport ? { sport } : {})}
+    <header class="masthead${editorial ? ' masthead--editorial' : ''}">
       <div class="container masthead-inner">
         <div class="masthead-left masthead-leagues" aria-label="League coverage and search">
           <button type="button" class="nav-link pbe-search-trigger masthead-search" data-pbe-search-open aria-label="Search PropBetEdge" aria-keyshortcuts="Control+K Meta+K /">
@@ -152,7 +158,7 @@ export function renderHeader() {
         </div>
       </div>
     </header>
-    ${renderUfcFightWeekShell()}
+    ${editorial ? '' : renderUfcFightWeekShell()}
   `;
 }
 

@@ -1,12 +1,18 @@
 /**
  * src/pages/author-founder.js
- * Founder / technical-operator profile, selected by an explicit registry field (profileVariant: 'founder'), never by
- * slug. Every word comes from the canonical registry (src/editorial/authors-registry.js) or the live author feed —
- * no counts, metrics or claims that need re-verifying. Other bylines keep the standard profile in pages/author.js.
+ * Founder / editorial authority profile, selected by an explicit registry field (profileVariant: 'founder'),
+ * never by slug. Composed for 100% browser zoom, not a full-page screenshot (owner 2026-10-04):
  *
- * Styles: src/styles/founder-profile.css (imported in main.js).
- * Order: hero → what I build → operating principles → accountability → expertise → latest work → across the network.
- * Schema (ProfilePage → Person) is injected by renderAuthor, unchanged.
+ *   hero            identity (portrait, name once, the two titles, 2-sentence bio, actions) | What I work on
+ *   About Justin    concise biography, full biography on demand
+ *   accountability  one horizontal band: named-human byline + evidence/model-record standard
+ *   Latest work     the visual centre: featured story + six recent with imagery, full list on demand
+ *   network         compact closing rail
+ *
+ * Quiet editorial header (no score strip / campaign / fight-week rail). Every word comes from the canonical
+ * registry (src/editorial/authors-registry.js) or the live author feed; no invented credentials or counts.
+ * Styles: src/styles/founder-profile.css (imported in main.js). Schema (ProfilePage -> Person) is injected by
+ * renderAuthor, unchanged.
  */
 
 import { api } from '../api.js';
@@ -16,72 +22,77 @@ import { escapeHtml, escapeAttr } from '../components/article-card.js';
 import { proxyImage } from '../ads-config.js';
 
 const FILTER_SPORTS = ['mlb', 'nfl', 'nhl'];
+const RECENT = 6;
 const isExternal = (href) => /^https?:\/\//.test(href);
 const linkAttrs = (href) => (isExternal(href) ? ' target="_blank" rel="noopener"' : '');
+const paragraphs = (bio) => String(bio || '').split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 
 export function founderProfileHtml(slug, author) {
   const f = author.founder;
+  const titles = String(author.title || '').split(' · ').filter(Boolean);
+  const bio = paragraphs(author.bio);
+  const aboutLead = bio.slice(0, 2);
+  const aboutRest = bio.slice(2);
   return `
-    ${renderHeader()}
+    ${renderHeader({ mode: 'editorial' })}
     <main class="fdr" data-profile-variant="founder">
       <header class="fdr-hero">
-        <div class="container fdr-hero-inner">
-          ${founderPortrait(author)}
-          <div class="fdr-hero-copy">
-            <p class="fdr-eyebrow">${escapeHtml(f.eyebrow)}</p>
-            <h1 class="fdr-name">${escapeHtml(author.name)}</h1>
-            <p class="fdr-title">${escapeHtml(author.title)}</p>
-            <p class="fdr-positioning">${escapeHtml(f.positioning)}</p>
-            <ul class="fdr-facts">${f.facts.map((x) => `<li>${escapeHtml(x)}</li>`).join('')}</ul>
-            <div class="fdr-actions">
-              <a class="fdr-btn fdr-btn--primary" href="#latest-work">Latest work</a>
-              <a class="fdr-btn" href="/editorial-standards">Editorial standards</a>
-              <a class="fdr-btn" href="/about">PropBetEdge network</a>
+        <div class="fdr-wrap fdr-hero-inner">
+          <div class="fdr-identity">
+            ${founderPortrait(author)}
+            <div class="fdr-identity-copy">
+              <h1 class="fdr-name">${escapeHtml(author.name)}</h1>
+              <ul class="fdr-titles">${titles.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>
             </div>
+            <p class="fdr-lede">${escapeHtml(f.positioning)} ${escapeHtml(f.heroBio || author.summary)}</p>
+            <nav class="fdr-actions" aria-label="Profile links">
+              <a class="fdr-btn fdr-btn--primary" href="#latest-work">Latest work</a>
+              <a class="fdr-btn" href="/editorial-standards">Editorial Standards</a>
+              <a class="fdr-btn" href="/about">PropBetEdge</a>
+              <a class="fdr-btn" href="https://proptechusa.ai" target="_blank" rel="noopener">PropTechUSA.ai</a>
+            </nav>
           </div>
+          <section class="fdr-domains" aria-labelledby="fdr-domains-h">
+            <h2 id="fdr-domains-h" class="fdr-label">What I work on</h2>
+            <ul>${(f.areas || []).map((a) => `<li>${escapeHtml(a)}</li>`).join('')}</ul>
+          </section>
         </div>
       </header>
 
-      <div class="container fdr-body">
-        <section class="fdr-section" aria-labelledby="fdr-build">
-          <h2 id="fdr-build" class="fdr-h2"><span>01</span> What I build</h2>
-          <div class="fdr-pillars">
-            ${f.pillars.map((p) => `<article class="fdr-pillar"><h3>${escapeHtml(p.title)}</h3><p>${escapeHtml(p.body)}</p></article>`).join('')}
-          </div>
-        </section>
+      <section class="fdr-section fdr-about" aria-labelledby="fdr-about-h">
+        <div class="fdr-wrap">
+          <h2 id="fdr-about-h" class="fdr-h2">About Justin</h2>
+          <div class="fdr-bio">${aboutLead.map((p) => `<p>${escapeHtml(p)}</p>`).join('')}</div>
+          ${aboutRest.length ? `<details class="fdr-more"><summary>Read the full biography</summary><div class="fdr-bio">${aboutRest.map((p) => `<p>${escapeHtml(p)}</p>`).join('')}</div></details>` : ''}
+        </div>
+      </section>
 
-        <section class="fdr-section" aria-labelledby="fdr-principles">
-          <h2 id="fdr-principles" class="fdr-h2"><span>02</span> Operating principles</h2>
-          <ol class="fdr-principles">
-            ${f.principles.map((p, i) => `<li><span class="fdr-pn">${String(i + 1).padStart(2, '0')}</span><div><h3>${escapeHtml(p.title)}</h3><p>${escapeHtml(p.body)}</p></div></li>`).join('')}
-          </ol>
-        </section>
-
-        <section class="fdr-section fdr-split" aria-label="Accountability and expertise">
-          <aside class="fdr-trust" aria-labelledby="fdr-trust-h">
-            <p class="fdr-trust-k" id="fdr-trust-h">Named human byline</p>
-            <p class="fdr-trust-body">${escapeHtml(author.accountability)}</p>
+      <section class="fdr-section fdr-accountability" aria-labelledby="fdr-acc-h">
+        <div class="fdr-wrap fdr-acc-inner">
+          <h2 id="fdr-acc-h" class="fdr-h2">Editorial &amp; model accountability</h2>
+          <div class="fdr-acc-copy">
+            <p>${escapeHtml(author.accountability)}</p>
             <a class="fdr-link" href="/editorial-standards">Read Editorial Standards →</a>
-          </aside>
-          <div class="fdr-expertise">
-            <h2 class="fdr-h2"><span>03</span> Expertise</h2>
-            <ul class="fdr-cap">${author.expertise.map((e) => `<li>${escapeHtml(e)}</li>`).join('')}</ul>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section class="fdr-section" id="latest-work" aria-labelledby="fdr-work">
+      <section class="fdr-section fdr-work-band" id="latest-work" aria-labelledby="fdr-work-h">
+        <div class="fdr-wrap">
           <div class="fdr-work-head">
-            <h2 id="fdr-work" class="fdr-h2"><span>04</span> Latest work</h2>
+            <h2 id="fdr-work-h" class="fdr-h2">Latest work</h2>
             <div class="fdr-filters" role="group" aria-label="Filter by sport" hidden></div>
           </div>
           <div class="fdr-work" id="fdr-work-list" aria-live="polite">${workSkeleton()}</div>
-        </section>
+        </div>
+      </section>
 
-        <section class="fdr-section fdr-network" aria-labelledby="fdr-net">
-          <h2 id="fdr-net" class="fdr-h2"><span>05</span> Across the network</h2>
+      <section class="fdr-section fdr-network" aria-labelledby="fdr-net-h">
+        <div class="fdr-wrap">
+          <h2 id="fdr-net-h" class="fdr-label">Elsewhere in the network</h2>
           <ul class="fdr-net">${f.network.map((n) => `<li><a href="${escapeAttr(n.href)}"${linkAttrs(n.href)}>${escapeHtml(n.label)} <span aria-hidden="true">→</span></a></li>`).join('')}</ul>
-        </section>
-      </div>
+        </div>
+      </section>
     </main>
     ${renderFooter({ cta: false })}
   `;
@@ -92,9 +103,10 @@ function founderPortrait(author) {
   const set = author.imageSet;
   if (!author.image || !set) return `<div class="fdr-mark" aria-hidden="true"><span>${escapeHtml(author.initials)}</span></div>`;
   const srcset = (list) => list.map((u, i) => `${escapeAttr(u)} ${i ? 960 : 480}w`).join(', ');
+  const sizes = '(max-width: 760px) 120px, 240px';
   return `<figure class="fdr-mark fdr-mark--photo"><picture>
-            <source type="image/webp" srcset="${srcset(set.webp)}" sizes="(max-width: 760px) 120px, (max-width: 1024px) 160px, 220px" />
-            <img src="${escapeAttr(set.jpg[0])}" srcset="${srcset(set.jpg)}" sizes="(max-width: 760px) 120px, (max-width: 1024px) 160px, 220px" alt="${escapeAttr(author.name)}" width="${author.imageWidth || 960}" height="${author.imageHeight || 960}" decoding="async" fetchpriority="high" />
+            <source type="image/webp" srcset="${srcset(set.webp)}" sizes="${sizes}" />
+            <img src="${escapeAttr(set.jpg[0])}" srcset="${srcset(set.jpg)}" sizes="${sizes}" alt="${escapeAttr(author.name)}" width="${author.imageWidth || 960}" height="${author.imageHeight || 960}" decoding="async" fetchpriority="high" />
           </picture></figure>`;
 }
 
@@ -114,7 +126,7 @@ export async function renderFounderProfile(root, slug, author) {
     list.innerHTML = '<p class="fdr-empty">New work appears here as it is published.</p>';
     return;
   }
-  list.innerHTML = workHtml(articles);
+  list.innerHTML = workHtml(articles, author.name);
   mountFilters(root, articles);
 }
 
@@ -131,18 +143,23 @@ const impact = (a) => {
   return Number.isFinite(s) && s >= 3 ? `<span class="fdr-impact${s >= 4 ? ' fdr-impact--high' : ''}">Impact ${s}/5</span>` : '';
 };
 const urlOf = (a) => a.url || `/news/${sportKey(a)}/${a.slug}`;
-const meta = (a) => `<p class="fdr-meta"><span class="fdr-sport">${escapeHtml(sportKey(a).toUpperCase())}</span><time datetime="${escapeAttr(a.published_at || '')}">${escapeHtml(fmtDate(a.published_at))}</time>${impact(a)}</p>`;
+const meta = (a) => `<p class="fdr-meta-line"><span class="fdr-sport">${escapeHtml(sportKey(a).toUpperCase())}</span><time datetime="${escapeAttr(a.published_at || '')}">${escapeHtml(fmtDate(a.published_at))}</time>${impact(a)}</p>`;
+const img = (a, w, h, cls) => (a.image_url
+  ? `<div class="${cls}"><img src="${escapeAttr(proxyImage(a.image_url))}" alt="${escapeAttr(a.title)}" width="${w}" height="${h}" loading="lazy" decoding="async" onerror="this.classList.add('img-broken')" /></div>`
+  : '');
 
-export function workHtml(articles) {
+export function workHtml(articles, authorName = '') {
   const [lead, ...rest] = articles;
-  const img = lead.image_url
-    ? `<div class="fdr-lead-img"><img src="${escapeAttr(proxyImage(lead.image_url))}" alt="${escapeAttr(lead.title)}" width="1200" height="675" loading="lazy" decoding="async" onerror="this.classList.add('img-broken')" /></div>`
+  const recent = rest.slice(0, RECENT);
+  const older = rest.slice(RECENT);
+  const leadHtml = `<a class="fdr-lead" href="${escapeAttr(urlOf(lead))}" data-bucket="${bucket(lead)}">${img(lead, 1200, 675, 'fdr-lead-img')}<div class="fdr-lead-copy">${meta(lead)}<h3>${escapeHtml(lead.title)}</h3>${lead.summary ? `<p class="fdr-dek">${escapeHtml(lead.summary)}</p>` : ''}</div></a>`;
+  const grid = recent.length
+    ? `<div class="fdr-grid">${recent.map((a) => `<a class="fdr-card" href="${escapeAttr(urlOf(a))}" data-bucket="${bucket(a)}">${img(a, 640, 360, 'fdr-card-img')}${meta(a)}<h3>${escapeHtml(a.title)}</h3>${a.summary ? `<p class="fdr-dek">${escapeHtml(a.summary)}</p>` : ''}</a>`).join('')}</div>`
     : '';
-  const leadHtml = `<a class="fdr-lead" href="${escapeAttr(urlOf(lead))}" data-bucket="${bucket(lead)}">${img}<div class="fdr-lead-copy">${meta(lead)}<h3>${escapeHtml(lead.title)}</h3>${lead.summary ? `<p class="fdr-dek">${escapeHtml(lead.summary)}</p>` : ''}</div></a>`;
-  const grid = rest.length
-    ? `<div class="fdr-grid">${rest.map((a) => `<a class="fdr-card" href="${escapeAttr(urlOf(a))}" data-bucket="${bucket(a)}">${meta(a)}<h3>${escapeHtml(a.title)}</h3>${a.summary ? `<p class="fdr-dek">${escapeHtml(a.summary)}</p>` : ''}</a>`).join('')}</div>`
+  const all = older.length
+    ? `<details class="fdr-all"><summary>View all work by ${escapeHtml(authorName)}</summary><ul class="fdr-list">${older.map((a) => `<li data-bucket="${bucket(a)}"><a href="${escapeAttr(urlOf(a))}">${meta(a)}<span class="fdr-list-title">${escapeHtml(a.title)}</span></a></li>`).join('')}</ul></details>`
     : '';
-  return leadHtml + grid;
+  return leadHtml + grid + all;
 }
 
 /** Filters only for buckets the feed actually contains; with fewer than two buckets there is nothing to filter. */

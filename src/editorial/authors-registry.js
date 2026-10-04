@@ -52,6 +52,10 @@ PropBetEdge operates inside PropTechUSA.ai alongside PropSports and PropData. Ju
     profileVariant: 'founder',
     founder: Object.freeze({
       eyebrow: 'Founder · CEO · Chief Architect',
+      // Hero bio: the summary's substance without restating the titles shown directly above it.
+      heroBio: 'Responsible for product direction, data infrastructure, APIs, models, editorial systems and release standards across the PropBetEdge sports-intelligence network.',
+      // Areas of work (owner 2026-10-04), shown as one compact line under About.
+      areas: Object.freeze(['Sports intelligence', 'Data infrastructure', 'Model governance', 'AI-native publishing']),
       positioning: 'Building the operating system behind sports intelligence — data, models, live products, editorial systems and permanent records under one accountable architecture.',
       facts: Object.freeze([
         'Founder & Chief Architect · PropBetEdge',
