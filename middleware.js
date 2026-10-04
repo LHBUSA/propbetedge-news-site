@@ -30,6 +30,7 @@ import { teamQueryAbbreviations } from './src/entity-graph/entities.js';
 import { liveCastUrl } from './src/live-cast-routes.js';
 import { NETWORK_SOCIAL_IMAGE } from './src/social.js';
 import { renderServerIntelligenceLink } from './src/intelligence-cta.js';
+import { classifyAutomatedAccess } from './src/security/automated-access.js';
 
 export const config = {
   matcher: [
@@ -70,6 +71,42 @@ const LEGACY_ARTICLE_REDIRECTS = new Map([
 export default async function middleware(request) {
   const url = new URL(request.url);
   const pathname = url.pathname.replace(/\/+$/, '') || '/';
+
+  const access = classifyAutomatedAccess(request.headers.get('user-agent') || '');
+  if (access.action === 'deny') {
+    console.warn('[automated-access]', JSON.stringify({
+      action: 'deny',
+      category: access.category,
+      matched: access.matched,
+      path: pathname,
+      method: request.method,
+      ua: request.headers.get('user-agent') || '',
+      referer: request.headers.get('referer') || '',
+      requestId: request.headers.get('x-vercel-id') || '',
+    }));
+    return new Response('Automated access not authorized. See https://propbetedge.ai/legal and /robots.txt.\n', {
+      status: 403,
+      headers: {
+        'content-type': 'text/plain; charset=utf-8',
+        'cache-control': 'private, no-store',
+        'x-robots-tag': 'noindex, nofollow',
+        'x-pbe-automation-policy': 'model-development-denied',
+      },
+    });
+  }
+
+  if (access.action === 'observe') {
+    console.info('[automated-access]', JSON.stringify({
+      action: 'observe',
+      category: access.category,
+      matched: access.matched,
+      path: pathname,
+      method: request.method,
+      ua: request.headers.get('user-agent') || '',
+      referer: request.headers.get('referer') || '',
+      requestId: request.headers.get('x-vercel-id') || '',
+    }));
+  }
 
   const repairedArticlePath = LEGACY_ARTICLE_REDIRECTS.get(pathname);
   if (repairedArticlePath) {
