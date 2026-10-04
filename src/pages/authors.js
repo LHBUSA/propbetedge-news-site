@@ -28,6 +28,7 @@ export function renderAuthorsIndex(root, setMeta) {
 
         <section class="pbe-masthead-intro">
           <p>PropBetEdge separates named human authors from the operational newsroom byline. Named contributors have permanent profiles, defined coverage areas and explicit accountability. The PropBetEdge Editorial Team is disclosed as an organizational byline for newsroom systems and automation — not as a fictitious person.</p>
+          <p>Founder-led work is explicit too. A Justin Erickson byline means Justin owns the thesis, materially directs or shapes the analysis and stands behind the published judgment; it does not claim that AI was absent or that every sentence was manually typed.</p>
           <p>Our sourcing, AI-use, corrections, conflicts, model-language and publication-integrity rules are documented publicly in the <a href="/editorial-standards">Editorial Standards</a>.</p>
         </section>
 
