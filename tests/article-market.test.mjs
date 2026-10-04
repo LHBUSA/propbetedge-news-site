@@ -83,7 +83,8 @@ test('vendored client is byte-identical to propbetedge-workers client at the pin
   const sha = (f) => createHash('sha256').update(fs.readFileSync(new URL(`../src/vendor/markets/${f}`, import.meta.url))).digest('hex');
   assert.equal(sha('article-market-ui.js'), '6d9e875beb080ed84e5b4806c41392c1990402b91b2dc40528f4d0bb53e4d3c6');
   assert.equal(sha('article-market-ui.css'), 'cfe70d8ca4cb90715e28ff73d71ece09d1066f86e3b317e08c49a1058c888737');
-  assert.equal(sha('kalshi-market-ui.js'), 'c4989c79ed3824c92363780d08d966ab752a5e65347af1693a8b22afc6fd7e29');
+  // kalshi-market-ui.js re-vendored at propbetedge-workers 64ca257 (one-sided book at $0/$1 keeps the full card; no fake mid)
+  assert.equal(sha('kalshi-market-ui.js'), '639f834c27bffed519d37eea4066d3b31e5699f7215d6ea5c07e23c2591ccc48');
 });
 
 test('vercel.json: exact article-market rewrites for the four newsroom sports only, numeric ids, no wildcard', () => {
@@ -101,4 +102,17 @@ test('article page wires the slot next to the Data Intelligence layer and mounts
   assert.match(page, /visualHtml \+ articleMarketSlot\(article, market\)/);
   assert.match(page, /mountArticleMarketSlot\(root, article, market\)/);
   assert.match(fs.readFileSync(new URL('../src/main.js', import.meta.url), 'utf8'), /import '\.\/vendor\/markets\/article-market-ui\.css';/);
+});
+
+test('vendored kalshi-market-ui (64ca257): one-sided book at $0/$1 keeps the full card, no fake Mid-market; old API fails closed', async () => {
+  const ui = await import('../src/vendor/markets/kalshi-market-ui.js');
+  const o = (role, bid, ask, last) => ({ role, abbr: role, contract: `${role} wins`, market_ticker: `T-${role}`, state: 'open', best_yes_bid_bp: bid, best_yes_ask_bp: ask, last_price_bp: last, mid_bp: null, spread_bp: null, displayable: false, renderable: true, one_sided: true });
+  const entry = { event: { sport: 'nfl' }, kalshi: { market_url: 'https://kalshi.com/markets/kxwtamatch/wta-tennis-match/kxwtamatch-26oct03mucsam', event_ticker: 'KXWTAMATCH-26OCT03MUCSAM', state: 'open', freshness: 'live', age_seconds: 20, outcomes: [o('a', 9900, null, 9900), o('b', null, 100, 100)] } };
+  const html = ui.kalshiCard(entry, { placement: 't' });
+  assert.ok(html.includes('Mid-market unavailable at this observation · one-sided book'));
+  assert.ok(/<dt>Ask<\/dt><dd>—<\/dd>/.test(html) && /<dt>Bid<\/dt><dd>—<\/dd>/.test(html));
+  assert.ok(!/99\.5¢|0\.5¢/.test(html));
+  assert.equal(ui.kalshiLine(entry), '');
+  const old = { ...entry, kalshi: { ...entry.kalshi, outcomes: entry.kalshi.outcomes.map(({ renderable, ...x }) => x) } };
+  assert.equal(ui.kalshiCard(old, { placement: 't' }), '');
 });
