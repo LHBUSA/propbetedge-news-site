@@ -165,12 +165,13 @@ const pages = {
 
       <h2>Analytics, cookies and browser storage</h2>
       <ul>
-        <li><strong>Google Analytics 4</strong> runs on PropBetEdge production sites. It sets analytics cookies on propbetedge.ai and its sport sites and records page views, clicks on links and calls to action, outbound clicks, article reading time and scroll depth, and changes to followed teams.</li>
-        <li><strong>Sign-in and access cookies</strong> keep members signed in and record access. They are necessary for paid features to work.</li>
+        <li><strong>Google Analytics 4</strong> is optional across the PropBetEdge network. We do not load the Google Analytics tag or create Google Analytics cookies until you choose <em>Accept analytics</em>. If you decline, the sites remain available and necessary membership features continue to work.</li>
+        <li><strong>Privacy choice cookie</strong> — a first-party cookie named <code>pbe_privacy_v1</code> records whether this browser accepted or declined analytics. It is scoped to <code>.propbetedge.ai</code> so the same choice applies across PropBetEdge sport and product subdomains.</li>
+        <li><strong>Sign-in and access cookies</strong> keep members signed in and record access. They are necessary for paid features to work and do not depend on analytics consent.</li>
         <li><strong>Browser storage</strong> — your browser’s local storage keeps preferences such as followed teams, followed writers, your background scene and how often a membership promotion has been shown. This stays on your device; clearing site data removes it.</li>
         <li><strong>Security</strong> — our edge network may set short-lived security cookies to separate people from automated traffic.</li>
       </ul>
-      <p>You can block or delete cookies in your browser settings and use Google’s browser add-on to opt out of Google Analytics. Blocking sign-in cookies will sign you out of member features.</p>
+      <p>You can change your analytics choice at any time with the <strong>Privacy choices</strong> control in the PropBetEdge footer. Declining analytics removes PropBetEdge’s Google Analytics cookies from this browser when possible. You can also block or delete cookies in your browser settings. Blocking sign-in cookies will sign you out of member features.</p>
 
       <h2>Embedded and linked services</h2>
       <p>Some pages load content from other services, which receive standard request information (such as your IP address and browser details) from your browser when that content loads: Google Fonts; Google’s preferred-sources tool; YouTube video embeds (article embeds use YouTube’s privacy-enhanced mode); team, league and athlete images from their publishers’ image servers or through our image service; and the Mother AI verification badge. Links to Stripe, Discord, X, LinkedIn, Bluesky, sportsbooks, prediction markets, leagues and publishers take you to services that operate under their own policies.</p>
