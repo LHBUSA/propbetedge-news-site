@@ -84,12 +84,12 @@ export function renderFooter() {
             </ul>
           </section>
 
-          <section class="nf-col">
+          <section class="nf-col nf-col--sports">
             <h4>Sports</h4>
             <ul class="nf-pairs">${sports}</ul>
           </section>
 
-          <section class="nf-col">
+          <section class="nf-col nf-col--newsrooms">
             <h4>Newsrooms</h4>
             <ul class="nf-pairs">
               <li class="nf-span">${a('/news', '<strong>All Sports News</strong>')}</li>
@@ -98,10 +98,13 @@ export function renderFooter() {
             </ul>
           </section>
 
-          <section class="nf-col">
+          <section class="nf-col nf-col--research">
             <h4>Research</h4>
             <ul>${research}</ul>
-            <h4 class="nf-subhead">Developers</h4>
+          </section>
+
+          <section class="nf-col nf-col--developers">
+            <h4>Developers</h4>
             <ul>
               ${apis}
               <li>${a(API_DOCS_URL, 'API Documentation')}</li>

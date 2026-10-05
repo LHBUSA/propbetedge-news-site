@@ -108,13 +108,20 @@ test('warm palette only; preferred source + Mother badge kept; legal line; focus
 });
 
 
-test('footer polish: editorial hierarchy, dividers, larger logo and readable legal line', () => {
+test('footer layout: balanced directory, responsive hierarchy, dividers and readable legal line', () => {
   assert.match(footer, /class="nf-row nf-row--editorial"/);
   assert.match(footer, /class="nf-row-primary"[^>]*>[\s\S]*Editorial Team[\s\S]*Editorial Standards/);
   assert.match(footer, /class="nf-row-secondary"/);
-  assert.match(css, /\.nf-logo \{[^}]*height: 56px/);
+  assert.match(css, /\.nf-logo \{[^}]*height: 52px/);
   assert.match(css, /\.nf-rows::before/);
   assert.match(css, /\.nf-row \+ \.nf-row \{[^}]*border-left:/);
   assert.match(css, /\.nf-trust::before/);
   assert.match(css, /\.nf \.nf-legal \{[^}]*font-size: 11\.5px/);
+  assert.match(footer, /class="nf-col nf-col--sports"/);
+  assert.match(footer, /class="nf-col nf-col--newsrooms"/);
+  assert.match(footer, /class="nf-col nf-col--research"/);
+  assert.match(footer, /class="nf-col nf-col--developers"/);
+  assert.match(css, /grid-template-columns: minmax\(210px, 1\.18fr\) minmax\(120px, \.62fr\) minmax\(190px, 1fr\) minmax\(180px, \.92fr\) minmax\(180px, \.92fr\)/);
+  assert.match(css, /@media \(max-width: 560px\)[\s\S]*\.nf-band-actions \{ display: grid; grid-template-columns: 1fr 1fr;/);
+  assert.match(css, /@media \(max-width: 560px\)[\s\S]*\.nf-col--sports ul, \.nf-col--newsrooms ul, \.nf-col--research ul, \.nf-col--developers ul \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
 });
