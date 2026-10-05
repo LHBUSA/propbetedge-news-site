@@ -213,7 +213,8 @@ export function proServerHtml({ checkoutSuccess = false } = {}) {
     : `<p>One membership. Ten sports. All Predictions. One autonomous sports intelligence operating system.</p>
       <p>PropBetEdge continuously ingests live sports data, runs sport-specific analytical engines, evaluates and grades official decisions, tests new intelligence in shadow and promotes changes only after evidence clears production gates.</p>
       <p><strong>$${ALL_ACCESS.priceUsd} / month.</strong> Launch offer: ${ALL_ACCESS.promoPercent}% off for as long as you stay active with code <strong>${ALL_ACCESS.promoCode}</strong>.</p>
-      <p><a href="${ALL_ACCESS.checkoutUrl}" rel="noopener">Get All Access</a></p>`;
+      <p><a href="${ALL_ACCESS.checkoutUrl}" rel="noopener">Get All Access</a></p>
+      <p>Digital sports intelligence membership. Charges are non-refundable once access is activated, except where required by law. Cancellation stops future renewal. <a href="/terms">Terms</a> · <a href="/support">Support</a>.</p>`;
   return `<main class="pbe-ssr-pro" data-server-rendered="1">
     <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; All Access</nav>
     <article>
