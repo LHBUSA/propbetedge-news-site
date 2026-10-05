@@ -439,9 +439,9 @@ async function resolveMeta(pathname, search = '') {
   if (pathname === '/privacy' || pathname === '/terms' || pathname === '/legal' || pathname === '/support' || pathname === '/media') {
     const meta = {
       '/privacy': ['Privacy Policy — PropBetEdge', 'How PropBetEdge handles personal information: analytics, memberships and sign-in, Stripe billing, support, cookies and browser storage, and how that differs from the sports data and model records shown in the product.'],
-      '/terms': ['Terms of Service — PropBetEdge', 'Terms governing use of the PropBetEdge sports intelligence network, including automated-access, data-use and AI-training restrictions.'],
+      '/terms': ['Terms of Service — PropBetEdge', 'Terms governing the PropBetEdge sports intelligence and entertainment network, including memberships, billing, no-refund policy, automated access, data use and AI-training restrictions.'],
       '/legal': ['Legal — PropBetEdge', 'Ownership, intellectual-property, crawler, AI-training, trademark, copyright, privacy and responsible-use notices for PropBetEdge.'],
-      '/support': ['Support — PropBetEdge', 'Account, billing, access, technical and data support for PropBetEdge.'],
+      '/support': ['Support — PropBetEdge', 'Account, billing, access, technical and data support for PropBetEdge, including membership cancellations and the no-refund policy.'],
       '/media': ['Media — PropBetEdge', 'Press, interview, commentary and brand information for PropBetEdge.'],
     }[pathname];
     return {
