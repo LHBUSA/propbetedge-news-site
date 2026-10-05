@@ -23,21 +23,25 @@ test('no fabricated numbers, no sport/product navigation, no promo code', () => 
   assert.equal((html.match(/<a /g) || []).length, 2);
 });
 
-// The generic "Go deeper than the article." network CTA is suppressed on an explicit list only: the homepage (its own
-// brand closer), ARTICLES (owner P0 2026-10-04: the sport-specific MORE THAN NEWS closer from article-funnel.js does
-// that job) and the trust / author / editorial pages that already opted out. Every other page keeps it.
-const SUPPRESSED = ['home.js', 'article.js', 'author.js', 'authors.js', 'editorial-standards.js', 'trust.js', 'author-founder.js', 'research.js', 'developers.js', 'about.js'];
+// Owner P0 2026-10-04: the generic pre-footer network billboard is retired sitewide.
+// renderFooter() now renders the premium network footer only; no route opt-in/opt-out list exists.
+test('scope: retired generic footer CTA has no active implementation anywhere', () => {
+  const footer = renderFooter();
+  assert.match(footer, /<footer class="footer nf">/);
+  assert.doesNotMatch(footer, /footer-cta|Go deeper than the article|EXPLORE THE PROPBETEDGE NETWORK/i);
 
-test('scope: generic footer CTA suppressed on the explicit list only; every other page keeps it', () => {
-  assert.match(renderFooter(), /footer-cta/);
-  assert.doesNotMatch(renderFooter({ cta: false }), /footer-cta/);
-  assert.match(renderFooter({ cta: false }), /<footer class="footer nf">/, 'the real footer stays');
-  const home = fs.readFileSync('src/pages/home.js', 'utf8');
-  assert.match(home, /\$\{renderHomeCloser\(\)\}\s*<\/main>\s*\$\{renderFooter\(\{ cta: false \}\)\}/);
+  const active = [
+    'src/ads-config.js',
+    'src/components/footer.js',
+    'src/analytics.js',
+    'src/styles/main.css',
+  ].map((p) => fs.readFileSync(p, 'utf8')).join('\n');
+  assert.doesNotMatch(active, /ad_footer_banner|footer-cta|Go deeper than the article|EXPLORE THE PROPBETEDGE NETWORK/i);
+
   for (const f of fs.readdirSync('src/pages').filter((x) => x.endsWith('.js'))) {
     const src = fs.readFileSync(`src/pages/${f}`, 'utf8');
     if (!src.includes('renderFooter(')) continue;
-    assert.equal(src.includes('renderFooter({ cta: false })'), SUPPRESSED.includes(f), `${f}: footer CTA scope`);
+    assert.doesNotMatch(src, /ad_footer_banner|footer-cta|Go deeper than the article|EXPLORE THE PROPBETEDGE NETWORK/i, f);
   }
 });
 
@@ -45,7 +49,7 @@ test('article: no generic footer CTA, real footer kept, sport-specific MORE THAN
   const article = fs.readFileSync('src/pages/article.js', 'utf8');
   assert.match(article, /\$\{renderFooter\(\{ cta: false \}\)\}/);
   assert.doesNotMatch(article, /renderFooter\(\)|ad_footer_banner|footer-cta|Go deeper than the article/);
-  const footer = renderFooter({ cta: false });
+  const footer = renderFooter();
   assert.doesNotMatch(footer, /footer-cta|Go deeper than the article\./);
   assert.match(footer, /<footer class="footer nf">/);
   const funnel = fs.readFileSync('src/article-funnel.js', 'utf8');
