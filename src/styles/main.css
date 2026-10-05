@@ -1305,108 +1305,6 @@ button { font-family: inherit; }
 
 
 /* ════════════════════════════════════════════════════════════════════════
- * FOOTER CTA BANNER — sells across all 4 sports + community
- * ════════════════════════════════════════════════════════════════════════ */
-.footer-cta {
-  margin-top: 64px;
-  padding: 48px 0;
-  background:
-    linear-gradient(135deg, rgba(29, 25, 20, 0.95), rgba(20, 17, 13, 0.95)),
-    radial-gradient(ellipse at top right, rgba(212, 175, 55, 0.20), transparent 60%);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-top: 4px solid var(--gold);
-  position: relative;
-  overflow: hidden;
-}
-.footer-cta::before {
-  content: '';
-  position: absolute;
-  top: -120px; right: -120px;
-  width: 400px; height: 400px;
-  background: var(--ai-grad);
-  filter: blur(140px);
-  opacity: 0.20;
-  pointer-events: none;
-}
-.footer-cta::after {
-  content: '';
-  position: absolute;
-  bottom: -100px; left: -100px;
-  width: 320px; height: 320px;
-  background: radial-gradient(circle, var(--gold) 0%, transparent 70%);
-  filter: blur(80px);
-  opacity: 0.15;
-  pointer-events: none;
-}
-.footer-cta-inner {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 36px;
-  align-items: center;
-}
-@media (max-width: 880px) {
-  .footer-cta-inner { grid-template-columns: 1fr; gap: 28px; }
-}
-.footer-cta-text { max-width: 540px; }
-.footer-cta-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 11px; font-weight: 800;
-  letter-spacing: 0.20em; text-transform: uppercase;
-  color: var(--gold);
-  display: block; margin-bottom: 10px;
-}
-.footer-cta-headline {
-  font-family: var(--font-serif);
-  font-size: clamp(28px, 3.4vw, 38px);
-  font-weight: 900;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  margin: 0 0 8px;
-  color: var(--paper);
-}
-.footer-cta-sub {
-  font-family: var(--font-sans);
-  font-size: 14px; line-height: 1.55;
-  color: var(--paper-dim);
-  margin: 0;
-}
-.footer-cta-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-@media (max-width: 480px) {
-  .footer-cta-buttons { grid-template-columns: 1fr; }
-}
-.footer-cta-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 14px 22px;
-  background: rgba(20, 17, 13, 0.6);
-  border: 1px solid var(--line-strong);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--paper);
-  text-decoration: none;
-  transition: all 0.18s ease;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-.footer-cta-btn .sport-emoji { font-size: 16px; }
-.footer-cta-btn-mlb:hover { border-color: var(--sport-mlb); color: var(--sport-mlb); transform: translateY(-2px); }
-.footer-cta-btn-nfl:hover { border-color: var(--sport-nfl); color: var(--sport-nfl); transform: translateY(-2px); }
-.footer-cta-btn-nba:hover { border-color: var(--sport-nba); color: var(--sport-nba); transform: translateY(-2px); }
-.footer-cta-btn-nhl:hover { border-color: var(--sport-nhl); color: var(--sport-nhl); transform: translateY(-2px); }
-
-/* ════════════════════════════════════════════════════════════════════════
  * FOOTER 4-COLUMN GRID
  * ════════════════════════════════════════════════════════════════════════ */
 
@@ -1629,12 +1527,6 @@ img { max-width: 100%; height: auto; }
   }
   .article-card-image { aspect-ratio: 16 / 10; }
 
-  /* Footer CTA — tighter on phones */
-  .footer-cta { padding: 36px 0; margin-top: 44px; }
-  .footer-cta-headline { font-size: 26px; }
-  .footer-cta-sub { font-size: 13px; }
-  .footer-cta-btn { padding: 12px 16px; font-size: 11px; }
-
   /* Footer columns: more vertical breathing room */
   .footer-grid { gap: 22px; }
   .footer-col h4 { font-size: 11px; margin-bottom: 14px; }
@@ -1655,9 +1547,6 @@ img { max-width: 100%; height: auto; }
   }
   .ad-banner-cta { font-size: 11px; }
   .ad-block-headline { font-size: 16px; }
-  .footer-cta-headline { font-size: 22px; }
-  .footer-cta-buttons { gap: 6px; }
-  .footer-cta-btn { padding: 10px 12px; font-size: 10px; }
 }
 
 /* Tables in article body — never let them bust the layout */
