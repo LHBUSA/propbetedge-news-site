@@ -16,7 +16,7 @@
  * Warm palette only. Styles: src/styles/network-footer.css.
  */
 
-import { ad_footer_banner, PROPBET_LINKS } from '../ads-config.js';
+import { PROPBET_LINKS } from '../ads-config.js';
 import { renderPreferredSource } from './preferred-source.js';
 import { AUTHOR_PROFILES } from '../editorial/authors-registry.js';
 import { INTELLIGENCE_SPORTS, INTELLIGENCE_ORDER } from '../intelligence-cta.js';
@@ -43,9 +43,8 @@ const LINKEDIN_PATH = 'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.0
 const predictions = FAMILY.products.find((p) => p.key === 'predictions');
 const learn = FAMILY.network.find((n) => n.key === 'learn');
 
-// cta=false: pages with their own closer (homepage brand closer, the article sport closer, trust/author pages) skip
-// the generic network CTA; every other page keeps the default.
-export function renderFooter({ cta = true } = {}) {
+// Canonical network footer. The retired generic pre-footer sales billboard is gone sitewide.
+export function renderFooter() {
   const year = new Date().getFullYear();
   const sports = FAMILY.sports.map((s) => `<li>${a(s.url, `${s.label}<span class="nf-sr"> Intelligence</span>`)}</li>`).join('');
   const newsrooms = INTELLIGENCE_ORDER.map((k) => INTELLIGENCE_SPORTS[k]).map((s) => `<li>${a(s.newsPath, `${s.label} News`)}</li>`).join('');
@@ -53,7 +52,6 @@ export function renderFooter({ cta = true } = {}) {
   const apis = PUBLIC_APIS.map((p) => `<li>${a(p.href, p.footerLabel)}</li>`).join('');
   const authors = FOOTER_AUTHORS.map((slug) => a(`/authors/${slug}`, AUTHOR_PROFILES[slug].name)).join('');
   return `
-    ${cta ? ad_footer_banner() : ''}
 
     <footer class="footer nf">
       <div class="container nf-wrap">
