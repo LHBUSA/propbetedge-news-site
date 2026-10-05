@@ -62,3 +62,15 @@ test('privacy is a dedicated PropBetEdge policy, distinct from sports data and m
 test('legal protections on /terms and /legal are unchanged by the privacy release',()=>{
  for(const h of ['Ownership and protected material','Automated access and crawler policy','AI and machine-learning use','Copyright and rights concerns','Security reports','Responsible gambling notice']) assert.ok(page.includes(`<h2>${h}</h2>`),h);
 });
+
+
+test('terms and support state the PropBetEdge no-refund digital membership policy', () => {
+ const source=fs.readFileSync(new URL('../src/pages/trust.js',import.meta.url),'utf8');
+ assert.match(source,/No-refund policy for digital sports intelligence/);
+ assert.match(source,/subscription and membership charges are final and non-refundable once access is activated or made available/);
+ assert.match(source,/Cancellation stops future renewal; it does not reverse or prorate the current billing period/);
+ assert.match(source,/losing pick, incorrect prediction, revised model output/i);
+ assert.match(source,/PropBetEdge memberships are non-refundable digital services/);
+ assert.match(source,/duplicate charge/);
+ assert.match(source,/verified billing\/access error/);
+});
