@@ -203,7 +203,7 @@ const pages = {
   },
   support: {
     title: 'Support — PropBetEdge',
-    description: 'Account, billing, access, technical and data support for PropBetEdge, including membership cancellations and the no-refund policy.'
+    description: 'Account, billing, access, technical and data support for PropBetEdge, including membership cancellations and the no-refund policy.',
     eyebrow: 'HELP CENTER',
     heading: 'Support',
     intro: 'Need help with access, billing, a broken page, or something that looks wrong in the data? Send enough detail for us to reproduce the issue and route it quickly.',
