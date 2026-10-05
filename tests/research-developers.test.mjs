@@ -13,7 +13,10 @@ test('research registry: the five pages the footer links, each with real content
   assert.deepEqual(RESEARCH_PAGES.map((p) => p.path), ['/research', '/research/methodology', '/research/model-governance', '/research/data-provenance', '/research/intelligence-systems']);
   for (const p of RESEARCH_PAGES) {
     assert.ok(p.title && p.description && p.lede, p.path);
-    assert.ok(p.sections.length >= 1, p.path);
+    assert.ok(p.heroSignals?.length >= 4, `${p.path} has a research-principles hero strip`);
+    assert.ok(p.summary?.length >= 3, `${p.path} has a substantive overview`);
+    assert.ok(p.sections.length >= 6, `${p.path} has first-class depth`);
+    assert.ok(p.sections.some((s) => s.points || s.cards || s.steps || s.rule), `${p.path} has structured evidence, not prose only`);
   }
   for (const term of ['provenance', 'canonical', 'uncertainty', 'prospective', 'replay', 'shadow', 'calibrat', 'frozen', 'permanent', 'version', 'promotion', 'missing', 'monitor']) {
     assert.match(registryText.toLowerCase(), new RegExp(term), `covers ${term}`);

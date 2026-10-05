@@ -1406,11 +1406,20 @@ function buildServerEditorialStandardsHtml() {
 }
 
 function buildServerResearchHtml(page) {
-  const secs = page.sections.map((sec) => `<h2>${escapeHtml(sec.h)}</h2>${sec.steps ? `<ol>${sec.steps.map(([k, v]) => `<li><strong>${escapeHtml(k)}</strong> — ${escapeHtml(v)}</li>`).join('')}</ol>` : sec.body.map((p) => `<p>${escapeHtml(p)}</p>`).join('')}`).join('');
+  const secs = page.sections.map((sec) => {
+    const deck = sec.deck ? `<p><strong>${escapeHtml(sec.deck)}</strong></p>` : '';
+    const body = (sec.body || []).map((p) => `<p>${escapeHtml(p)}</p>`).join('');
+    const steps = sec.steps ? `<ol>${sec.steps.map(([k, v]) => `<li><strong>${escapeHtml(k)}</strong> — ${escapeHtml(v)}</li>`).join('')}</ol>` : '';
+    const points = sec.points ? `<dl>${sec.points.map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`).join('')}</dl>` : '';
+    const cards = sec.cards ? `<ul>${sec.cards.map(([k, h, v]) => `<li><strong>${escapeHtml(k)} · ${escapeHtml(h)}</strong> — ${escapeHtml(v)}</li>`).join('')}</ul>` : '';
+    const rule = sec.rule ? `<p><strong>${escapeHtml(sec.rule)}</strong></p>` : '';
+    return `<h2>${escapeHtml(sec.h)}</h2>${deck}${body}${steps}${points}${cards}${rule}`;
+  }).join('');
   const nav = researchSubpages().map((p) => `<a href="${p.path}">${escapeHtml(p.label)}</a>`).join(' · ');
+  const summary = (page.summary || []).map((s) => `<li><strong>${escapeHtml(s.k)} · ${escapeHtml(s.h)}</strong> — ${escapeHtml(s.body)}</li>`).join('');
   return `<main class="pbe-ssr-research" data-server-rendered="1">
     <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; <a href="/research">Research</a>${page.slug ? ` &rsaquo; ${escapeHtml(page.label)}` : ''}</nav>
-    <article><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.lede)}</p>${secs}
+    <article><h1>${escapeHtml(page.title)}</h1><p>${escapeHtml(page.lede)}</p>${summary ? `<ul>${summary}</ul>` : ''}${secs}
       <h2>What we do not publish</h2><ul>${RESEARCH_NOT_PUBLISHED.map((x) => `<li>${escapeHtml(x)}</li>`).join('')}</ul>
       <p>${nav} · <a href="/editorial-standards">Editorial Standards</a> · <a href="/developers">Developers</a></p></article>
   </main>`;
