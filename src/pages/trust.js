@@ -12,7 +12,7 @@ const pages = {
     eyebrow: 'TRUST & LEGAL',
     heading: 'Terms of Service',
     toc: true,
-    intro: 'These Terms govern PropBetEdge and its sport, news, learning, intelligence, membership and related properties. PropBetEdge is a digital sports intelligence and entertainment service. By accessing, purchasing or using the network, you agree to these Terms.'
+    intro: 'These Terms govern PropBetEdge and its sport, news, learning, intelligence, membership and related properties. PropBetEdge is a digital sports intelligence and entertainment service. By accessing, purchasing or using the network, you agree to these Terms.',
     body: `
       <div class="trust-notice"><strong>Operator:</strong> PropBetEdge is operated by Local Home Buyers LLC d/b/a PropTechUSA.ai, Saint Paul, Minnesota. PropBetEdge provides sports information, analysis, models, predictions and entertainment. It is not a sportsbook, casino, bookmaker, broker, investment adviser or financial institution, and no output guarantees a winning outcome or profit.</div>
 
