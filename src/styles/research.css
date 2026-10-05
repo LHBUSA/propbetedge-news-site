@@ -44,7 +44,7 @@
 .rs-evidence-card > p:last-child { margin: 0; font-size: 14.5px; line-height: 1.62; color: var(--paper-dim); }
 
 /* Section-carrying standard. */
-.rs-rule { max-width: none !important; margin: 24px 0 4px !important; padding: 17px 20px; border-left: 2px solid var(--gold); background: rgba(212, 175, 55, .055); font-family: var(--serif) !important; font-size: 17px !important; line-height: 1.55 !important; color: var(--paper) !important; }
+.rs-rule { max-width: none !important; margin: 24px 0 4px !important; padding: 17px 20px; border-left: 2px solid var(--gold); background: rgba(212, 175, 55, .055); font-family: var(--font-serif) !important; font-size: 17px !important; line-height: 1.55 !important; color: var(--paper) !important; }
 
 /* Research area cards (index) */
 .rs-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 14px !important; }
