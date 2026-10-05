@@ -154,7 +154,7 @@ function membershipCard(active) {
         <span class="pbe-pro-card-name">All Access</span>
       </div>
       <div class="pbe-pro-card-price"><span class="pbe-pro-card-amount">$${ALL_ACCESS.priceUsd}</span><span class="pbe-pro-card-per">/ ${ALL_ACCESS.interval}</span></div>
-      <p class="pbe-pro-card-sub">Cancel anytime. One login across the whole network.</p>
+      <p class="pbe-pro-card-sub">Cancel anytime. One login across the whole network.</p><p class="pbe-pro-card-policy">Digital membership · charges are non-refundable once access is activated, except where required by law. <a href="/terms">Terms</a></p>
       <ul class="pbe-pro-card-list">
         ${SPORTS.map((s) => `<li><span class="pbe-pro-check" aria-hidden="true">✓</span>${s.proName || `${s.label} Pro`}</li>`).join('')}
         <li class="pbe-pro-card-predictions"><span class="pbe-pro-check" aria-hidden="true">✓</span>PropBetEdge Predictions</li>
@@ -279,7 +279,7 @@ export function buildProHtml({ checkoutSuccess = false, shareBar = '' } = {}) {
             <p>Existing individual sport plans continue unchanged. All Access is the premium umbrella for people who want the whole network under one subscription and one login — including Tennis Pro, Soccer Pro, Golf Pro and F1 Intelligence today, plus Boxing Pro when it launches.</p>
           </div>
           <div class="pbe-pro-plans-facts">
-            <div><span class="pbe-pro-fact-k">Billing</span><span class="pbe-pro-fact-v">${priceLabel()}, cancel anytime</span></div>
+            <div><span class="pbe-pro-fact-k">Billing</span><span class="pbe-pro-fact-v">${priceLabel()}, cancel anytime · no prorated refunds after access is activated</span></div>
             <div><span class="pbe-pro-fact-k">Access</span><span class="pbe-pro-fact-v">Secure sign-in link to your checkout email</span></div>
             <div><span class="pbe-pro-fact-k">Coverage</span><span class="pbe-pro-fact-v">10 live sports + PropBetEdge Predictions today · Boxing planned Q1 2027 · every future sport included</span></div>
             <div><span class="pbe-pro-fact-k">Launch offer</span><span class="pbe-pro-fact-v">${esc(promoLine())}</span></div>
@@ -292,6 +292,7 @@ export function buildProHtml({ checkoutSuccess = false, shareBar = '' } = {}) {
         <h2>Get the intelligence system behind every PropBetEdge sport.</h2>
         <p>Ten live sports and PropBetEdge Predictions today. Boxing planned Q1 2027. Every future sport. ${priceLabel()}. ${esc(promoLine())}</p>
         ${ctaButton('Get All Access', 'pbe-pro-cta-hero')}
+        <p class="pbe-pro-final-policy">Digital sports intelligence membership. Charges are non-refundable once access is activated, except where required by law. <a href="/terms">Terms</a> · <a href="/support">Support</a></p>
       </section>`}
     </div>`;
 }
