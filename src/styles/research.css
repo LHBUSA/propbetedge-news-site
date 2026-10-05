@@ -1,19 +1,66 @@
-/* Research + Developers pages: extend the Editorial Standards trust-center system (.es-*). Warm tokens only. */
+/* Research + Developers pages: extend the Editorial Standards trust-center system (.es-*).
+ * Research is intentionally denser and more architectural than a normal article: evidence strips, summary
+ * panels, point matrices and operating-loop diagrams make the five pages read like an institutional lab. */
+
+/* Research hero */
+.rs-hero .es-hero-inner { padding-top: 64px; padding-bottom: 34px; }
+.rs-hero .es-lede { max-width: 58ch; }
+.rs-signals { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 0 !important; }
+.rs-signals li { padding: 7px 10px; border: 1px solid var(--line); border-radius: 999px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--paper-2); background: rgba(18, 16, 13, .38); }
+.rs-signals li::before { content: '•'; margin-right: 7px; color: var(--gold); }
+
+/* Three-column research thesis directly below the hero. */
+.rs-summary-wrap { border-bottom: 1px solid var(--line); background: rgba(18, 16, 13, .28); }
+.rs-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rs-summary article { min-height: 190px; padding: 28px 30px 30px; border-left: 1px solid var(--line); }
+.rs-summary article:last-child { border-right: 1px solid var(--line); }
+.rs-summary-k { margin: 0 0 14px; font-family: var(--font-mono); font-size: 10px; font-weight: 800; letter-spacing: .19em; color: var(--gold); }
+.rs-summary h2 { margin: 0 0 10px; font-family: var(--font-serif); font-size: 24px; line-height: 1.14; color: var(--paper); }
+.rs-summary article > p:last-child { margin: 0; font-family: var(--font-sans); font-size: 14.5px; line-height: 1.65; color: var(--paper-dim); }
+
+.rs-layout { padding-top: 52px; gap: 64px; }
+.rs-doc { max-width: 860px; }
+.rs-sec { padding-bottom: 52px; }
+.rs-sec + .rs-sec { padding-top: 48px; }
+.rs-sec > p { max-width: 72ch; }
+.rs-deck { margin: -6px 0 20px !important; max-width: 60ch !important; font-family: var(--font-serif) !important; font-size: 20px !important; line-height: 1.5 !important; color: var(--paper-2) !important; }
 
 /* Research loop diagram */
-.rs-loop { counter-reset: rs; margin: 6px 0 4px !important; }
-.rs-loop li { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 18px; padding: 14px 0; border-bottom: 1px solid var(--line); font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--paper-2); }
-.rs-loop-k { font-family: var(--font-serif); font-size: 21px; color: var(--gold); }
+.rs-loop { counter-reset: rs; margin: 16px 0 8px !important; border-top: 1px solid var(--line); }
+.rs-loop li { display: grid; grid-template-columns: 145px minmax(0, 1fr); gap: 20px; padding: 17px 0; border-bottom: 1px solid var(--line); font-family: var(--font-sans); font-size: 15.5px; line-height: 1.62; color: var(--paper-2); }
+.rs-loop-k { font-family: var(--font-serif); font-size: 21px; line-height: 1.35; color: var(--gold); }
+
+/* Definition matrices for evidence / controls. */
+.rs-points { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 22px 0 8px; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+.rs-points > div { padding: 20px 22px 22px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.rs-points dt { margin: 0 0 8px; font-family: var(--font-serif); font-size: 19px; line-height: 1.2; color: var(--paper); }
+.rs-points dd { margin: 0; font-family: var(--font-sans); font-size: 14.5px; line-height: 1.62; color: var(--paper-dim); }
+
+/* State / concept cards. */
+.rs-evidence-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 22px 0 8px; }
+.rs-evidence-card { padding: 22px 22px 24px; border: 1px solid var(--line); background: rgba(27, 24, 19, .54); }
+.rs-evidence-k { margin: 0 0 11px !important; font-family: var(--font-mono) !important; font-size: 10px !important; font-weight: 800; letter-spacing: .18em; color: var(--gold) !important; }
+.rs-evidence-card h3 { margin: 0 0 8px; font-family: var(--font-serif); font-size: 20px; line-height: 1.2; color: var(--paper); }
+.rs-evidence-card > p:last-child { margin: 0; font-size: 14.5px; line-height: 1.62; color: var(--paper-dim); }
+
+/* Section-carrying standard. */
+.rs-rule { max-width: none !important; margin: 24px 0 4px !important; padding: 17px 20px; border-left: 2px solid var(--gold); background: rgba(212, 175, 55, .055); font-family: var(--serif) !important; font-size: 17px !important; line-height: 1.55 !important; color: var(--paper) !important; }
 
 /* Research area cards (index) */
-.rs-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 4px !important; }
-.rs-cards a { position: relative; display: block; height: 100%; padding: 22px 24px 26px; background: rgba(42, 36, 28, .6); border-top: 2px solid var(--gold); color: var(--paper); text-decoration: none !important; }
-.rs-cards a:hover { background: rgba(42, 36, 28, .85); }
-.rs-card-t { display: block; margin-bottom: 8px; font-family: var(--font-serif); font-size: 22px; color: var(--paper); }
-.rs-card-d { display: block; font-family: var(--font-sans); font-size: 15px; line-height: 1.6; color: var(--paper-dim); }
-.rs-card-go { position: absolute; right: 20px; top: 22px; color: var(--gold); }
+.rs-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 14px !important; }
+.rs-cards a { position: relative; display: block; height: 100%; min-height: 180px; padding: 24px 25px 28px; background: rgba(42, 36, 28, .6); border: 1px solid var(--line); border-top: 2px solid var(--gold); color: var(--paper); text-decoration: none !important; }
+.rs-cards a:hover { background: rgba(42, 36, 28, .85); border-color: rgba(212, 175, 55, .42); }
+.rs-card-t { display: block; margin: 0 26px 10px 0; font-family: var(--font-serif); font-size: 23px; line-height: 1.18; color: var(--paper); }
+.rs-card-d { display: block; font-family: var(--font-sans); font-size: 14.5px; line-height: 1.62; color: var(--paper-dim); }
+.rs-card-go { position: absolute; right: 20px; top: 24px; color: var(--gold); }
 .rs-scope .es-list li::before { background: var(--paper-faint); }
 .es-toc a[aria-current="page"] { border-left-color: var(--gold); color: var(--gold); }
+
+/* Cross-links are a final navigation block, not a loose paragraph. */
+.rs-related { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 12px 0 8px; padding-top: 6px; }
+.rs-related a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; padding: 13px 16px; border: 1px solid var(--line); font-family: var(--font-sans); font-size: 14.5px; color: var(--paper); text-decoration: none; }
+.rs-related a:hover { border-color: rgba(212, 175, 55, .48); color: var(--gold); text-decoration: none; }
+.rs-related-all { grid-column: 1 / -1; justify-content: flex-start !important; font-family: var(--font-mono) !important; font-size: 11px !important; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; color: var(--gold) !important; }
 
 /* Developers */
 .dv-body { padding-top: 48px; }
@@ -38,9 +85,26 @@
 .dv-points strong { color: var(--paper); }
 .dv-contact p { max-width: 70ch; font-family: var(--font-sans); font-size: 16px; line-height: 1.7; color: var(--paper-2); }
 
-@media (max-width: 1024px) { .dv-catalog { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 1024px) {
+  .rs-summary { grid-template-columns: minmax(0, 1fr); }
+  .rs-summary article { min-height: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .rs-summary article:last-child { border-bottom: 0; }
+  .rs-layout { padding-top: 26px; gap: 24px; }
+  .dv-catalog { grid-template-columns: minmax(0, 1fr); }
+}
+
 @media (max-width: 680px) {
-  .rs-cards, .dv-points { grid-template-columns: minmax(0, 1fr); }
+  .rs-hero .es-hero-inner { padding-top: 38px; padding-bottom: 26px; }
+  .rs-signals { gap: 6px; }
+  .rs-signals li { font-size: 9.5px; }
+  .rs-summary article { padding: 22px 20px 24px; }
+  .rs-summary h2 { font-size: 21px; }
+  .rs-cards, .rs-points, .rs-evidence-grid, .rs-related, .dv-points { grid-template-columns: minmax(0, 1fr); }
+  .rs-related-all { grid-column: auto; }
   .rs-loop li { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .rs-loop-k { font-size: 19px; }
+  .rs-deck { font-size: 18px !important; }
+  .rs-evidence-card, .rs-points > div { padding: 19px 18px 20px; }
+  .rs-cards a { min-height: 0; }
   .dv-api { padding: 22px 20px; }
 }
