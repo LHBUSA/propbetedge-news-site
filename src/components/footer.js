@@ -12,7 +12,7 @@
  * destination. Features (PBEcast, HR Targets, K Props, Ask The Algo...) are never "Products" and MLB tools do
  * not sit under global Research. The full trust/editorial/author inventory belongs on this site (the compact
  * "no individual authors" policy is for sport subdomains only). Each directory destination appears once; the
- * brand band's three commercial actions intentionally repeat All Access, APIs and the UFC Store.
+ * brand band intentionally repeats the three network-level paths: All Access, APIs and Research.
  * Warm palette only. Styles: src/styles/network-footer.css.
  */
 
@@ -65,7 +65,7 @@ export function renderFooter({ cta = true } = {}) {
           <div class="nf-band-actions">
             <a href="/pro" class="nf-action nf-action--primary">Explore All Access</a>
             <a href="/developers" class="nf-action">Explore APIs</a>
-            <a href="${STORE_URL}" class="nf-action" ${EXT}>UFC Store</a>
+            <a href="/research" class="nf-action">Explore Research</a>
           </div>
           <div class="nf-social">
             <a href="${PROPBET_LINKS.discord}" class="nf-social-link" target="_blank" rel="noopener" aria-label="Discord">${SVG(DISCORD_PATH)}</a>
@@ -113,9 +113,10 @@ export function renderFooter({ cta = true } = {}) {
         </nav>
 
         <div class="nf-rows">
-          <div class="nf-row">
+          <div class="nf-row nf-row--editorial">
             <h4>Editorial &amp; Trust</h4>
-            <p>${a('/authors', '<strong>Editorial Team</strong>')}${authors}${a('/editorial-standards', 'Editorial Standards')}</p>
+            <div class="nf-row-primary">${a('/authors', '<strong>Editorial Team</strong>')}${a('/editorial-standards', '<strong>Editorial Standards</strong>')}</div>
+            <p class="nf-row-secondary">${authors}</p>
           </div>
           <div class="nf-row">
             <h4>Company &amp; Legal</h4>
