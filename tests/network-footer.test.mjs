@@ -39,9 +39,9 @@ test('main-site trust / legal / editorial inventory: every required link present
   for (const h of ['/authors', '/authors/justin-erickson', '/editorial-standards']) assert.equal(groupOf(h), 'Editorial & Trust', h);
 });
 
-test('commercial band: Explore All Access, Explore APIs, UFC Store', () => {
+test('commercial band: Explore All Access, Explore APIs, Explore Research', () => {
   const b = anchors(band);
-  assert.deepEqual(b.filter((x) => /nf-action/.test(band.slice(band.indexOf(`href="${x.href}"`) - 40, band.indexOf(`href="${x.href}"`) + 60)) || true).map((x) => x.href).slice(0, 3), ['/pro', '/developers', STORE_URL]);
+  assert.deepEqual(b.filter((x) => /nf-action/.test(band.slice(band.indexOf(`href="${x.href}"`) - 40, band.indexOf(`href="${x.href}"`) + 60)) || true).map((x) => x.href).slice(0, 3), ['/pro', '/developers', '/research']);
   assert.match(band, /class="nf-action nf-action--primary">Explore All Access</);
 });
 
@@ -85,11 +85,11 @@ test('Developers render the public-API catalog only, plus docs and the full cata
   assert.ok(!/workers\.dev/.test(footer), 'no internal Worker hosts');
 });
 
-test('no duplicate directory destinations (only the band repeats All Access, APIs, Store)', () => {
+test('no duplicate directory destinations (only the band repeats All Access, APIs, Research)', () => {
   const dupes = dirHrefs.filter((h, i) => dirHrefs.indexOf(h) !== i);
   assert.deepEqual(dupes, []);
   const bandOnly = anchors(band).map((x) => x.href).filter((h) => !/discord|x\.com|twitter|linkedin/.test(h));
-  assert.deepEqual(bandOnly, ['/pro', '/developers', STORE_URL]);
+  assert.deepEqual(bandOnly, ['/pro', '/developers', '/research']);
 });
 
 test('warm palette only; preferred source + Mother badge kept; legal line; focus visible; no inline styles', () => {
@@ -105,4 +105,16 @@ test('warm palette only; preferred source + Mother badge kept; legal line; focus
   for (const m of footer.matchAll(/<a\b[^>]*target="_blank"[^>]*>/g)) assert.match(m[0], /rel="noopener/, m[0]);
   assert.match(css, /\.nf a:focus-visible \{ outline: 2px solid var\(--gold\)/);
   assert.doesNotMatch(footer, /<style>|\sstyle="/);
+});
+
+
+test('footer polish: editorial hierarchy, dividers, larger logo and readable legal line', () => {
+  assert.match(footer, /class="nf-row nf-row--editorial"/);
+  assert.match(footer, /class="nf-row-primary"[^>]*>[\s\S]*Editorial Team[\s\S]*Editorial Standards/);
+  assert.match(footer, /class="nf-row-secondary"/);
+  assert.match(css, /\.nf-logo \{[^}]*height: 56px/);
+  assert.match(css, /\.nf-rows::before/);
+  assert.match(css, /\.nf-row \+ \.nf-row \{[^}]*border-left:/);
+  assert.match(css, /\.nf-trust::before/);
+  assert.match(css, /\.nf \.nf-legal \{[^}]*font-size: 11\.5px/);
 });
