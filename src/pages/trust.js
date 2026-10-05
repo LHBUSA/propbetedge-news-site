@@ -8,11 +8,11 @@ const SITE = 'https://propbetedge.ai';
 const pages = {
   terms: {
     title: 'Terms of Service — PropBetEdge',
-    description: 'Terms governing use of the PropBetEdge sports intelligence network, including automated-access, data-use and AI-training restrictions.',
+    description: 'Terms governing the PropBetEdge sports intelligence and entertainment network, including memberships, billing, no-refund policy, automated access, data use and AI-training restrictions.',
     eyebrow: 'TRUST & LEGAL',
     heading: 'Terms of Service',
     toc: true,
-    intro: 'These Terms govern PropBetEdge and its sport, news, learning, intelligence, membership and related properties. By accessing or using the network, you agree to these Terms.',
+    intro: 'These Terms govern PropBetEdge and its sport, news, learning, intelligence, membership and related properties. PropBetEdge is a digital sports intelligence and entertainment service. By accessing, purchasing or using the network, you agree to these Terms.'
     body: `
       <div class="trust-notice"><strong>Operator:</strong> PropBetEdge is operated by Local Home Buyers LLC d/b/a PropTechUSA.ai, Saint Paul, Minnesota. PropBetEdge provides sports information, analysis, models, predictions and entertainment. It is not a sportsbook, casino, bookmaker, broker, investment adviser or financial institution, and no output guarantees a winning outcome or profit.</div>
 
@@ -32,11 +32,14 @@ const pages = {
       <h2>5. Intellectual property and data rights</h2>
       <p>PropBetEdge and its licensors retain rights in the Services, including original editorial expression, software, interfaces, product design, model logic, derived metrics, proprietary analytics, databases and compilations, selection and arrangement, graphics, trademarks, logos and branding. We do not claim exclusive ownership of raw facts merely because they appear on a PropBetEdge page. Third-party names, marks, data, images, statistics and links remain subject to the rights of their respective owners. No license to third-party material is granted by these Terms.</p>
 
-      <h2>6. Accounts, memberships and billing</h2>
-      <p>You are responsible for activity under your account and for protecting magic links, credentials and devices. Access is personal unless a written plan expressly says otherwise. You may not share, sell, transfer or sublicense paid access. Fees, renewals, cancellations, refunds, promotions, taxes and entitlements are governed by the checkout terms shown to you, these Terms and applicable law. We may correct pricing or entitlement errors and may suspend access for nonpayment or abuse.</p>
+      <h2>6. Accounts, memberships, billing, cancellations and refunds</h2>
+      <p>You are responsible for activity under your account and for protecting magic links, credentials and devices. Access is personal unless a written plan expressly says otherwise. You may not share, sell, transfer or sublicense paid access. Fees, renewal terms, promotions, taxes and entitlements are governed by the checkout terms shown to you, these Terms and applicable law. We may correct pricing or entitlement errors and may suspend access for nonpayment or abuse.</p>
+      <div class="trust-notice"><strong>No-refund policy for digital sports intelligence.</strong> PropBetEdge memberships provide immediate access to digital sports information, live data, model output, predictions, proprietary analytics, research and entertainment features. Except where required by applicable law or expressly agreed by us in writing, subscription and membership charges are final and non-refundable once access is activated or made available.</div>
+      <p>Cancellation stops future renewal; it does not reverse or prorate the current billing period. A losing pick, incorrect prediction, revised model output, changed odds or market prices, a player or team result, an unavailable or delayed data point, a temporary feature outage, a sport or event not producing the result you expected, non-use of the membership, or dissatisfaction with the outcome of a wager does not create a right to a refund. PropBetEdge is not selling a guaranteed result, profit, wager, security or financial return.</p>
+      <p>If you believe you were charged twice, charged after a cancellation should have taken effect, denied access because of a verified billing or entitlement error, or otherwise experienced a billing error, contact <a href="/support">Support</a>. We will investigate and correct verified billing or access errors. A correction, access extension, service credit or other remedy may be offered at our discretion where appropriate, but it does not convert the membership into a refundable product.</p>
 
       <h2>7. Sports intelligence, models and predictions</h2>
-      <p>Scores, statistics, market information, projections, picks, Player DNA, probabilities, live intelligence, editorial material and other outputs may be delayed, incomplete, revised, unavailable or wrong. Models are probabilistic, not promises. Past performance does not guarantee future results. You are responsible for your own decisions and for independently verifying information that matters to you.</p>
+      <p>PropBetEdge is a sports intelligence and entertainment service. Scores, statistics, market information, projections, picks, Player DNA, probabilities, live intelligence, editorial material and other outputs may be delayed, incomplete, revised, unavailable or wrong. Models are probabilistic, not promises. Past performance does not guarantee future results. No pick, projection, probability, model edge, live signal or editorial statement is a warranty of accuracy, a promise of profit or a guarantee that a wager will win. You are responsible for your own decisions and for independently verifying information that matters to you.</p>
 
       <h2>8. Acceptable use and security</h2>
       <p>You may not interfere with the Services; probe or test security without written authorization; gain unauthorized access; misuse accounts; introduce malicious code; impersonate another person; manipulate grading or records; engage in fraud, match-fixing or unlawful gambling; or use the Services in a manner that is illegal, deceptive, abusive, harmful or operationally disruptive.</p>
@@ -200,17 +203,20 @@ const pages = {
   },
   support: {
     title: 'Support — PropBetEdge',
-    description: 'Account, billing, access, technical and data support for PropBetEdge.',
+    description: 'Account, billing, access, technical and data support for PropBetEdge, including membership cancellations and the no-refund policy.'
     eyebrow: 'HELP CENTER',
     heading: 'Support',
     intro: 'Need help with access, billing, a broken page, or something that looks wrong in the data? Send enough detail for us to reproduce the issue and route it quickly.',
     body: `
       <div class="trust-grid">
         <section><h2>Account & access</h2><p>Include the email used for your PropBetEdge membership, the sport or product and what you expected to see. Never send a password, login token or full payment-card number.</p></section>
-        <section><h2>Billing & membership</h2><p>Include the membership name, approximate purchase date and the email used at checkout. For duplicate subscriptions or access mismatches, mention both products involved.</p></section>
+        <section><h2>Billing & membership</h2><p>Include the membership name, approximate purchase date and the email used at checkout. For duplicate subscriptions, post-cancellation charges or access mismatches, mention both products involved so we can investigate the billing or entitlement record.</p></section>
         <section><h2>Site or app issue</h2><p>Send the page URL, device/browser, what you clicked, what happened and a screenshot when useful. If a hard refresh changes the result, tell us that too.</p></section>
         <section><h2>Data or model issue</h2><p>Include the sport, event or player, date, page and exact number or statement that looks wrong. Clear reproduction details help us separate source latency from a product bug.</p></section>
       </div>
+      <h2>Membership cancellations and refunds</h2>
+      <div class="trust-notice"><strong>PropBetEdge memberships are non-refundable digital services.</strong> Access to sports intelligence, live data, models, predictions, proprietary analytics, research and entertainment features is made available digitally. Except where applicable law requires otherwise or we expressly agree in writing, charges are final once access is activated or made available. Cancellation stops the next renewal; it does not prorate or reverse the current billing period.</div>
+      <p>A losing pick, incorrect prediction, revised model output, changed market price, delayed or unavailable data point, temporary feature outage, non-use, or dissatisfaction with a game, match, race, fight, market or wagering outcome is not a refundable event. If the issue is a duplicate charge, a charge after cancellation should have taken effect, or a verified billing/access error, contact us and we will investigate and correct the error.</p>
       <h2>Contact support</h2><p>Email <a href="mailto:support@proptechusa.ai">support@proptechusa.ai</a> for account, membership, billing and general product support. For editorial corrections or newsroom questions, email <a href="mailto:editorial@proptechusa.ai">editorial@proptechusa.ai</a>.</p>
       <div class="trust-notice"><strong>Security:</strong> never send passwords, API keys, magic-login links, full card numbers, government IDs or other sensitive credentials by email or in a public community channel.</div>
       <h2>Responsible play</h2><p>PropBetEdge is an intelligence platform, not a sportsbook. If gambling is causing harm or feels difficult to control, stop wagering and seek support. In the United States, call or text <strong>1-800-GAMBLER</strong>.</p>
@@ -272,7 +278,7 @@ export function renderTrustPage(root, kind, setMeta) {
         <div class="trust-kicker">${page.eyebrow}</div>
         <h1>${page.heading}</h1>
         <p class="trust-lede">${page.intro}</p>
-        <p class="trust-meta">Effective October 4, 2026 · Last updated October 4, 2026</p>
+        <p class="trust-meta">Effective October 5, 2026 · Last updated October 5, 2026</p>
         ${contents ? `<details class="trust-toc-mobile"><summary>On this page · ${toc.length} sections</summary>${contents}</details>` : ''}
         <div class="${contents ? 'trust-layout' : ''}">
           ${contents ? `<nav class="trust-toc" aria-label="On this page"><div class="trust-toc-label">On this page</div>${contents}</nav>` : ''}
