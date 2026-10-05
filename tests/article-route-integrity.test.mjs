@@ -20,7 +20,7 @@ test('article markup: no footer CTA, no generic end-of-article billboard, real f
   assert.match(article, /<div id="related-slot"><\/div>/, 'related stories slot (the closer anchors after it) kept');
   assert.match(article, /articleMarketSlot\(article, market\)/, 'Article Market kept');
   assert.match(article, /\$\{renderFooter\(\{ cta: false \}\)\}/);
-  const footer = renderFooter({ cta: false });
+  const footer = renderFooter();
   assert.match(footer, /<footer class="footer nf">/, 'normal footer renders');
   assert.doesNotMatch(footer, /footer-cta|Go deeper than the article\./);
   const funnel = fs.readFileSync('src/article-funnel.js', 'utf8');
@@ -79,12 +79,12 @@ test('navigation simulation: A -> B -> back; a late render of an earlier route n
   // A late render only writes if its root is still live (what every renderer now does).
   const lateRender = (root, html) => { if (isLiveRoot(root)) root.innerHTML = html; };
 
-  const sportRoot = freshRouteRoot(doc);            // /news/mlb (keeps its CTA legitimately)
-  sportRoot.innerHTML = '<div class="footer-cta">Go deeper than the article.</div>';
+  const sportRoot = freshRouteRoot(doc);            // /news/mlb
+  sportRoot.innerHTML = '<section>MLB sport page</section><footer class="footer nf"></footer>';
   const rootA = freshRouteRoot(doc);                 // -> article A (skeleton)
   rootA.innerHTML = '<article>A skeleton</article>';
-  lateRender(sportRoot, '<div class="footer-cta">late sport paint</div>');
-  assert.doesNotMatch(visible(), /footer-cta|Go deeper/);
+  lateRender(sportRoot, '<section>late sport paint</section><footer class="footer nf"></footer>');
+  assert.doesNotMatch(visible(), /late sport paint/);
 
   const rootB = freshRouteRoot(doc);                 // A -> B before A resolved
   rootB.innerHTML = '<article>B</article><div class="pbe-intel-closer"></div><footer class="footer nf"></footer>';
@@ -95,8 +95,8 @@ test('navigation simulation: A -> B -> back; a late render of an earlier route n
 
   const rootBack = freshRouteRoot(doc);              // back/forward re-renders into its own root
   rootBack.innerHTML = '<article>A</article><div class="pbe-intel-closer"></div><footer class="footer nf"></footer>';
-  lateRender(rootB, '<div class="footer-cta">stale</div>');
-  assert.doesNotMatch(visible(), /footer-cta|Go deeper|ad-brand-family/);
+  lateRender(rootB, '<section>stale B paint</section>');
+  assert.doesNotMatch(visible(), /stale B paint|ad-brand-family/);
   assert.equal(doc.body.children.filter((c) => c.id === 'app').length, 1, 'exactly one #app');
 });
 

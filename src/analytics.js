@@ -81,16 +81,6 @@ function handleClick(event) {
       link_text: cleanText(anchor.textContent),
     });
   }
-
-  if (anchor.classList.contains('footer-cta-btn')) {
-    gtagEvent('network_cta_click', {
-      placement: 'footer_network',
-      link_url: href,
-      link_text: cleanText(anchor.textContent),
-      destination: destinationFor(href),
-    });
-  }
-
   const placed = anchor.closest('[data-pbe-placement]');
   if (placed) {
     gtagEvent('network_cta_click', {

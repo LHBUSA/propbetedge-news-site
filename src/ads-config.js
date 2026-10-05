@@ -546,39 +546,6 @@ export function ad_in_article_mid(articleContext = {}) {
   return ad_brand_family('mid_article', articleContext);
 }
 
-export function ad_footer_banner() {
-  return `
-    <div class="footer-cta">
-      <div class="container footer-cta-inner">
-        <div class="footer-cta-text">
-          <span class="footer-cta-eyebrow">⚡ EXPLORE THE PROPBETEDGE NETWORK</span>
-          <h3 class="footer-cta-headline">Go deeper than the article.</h3>
-          <p class="footer-cta-sub">Live picks, PBEcast, Player DNA, model records and sport-specific intelligence across the PropBetEdge network.</p>
-        </div>
-        <div class="footer-cta-buttons">
-          <a href="${withUtm(PROPBET_LINKS.picks_mlb, 'footer_banner', 'mlb', 'mlb')}" class="footer-cta-btn footer-cta-btn-mlb" target="_blank" rel="noopener">
-            <span class="sport-emoji">⚾</span><span>MLB Intelligence</span>
-          </a>
-          <a href="${withUtm(PROPBET_LINKS.picks_nfl, 'footer_banner', 'nfl', 'nfl')}" class="footer-cta-btn footer-cta-btn-nfl" target="_blank" rel="noopener">
-            <span class="sport-emoji">🏈</span><span>NFL Intelligence</span>
-          </a>
-          <a href="${withUtm(PROPBET_LINKS.picks_ufc, 'footer_banner', 'ufc', 'ufc')}" class="footer-cta-btn footer-cta-btn-ufc" target="_blank" rel="noopener">
-            <span class="sport-emoji">🥊</span><span>UFC Fight Intelligence</span>
-          </a>
-          <a href="${withUtm('/odds', 'footer_banner', 'free_picks')}" class="footer-cta-btn">
-            <span class="sport-emoji">⚡</span><span>Free Picks + Track Record</span>
-          </a>
-          <a href="${withUtm('/games', 'footer_banner', 'pbe_cast')}" class="footer-cta-btn">
-            <span class="sport-emoji">●</span><span>PBE Cast</span>
-          </a>
-          <a href="${withUtm(PROPBET_LINKS.propsports, 'footer_banner', 'propsports')}" class="footer-cta-btn" target="_blank" rel="noopener">
-            <span class="sport-emoji">API</span><span>PropSports API</span>
-          </a>
-        </div>
-      </div>
-    </div>
-  `;
-}
 
 function renderAdBanner({ tone, eyebrow, headline, cta, href }) {
   let isExternal = false;

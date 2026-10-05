@@ -2,8 +2,8 @@
  * src/components/home-closer.js
  * Homepage-only brand closer (owner brief 2026-10-04): sells WHY PropBetEdge exists — the decision pipeline —
  * instead of repeating navigation. Static markup (no data, no fabricated numbers), rendered in the homepage
- * shell before the footer, so it is in the first layout (zero CLS). The generic footer CTA is suppressed on the
- * homepage only (renderFooter({ cta: false })); every other page keeps its footer unchanged.
+ * shell before the footer, so it is in the first layout (zero CLS). The canonical footer renders the premium
+ * network directory only; the retired generic pre-footer sales billboard no longer exists on any route.
  * Styles: src/styles/home-closer.css (imported by pages/home.js so this module stays importable in Node tests).
  */
 const STAGES = [
