@@ -6,7 +6,12 @@
  * - Recover existing no-image / broken-image cards at render time.
  * - Reuse the existing article entity metadata + /api/sports-media resolver.
  * - Fall back to a restrained sport treatment only when no legitimate media exists.
+ * - The full article hero (/news/<sport>/<slug>, figure[data-story-media]) participates exactly like a card.
+ * - Media-usage policy (src/editorial/media-usage.js): one exact image = one story on a page. A card whose image
+ *   another story already shows recovers its next contextual candidate (other player, opponent, team), else the
+ *   sport fallback — never a repeat, never an unrelated photo.
  */
+import { imageKey, chooseStoryMedia } from './editorial/media-usage.js';
 
 const NEWS_API = 'https://propbet-news-api.sales-fd3.workers.dev';
 const ARTICLE_PATH_RE = /^\/news\/(mlb|nfl|nba|nhl)\/([^/]+)\/?$/i;
@@ -97,6 +102,31 @@ function injectStyles() {
       position: absolute;
       inset: 0;
     }
+    /* Full article hero: recovered subject media (a headshot or a team mark, never 16:9 photography) is presented as
+       an intentional portrait panel, not cover-cropped into a giant blurred face. */
+    .article-hero-image[data-pbe-recovered-kind] {
+      background:
+        radial-gradient(circle at 50% 38%, rgba(212,175,55,.16), transparent 52%),
+        linear-gradient(145deg, #241e16, #0f0c09) !important;
+    }
+    .article-hero-image[data-pbe-recovered-kind] > .pbe-recovered-story-img {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      margin: 0 auto;
+      width: auto;
+      height: 92%;
+      object-fit: contain;
+      filter: drop-shadow(0 18px 40px rgba(0,0,0,.45));
+    }
+    .article-hero-image[data-pbe-recovered-kind="team"] > .pbe-recovered-story-img {
+      top: 0; height: 56%; margin: auto;
+    }
+    .article-hero-image .pbe-hero-subject {
+      position: absolute; left: 16px; bottom: 14px; z-index: 2;
+      font-family: var(--font-mono, monospace); font-size: 10px; font-weight: 800;
+      letter-spacing: .14em; text-transform: uppercase; color: rgba(245,241,235,.78);
+      background: rgba(15,12,9,.62); padding: 6px 10px; border-radius: 999px;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -111,6 +141,8 @@ function queueScan() {
 }
 
 function scanStoryMedia() {
+  releaseDuplicateStoryImages();
+
   // First neutralize every legacy branded fallback, even when its primary image
   // is still healthy. If that image later fails, the user never sees a logo card.
   document.querySelectorAll('.img-fallback, .lead-overlay-fallback').forEach((fallback) => {
@@ -203,6 +235,8 @@ function recoverForFallback(fallback) {
     .catch(() => setFallbackSettled(fallback, context.sport));
 }
 
+// Every contextual candidate for the story, resolved, in preference order (the choice against what the page already
+// shows happens at insert time, synchronously, so two cards recovering together cannot both take one image).
 async function resolveArticleMedia(context) {
   const key = `${context.sport}:${context.slug}`;
   if (articleMediaCache.has(key)) return articleMediaCache.get(key);
@@ -210,18 +244,54 @@ async function resolveArticleMedia(context) {
   const promise = (async () => {
     const article = await fetchArticle(context.slug);
     const candidates = buildCandidates(article, context.title);
-
-    for (const candidate of candidates) {
-      const media = await resolveEntityMedia(context.sport, candidate.kind, candidate.name);
-      if (media?.image && !isHouseBrandImageUrl(media.image)) {
-        return { ...media, candidate };
-      }
-    }
-    return null;
+    const resolved = await Promise.all(candidates.map((candidate) => resolveEntityMedia(context.sport, candidate.kind, candidate.name)
+      .then((media) => (media?.image && !isHouseBrandImageUrl(media.image) ? { ...media, candidate } : null))));
+    return resolved.filter(Boolean);
   })();
 
   articleMediaCache.set(key, promise);
   return promise;
+}
+
+const storyIdOf = (el) => {
+  const c = storyContextFromElement(el);
+  return c ? `${c.sport}:${c.slug}` : null;
+};
+
+const visibleStoryImages = () => [...document.querySelectorAll('img')]
+  .filter((img) => isStoryImage(img) && !img.classList.contains('img-broken') && !img.closest('[aria-hidden="true"]'));
+
+/** imageKey -> storyId for every story image the page shows, except inside `skip` (the container being filled). */
+function imagesInUse(skip = null) {
+  const used = new Map();
+  for (const img of visibleStoryImages()) {
+    if (skip && skip.contains(img)) continue;
+    const key = imageKey(img.getAttribute('src') || img.currentSrc || img.src);
+    if (key && !used.has(key)) used.set(key, storyIdOf(img) || key);
+  }
+  return used;
+}
+
+// Original (API) images: the first story to show an image keeps it; a DIFFERENT story showing the same exact image
+// recovers contextual media instead (2026-10-06: two promo stories shared one graphic, NHL mirror stories one photo).
+function releaseDuplicateStoryImages() {
+  const owner = new Map();
+  for (const img of visibleStoryImages()) {
+    if (img.dataset.pbeRecoveredMedia === '1') continue;
+    const key = imageKey(img.getAttribute('src') || img.currentSrc || img.src);
+    const story = storyIdOf(img);
+    if (!key || !story) continue;
+    if (!owner.has(key)) { owner.set(key, story); continue; }
+    if (owner.get(key) === story) continue; // the same story rendered twice keeps its image
+    const container = mediaContainerForImage(img);
+    const fallback = fallbackIn(container);
+    if (!fallback) continue;
+    img.classList.add('img-broken');
+    img.dataset.pbeDuplicateMedia = '1';
+    neutralizeFallback(fallback);
+    fallback.style.display = '';
+    recoverForFallback(fallback);
+  }
 }
 
 async function fetchArticle(slug) {
@@ -287,15 +357,15 @@ async function resolveEntityMedia(sport, kind, name) {
   }
 }
 
-function applyRecoveredMedia(fallback, media, context) {
+function applyRecoveredMedia(fallback, candidates, context) {
   if (!(fallback instanceof HTMLElement) || !fallback.isConnected) return;
-  if (!media?.image) {
+  const container = mediaContainerForFallback(fallback);
+  if (!container) {
     setFallbackSettled(fallback, context?.sport);
     return;
   }
-
-  const container = mediaContainerForFallback(fallback);
-  if (!container) {
+  const media = chooseStoryMedia(candidates, imagesInUse(container), `${context?.sport}:${context?.slug}`);
+  if (!media?.image) {
     setFallbackSettled(fallback, context?.sport);
     return;
   }
@@ -311,14 +381,25 @@ function applyRecoveredMedia(fallback, media, context) {
   const img = document.createElement('img');
   img.src = media.image;
   img.alt = context?.title || media.name || 'Story image';
-  img.loading = 'lazy';
+  img.loading = container.classList.contains('article-hero-image') ? 'eager' : 'lazy';
   img.decoding = 'async';
   img.dataset.pbeRecoveredMedia = '1';
   img.className = recoveredImageClass(container);
 
+  const isHero = container.classList.contains('article-hero-image');
   img.addEventListener('load', () => {
     fallback.dataset.pbeMediaState = 'recovered';
     fallback.style.display = 'none';
+    if (isHero) {
+      container.dataset.pbeRecoveredKind = media.candidate?.kind === 'team' ? 'team' : 'player';
+      const label = media.name || media.candidate?.name;
+      if (label && !container.querySelector('.pbe-hero-subject')) {
+        const cap = document.createElement('figcaption');
+        cap.className = 'pbe-hero-subject';
+        cap.textContent = label;
+        container.appendChild(cap);
+      }
+    }
   }, { once: true });
 
   img.addEventListener('error', () => {
@@ -338,6 +419,11 @@ function setFallbackSettled(fallback, sport) {
 }
 
 function storyContextFromElement(element) {
+  // The full article hero has no card anchor: the figure names its own story (src/pages/article.js).
+  const own = element.closest?.('[data-story-media]');
+  if (own?.dataset.storySlug && SPORT_META[own.dataset.storySport]) {
+    return { sport: own.dataset.storySport, slug: own.dataset.storySlug, title: own.dataset.storyTitle || '' };
+  }
   const anchor = element.closest?.('a[href]');
   if (!anchor) return null;
 
@@ -369,11 +455,11 @@ function sportFromFallback(fallback) {
 }
 
 function mediaContainerForFallback(fallback) {
-  return fallback.closest?.('.card-image, .sidebar-hero-img, .lead-overlay-image-wrap, .lead-image') || fallback.parentElement;
+  return fallback.closest?.('.card-image, .sidebar-hero-img, .lead-overlay-image-wrap, .lead-image, .article-hero-image') || fallback.parentElement;
 }
 
 function mediaContainerForImage(img) {
-  return img.closest?.('.card-image, .sidebar-hero-img, .lead-overlay-image-wrap, .lead-image') || img.parentElement;
+  return img.closest?.('.card-image, .sidebar-hero-img, .lead-overlay-image-wrap, .lead-image, .article-hero-image') || img.parentElement;
 }
 
 function fallbackIn(container) {
@@ -384,17 +470,18 @@ function fallbackIn(container) {
 
 function storyImageIn(container) {
   if (!container) return null;
-  return container.querySelector(':scope > img, img.card-image-img, img.lead-overlay-img, img[data-pbe-recovered-media]');
+  return container.querySelector(':scope > img:not([data-pbe-duplicate-media]), img.card-image-img:not([data-pbe-duplicate-media]), img.lead-overlay-img, img[data-pbe-recovered-media]');
 }
 
 function recoveredImageClass(container) {
   if (container.classList.contains('card-image')) return 'card-image-img pbe-recovered-story-img';
   if (container.classList.contains('lead-overlay-image-wrap')) return 'lead-overlay-img pbe-recovered-story-img';
+  if (container.classList.contains('article-hero-image')) return 'pbe-recovered-story-img';
   return 'pbe-recovered-story-img';
 }
 
 function isStoryImage(img) {
-  return Boolean(img.closest?.('.card-image, .sidebar-hero-img, .lead-overlay-image-wrap, .lead-image'));
+  return Boolean(img.closest?.('.card-image, .sidebar-hero-img, .lead-overlay-image-wrap, .lead-image, .article-hero-image'));
 }
 
 function isHouseBrandImageUrl(raw) {

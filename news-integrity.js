@@ -5,6 +5,7 @@
  * strong evidence that the editorial attached to the URL belongs to another
  * story. It never rewrites or guesses replacement content.
  */
+import { promotionalSourceReason } from './src/editorial/promo-creative.js';
 
 const STOP = new Set([
   'about','after','again','against','ahead','before','being','between','could',
@@ -21,6 +22,12 @@ export function assessArticleIntegrity(article, peers = []) {
 
   const title = clean(article.title || article.headline || '');
   if (!title) return { ok: false, reason: 'missing_title' };
+
+  // Source quality gate (owner 2026-10-06): a sportsbook/prediction-market promo or affiliate page is never a news
+  // source, however the writer re-headlined it. The writer quarantines these upstream (archived_reason
+  // PROMOTIONAL_SOURCE); this withholds any such row that still reaches a public surface.
+  const promo = promotionalSourceReason(article);
+  if (promo) return { ok: false, reason: promo };
 
   const summary = clean(article.summary || article.description || article.take?.summary || '');
   const body = articleBodyText(article);

@@ -100,12 +100,15 @@ export async function renderArticle(root, sport, slug, setMeta) {
   applySocialMeta(seo);
   applyPrimarySchema(seo);
 
-  const heroImage = article.image_url
-    ? `<figure class="article-hero-image">
-         <img src="${escapeAttr(proxyImage(article.image_url))}" alt="${escapeAttr(seo.image.alt || article.title)}" class="hero-image-img" width="1200" height="675" onerror="this.classList.add('img-broken')" />
+  // The editorial media surface is ALWAYS reserved (owner 2026-10-06): a rejected or missing source image (promo
+  // creative, house logo, none) leaves the same 16:9 figure, and media-backfill recovers contextual player/team
+  // imagery into it (data-story-* = this story), else the restrained sport fallback. Never no hero at all.
+  const heroImage = `<figure class="article-hero-image" data-story-media data-story-sport="${escapeAttr(article.sport)}" data-story-slug="${escapeAttr(article.slug)}" data-story-title="${escapeAttr(article.title)}">
+         ${article.image_url
+           ? `<img src="${escapeAttr(proxyImage(article.image_url))}" alt="${escapeAttr(seo.image.alt || article.title)}" class="hero-image-img" width="1200" height="675" onerror="this.classList.add('img-broken')" />`
+           : ''}
          <div class="img-fallback">${SPORT_FALLBACK[article.sport] || '◆'}</div>
-       </figure>`
-    : '';
+       </figure>`;
 
   const articleContext = { sport: article.sport, imageUrl: article.image_url || seo.image?.url || null };
   const visualHtml = renderArticleVisuals(article, manifest);

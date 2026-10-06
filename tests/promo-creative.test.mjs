@@ -48,5 +48,5 @@ test('canonical rule is hash-pinned: the newsroom enrich Worker vendors this exa
   // the same hash). Changing this file means: re-vendor into the Worker, update both pins, redeploy propbet-news-enrich.
   const { createHash } = await import('node:crypto');
   const sha = createHash('sha256').update(fs.readFileSync(new URL('../src/editorial/promo-creative.js', import.meta.url))).digest('hex');
-  assert.equal(sha, '2481f515319070e233661b4fee665e187b2cc39742db161d0f8b59e2e851fc37');
+  assert.equal(sha, '7992c8f08fec487d5740b8cae9439fb986347dca3e72f2b55e4af01b89c54564');
 });

@@ -1656,3 +1656,10 @@
   .pbe-article-visuals .pbe-av-evidence-card.is-single b { max-width: none; }
   .pbe-article-visuals .pbe-av-evidence-card.is-single p { grid-column: 1 / -1; }
 }
+
+/* Article Market reservation (src/article-market.js, owner 2026-10-06): an ELIGIBLE event-linked story keeps the
+   module's space from first paint while a late/retried read is in flight, so hydration never shifts the prose.
+   Blank by design (no "loading" copy); collapses to zero when the read definitely has nothing to show. Heights =
+   the LIVE two-venue module measured on production at each width. */
+.art-market--reserved { min-height: 430px; margin: 28px 0; border-radius: 14px; background: rgba(243, 239, 230, 0.025); }
+@media (max-width: 760px) { .art-market--reserved { min-height: 470px; } }

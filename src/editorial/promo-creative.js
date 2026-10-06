@@ -26,6 +26,28 @@ export function isPromotionalSourceUrl(url) {
   return !!url && PROMO_SOURCE.test(String(url));
 }
 
+// SOURCE QUALITY GATE (owner 2026-10-06): a sportsbook / prediction-market promo or affiliate page is never a news
+// source. 2026-10-06 MLB: "use-draftkings-promo-code-to-claim-150-bonus-bets-braves-dodgers..." and "use-betmgm-bonus-
+// code-cbssports..." pages were rewritten into normal-looking Braves-Dodgers analysis. Strong offer language only:
+// a plain "signing bonus" / "bonus" in contract news, or an ordinary betting picks/odds column, is not promotional.
+const SOURCE_OFFER = /(promo[-_ ]?codes?|bonus[-_ ]?codes?|bonus[-_ ]?bets?|sign[-_ ]?up[-_ ]?(bonus|offer|promo)|deposit[-_ ]?match|first[-_ ]?bet[-_ ]?(offer|insurance|safety[-_ ]?net)|no[-_ ]?sweat[-_ ]?bets?|risk[-_ ]?free[-_ ]?bets?|bet[-_ ]?\$?\d+[-_ ,]*get[-_ ]?\$?\d+|referral[-_ ]?code)/i;
+// Affiliate landing sections (path segments), e.g. /sportsbooks/promos/, /betting-promos/, /sportsbook-reviews/.
+const AFFILIATE_PATH = /\/(promo[-_]?codes?|promos|bonus[-_]?codes?|betting[-_]?promos?|sportsbook[-_]?(promos?|bonus(es)?|reviews?|offers?))(\/|$)/i;
+
+/** Why an article's SOURCE is promotional/affiliate (the gate reason), else null. Looks at the source URL and the
+ *  source's own headline; the image is judged separately (isPromotionalHero). */
+export function promotionalSourceReason(article) {
+  const url = String(article?.source_url || '');
+  let path = url;
+  try { path = decodeURIComponent(new URL(url).pathname); } catch { /* keep raw */ }
+  if (url && (PROMO_SOURCE.test(url) || SOURCE_OFFER.test(path) || BOOK_OFFER.test(path) || AFFILIATE_PATH.test(path))) return 'PROMOTIONAL_SOURCE';
+  const head = String(article?.source_title || '');
+  if (head && (SOURCE_OFFER.test(head) || BOOK_OFFER.test(head))) return 'PROMOTIONAL_SOURCE';
+  return null;
+}
+
+export const isPromotionalSource = (article) => promotionalSourceReason(article) !== null;
+
 // Publisher family of a host: publishers serve page images from their own CDNs (cbssports.com -> cbsistatic.com).
 const FAMILY = [[/(^|\.)cbs(sports|istatic)\.com$/, 'cbs'], [/(^|\.)nbcsports(\.brightspotcdn)?\.com$/, 'nbcsports'], [/(^|\.)espn(cdn)?\.com$/, 'espn'], [/(^|\.)foxsports\.com$|(^|\.)fssta\.com$/, 'fox'], [/(^|\.)yahoo\.com$|(^|\.)yimg\.com$/, 'yahoo']];
 export function publisherFamily(url) {
