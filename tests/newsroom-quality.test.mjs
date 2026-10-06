@@ -195,3 +195,12 @@ test('reservation CSS exists and is scoped to the reserved state only', () => {
   assert.match(css, /\.art-market--reserved \{ min-height: \d+px;/);
   assert.doesNotMatch(css, /\.art-market \{[^}]*min-height/, 'a settled/empty slot never keeps a box');
 });
+
+test('Article Market house theme: gold/brown/charcoal, no blue, host-scoped and loaded after the pinned vendor CSS', () => {
+  const css = fs.readFileSync(new URL('../src/styles/pbe-article-market-theme.css', import.meta.url), 'utf8');
+  assert.doesNotMatch(css, /#7fb8ff|127,\s*184,\s*255|#16181d|160,\s*186,\s*220/i, 'no market blue / cold slab');
+  for (const rule of css.match(/^[^@/\s}][^{]*\{/gm) || []) assert.match(rule, /^\.art-market /, `scoped to the host slot: ${rule}`);
+  assert.match(css, /--am-accent: var\(--gold, #d4af37\)/);
+  const main = fs.readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  assert.ok(main.indexOf("import './styles/pbe-article-market-theme.css';") > main.indexOf("import './vendor/markets/article-market-ui.css';"), 'theme after vendor');
+});

@@ -1660,10 +1660,9 @@
 /* Article Market reservation (src/article-market.js, owner 2026-10-06): an ELIGIBLE event-linked story keeps the
    module's space from first paint while a late/retried read is in flight, so hydration never shifts the prose.
    Blank by design (no "loading" copy); collapses to zero when the read definitely has nothing to show. Heights =
-   the LIVE two-venue module (Kalshi + Polymarket, MLB 849819) measured on production 2026-10-06: 424 @1440/1024,
-   453 @768, 470 @600, 530 @390, 608 @360 (+ the module's own 20px margins). */
-.art-market--reserved { min-height: 426px; margin: 20px 0; border-radius: 14px; background: rgba(243, 239, 230, 0.025); }
-@media (max-width: 900px) { .art-market--reserved { min-height: 455px; } }
-@media (max-width: 640px) { .art-market--reserved { min-height: 480px; } }
-@media (max-width: 420px) { .art-market--reserved { min-height: 532px; } }
-@media (max-width: 370px) { .art-market--reserved { min-height: 608px; } }
+   the LIVE two-venue module (Kalshi + Polymarket, MLB 849819) measured 2026-10-06 with the house theme (pbe-article-market-theme.css): 571 @1440/1024/768,
+   591 @600, 644 @390, 717 @360 (+ the themed module's 24px margins). */
+.art-market--reserved { min-height: 572px; margin: 24px 0; border-radius: 14px; background: rgba(255, 245, 220, 0.03); border: 1px solid rgba(212, 175, 55, 0.14); }
+@media (max-width: 640px) { .art-market--reserved { min-height: 592px; } }
+@media (max-width: 420px) { .art-market--reserved { min-height: 645px; } }
+@media (max-width: 370px) { .art-market--reserved { min-height: 718px; } }
