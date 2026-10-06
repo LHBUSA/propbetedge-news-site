@@ -29,7 +29,8 @@ test('vendored family.json is the canonical registry shape', () => {
   assert.equal(family.organization, ORG);
   assert.deepEqual(family.sports.map((s) => s.key), ['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer', 'golf', 'f1']);
   assert.equal(PRED_URL, 'https://predictions.propbetedge.ai/');
-  assert.deepEqual(family.network.map((n) => n.url), ['https://propbetedge.ai/', 'https://propbetedge.ai/pro', 'https://learn.propbetedge.ai/']);
+  assert.deepEqual(family.network.map((n) => n.url), ['https://propbetedge.ai/', 'https://learn.propbetedge.ai/']);
+  assert.deepEqual(family.products.map((p) => p.key), ['members', 'compare', 'predictions']);
   assert.ok(family.retired_hosts.includes('hub.propbetedge.ai'));
 });
 
@@ -45,9 +46,10 @@ test('footer links every family sport in registry order, Predictions in its own 
   const groupOf = (href) => { const at = footer.indexOf(`href="${href}"`); const h = [...footer.slice(0, at).matchAll(/<h4[^>]*>([^<]+)<\/h4>/g)].pop(); return h ? h[1] : null; };
   assert.equal(groupOf(F1_URL), 'Sports');
   assert.notEqual(groupOf(PRED_URL), 'Sports', 'Predictions is never a sport');
-  assert.equal(groupOf(PRED_URL), 'Network');
+  assert.equal(groupOf(PRED_URL), 'All Access');
   assert.match(footer, /F1<span class="nf-sr"> Intelligence<\/span>/, 'accessible name "F1 Intelligence"');
-  assert.match(footer, />PropBetEdge Predictions</, 'product name, not a sport label');
+  assert.match(footer, />Predictions</, 'product label, not a sport label');
+  for (const p of family.products) assert.equal(hrefs.filter((h) => h === p.url).length, 1, p.key);
 });
 
 test('footer network links: PropBetEdge home, All Access, Learn; no retired hosts, no http://', () => {
