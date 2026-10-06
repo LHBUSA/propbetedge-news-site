@@ -227,98 +227,368 @@
 }
 
 
-/* All Access premium network v2 */
-.pbe-pro-hero-v2{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,.42fr);gap:26px;align-items:start}
-.pbe-pro-hero-main{min-width:0}
-.pbe-pro-hero-v2 .pbe-pro-title-all{font-size:clamp(54px,7.5vw,104px);line-height:.92}
-.pbe-pro-hero-v2 .pbe-pro-statement{font-size:clamp(20px,2.2vw,29px);max-width:900px}
-.pbe-pro-hero-v2 .pbe-pro-statement strong{color:var(--gold-bright)}
-.pbe-pro-hero-counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:22px 0;max-width:780px}
-.pbe-pro-hero-counts span{padding:14px;border:1px solid var(--line);border-radius:12px;background:rgba(255,245,220,.025);display:grid;gap:4px}
-.pbe-pro-hero-counts b{font:800 30px/1 var(--font-sans);color:var(--paper)}
-.pbe-pro-hero-counts small{font:800 8px/1.35 var(--font-mono);letter-spacing:.11em;color:var(--gold-bright)}
-.pbe-pro-buyline{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:8px 0 4px}
+
+
+/* All Access editorial rebuild */
+.pbe-pro { padding: 34px 0 78px; }
+
+.pbe-pro-hero{
+  grid-template-columns:minmax(0,1.2fr) minmax(320px,.76fr);
+  gap:56px;
+  padding:64px 0 72px;
+  align-items:center;
+  position:relative;
+}
+.pbe-pro-hero:before{
+  content:"";
+  position:absolute;
+  inset:-34px calc(50% - 50vw) 0;
+  z-index:-2;
+  background:
+    linear-gradient(90deg,rgba(6,10,16,.96) 0%,rgba(6,10,16,.76) 46%,rgba(6,10,16,.28) 100%),
+    url('https://nfl.propbetedge.ai/stadiums/lambeau-bg.webp') center 47%/cover no-repeat;
+}
+.pbe-pro-hero:after{
+  content:"";
+  position:absolute;
+  inset:-34px calc(50% - 50vw) 0;
+  z-index:-1;
+  background:linear-gradient(180deg,rgba(5,9,14,.1),rgba(5,9,14,.5) 66%,var(--ink) 100%);
+}
+.pbe-pro-title{margin:20px 0 22px}
+.pbe-pro-title-brand{
+  font:800 12px/1 var(--font-mono);
+  letter-spacing:.2em;
+  color:var(--paper-dim);
+  margin-bottom:12px;
+}
+.pbe-pro-title-all{
+  max-width:920px;
+  font-size:clamp(62px,8vw,116px);
+  line-height:.88;
+}
+.pbe-pro-statement{
+  max-width:860px;
+  display:block;
+  margin:0 0 20px;
+  font:700 clamp(21px,2.2vw,30px)/1.28 var(--font-serif);
+}
+.pbe-pro-os-intro{
+  max-width:760px;
+  margin:0 0 24px;
+  font-size:clamp(15px,1.4vw,18px);
+  line-height:1.68;
+}
+.pbe-pro-buyline{
+  display:flex;
+  gap:18px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin:4px 0 0;
+}
 .pbe-pro-buyline .pbe-pro-price{margin:0}
-.pbe-pro-hero-links{display:flex;gap:16px;flex-wrap:wrap;margin-top:15px}
-.pbe-pro-hero-links a{font:700 10px var(--font-mono);letter-spacing:.08em;color:var(--paper-dim);text-decoration:none}
+.pbe-pro-hero-links{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-top:16px;
+}
+.pbe-pro-hero-links a{
+  color:var(--paper-dim);
+  font:700 10px/1.3 var(--font-mono);
+  letter-spacing:.08em;
+  text-decoration:none;
+}
 .pbe-pro-hero-links a:hover{color:var(--gold-bright)}
-.pbe-pro-hero-visual{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:30px}
-.pbe-pro-window{min-height:170px;border:1px solid var(--line-strong);border-radius:14px;padding:13px;text-decoration:none;color:var(--paper);background:#0a0f16;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;transition:.18s ease}
-.pbe-pro-window:hover{transform:translateY(-2px);border-color:rgba(212,175,55,.65)}
-.pbe-pro-window-top,.pbe-pro-window-foot{display:flex;justify-content:space-between;gap:8px;align-items:center}
-.pbe-pro-window-top b{font:800 9px var(--font-mono);letter-spacing:.1em}
-.pbe-pro-window-top i{font:800 7px var(--font-mono);font-style:normal;color:var(--gold-bright);letter-spacing:.08em}
-.pbe-pro-window-foot span{font:800 7px var(--font-mono);letter-spacing:.07em;color:var(--paper-faint)}
-.pbe-pro-window-compare{background:radial-gradient(circle at 100% 0,rgba(212,175,55,.12),transparent 36%),#091019}
-.pbe-pro-venue-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
-.pbe-pro-venue-row>span{padding:12px;border:1px solid var(--line);border-radius:9px;background:rgba(255,255,255,.02);display:grid;gap:3px}
-.pbe-pro-venue-row small,.pbe-pro-analysts small{font:800 7px var(--font-mono);letter-spacing:.1em;color:var(--gold-bright)}
-.pbe-pro-venue-row strong,.pbe-pro-analysts strong{font:800 15px var(--font-sans)}
-.pbe-pro-venue-row em{font-style:normal;color:var(--paper-faint)}
-.pbe-pro-window-crypto{background:linear-gradient(145deg,#081625,#091019)}
-.pbe-pro-prob{display:grid;gap:6px}
-.pbe-pro-prob small{font:800 7px var(--font-mono);letter-spacing:.1em;color:#8cc2ff}
-.pbe-pro-prob strong{font:800 26px var(--font-sans)}
-.pbe-pro-prob>span{height:5px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
-.pbe-pro-prob>span i{display:block;width:66%;height:100%;background:linear-gradient(90deg,#4aa3ff,#8cc2ff)}
-.pbe-pro-window-markets{background:linear-gradient(145deg,#0b1218,#0b0f15)}
-.pbe-pro-analysts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.pbe-pro-analysts span{padding:10px;border:1px solid var(--line);border-radius:8px;display:grid;gap:2px}
-.pbe-pro-analysts span:nth-child(1) strong{color:#00d4aa}.pbe-pro-analysts span:nth-child(2) strong{color:#ff6b83}.pbe-pro-analysts span:nth-child(3) strong{color:#e2b55a}
-.pbe-pro-window-hub{background:linear-gradient(145deg,rgba(212,175,55,.12),rgba(7,11,16,.96))}
-.pbe-pro-hub-lines{display:grid;gap:7px}.pbe-pro-hub-lines span{padding:8px 9px;border-left:2px solid var(--gold);background:rgba(255,255,255,.025);font:800 8px var(--font-mono);letter-spacing:.09em}
-.pbe-pro-section-head-wide{max-width:960px}
-.pbe-pro-network-products{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px}
-.pbe-pro-product{position:relative;min-height:310px;border:1px solid var(--line);border-radius:18px;padding:20px;text-decoration:none;color:var(--paper);display:flex;flex-direction:column;background:linear-gradient(155deg,rgba(255,245,220,.05),rgba(255,245,220,.015));overflow:hidden;transition:.18s ease}
-.pbe-pro-product:hover{transform:translateY(-3px);border-color:var(--gold-soft)}
-.pbe-pro-product-members,.pbe-pro-product-compare{grid-column:span 6}
-.pbe-pro-product-markets,.pbe-pro-product-crypto,.pbe-pro-product-predictions{grid-column:span 4}
-.pbe-pro-product-members{background:radial-gradient(circle at 90% 0,rgba(212,175,55,.18),transparent 35%),#0b1017}
-.pbe-pro-product-compare{background:radial-gradient(circle at 80% 0,rgba(242,184,75,.16),transparent 34%),#091019}
-.pbe-pro-product-markets{background:radial-gradient(circle at 80% 0,rgba(0,212,170,.12),transparent 35%),#0a1118}
-.pbe-pro-product-crypto{background:radial-gradient(circle at 80% 0,rgba(74,163,255,.16),transparent 35%),#08121e}
-.pbe-pro-product-predictions{background:radial-gradient(circle at 80% 0,rgba(155,109,255,.17),transparent 35%),#0b1020}
-.pbe-pro-product-index{position:absolute;right:17px;top:15px;font:800 10px var(--font-mono);color:rgba(255,255,255,.28)}
-.pbe-pro-product-eyebrow{font:800 8px var(--font-mono);letter-spacing:.13em;color:var(--gold-bright);margin-top:auto}
-.pbe-pro-product h3{font:900 clamp(30px,3vw,46px)/1 var(--font-serif);margin:8px 0 6px}
-.pbe-pro-product>strong{font:800 15px/1.35 var(--font-sans);max-width:620px}
-.pbe-pro-product p{font:400 12px/1.65 var(--font-sans);color:var(--paper-dim);max-width:650px}
-.pbe-pro-product-proof{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.pbe-pro-product-proof i{font:800 7px var(--font-mono);font-style:normal;letter-spacing:.08em;padding:6px 8px;border:1px solid var(--line);border-radius:999px;color:var(--paper-dim)}
-.pbe-pro-product-open{margin-top:18px;font:800 8px var(--font-mono);letter-spacing:.09em;color:var(--gold-bright)}
-.pbe-pro-showcase-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.pbe-pro-showcase-card{min-height:500px;border:1px solid var(--line);border-radius:18px;overflow:hidden;text-decoration:none;color:var(--paper);background:#0a1017;display:flex;flex-direction:column}
-.pbe-pro-showcase-card>div:last-child{padding:18px}
-.pbe-pro-showcase-card>div:last-child>span{font:800 8px var(--font-mono);letter-spacing:.11em;color:var(--gold-bright)}
-.pbe-pro-showcase-card h3{font:850 24px/1.08 var(--font-serif);margin:8px 0}
-.pbe-pro-showcase-card p{font:400 11px/1.6 var(--font-sans);color:var(--paper-dim)}
-.pbe-pro-showcase-ui,.pbe-pro-showcase-hub-ui,.pbe-pro-showcase-image{min-height:290px;border-bottom:1px solid var(--line);padding:16px}
-.pbe-pro-showcase-ui{display:flex;flex-direction:column;background:radial-gradient(circle at 90% 0,rgba(212,175,55,.14),transparent 36%),#081018}
-.pbe-pro-ui-kicker{font:800 8px var(--font-mono);letter-spacing:.1em;color:var(--gold-bright)}
-.pbe-pro-ui-market{display:grid;grid-template-columns:1fr auto 1fr;gap:9px;align-items:center;flex:1}
-.pbe-pro-ui-market span{padding:18px 12px;border:1px solid var(--line);border-radius:10px;display:grid;gap:6px}
-.pbe-pro-ui-market small{font:800 7px var(--font-mono);letter-spacing:.1em;color:var(--gold-bright)}
-.pbe-pro-ui-market b{font:800 22px var(--font-sans)}
-.pbe-pro-ui-tags{display:flex;justify-content:space-between;gap:8px}.pbe-pro-ui-tags span{font:800 7px var(--font-mono);letter-spacing:.08em;color:var(--paper-faint)}
-.pbe-pro-showcase-image{background:linear-gradient(180deg,rgba(5,10,16,.08),rgba(5,10,16,.55)),url('https://predictions.propbetedge.ai/images/predictions/hero-1280.webp') center/cover no-repeat}
-.pbe-pro-showcase-hub-ui{display:flex;flex-direction:column;justify-content:center;gap:8px;background:linear-gradient(145deg,rgba(212,175,55,.12),#090e15)}
-.pbe-pro-showcase-hub-ui b{font:800 8px var(--font-mono);letter-spacing:.12em;color:var(--gold-bright)}
-.pbe-pro-showcase-hub-ui strong{font:900 32px/1 var(--font-serif);margin-bottom:8px}
-.pbe-pro-showcase-hub-ui span{padding:10px;border:1px solid var(--line);border-radius:8px;font:800 8px var(--font-mono);letter-spacing:.09em}
-.pbe-pro-card-list-featured{grid-template-columns:1fr}.pbe-pro-card-manage{display:block;margin-top:12px;text-align:center;color:var(--paper-dim);font:700 9px var(--font-mono);text-decoration:none}
-.pbe-pro-card-policy{margin:14px 0 0;font:400 10px/1.5 var(--font-sans);color:var(--paper-faint)}
-.pbe-pro-success-actions{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 24px}.pbe-pro-success-link{display:inline-flex;align-items:center;padding:13px 15px;border:1px solid var(--line);border-radius:10px;color:var(--paper);text-decoration:none;font:800 9px var(--font-mono)}
-.pbe-pro-final strong{color:var(--gold-bright)}
-@media(max-width:1080px){
-  .pbe-pro-hero-v2{grid-template-columns:1fr}
-  .pbe-pro-product-members,.pbe-pro-product-compare,.pbe-pro-product-markets,.pbe-pro-product-crypto,.pbe-pro-product-predictions{grid-column:span 6}
-  .pbe-pro-showcase-grid{grid-template-columns:1fr}
+.pbe-pro-card{
+  background:linear-gradient(160deg,rgba(18,20,20,.96),rgba(13,15,15,.94));
+  border-color:rgba(212,175,55,.4);
+  box-shadow:0 32px 90px rgba(0,0,0,.45),inset 0 1px rgba(255,255,255,.04);
+}
+.pbe-pro-card-list{gap:11px}
+.pbe-pro-card-policy{margin:14px 0 0;font:400 10px/1.55 var(--font-sans);color:var(--paper-faint)}
+.pbe-pro-card-policy a{color:inherit}
+.pbe-pro-card-manage{display:block;margin-top:12px;text-align:center;color:var(--paper-dim);font:700 9px var(--font-mono);text-decoration:none}
+
+.pbe-pro-section{padding-top:78px}
+.pbe-pro-section-head{max-width:880px;margin-bottom:34px}
+.pbe-pro-section-head h2{
+  margin:15px 0 12px;
+  font-size:clamp(34px,4.4vw,58px);
+  line-height:.98;
+}
+.pbe-pro-section-head p{font-size:15px;max-width:800px}
+
+.pbe-pro-feature-stories{display:grid;gap:22px}
+.pbe-pro-feature-story{
+  min-height:520px;
+  display:grid;
+  grid-template-columns:minmax(0,1.12fr) minmax(330px,.88fr);
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:24px;
+  text-decoration:none;
+  color:var(--paper);
+  background:#0a0f15;
+  transition:transform .18s ease,border-color .18s ease;
+}
+.pbe-pro-feature-story:hover{transform:translateY(-2px);border-color:var(--gold-soft)}
+.pbe-pro-feature-story:nth-child(even){grid-template-columns:minmax(330px,.88fr) minmax(0,1.12fr)}
+.pbe-pro-feature-story:nth-child(even) .pbe-pro-feature-media{order:2}
+.pbe-pro-feature-media{
+  min-height:520px;
+  position:relative;
+  background-size:cover;
+  background-position:center;
+}
+.pbe-pro-feature-media:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg,rgba(4,8,13,.05),rgba(4,8,13,.7));
+}
+.pbe-pro-feature-copy{
+  padding:clamp(32px,4vw,58px);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  position:relative;
+  background:
+    radial-gradient(circle at 88% 8%,rgba(212,175,55,.08),transparent 30%),
+    linear-gradient(145deg,rgba(255,255,255,.03),rgba(255,255,255,.01));
+}
+.pbe-pro-feature-index{
+  position:absolute;
+  top:24px;
+  right:26px;
+  font:800 10px var(--font-mono);
+  color:rgba(255,255,255,.28);
+}
+.pbe-pro-feature-eyebrow{
+  font:800 9px var(--font-mono);
+  letter-spacing:.15em;
+  color:var(--gold-bright);
+}
+.pbe-pro-feature-copy h3{
+  margin:10px 0 4px;
+  font:900 clamp(42px,5vw,74px)/.92 var(--font-serif);
+}
+.pbe-pro-feature-copy>strong{
+  font:800 clamp(18px,2vw,25px)/1.28 var(--font-sans);
+  max-width:620px;
+}
+.pbe-pro-feature-copy p{
+  margin:16px 0 24px;
+  max-width:660px;
+  font:400 14px/1.7 var(--font-sans);
+  color:var(--paper-dim);
+}
+.pbe-pro-feature-copy>b{
+  font:800 9px var(--font-mono);
+  letter-spacing:.11em;
+  color:var(--gold-bright);
+}
+.pbe-pro-feature-compare .pbe-pro-feature-media{
+  background:
+    linear-gradient(180deg,rgba(5,9,14,.08),rgba(5,9,14,.28)),
+    url('https://predictions.propbetedge.ai/images/predictions/hero-1280.webp') center/cover no-repeat;
+}
+.pbe-pro-feature-markets .pbe-pro-feature-media{
+  background:
+    radial-gradient(circle at 25% 30%,rgba(0,212,170,.22),transparent 30%),
+    radial-gradient(circle at 70% 60%,rgba(255,77,109,.18),transparent 28%),
+    linear-gradient(135deg,#111922,#070b10);
+}
+.pbe-pro-feature-markets .pbe-pro-feature-media:before{
+  content:"BULL     BEAR     QUANT";
+  position:absolute;left:7%;right:7%;bottom:14%;z-index:1;
+  font:900 clamp(28px,4vw,60px)/1 var(--font-sans);
+  letter-spacing:.08em;color:rgba(255,255,255,.9);
+  word-spacing:1.2em;
+}
+.pbe-pro-feature-crypto .pbe-pro-feature-media{
+  background:
+    linear-gradient(180deg,rgba(5,9,14,.02),rgba(5,9,14,.48)),
+    url('https://predictions.propbetedge.ai/images/predictions/hero-1280.webp') 72% center/cover no-repeat;
+}
+.pbe-pro-feature-predictions .pbe-pro-feature-media{
+  background:
+    linear-gradient(180deg,rgba(5,9,14,.02),rgba(5,9,14,.48)),
+    url('https://predictions.propbetedge.ai/images/predictions/hero-1672.webp') center/cover no-repeat;
+}
+
+.pbe-pro-hub-story{
+  margin-top:78px;
+  min-height:560px;
+  border:1px solid rgba(212,175,55,.28);
+  border-radius:24px;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:minmax(0,1.15fr) minmax(360px,.85fr);
+  background:#0a0f15;
+}
+.pbe-pro-hub-story-media{
+  background:
+    linear-gradient(90deg,rgba(5,9,14,.12),rgba(5,9,14,.56)),
+    url('https://soccer.propbetedge.ai/brand/soccer-stadium-1600.webp') center/cover no-repeat;
+}
+.pbe-pro-hub-story-copy{
+  padding:clamp(34px,4.5vw,64px);
+  display:flex;flex-direction:column;justify-content:center;
+  background:linear-gradient(145deg,rgba(212,175,55,.08),rgba(255,255,255,.015));
+}
+.pbe-pro-hub-story h2{
+  margin:16px 0 12px;
+  font:900 clamp(36px,4.5vw,62px)/.98 var(--font-serif);
+}
+.pbe-pro-hub-story p{
+  margin:0;
+  font:400 15px/1.7 var(--font-sans);
+  color:var(--paper-dim);
+}
+.pbe-pro-hub-points{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0}
+.pbe-pro-hub-points span{
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:8px 10px;
+  font:800 8px var(--font-mono);
+  letter-spacing:.09em;
+  color:var(--gold-bright);
+}
+.pbe-pro-text-link{
+  color:var(--paper);
+  text-decoration:none;
+  font:800 10px var(--font-mono);
+  letter-spacing:.08em;
+}
+.pbe-pro-text-link:hover{color:var(--gold-bright)}
+
+.pbe-pro-sports{
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+}
+.pbe-pro-sport>a,.pbe-pro-sport>div{
+  min-height:270px;
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  border-radius:16px;
+  background:
+    linear-gradient(180deg,rgba(5,9,14,.06),rgba(5,9,14,.9)),
+    #0d1218;
+}
+.pbe-pro-sport-label{font-size:9px}
+.pbe-pro-sport-name{font-size:25px;margin:4px 0}
+.pbe-pro-sport-edge{font-size:11px;line-height:1.5;min-height:54px}
+.pbe-pro-sport>a>b{
+  margin-top:14px;
+  font:800 8px var(--font-mono);
+  letter-spacing:.08em;
+  color:var(--gold-bright);
+}
+.pbe-pro-sport[data-sport="nfl"]>a{background:linear-gradient(180deg,rgba(5,9,14,.08),rgba(5,9,14,.92)),url('https://nfl.propbetedge.ai/stadiums/lambeau-bg.webp') center/cover}
+.pbe-pro-sport[data-sport="wnba"]>a{background:linear-gradient(180deg,rgba(5,9,14,.08),rgba(5,9,14,.92)),url('https://wnba.propbetedge.ai/media/atmosphere/pbe-wnba-arena-2400.webp') center/cover}
+.pbe-pro-sport[data-sport="ufc"]>a{background:linear-gradient(180deg,rgba(5,9,14,.08),rgba(5,9,14,.92)),url('https://ufc.propbetedge.ai/media/ufc-cage-bg-1600.webp') center/cover}
+.pbe-pro-sport[data-sport="soccer"]>a{background:linear-gradient(180deg,rgba(5,9,14,.08),rgba(5,9,14,.92)),url('https://soccer.propbetedge.ai/brand/soccer-stadium-1600.webp') center/cover}
+.pbe-pro-sport[data-sport="golf"]>a{background:linear-gradient(180deg,rgba(5,9,14,.08),rgba(5,9,14,.92)),url('https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=1200&q=72&auto=format&fit=crop&fm=webp') center/cover}
+.pbe-pro-sport[data-sport="f1"]>a{background:linear-gradient(180deg,rgba(5,9,14,.08),rgba(5,9,14,.92)),url('https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?w=1200&q=72&auto=format&fit=crop&fm=webp') center/cover}
+.pbe-pro-sport[data-sport="tennis"]>a{background:linear-gradient(180deg,rgba(5,9,14,.08),rgba(5,9,14,.92)),url('https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=1200&q=72&auto=format&fit=crop&fm=webp') center/cover}
+.pbe-pro-sport[data-sport="mlb"]>a{background:linear-gradient(180deg,rgba(5,9,14,.08),rgba(5,9,14,.92)),url('https://images.unsplash.com/photo-1519879709058-11082644047d?w=1200&q=72&auto=format&fit=crop&fm=webp') center/cover}
+.pbe-pro-sport[data-sport="nba"]>a{background:linear-gradient(180deg,rgba(5,9,14,.08),rgba(5,9,14,.92)),url('https://images.unsplash.com/photo-1546519638-68e109498ffc?w=1200&q=72&auto=format&fit=crop&fm=webp') center/cover}
+.pbe-pro-sport[data-sport="nhl"]>a{background:linear-gradient(180deg,rgba(5,9,14,.08),rgba(5,9,14,.92)),url('https://images.unsplash.com/photo-1580748141549-71748dbe0bdc?w=1200&q=72&auto=format&fit=crop&fm=webp') center/cover}
+
+.pbe-pro-why-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.pbe-pro-why-grid article{
+  padding:26px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:linear-gradient(145deg,rgba(255,245,220,.04),rgba(255,245,220,.015));
+}
+.pbe-pro-why-grid h3{
+  margin:0 0 8px;
+  font:850 23px/1.1 var(--font-serif);
+}
+.pbe-pro-why-grid p{
+  margin:0;
+  font:400 14px/1.7 var(--font-sans);
+  color:var(--paper-dim);
+}
+
+.pbe-pro-system{
+  margin-top:64px;
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+}
+.pbe-pro-system>summary{
+  list-style:none;
+  cursor:pointer;
+  padding:22px 0;
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  align-items:center;
+}
+.pbe-pro-system>summary::-webkit-details-marker{display:none}
+.pbe-pro-system>summary span{font:800 9px var(--font-mono);letter-spacing:.12em;color:var(--gold-bright)}
+.pbe-pro-system>summary b{font:700 12px var(--font-sans)}
+.pbe-pro-system-inner{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  padding:0 0 26px;
+}
+.pbe-pro-system-inner article{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:18px;
+}
+.pbe-pro-system-inner article>span{font:800 9px var(--font-mono);color:var(--gold-bright)}
+.pbe-pro-system-inner small{display:block;margin:10px 0 4px;font:800 8px var(--font-mono);letter-spacing:.1em;color:var(--paper-faint)}
+.pbe-pro-system-inner h3{margin:0 0 6px;font:800 18px var(--font-serif)}
+.pbe-pro-system-inner p{margin:0;font:400 12px/1.6 var(--font-sans);color:var(--paper-dim)}
+
+.pbe-pro-final{
+  margin-top:72px;
+  padding:70px 34px;
+  background:
+    radial-gradient(circle at 50% -20%,rgba(212,175,55,.24),transparent 42%),
+    linear-gradient(160deg,rgba(255,245,220,.05),rgba(255,245,220,.015));
+}
+.pbe-pro-final h2{
+  max-width:900px;
+  margin:18px auto 12px;
+  font-size:clamp(38px,5vw,66px);
+}
+.pbe-pro-final p{max-width:760px;margin:0 auto 28px}
+.pbe-pro-final-links{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:16px}
+.pbe-pro-final-links a{color:var(--paper-dim);font:700 9px var(--font-mono);text-decoration:none}
+
+.pbe-pro-success-actions{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}
+.pbe-pro-success-link{display:inline-flex;align-items:center;padding:13px 15px;border:1px solid var(--line);border-radius:10px;color:var(--paper);text-decoration:none;font:800 9px var(--font-mono)}
+
+@media(max-width:1180px){
+  .pbe-pro-sports{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:960px){
+  .pbe-pro-feature-story,.pbe-pro-feature-story:nth-child(even),.pbe-pro-hub-story{grid-template-columns:1fr}
+  .pbe-pro-feature-story:nth-child(even) .pbe-pro-feature-media{order:0}
+  .pbe-pro-feature-media{min-height:360px}
+  .pbe-pro-hub-story-media{min-height:360px}
 }
 @media(max-width:720px){
-  .pbe-pro-hero-counts{grid-template-columns:1fr 1fr}
-  .pbe-pro-hero-visual{grid-template-columns:1fr}
-  .pbe-pro-network-products{grid-template-columns:1fr}
-  .pbe-pro-product-members,.pbe-pro-product-compare,.pbe-pro-product-markets,.pbe-pro-product-crypto,.pbe-pro-product-predictions{grid-column:auto}
-  .pbe-pro-product{min-height:260px}
-  .pbe-pro-showcase-card{min-height:0}
+  .pbe-pro-hero{padding-top:38px}
+  .pbe-pro-title-all{font-size:clamp(50px,15vw,72px)}
+  .pbe-pro-statement{font-size:21px}
+  .pbe-pro-feature-story{min-height:0}
+  .pbe-pro-feature-media{min-height:300px}
+  .pbe-pro-feature-copy{padding:28px 20px 32px}
+  .pbe-pro-feature-copy h3{font-size:48px}
+  .pbe-pro-hub-story-media{min-height:300px}
+  .pbe-pro-hub-story-copy{padding:32px 20px}
+  .pbe-pro-sports,.pbe-pro-why-grid,.pbe-pro-system-inner{grid-template-columns:1fr}
 }
