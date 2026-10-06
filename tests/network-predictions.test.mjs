@@ -28,18 +28,18 @@ test('main WebSite hasPart lists the ten sports and Predictions (with its canoni
   assert.equal(organizationSchema()['@id'], 'https://propbetedge.ai/#organization');
 });
 
-test('/pro says ten sports + Predictions, shows a Predictions product card, and keeps the $29 Offer', () => {
+test('/pro says 10 sports + Predictions + Compare + Markets, links Predictions as a product, and keeps the $29 Offer', () => {
   const html = buildProHtml();
-  assert.match(html, /<span>Ten sports\.<\/span>\s*<span>All Predictions\.<\/span>/);
-  assert.match(html, /class="pbe-pro-predictions" href="https:\/\/predictions\.propbetedge\.ai\/"/);
-  assert.match(html, /10 live sports \+ PropBetEdge Predictions today/);
+  assert.match(html, /10 sports \+ Predictions \+ Compare \+ Markets\. Live intelligence/);
+  assert.match(html, /data-pbe-story="predictions"[\s\S]*?href="https:\/\/predictions\.propbetedge\.ai\/"/);
   assert.equal((html.match(/pbe-pro-sport" data-sport=/g) || []).length, 10, 'sport grid still has exactly ten sports');
+  assert.equal(/data-sport="predictions"/.test(html), false, 'Predictions is never a sport card');
   const graph = seo.proJsonLd()['@graph'];
   const offer = graph.find((n) => n['@type'] === 'Offer');
   assert.equal(offer.price, '29'); assert.equal(offer.priceCurrency, 'USD'); assert.equal(offer.url, ALL_ACCESS.checkoutUrl);
   const product = graph.find((n) => n['@type'] === 'Product');
   assert.ok(product.isRelatedTo.some((x) => x['@id'] === `${PRED}/#website`));
-  assert.match(seo.proServerHtml(), /One membership\. Ten sports\. All Predictions\./);
+  assert.match(seo.proServerHtml(), /10 sports \+ Predictions \+ Compare \+ Markets · \$29\/month/);
   assert.match(seo.proServerHtml(), new RegExp(`<a href="${PRED}/">PropBetEdge Predictions</a>`));
   assert.equal(ALL_ACCESS.priceUsd, 29);
 });

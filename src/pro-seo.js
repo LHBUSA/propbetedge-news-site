@@ -10,7 +10,7 @@
  * coupon-required launch discount and is described only in visible copy and
  * descriptions, never as the listed price. */
 
-import { ALL_ACCESS, SPORTS, PREDICTIONS } from './pro-content.js';
+import { ALL_ACCESS, SPORTS, PREDICTIONS, NETWORK_PRODUCTS, ALL_ACCESS_LINE, artSrcset, HERO_MOBILE_MEDIA, HERO_DESKTOP_MEDIA } from './pro-content.js';
 
 import { PROPBETEDGE_X_HANDLE } from './social.js';
 import { ownedImage, imageObject } from './image-metadata.js';
@@ -25,9 +25,9 @@ export const OFFER_ID = `${PRO_CANONICAL}#offer`;
 export const BREADCRUMB_ID = `${PRO_CANONICAL}#breadcrumb`;
 
 export const PRO_TITLE = 'PropBetEdge All Access | Premium Sports & Market Intelligence';
-export const PRO_DESCRIPTION = 'PropBetEdge All Access is the premium membership across Compare, Markets, Crypto, Predictions, the Platinum member hub and the full live sport network for $29/month.';
+export const PRO_DESCRIPTION = 'One $29/month membership for the entire PropBetEdge network: 10 sports plus Predictions, Compare, Markets and your private Command Center — proprietary models, prediction-market intelligence and live sport-native research.';
 export const PRO_SUCCESS_TITLE = 'All Access is active | PropBetEdge';
-export const PRO_SUCCESS_DESCRIPTION = 'Your PropBetEdge All Access membership is active. Start in the Platinum Hub and enter the premium network with the email you used at checkout.';
+export const PRO_SUCCESS_DESCRIPTION = 'Your PropBetEdge All Access membership is active. Start in Command Center and enter the premium network with the email you used at checkout.';
 
 /* Dedicated, evergreen share card: a static 1200x630 PNG at a stable public
    URL. Static on purpose: no auth, no runtime, correct MIME, cacheable. */
@@ -40,7 +40,18 @@ export const PRO_SOCIAL_IMAGE = Object.freeze({
   alt: 'PropBetEdge All Access premium membership across market intelligence, predictions and the live sports network.',
 });
 
-export const PRO_SHARE_TITLE = 'PropBetEdge All Access — Compare, Markets, Crypto, Predictions, Platinum Hub and the full sport network.';
+export const PRO_SHARE_TITLE = 'PropBetEdge All Access — 10 sports + Predictions + Compare + Markets, one membership.';
+
+/* The hero is the LCP element. Edge Middleware emits one preload per art-directed
+   source, with media queries that match the <picture> in pro-content.js exactly, so
+   each viewport fetches only the one candidate it will paint. AVIF only: browsers
+   without AVIF skip a typed preload and fall back to the WebP source. */
+export function proHeroPreloads() {
+  return [
+    { media: HERO_MOBILE_MEDIA, type: 'image/avif', imagesrcset: artSrcset('heroMobile', 'avif'), imagesizes: '100vw' },
+    { media: HERO_DESKTOP_MEDIA, type: 'image/avif', imagesrcset: artSrcset('hero', 'avif'), imagesizes: '100vw' },
+  ];
+}
 
 export const ROBOTS_INDEX = 'index, follow, max-image-preview:large';
 export const ROBOTS_TRANSACTIONAL = 'noindex, follow';
@@ -142,7 +153,7 @@ export function proJsonLd() {
         '@id': PRODUCT_ID,
         name: ALL_ACCESS.name,
         alternateName: 'All Access',
-        description: 'A monthly premium membership across PropBetEdge Compare, Markets, Crypto, Predictions, the Platinum member hub and the live sport network, with sport-native models, research, live intelligence and future All Access products as they launch.',
+        description: 'A monthly premium membership across the PropBetEdge network — Command Center, Compare, Markets, Predictions and all 10 sport products — with sport-native models, research, live intelligence and future All Access products as they launch.',
         url: PRO_CANONICAL,
         image: PRO_SOCIAL_IMAGE.url,
         category: 'Sports and market intelligence membership',
@@ -153,7 +164,7 @@ export function proJsonLd() {
           { '@type': 'PropertyValue', name: 'Platform', value: 'Autonomous sports intelligence operating system' },
           { '@type': 'PropertyValue', name: 'Sport network', value: 'Full live PropBetEdge sport network' },
           { '@type': 'PropertyValue', name: 'Included intelligence product', value: PREDICTIONS.name },
-          { '@type': 'PropertyValue', name: 'Premium network', value: 'Platinum Hub, Compare, Markets, Crypto and Predictions' },
+          { '@type': 'PropertyValue', name: 'Premium network', value: 'Command Center, Compare, Markets and Predictions' },
           { '@type': 'PropertyValue', name: 'Model governance', value: 'Shadow research, evidence gates and governed promotion to production' },
           { '@type': 'PropertyValue', name: 'Decision accountability', value: 'Tracked and graded official decisions with permanent records where live' },
         ],
@@ -209,9 +220,9 @@ export function proJsonLd() {
 export function proServerHtml({ checkoutSuccess = false } = {}) {
   const sports = SPORTS.map((s) => `<li><a href="${s.url}/">${s.name}</a> — ${escapeHtml(s.edge)}</li>`).join('\n        ');
   const intro = checkoutSuccess
-    ? `<p>Your PropBetEdge All Access membership is active. Start in the Platinum Hub and use the email you used at checkout.</p>`
-    : `<p>One membership across PropBetEdge Compare, Markets, Crypto, Predictions, the Platinum Hub and the live sport network.</p>
-      <p>All Access is the premium layer across the products PropBetEdge builds, with sport-native intelligence, market comparison, probability models and member-only access.</p>
+    ? `<p>Your PropBetEdge All Access membership is active. Start in Command Center and use the email you used at checkout.</p>`
+    : `<p>One membership. The entire intelligence network: ${escapeHtml(ALL_ACCESS_LINE)}.</p>
+      <p>Live intelligence, proprietary models, prediction markets and sport-native research under one membership — ${NETWORK_PRODUCTS.map((p) => `<a href="${p.url}">${escapeHtml(p.label)}</a>`).join(', ')} and all ten sport products.</p>
       <p><strong>$${ALL_ACCESS.priceUsd} / month.</strong> Launch offer: ${ALL_ACCESS.promoPercent}% off for as long as you stay active with code <strong>${ALL_ACCESS.promoCode}</strong>.</p>
       <p><a href="${ALL_ACCESS.checkoutUrl}" rel="noopener">Get All Access</a></p>
       <p>Digital sports intelligence membership. Charges are non-refundable once access is activated, except where required by law. Cancellation stops future renewal. <a href="/terms">Terms</a> · <a href="/support">Support</a>.</p>`;

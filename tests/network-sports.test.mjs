@@ -52,17 +52,15 @@ test('Soccer is a network discovery link and an included All Access sport', () =
   assert.equal(SPORTS.some((s) => s.key === 'soccer'), true, 'Soccer is included in All Access');
 });
 
-test('Tennis, Soccer and Golf are Pro, F1 is live; Boxing is the Q1 2027 roadmap sport', async () => {
+test('/pro lists all ten sports (F1 as F1 Intelligence); Boxing stays a roadmap sport, not a card', async () => {
   const { buildProHtml, UPCOMING_SPORTS } = await import('../src/pro-content.js');
   const html = buildProHtml();
-  assert.match(html, /Tennis Pro<\/li>/);
-  assert.match(html, /Soccer Pro<\/li>/);
+  for (const name of ['PropBetEdge Tennis', 'PropBetEdge Soccer', 'PropBetEdge Golf', 'F1 Intelligence']) assert.ok(html.includes(name), name);
   assert.deepEqual(UPCOMING_SPORTS.map((s) => s.key), ['boxing']);
-  assert.match(html, /Golf Pro<\/li>/);
-  assert.match(html, /Boxing Pro — coming Q1 2027/);
-  assert.match(html, /<span>One membership\.<\/span>\s*<span>Ten sports\.<\/span>\s*<span>All Predictions\.<\/span>/);
-  assert.match(html, /MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf · F1/);
-  assert.match(buildProHtml({ checkoutSuccess: true }), /covers the Pro features across all ten live sports/);
+  assert.equal(/data-sport="boxing"/.test(html), false, 'no roadmap sport is sold as included');
+  assert.match(html, /MLB · NFL · NBA · NHL · WNBA · UFC · Tennis · Soccer · Golf · F1/);
+  const success = buildProHtml({ checkoutSuccess: true });
+  for (const s of SPORTS) assert.ok(success.includes(`href="${s.url}"`), `${s.label} reachable after checkout`);
 });
 
 test('root WebSite schema lists every family sport property once, plus Predictions', async () => {

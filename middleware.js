@@ -16,7 +16,7 @@
 
 import { next } from '@vercel/edge';
 
-import { proHeadMeta, proSocialTags, proJsonLd, proServerHtml, isCheckoutSuccess } from './src/pro-seo.js';
+import { proHeadMeta, proSocialTags, proJsonLd, proServerHtml, isCheckoutSuccess, proHeroPreloads } from './src/pro-seo.js';
 import { assessArticleIntegrity, applyArticlePublicationPolicy, filterPublicArticles } from './news-integrity.js';
 import { buildEntityManifest } from './src/entity-graph/manifest.js';
 import { enrichManifestWithGame } from './src/entity-graph/games.js';
@@ -418,6 +418,7 @@ async function resolveMeta(pathname, search = '') {
       socialTags: proSocialTags(),
       jsonLd: proJsonLd(),
       ssrHtml: proServerHtml({ checkoutSuccess }),
+      preloadImages: proHeroPreloads(),
     };
   }
 
@@ -639,6 +640,14 @@ function injectMeta(html, meta) {
       /<\/head>/i,
       `  <script type="application/ld+json" id="pbe-server-primary-schema">${serialized}</script>\n</head>`
     );
+  }
+
+  // LCP image hints (art-directed: one per media query). fetchpriority keeps them ahead of fonts.
+  if (Array.isArray(meta.preloadImages) && meta.preloadImages.length) {
+    const links = meta.preloadImages.map((p) =>
+      `  <link rel="preload" as="image" fetchpriority="high" type="${escapeAttr(p.type)}" media="${escapeAttr(p.media)}" imagesrcset="${escapeAttr(p.imagesrcset)}" imagesizes="${escapeAttr(p.imagesizes)}" />`
+    ).join('\n');
+    html = html.replace(/<\/head>/i, `${links}\n</head>`);
   }
 
   if (meta.ssrHtml) {

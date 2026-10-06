@@ -1,5 +1,7 @@
-// GENERATED mirror of src/network/family.json for runtimes that do not import JSON modules.
-// Regenerate from the canonical family registry; never hand-edit independently.
+// GENERATED from src/network/family.json (the vendored canonical family registry) — do not hand-edit.
+// Exists because the Vercel Edge middleware bundler cannot parse JSON import attributes (`with { type: 'json' }`),
+// while Node requires them; modules shared with middleware import this mirror instead. tests/network-family-mirror
+// fails if it ever differs from family.json. Regenerate: node scripts/build-family-mirror.mjs
 export default Object.freeze({
   "_comment": "GENERATED from shared/network/pbe-network.js by scripts/footer-parity/build-family-json.mjs. Vendor this file; never hand-edit.",
   "version": "2.0.0",
@@ -92,6 +94,13 @@ export default Object.freeze({
       "url": "https://compare.propbetedge.ai/"
     },
     {
+      "key": "markets",
+      "kind": "product",
+      "label": "Markets",
+      "name": "PropBetEdge Markets Intelligence",
+      "url": "https://predictions.propbetedge.ai/markets/"
+    },
+    {
       "key": "predictions",
       "kind": "product",
       "label": "Predictions",
@@ -122,6 +131,13 @@ export default Object.freeze({
       "url": "https://compare.propbetedge.ai/"
     },
     {
+      "key": "markets",
+      "kind": "product",
+      "label": "Markets",
+      "name": "PropBetEdge Markets Intelligence",
+      "url": "https://predictions.propbetedge.ai/markets/"
+    },
+    {
       "key": "predictions",
       "kind": "product",
       "label": "Predictions",
@@ -145,7 +161,7 @@ export default Object.freeze({
       "url": "https://learn.propbetedge.ai/"
     }
   ],
-  "all_access_line": "10 sports + Predictions + Compare · $29/month",
+  "all_access_line": "10 sports + Predictions + Compare + Markets · $29/month",
   "retired_hosts": [
     "hub.propbetedge.ai"
   ]

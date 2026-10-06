@@ -30,7 +30,7 @@ test('vendored family.json is the canonical registry shape', () => {
   assert.deepEqual(family.sports.map((s) => s.key), ['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer', 'golf', 'f1']);
   assert.equal(PRED_URL, 'https://predictions.propbetedge.ai/');
   assert.deepEqual(family.network.map((n) => n.url), ['https://propbetedge.ai/', 'https://learn.propbetedge.ai/']);
-  assert.deepEqual(family.products.map((p) => p.key), ['members', 'compare', 'predictions']);
+  assert.deepEqual(family.products.map((p) => p.key), ['members', 'compare', 'markets', 'predictions']);
   assert.ok(family.retired_hosts.includes('hub.propbetedge.ai'));
 });
 
@@ -40,7 +40,7 @@ test('footer links every family sport in registry order, Predictions in its own 
   assert.deepEqual(sportHrefs.map(slash), SPORT_URLS, 'sports set + order match family.json');
   assert.equal(hrefs.filter((h) => h === F1_URL).length, 1, 'exactly one canonical F1 anchor');
   assert.equal(hrefs.filter((h) => h === PRED_URL).length, 1, 'exactly one canonical Predictions anchor');
-  assert.equal(hrefs.filter((h) => /predictions\.propbetedge\.ai/.test(h)).length, 1);
+  assert.equal(hrefs.filter((h) => /^https:\/\/predictions\.propbetedge\.ai\/?$/.test(h)).length, 1, 'one Predictions root anchor (Markets lives under it at /markets/)');
   assert.equal(hrefs.filter((h) => /^https:\/\/f1\.propbetedge\.ai\/?$/.test(h)).length, 1, 'one F1 intelligence anchor (its newsroom is separate)');
   // Predictions sits in its own group (Network, owner 2026-10-04), never inside the sport list.
   const groupOf = (href) => { const at = footer.indexOf(`href="${href}"`); const h = [...footer.slice(0, at).matchAll(/<h4[^>]*>([^<]+)<\/h4>/g)].pop(); return h ? h[1] : null; };

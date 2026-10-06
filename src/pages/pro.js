@@ -1,11 +1,17 @@
 import { renderHeader } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { renderShareBar, mountShareBars } from '../entity-graph/share-bar.js';
-import { buildProHtml, checkoutSucceeded, ALL_ACCESS } from '../pro-content.js';
+import { buildProHtml, checkoutSucceeded, memberStateFrom, ALL_ACCESS } from '../pro-content.js';
 import { proHeadMeta, proSocialTags, proJsonLd, PRO_CANONICAL, PRO_SHARE_TITLE } from '../pro-seo.js';
 
 /* /pro — PropBetEdge All Access, the network membership page.
  * ?checkout=success is Stripe's success redirect for the live payment link.
+ *
+ * Membership: the page first renders the public sales page, then asks the
+ * network auth server (auth.propbetedge.ai/membership, credentialed CORS) who
+ * the visitor is. Only a server verdict of all_access or owner swaps the
+ * purchase CTAs for Command Center; signed-out, sport-only, free, errors and
+ * timeouts all keep the public page. Nothing is read from the URL or storage.
  *
  * Head parity: Edge Middleware already served the authoritative title,
  * description, canonical, robots, Open Graph, Twitter and JSON-LD from
@@ -18,19 +24,44 @@ export function renderPro(root, setMeta) {
   setMeta?.({ title: head.title, description: head.description, canonical: head.canonical, ogImage: head.image.url });
   applyHeadContract(head);
 
+  const shareBar = renderShareBar(PRO_CANONICAL, PRO_SHARE_TITLE, { compact: true, subject: 'PropBetEdge All Access' });
   root.innerHTML = `
     ${renderHeader()}
-    <main>
-      <div class="container">
-        ${buildProHtml({ checkoutSuccess, shareBar: renderShareBar(PRO_CANONICAL, PRO_SHARE_TITLE, { compact: true, subject: 'PropBetEdge All Access' }) })}
-      </div>
+    <main class="pbe-pro-main">
+      ${buildProHtml({ checkoutSuccess, shareBar })}
     </main>
     ${renderFooter()}
   `;
 
   mountShareBars(root);
   wireCopyButtons(root);
-  if (checkoutSuccess) trackSuccess();
+  if (checkoutSuccess) { trackSuccess(); return; }
+
+  readMembership().then((member) => {
+    const page = root.querySelector('.pbe-pro');
+    if (!member || !page || !page.isConnected) return;
+    page.outerHTML = buildProHtml({ shareBar, member });
+    mountShareBars(root);
+    wireCopyButtons(root);
+  });
+}
+
+const MEMBERSHIP_URL = 'https://auth.propbetedge.ai/membership?product=predictions';
+
+/* Server verdict only. Resolves to 'all_access' | 'owner' | null. */
+async function readMembership() {
+  try {
+    const res = await fetch(MEMBERSHIP_URL, {
+      credentials: 'include',
+      headers: { accept: 'application/json' },
+      cache: 'no-store',
+      signal: AbortSignal.timeout?.(4000),
+    });
+    if (!res.ok) return null;
+    return memberStateFrom(await res.json());
+  } catch {
+    return null;
+  }
 }
 
 /* Robots + the full social set + the connected JSON-LD graph, identical to the

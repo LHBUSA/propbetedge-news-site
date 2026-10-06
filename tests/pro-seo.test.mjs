@@ -23,11 +23,11 @@ const GENERIC_LOGO = /pbe-full-\d+\.png/;
 
 /* ---------------------------------------------------------------- module */
 test('title and description: premium, descriptive, SERP-length, product first (not the coupon)', () => {
-  assert.equal(seo.PRO_TITLE, 'PropBetEdge All Access | Sports Intelligence OS');
-  assert.ok(seo.PRO_TITLE.length <= 60, `title ${seo.PRO_TITLE.length} chars`);
+  assert.equal(seo.PRO_TITLE, 'PropBetEdge All Access | Premium Sports & Market Intelligence');
+  assert.ok(seo.PRO_TITLE.length <= 65, `title ${seo.PRO_TITLE.length} chars`);
   assert.equal(/THEEDGE25|25%/.test(seo.PRO_TITLE), false, 'the discount never leads the title');
   assert.ok(seo.PRO_DESCRIPTION.length >= 140 && seo.PRO_DESCRIPTION.length <= 300, `description ${seo.PRO_DESCRIPTION.length} chars`);
-  for (const word of ['10 live sports', '$29/month', 'sports intelligence operating system', 'sport-specific analytical engines', 'tracked decisions', 'shadow research', 'PBEcast', 'Golf and F1', 'Boxing Pro', 'Q1 2027']) {
+  for (const word of ['$29/month', '10 sports', 'Predictions', 'Compare', 'Markets', 'Command Center', 'proprietary models']) {
     assert.ok(seo.PRO_DESCRIPTION.includes(word), word);
   }
   assert.equal(/best|#1|most accurate/i.test(seo.PRO_TITLE + seo.PRO_DESCRIPTION), false, 'no fabricated superlatives');
@@ -84,7 +84,7 @@ test('JSON-LD graph: connected WebPage -> Product -> Offer with stable @ids, bra
   assert.deepEqual(by.WebPage.publisher, { '@id': 'https://propbetedge.ai/#organization' });
   assert.deepEqual(by.WebPage.breadcrumb, { '@id': `${CANON}#breadcrumb` });
   assert.deepEqual(by.Product.offers, { '@id': `${CANON}#offer` });
-  assert.equal(by.Product.category, 'Sports intelligence operating system membership');
+  assert.equal(by.Product.category, 'Sports and market intelligence membership');
   assert.ok(by.Product.isRelatedTo.some((x) => x['@id'] === 'https://propbetedge.ai/#sports-intelligence-os'));
   assert.deepEqual(by.Product.brand, { '@id': 'https://propbetedge.ai/#organization' });
   assert.deepEqual(by.Product.mainEntityOfPage, { '@id': `${CANON}#webpage` });
@@ -127,7 +127,7 @@ test('crawler HTML: one H1, descriptive sport anchors to canonical properties, r
 test('share UI: canonical URL only, clean product text, X / LinkedIn / Bluesky / copy / native, no query strings or Stripe URLs', () => {
   const bar = renderShareBar(seo.PRO_CANONICAL, seo.PRO_SHARE_TITLE, { compact: true, subject: 'PropBetEdge All Access' });
   assert.match(bar, /data-share-url="https:\/\/propbetedge\.ai\/pro"/);
-  assert.equal(seo.PRO_SHARE_TITLE, 'PropBetEdge All Access — the sports intelligence operating system across MLB, NFL, NBA, NHL, WNBA, UFC, Tennis, Soccer, Golf and F1.');
+  assert.equal(seo.PRO_SHARE_TITLE, 'PropBetEdge All Access — 10 sports + Predictions + Compare + Markets, one membership.');
   assert.equal(/THEEDGE25|25%/.test(seo.PRO_SHARE_TITLE), false, 'no promo spam in share intents');
   for (const key of ['x', 'linkedin', 'bluesky', 'copy', 'native']) assert.match(bar, new RegExp(`pbe-share-btn--${key}`));
   const urls = [...bar.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, '&'));
@@ -183,7 +183,10 @@ test('crawler bytes /pro: exactly one authoritative value for every head field, 
   assert.equal(status, 200);
   const once = (re) => assert.equal((head.match(re) || []).length, 1, String(re));
   for (const re of [/<title>/g, /rel="canonical"/g, /name="description"/g, /name="robots"/g, /property="og:title"/g, /property="og:description"/g, /property="og:url"/g, /property="og:image"/g, /property="og:type"/g, /property="og:site_name"/g, /property="og:locale"/g, /property="og:image:width"/g, /property="og:image:height"/g, /property="og:image:alt"/g, /name="twitter:card"/g, /name="twitter:title"/g, /name="twitter:description"/g, /name="twitter:image"/g, /name="twitter:image:alt"/g]) once(re);
-  assert.deepEqual(pick(head, /<title>([^<]*)<\/title>/g), ['PropBetEdge All Access | Sports Intelligence OS']);
+  assert.deepEqual(pick(head, /<title>([^<]*)<\/title>/g), ['PropBetEdge All Access | Premium Sports &amp; Market Intelligence']);
+  /* LCP: one typed AVIF preload per art-directed hero source, nothing else */
+  const preloads = pick(head, /<link rel="preload" as="image"[^>]*media="([^"]+)"/g);
+  assert.deepEqual(preloads, ['(max-width: 720px)', '(min-width: 721px)']);
   assert.deepEqual(pick(head, /rel="canonical" href="([^"]+)"/g), [CANON]);
   assert.deepEqual(pick(head, /name="robots" content="([^"]+)"/g), ['index, follow, max-image-preview:large']);
   assert.equal(headers.get('x-robots-tag'), null);
