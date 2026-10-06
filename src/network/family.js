@@ -1,10 +1,8 @@
-// GENERATED from src/network/family.json (the vendored canonical family registry) — do not hand-edit.
-// Exists because the Vercel Edge middleware bundler cannot parse JSON import attributes (`with { type: 'json' }`),
-// while Node requires them; modules shared with middleware import this mirror instead. tests/network-family-mirror
-// fails if it ever differs from family.json. Regenerate: node scripts/build-family-mirror.mjs
+// GENERATED mirror of src/network/family.json for runtimes that do not import JSON modules.
+// Regenerate from the canonical family registry; never hand-edit independently.
 export default Object.freeze({
   "_comment": "GENERATED from shared/network/pbe-network.js by scripts/footer-parity/build-family-json.mjs. Vendor this file; never hand-edit.",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "organization": "https://propbetedge.ai/#organization",
   "sports": [
     {
@@ -80,6 +78,50 @@ export default Object.freeze({
   ],
   "products": [
     {
+      "key": "members",
+      "kind": "product",
+      "label": "Command Center",
+      "name": "PropBetEdge Members Command Center",
+      "url": "https://members.propbetedge.ai/"
+    },
+    {
+      "key": "compare",
+      "kind": "product",
+      "label": "Compare",
+      "name": "PropBetEdge Compare",
+      "url": "https://compare.propbetedge.ai/"
+    },
+    {
+      "key": "predictions",
+      "kind": "product",
+      "label": "Predictions",
+      "name": "PropBetEdge Predictions",
+      "url": "https://predictions.propbetedge.ai/"
+    }
+  ],
+  "all_access": [
+    {
+      "key": "all_access",
+      "kind": "network",
+      "label": "All Access",
+      "name": "PropBetEdge All Access",
+      "url": "https://propbetedge.ai/pro"
+    },
+    {
+      "key": "members",
+      "kind": "product",
+      "label": "Command Center",
+      "name": "PropBetEdge Members Command Center",
+      "url": "https://members.propbetedge.ai/"
+    },
+    {
+      "key": "compare",
+      "kind": "product",
+      "label": "Compare",
+      "name": "PropBetEdge Compare",
+      "url": "https://compare.propbetedge.ai/"
+    },
+    {
       "key": "predictions",
       "kind": "product",
       "label": "Predictions",
@@ -96,13 +138,6 @@ export default Object.freeze({
       "url": "https://propbetedge.ai/"
     },
     {
-      "key": "all_access",
-      "kind": "network",
-      "label": "All Access",
-      "name": "PropBetEdge All Access",
-      "url": "https://propbetedge.ai/pro"
-    },
-    {
       "key": "learn",
       "kind": "network",
       "label": "Learn",
@@ -110,7 +145,7 @@ export default Object.freeze({
       "url": "https://learn.propbetedge.ai/"
     }
   ],
-  "all_access_line": "10 sports + PropBetEdge Predictions · $29/month",
+  "all_access_line": "10 sports + Predictions + Compare · $29/month",
   "retired_hosts": [
     "hub.propbetedge.ai"
   ]
