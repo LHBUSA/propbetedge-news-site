@@ -54,6 +54,7 @@ let _lastPayload = null;
 let _lastTracker = null;
 let _lastTrackerAt = 0;
 let _trackerRefreshInFlight = false;
+let _trackerFetch = null;
 let _visibilityBound = false;
 let _filter = 'all';
 const _mediaCache = new Map();
@@ -186,7 +187,7 @@ async function loadAndRender() {
   // tracker's own schedule). A read younger than the ledger cadence is reused.
   const reuseTracker = _lastTracker?.ok && Date.now() - _lastTrackerAt < trackerIntervalMs() - TRACKER_REUSE_SLACK_MS;
   const [tracker, mlb, nfl, ufc, wnba, nhl] = await Promise.allSettled([
-    reuseTracker ? Promise.resolve(_lastTracker) : fetchJson(FREE_TRACKER_URL),
+    reuseTracker ? Promise.resolve(_lastTracker) : fetchTracker(),
     fetchJson(MLB_FEATURED_URL),
     fetchJson(NFL_TD_URL),
     fetchJson(UFC_SAMPLE_URL),
@@ -216,7 +217,7 @@ async function refreshTrackerOnly() {
   if (_trackerRefreshInFlight || !_lastPayload || !document.getElementById('odds-board')) return;
   _trackerRefreshInFlight = true;
   try {
-    const tracker = await fetchJson(FREE_TRACKER_URL);
+    const tracker = await fetchTracker();
     if (tracker?.ok) { _lastTracker = tracker; _lastTrackerAt = Date.now(); }
     renderBoard();
   } catch (error) {
@@ -233,6 +234,12 @@ async function loadNhlSource() {
     fetchJson(NHL_PRESEASON_URL(date)),
   ]);
   return normalizeNhlSources({ official, preseason });
+}
+
+// The feed refresh and the ledger timer can fire together; they share one request.
+function fetchTracker() {
+  if (!_trackerFetch) _trackerFetch = fetchJson(FREE_TRACKER_URL).finally(() => { _trackerFetch = null; });
+  return _trackerFetch;
 }
 
 async function fetchJson(url) {

@@ -85,3 +85,8 @@ test('/odds polls the ledger at 60 s (live) / 120 s (idle) and never while hidde
   assert.match(ODDS, /addEventListener\('visibilitychange', onVisibilityChange\)/);
   assert.match(ODDS, /if \(pageHidden\(\)\) return; \/\/ resumed by visibilitychange/);
 });
+
+test('/odds: the feed refresh and the ledger timer share one in-flight ledger request', () => {
+  assert.match(ODDS, /function fetchTracker\(\) \{/);
+  assert.equal((ODDS.match(/fetchJson\(FREE_TRACKER_URL\)/g) || []).length, 1, 'only fetchTracker() requests the ledger');
+});
