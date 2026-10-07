@@ -13,7 +13,7 @@ export async function loadTracker() {
   code = code.replace(/^import "jsr:[^"]+";\n/m, '');
   code = code.replace(/Deno\.env\.get\("([A-Z_]+)"\)!/g, 'String(globalThis.__TRACKER_ENV?.$1 ?? "")');
   const serve = code.indexOf('Deno.serve(');
-  code = code.slice(0, serve) + '\nexport { captureCurrent, resolvePending, responsePayload, productOf, recordClass, stableIdentity, PRODUCTS };\n';
+  code = code.slice(0, serve) + '\nexport { captureCurrent, resolvePending, responsePayload, productOf, recordClass, stableIdentity, PRODUCTS, patchChanges, startCycle };\n';
   const dir = mkdtempSync(join(tmpdir(), 'tracker-'));
   const file = join(dir, `tracker-${Date.now()}-${Math.random().toString(16).slice(2)}.ts`);
   writeFileSync(file, code);

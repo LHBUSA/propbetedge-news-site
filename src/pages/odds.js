@@ -37,15 +37,24 @@ const NHL_SAMPLE_URL = 'https://nhl-api.propbetedge.ai/nhl/picks/free-sample';
 const NHL_PRESEASON_URL = (date) => `https://nhl-api.propbetedge.ai/nhl/picks/preseason?date=${encodeURIComponent(date)}`;
 const FREE_TRACKER_URL = 'https://tkmlnhmylqnttmnsnief.supabase.co/functions/v1/free-picks-tracker';
 // Feeds only enrich ledger entries, so they refresh on a one-minute cadence.
-// The ledger is the board: it polls every 10 seconds so HIT/MISS lands fast.
+// The ledger is the board. The tracker captures and settles once a minute on its
+// schedule, so the page re-reads it every minute while a pick is in play or
+// waiting on its grade, and every two minutes otherwise. Nothing polls while the
+// tab is hidden; returning to the tab refreshes immediately.
 const REFRESH_INTERVAL_MS = 60 * 1000;
-const TRACKER_REFRESH_INTERVAL_MS = 10 * 1000;
+const TRACKER_LIVE_INTERVAL_MS = 60 * 1000;
+const TRACKER_IDLE_INTERVAL_MS = 120 * 1000;
+// The one-minute feed refresh reuses the last ledger read unless it is older
+// than the ledger cadence, so the ledger itself is read once per cadence.
+const TRACKER_REUSE_SLACK_MS = 5 * 1000;
 const NHL_MAX_FREE_PICKS = 2;
 let _refreshTimer = null;
 let _trackerTimer = null;
 let _lastPayload = null;
 let _lastTracker = null;
+let _lastTrackerAt = 0;
 let _trackerRefreshInFlight = false;
+let _visibilityBound = false;
 let _filter = 'all';
 const _mediaCache = new Map();
 
@@ -87,8 +96,65 @@ export async function renderOdds(root) {
   await loadAndRender();
 
   teardownOdds();
-  _refreshTimer = setInterval(loadAndRender, REFRESH_INTERVAL_MS);
-  _trackerTimer = setInterval(refreshTrackerOnly, TRACKER_REFRESH_INTERVAL_MS);
+  scheduleFeeds();
+  scheduleTracker();
+  if (!_visibilityBound && typeof document.addEventListener === 'function') {
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    _visibilityBound = true;
+  }
+}
+
+function pageHidden() {
+  return typeof document !== 'undefined' && document.hidden === true;
+}
+
+function scheduleFeeds() {
+  if (_refreshTimer) clearTimeout(_refreshTimer);
+  _refreshTimer = setTimeout(async () => {
+    _refreshTimer = null;
+    if (pageHidden()) return; // resumed by visibilitychange
+    await loadAndRender();
+    if (document.getElementById('odds-board')) scheduleFeeds();
+  }, REFRESH_INTERVAL_MS);
+}
+
+function trackerHasLiveState() {
+  if (!_lastTracker?.ok) return true; // reconnecting: keep the faster cadence
+  try {
+    const board = buildFreeBoard(_lastTracker, new Date(), liveHints(_lastTracker, _lastPayload));
+    return board.counts.inPlay > 0 || board.counts.awaiting > 0;
+  } catch {
+    return false;
+  }
+}
+
+function trackerIntervalMs() {
+  return trackerHasLiveState() ? TRACKER_LIVE_INTERVAL_MS : TRACKER_IDLE_INTERVAL_MS;
+}
+
+function scheduleTracker() {
+  if (_trackerTimer) clearTimeout(_trackerTimer);
+  const delay = trackerIntervalMs();
+  _trackerTimer = setTimeout(async () => {
+    _trackerTimer = null;
+    if (pageHidden()) return; // resumed by visibilitychange
+    await refreshTrackerOnly();
+    if (document.getElementById('odds-board')) scheduleTracker();
+  }, delay);
+}
+
+async function onVisibilityChange() {
+  if (pageHidden()) return;
+  if (!document.getElementById('odds-board')) {
+    teardownOdds();
+    return;
+  }
+  // Back on the tab: refresh now, then resume the normal cadence.
+  teardownOdds();
+  await loadAndRender();
+  if (!document.getElementById('odds-board')) return;
+  scheduleFeeds();
+  scheduleTracker();
 }
 
 function initialFilter() {
@@ -116,10 +182,11 @@ async function loadAndRender() {
     teardownOdds();
     return;
   }
-  // The tracker GET captures the current public picks into the ledger before
-  // it answers, so it runs alongside the feeds rather than after them.
+  // The tracker GET is a read of the public ledger (capture runs on the
+  // tracker's own schedule). A read younger than the ledger cadence is reused.
+  const reuseTracker = _lastTracker?.ok && Date.now() - _lastTrackerAt < trackerIntervalMs() - TRACKER_REUSE_SLACK_MS;
   const [tracker, mlb, nfl, ufc, wnba, nhl] = await Promise.allSettled([
-    fetchJson(FREE_TRACKER_URL),
+    reuseTracker ? Promise.resolve(_lastTracker) : fetchJson(FREE_TRACKER_URL),
     fetchJson(MLB_FEATURED_URL),
     fetchJson(NFL_TD_URL),
     fetchJson(UFC_SAMPLE_URL),
@@ -135,6 +202,7 @@ async function loadAndRender() {
     nhl: nhl.status === 'fulfilled' ? nhl.value : sourceFailure('nhl', nhl.reason),
   };
   if (tracker.status === 'fulfilled' && tracker.value?.ok) {
+    if (tracker.value !== _lastTracker) _lastTrackerAt = Date.now();
     _lastTracker = tracker.value;
   } else if (tracker.status === 'rejected') {
     console.warn('[odds] Free Picks ledger unavailable:', tracker.reason);
@@ -149,7 +217,7 @@ async function refreshTrackerOnly() {
   _trackerRefreshInFlight = true;
   try {
     const tracker = await fetchJson(FREE_TRACKER_URL);
-    if (tracker?.ok) _lastTracker = tracker;
+    if (tracker?.ok) { _lastTracker = tracker; _lastTrackerAt = Date.now(); }
     renderBoard();
   } catch (error) {
     console.warn('[odds] Free Picks ledger refresh unavailable:', error);
@@ -867,8 +935,8 @@ function formatUpdatedAt(iso) {
 }
 
 export function teardownOdds() {
-  if (_refreshTimer) clearInterval(_refreshTimer);
-  if (_trackerTimer) clearInterval(_trackerTimer);
+  if (_refreshTimer) clearTimeout(_refreshTimer);
+  if (_trackerTimer) clearTimeout(_trackerTimer);
   _refreshTimer = null;
   _trackerTimer = null;
 }

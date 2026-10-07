@@ -193,12 +193,54 @@ async function sb(path:string, init:RequestInit = {}) {
   return text ? JSON.parse(text) : null;
 }
 
-async function patchEntry(id:string, patch:Record<string,unknown>) {
-  await sb(`${TABLE}?id=eq.${encodeURIComponent(id)}`, {
+// Canonical JSON (sorted keys, undefined dropped) so a jsonb value read back from PostgREST compares equal to the
+// object the resolver would write.
+function canonical(value:unknown):string {
+  const norm = (v:any):any => {
+    if (Array.isArray(v)) return v.map(norm);
+    if (v && typeof v === "object") return Object.fromEntries(Object.keys(v).sort().map(k => [k, norm(v[k])]));
+    return v;
+  };
+  const plain = value === undefined ? null : JSON.parse(JSON.stringify(value));
+  return JSON.stringify(norm(plain));
+}
+
+const TIMESTAMP_FIELDS = new Set(["result_at","published_at","event_start_at"]);
+
+/**
+ * True when writing `patch` would change the stored row. `evidence.checked_at` is a heartbeat, not a fact: a recheck
+ * that only moves it is not a change, so an unchanged PENDING row is not rewritten every cycle.
+ */
+function patchChanges(entry:any, patch:Record<string,unknown>) {
+  for (const [field, next] of Object.entries(patch)) {
+    const current = entry?.[field];
+    if (field === "evidence") {
+      const strip = (ev:any) => {
+        if (!ev || typeof ev !== "object") return ev ?? {};
+        const { checked_at:_ignored, ...rest } = ev;
+        return rest;
+      };
+      if (canonical(strip(current)) !== canonical(strip(next))) return true;
+      continue;
+    }
+    if (TIMESTAMP_FIELDS.has(field) && current != null && next != null) {
+      const a = Date.parse(String(current)), b = Date.parse(String(next));
+      if (Number.isFinite(a) && Number.isFinite(b)) { if (a !== b) return true; continue; }
+    }
+    if (canonical(current ?? null) !== canonical(next ?? null)) return true;
+  }
+  return false;
+}
+
+/** PATCH a ledger row only when the resolver's verdict actually differs from what is stored. */
+async function patchEntry(entry:any, patch:Record<string,unknown>) {
+  if (!patchChanges(entry, patch)) return false;
+  await sb(`${TABLE}?id=eq.${encodeURIComponent(String(entry.id))}`, {
     method:"PATCH",
     headers:{ Prefer:"return=minimal" },
     body:JSON.stringify({ ...patch, last_checked_at:new Date().toISOString() }),
   });
+  return true;
 }
 
 async function insertEntry(row:Record<string,unknown>) {
@@ -546,7 +588,7 @@ async function resolveMlb(entry:any) {
   // This also reopens any previously settled row if MLB later reports it postponed,
   // suspended, delayed, or otherwise non-final.
   if (!final) {
-    await patchEntry(entry.id,{
+    await patchEntry(entry,{
       result:"PENDING",
       result_at:null,
       score:null,
@@ -572,7 +614,7 @@ async function resolveMlb(entry:any) {
   };
 
   const mlbResult = hrs > 0 ? "WIN" : "LOSS";
-  await patchEntry(entry.id,{
+  await patchEntry(entry,{
     result:mlbResult,
     // Re-checks must not move the settlement time, or every recheck would
     // float MLB to the top of "latest results".
@@ -606,11 +648,11 @@ async function resolveMlbFeatured(entry:any) {
     status:detailedState || null, checked_at:checkedAt,
   };
   if (cancelled) {
-    await patchEntry(entry.id,{ result:"VOID", result_at:entry.result === "VOID" && entry.result_at ? entry.result_at : checkedAt, score:null, evidence:{ ...baseEvidence, resolution:"game_cancelled" } });
+    await patchEntry(entry,{ result:"VOID", result_at:entry.result === "VOID" && entry.result_at ? entry.result_at : checkedAt, score:null, evidence:{ ...baseEvidence, resolution:"game_cancelled" } });
     return;
   }
   if (!final) {
-    await patchEntry(entry.id,{ result:"PENDING", result_at:null, score:null, evidence:{ ...baseEvidence, resolution:delayed ? "game_delayed_or_postponed" : "waiting_for_official_final" } });
+    await patchEntry(entry,{ result:"PENDING", result_at:null, score:null, evidence:{ ...baseEvidence, resolution:delayed ? "game_delayed_or_postponed" : "waiting_for_official_final" } });
     return;
   }
   const box:any = await json(`https://statsapi.mlb.com/api/v1/game/${gamePk}/boxscore`);
@@ -622,7 +664,7 @@ async function resolveMlbFeatured(entry:any) {
   const a = game?.teams?.away?.score, h = game?.teams?.home?.score;
   const score = Number.isFinite(Number(a)) && Number.isFinite(Number(h)) ? `${awayName} ${a} · ${homeName} ${h}` : null;
   const result = pa <= 0 ? "VOID" : hrs > 0 ? "WIN" : "LOSS";
-  await patchEntry(entry.id,{
+  await patchEntry(entry,{
     result,
     result_at:entry.result === result && entry.result_at ? entry.result_at : checkedAt,
     score,
@@ -636,7 +678,7 @@ async function resolveWnba(entry:any) {
   const gameId = String(snap.game_id || "").trim();
   const selectedTeamId = String(snap.selected_team_id || snap.pick_team?.team_id || "").trim();
   if (!gameId || !selectedTeamId) {
-    await patchEntry(entry.id,{
+    await patchEntry(entry,{
       evidence:{ ...(entry.evidence || {}), provider:"wnba_public_result", resolution:"missing_public_identity", checked_at:new Date().toISOString() }
     });
     return;
@@ -676,7 +718,7 @@ async function resolveWnba(entry:any) {
     if (publicResult !== "PENDING") {
       const away = snap.away?.abbr || "AWAY";
       const home = snap.home?.abbr || "HOME";
-      await patchEntry(entry.id,{
+      await patchEntry(entry,{
         result:publicResult,
         result_at:grade.graded_at || new Date().toISOString(),
         score:grade.away_score == null || grade.home_score == null ? null : `${away} ${grade.away_score} · ${home} ${grade.home_score}`,
@@ -706,7 +748,7 @@ async function resolveWnba(entry:any) {
     if (winnerTeamId) {
       const away = game?.away?.abbr || snap.away?.abbr || "AWAY";
       const home = game?.home?.abbr || snap.home?.abbr || "HOME";
-      await patchEntry(entry.id,{
+      await patchEntry(entry,{
         result:winnerTeamId === selectedTeamId ? "WIN" : "LOSS",
         result_at:new Date().toISOString(),
         score:`${away} ${awayScore} · ${home} ${homeScore}`,
@@ -726,7 +768,7 @@ async function resolveWnba(entry:any) {
     }
   }
 
-  await patchEntry(entry.id,{
+  await patchEntry(entry,{
     evidence:{
       ...(entry.evidence || {}),
       provider:"wnba_public_result",
@@ -759,7 +801,7 @@ async function resolveNhl(entry:any) {
   const carrierPickId = exactPickId || locks?.[0]?.pick_id || null;
 
   if (!carrierPickId) {
-    await patchEntry(entry.id,{
+    await patchEntry(entry,{
       evidence:{ ...(entry.evidence || {}), provider:"nhl_pbe_pick_grades", resolution:"locked_pick_not_found", public_pick_team:wanted, checked_at:new Date().toISOString() }
     });
     return;
@@ -770,7 +812,7 @@ async function resolveNhl(entry:any) {
   );
   const g = grades?.[0] || null;
   if (!g) {
-    await patchEntry(entry.id,{
+    await patchEntry(entry,{
       evidence:{ ...(entry.evidence || {}), provider:"nhl_pbe_pick_grades", resolved_pick_id:exactPickId, result_source_pick_id:carrierPickId, public_pick_team:wanted, checked_at:new Date().toISOString() }
     });
     return;
@@ -787,13 +829,13 @@ async function resolveNhl(entry:any) {
         : "PENDING";
 
   if (publicResult === "PENDING") {
-    await patchEntry(entry.id,{
+    await patchEntry(entry,{
       evidence:{ ...(entry.evidence || {}), provider:"nhl_pbe_pick_grades", resolved_pick_id:exactPickId, result_source_pick_id:carrierPickId, public_pick_team:wanted, resolution:"final_without_public_side_identity", checked_at:new Date().toISOString() }
     });
     return;
   }
 
-  await patchEntry(entry.id,{
+  await patchEntry(entry,{
     result:publicResult,
     result_at:g.graded_at,
     score:g.home_score == null || g.away_score == null ? null : `${snap.away || "AWAY"} ${g.away_score} · ${snap.home || "HOME"} ${g.home_score}`,
@@ -854,7 +896,7 @@ async function resolveNfl(entry:any) {
   }
 
   if (!row?.id) {
-    await patchEntry(entry.id, {
+    await patchEntry(entry, {
       evidence:{ ...(entry.evidence || {}), provider:"nfl_pick_grades", match:"not_found", checked_at:new Date().toISOString() }
     });
     return;
@@ -863,7 +905,7 @@ async function resolveNfl(entry:any) {
   const grades = await sb(`nfl_pick_grades?pick_id=eq.${encodeURIComponent(row.id)}&select=result,graded_at,units_delta,clv_points,clv_prob,clv_beat&order=graded_at.desc&limit=1`);
   const grade = grades?.[0] || null;
   if (!grade) {
-    await patchEntry(entry.id, {
+    await patchEntry(entry, {
       evidence:{
         ...(entry.evidence || {}),
         provider:"nfl_pick_grades",
@@ -875,7 +917,7 @@ async function resolveNfl(entry:any) {
     return;
   }
 
-  await patchEntry(entry.id, {
+  await patchEntry(entry, {
     result:normalizeResult(grade.result),
     result_at:grade.graded_at,
     evidence:{
@@ -908,12 +950,12 @@ async function resolveNflTd(entry:any) {
   const checkedAt = new Date().toISOString();
   const base = { provider:"nfl_prop_pick_grades", record_namespace:"free_td_target_record", source_pick_id:targetId, checked_at:checkedAt };
   if (!pick) {
-    await patchEntry(entry.id, { evidence:{ ...(entry.evidence || {}), ...base, match:"not_found" } });
+    await patchEntry(entry, { evidence:{ ...(entry.evidence || {}), ...base, match:"not_found" } });
     return;
   }
   const grade = Array.isArray(pick.grade) ? pick.grade[0] : pick.grade;
   if (!grade && String(pick.status || "").toLowerCase() === "superseded") {
-    await patchEntry(entry.id, {
+    await patchEntry(entry, {
       result:"VOID",
       result_at:checkedAt,
       score:null,
@@ -922,12 +964,12 @@ async function resolveNflTd(entry:any) {
     return;
   }
   if (!grade) {
-    await patchEntry(entry.id, { evidence:{ ...(entry.evidence || {}), ...base, source_status:pick.status } });
+    await patchEntry(entry, { evidence:{ ...(entry.evidence || {}), ...base, source_status:pick.status } });
     return;
   }
   const result = normalizeResult(grade.result);
   const note = grade.settlement_note || {};
-  await patchEntry(entry.id, {
+  await patchEntry(entry, {
     result,
     result_at:grade.graded_at || checkedAt,
     evidence:{
@@ -954,7 +996,7 @@ async function resolveUfc(entry:any) {
   const pickFighter = pickRows?.[0] || null;
   const opponent = oppRows?.[0] || null;
   if (!pickFighter?.id || !opponent?.id || !eventRows?.length) {
-    await patchEntry(entry.id, {
+    await patchEntry(entry, {
       evidence:{
         ...(entry.evidence || {}),
         provider:"ufc_bout_results",
@@ -980,7 +1022,7 @@ async function resolveUfc(entry:any) {
   }
 
   if (!bout?.id) {
-    await patchEntry(entry.id, {
+    await patchEntry(entry, {
       evidence:{
         ...(entry.evidence || {}),
         provider:"ufc_bout_results",
@@ -999,7 +1041,7 @@ async function resolveUfc(entry:any) {
   const result = results?.[0] || null;
   if (!result && await withdrawUfcIfReplaced(entry, bout, pickFighter)) return;
   if (!result) {
-    await patchEntry(entry.id, {
+    await patchEntry(entry, {
       evidence:{
         ...(entry.evidence || {}),
         provider:"ufc_bout_results",
@@ -1020,7 +1062,7 @@ async function resolveUfc(entry:any) {
       ? "LOSS"
       : "VOID";
 
-  await patchEntry(entry.id, {
+  await patchEntry(entry, {
     result:normalized,
     result_at:result.captured_at || new Date().toISOString(),
     score:result.method
@@ -1053,7 +1095,7 @@ async function resolveUfc(entry:any) {
 async function withdrawUfcIfReplaced(entry:any, bout:any, pickFighter:any) {
   const withdraw = async (reason:string, extra:Record<string,unknown> = {}) => {
     const at = new Date().toISOString();
-    await patchEntry(entry.id, {
+    await patchEntry(entry, {
       result:"VOID",
       result_at:at,
       score:null,
@@ -1088,8 +1130,11 @@ async function withdrawUfcIfReplaced(entry:any, bout:any, pickFighter:any) {
   return false;
 }
 
+// Only the columns the resolvers read or compare against (the response payload still returns whole rows).
+const RESOLVE_COLUMNS = "id,sport,period_start,source_record_id,selection,opponent,event_start_at,published_at,snapshot,result,result_at,score,evidence";
+
 async function resolvePending() {
-  const rows = await sb(`${TABLE}?result=eq.PENDING&period_start=gte.${EPOCH}&select=*`);
+  const rows = await sb(`${TABLE}?result=eq.PENDING&period_start=gte.${EPOCH}&select=${RESOLVE_COLUMNS}`);
   for (const entry of rows || []) {
     if (entry?.evidence?.suppressed === true) continue;
     try {
@@ -1100,7 +1145,7 @@ async function resolvePending() {
       else if (entry.sport === "NFL" && isTdTarget(entry)) await resolveNflTd(entry);
       else if (entry.sport === "NFL") await resolveNfl(entry);
       else if (entry.sport === "UFC") await resolveUfc(entry);
-      else await patchEntry(entry.id,{ evidence:{ ...(entry.evidence || {}), provider:"nba_free_picks_future_lane", checked_at:new Date().toISOString() } });
+      else await patchEntry(entry,{ evidence:{ ...(entry.evidence || {}), provider:"nba_free_picks_future_lane", checked_at:new Date().toISOString() } });
     } catch (error) {
       console.error("tracker resolve", entry.sport, entry.id, String(error));
     }
@@ -1111,7 +1156,7 @@ async function resolvePending() {
   // in the public W/L record.
   const recentStart = addDays(etDate(), -7);
   const settledMlb = await sb(
-    `${TABLE}?sport=eq.MLB&period_start=gte.${recentStart}&result=in.(WIN,LOSS)&select=*`
+    `${TABLE}?sport=eq.MLB&period_start=gte.${recentStart}&result=in.(WIN,LOSS)&select=${RESOLVE_COLUMNS}`
   );
   for (const entry of settledMlb || []) {
     if (entry?.evidence?.suppressed === true) continue;
@@ -1252,13 +1297,60 @@ async function responsePayload(capture:CaptureReport = {}) {
   };
 }
 
+// ---------------------------------------------------------------- scheduled cycle
+// Capture + settlement run ONLY on the scheduled path (pg_cron job `pbe-free-picks-tracker-minute` calls
+// `?cycle=1` once a minute). Browser reads never capture, resolve or write. A cycle that is already running, or one
+// that started less than CYCLE_MIN_GAP_MS ago in this isolate, is not started again.
+const CYCLE_MIN_GAP_MS = 45_000;
+let lastCycleStartedAt = 0;
+let cycleInFlight:Promise<CaptureReport>|null = null;
+let lastCapture:CaptureReport = {};
+
+function startCycle(now = Date.now()):{ state:"started"|"in_flight"|"throttled", promise:Promise<CaptureReport>|null } {
+  if (cycleInFlight) return { state:"in_flight", promise:cycleInFlight };
+  if (now - lastCycleStartedAt < CYCLE_MIN_GAP_MS) return { state:"throttled", promise:null };
+  lastCycleStartedAt = now;
+  cycleInFlight = (async () => {
+    const capture = await captureCurrent();
+    await resolvePending();
+    lastCapture = capture;
+    return capture;
+  })().finally(() => { cycleInFlight = null; });
+  return { state:"started", promise:cycleInFlight };
+}
+
+// The public ledger read is identical for every viewer, so the CDN/browser may reuse it briefly. The scheduled path,
+// errors and anything else stay uncached.
+const PUBLIC_READ_CACHE = "public, max-age=30, s-maxage=30";
+
+function isCycleRequest(url:URL) {
+  return url.searchParams.get("cycle") === "1";
+}
+
 Deno.serve(async (req:Request) => {
   if (req.method === "OPTIONS") return new Response(null,{ status:204, headers:CORS });
   if (req.method !== "GET") return new Response(JSON.stringify({ok:false,error:"method_not_allowed"}),{status:405,headers:CORS});
+  const url = new URL(req.url);
   try {
-    const capture = await captureCurrent();
-    await resolvePending();
-    return new Response(JSON.stringify(await responsePayload(capture)),{ status:200, headers:CORS });
+    if (isCycleRequest(url)) {
+      const cycle = startCycle();
+      if (url.searchParams.get("wait") === "1") {
+        // Operator check: wait for the cycle and answer with the full payload and its capture report.
+        const capture = cycle.promise ? await cycle.promise : lastCapture;
+        return new Response(JSON.stringify(await responsePayload(capture)),{ status:200, headers:CORS });
+      }
+      // The cron caller only needs an acknowledgement; the cycle finishes in the background so the database
+      // connection that issued the request is released immediately.
+      if (cycle.promise) {
+        const task = cycle.promise.catch((error) => console.error("free-picks-tracker cycle", error));
+        (globalThis as any).EdgeRuntime?.waitUntil?.(task);
+      }
+      return new Response(JSON.stringify({ ok:true, cycle:cycle.state }),{ status:202, headers:CORS });
+    }
+    return new Response(JSON.stringify(await responsePayload(lastCapture)),{
+      status:200,
+      headers:{ ...CORS, "Cache-Control":PUBLIC_READ_CACHE },
+    });
   } catch (error) {
     console.error("free-picks-tracker", error);
     return new Response(JSON.stringify({ok:false,error:"tracker_unavailable"}),{ status:503, headers:CORS });
