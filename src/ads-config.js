@@ -33,12 +33,6 @@ export const AFFILIATE_LINKS = {
   caesars: null,
 };
 
-// The one PropBetEdge Discord invite for the whole network (non-expiring,
-// owner-confirmed 2026-09-11). Reference this constant; never paste an
-// invite code anywhere else - per-page codes are how 8rMxrMG5 and e9S6pFq9
-// both expired while still linked.
-export const PROPBETEDGE_DISCORD_URL = 'https://discord.gg/kb5zCTHbME';
-
 export const PROPBET_LINKS = {
   network:     'https://propbetedge.ai',
   picks_mlb:   'https://mlb.propbetedge.ai',
@@ -60,7 +54,6 @@ export const PROPBET_LINKS = {
   hr_targets:  'https://mlb.propbetedge.ai/picks',
   learn:       'https://learn.propbetedge.ai/',
   propsports:  'https://propsports.proptechusa.ai',
-  discord:     PROPBETEDGE_DISCORD_URL,
   twitter:     PROPBETEDGE_X_URL,
   bluesky:     'https://bsky.app/profile/propbetedge.bsky.social',
   linkedin:    'https://www.linkedin.com/company/propbetedge-ai/',
