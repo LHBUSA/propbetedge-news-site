@@ -54,6 +54,10 @@ const INTELLIGENCE_PRODUCTS = Object.freeze(INTELLIGENCE_ORDER.map((key) => {
   };
 }));
 
+// Account entry: the header has no session state, so this is always SIGN IN into the existing
+// Members / All Access login flow (no second login system).
+export const MEMBERS_SIGN_IN_URL = 'https://members.propbetedge.ai/';
+
 // mode 'editorial': institutional / editorial pages (About, authors, masthead, Editorial Standards, Terms, Legal,
 // Media, Support) render the masthead and navigation only — no live-score strip, no sport campaign banner, no
 // UFC Fight Week rail — so the reader sees the page they asked for immediately. Sports pages keep the full chrome.
@@ -97,6 +101,7 @@ export function renderHeader({ mode = 'sports' } = {}) {
           ${NEWS_PRIMARY.map(key => `<a href="${newsHref(key)}" class="nav-link ${sportPathActive(path, key) ? 'active' : ''}"${newsTargetAttrs(key)}>${INTELLIGENCE_SPORTS[key].label}</a>`).join('')}
           ${renderMoreNewsSwitcher(sport)}
           <a href="/pro" class="nav-link pbe-all-access-link ${path === '/pro' ? 'active' : ''}" data-pbe-placement="masthead_all_access">All Access</a>
+          <a href="${MEMBERS_SIGN_IN_URL}" class="nav-link pbe-signin-link" data-pbe-placement="masthead_sign_in" aria-label="Sign in to PropBetEdge Members">Sign In</a>
         </div>
         <a href="/" class="masthead-logo" aria-label="PropBetEdge home">
           <img
@@ -114,6 +119,7 @@ export function renderHeader({ mode = 'sports' } = {}) {
           <a href="/odds" class="pbe-mobile-nav-link ${isOdds ? 'active' : ''}">Picks</a>
           <a href="/leaders" class="pbe-mobile-nav-link ${isLeaders || isStandings ? 'active' : ''}">Stats</a>
           <a href="/pro" class="pbe-mobile-nav-link pbe-mobile-all-access ${path === '/pro' ? 'active' : ''}" data-pbe-placement="mobile_nav_all_access" aria-label="PropBetEdge All Access membership">All Access</a>
+          <a href="${MEMBERS_SIGN_IN_URL}" class="pbe-mobile-nav-link pbe-mobile-signin" data-pbe-placement="mobile_nav_sign_in" aria-label="Sign in to PropBetEdge Members"><span class="pbe-mobile-signin-chip">Sign In</span></a>
           <button type="button" class="pbe-mobile-nav-link pbe-mobile-search" data-pbe-search-open aria-label="Search PropBetEdge">Search</button>
           <details class="pbe-mobile-more">
             <summary class="pbe-mobile-nav-link">More</summary>
@@ -122,6 +128,7 @@ export function renderHeader({ mode = 'sports' } = {}) {
                 <span class="pbe-mobile-more-label">Membership</span>
                 <div class="pbe-mobile-more-links">
                   <a href="/pro" class="pbe-mobile-more-all-access ${path === '/pro' ? 'active' : ''}"><strong>All Access</strong><span>$29/mo · Every sport</span></a>
+                  <a href="${MEMBERS_SIGN_IN_URL}" class="pbe-mobile-more-signin" data-pbe-placement="mobile_more_sign_in"><strong>Sign In</strong><span>Members · All Access</span></a>
                   <button type="button" class="pbe-mobile-more-search" data-pbe-search-open>Search</button>
                 </div>
               </div>

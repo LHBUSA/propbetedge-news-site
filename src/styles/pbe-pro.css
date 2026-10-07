@@ -229,6 +229,39 @@ main.pbe-pro-main, main.pbe-pro-main > .pbe-pro { padding-left: 0 !important; pa
   font-weight: 800 !important; letter-spacing: .08em; text-transform: uppercase; font-size: 10px !important; margin-left: 6px;
 }
 .masthead-leagues .pbe-all-access-link:hover, .masthead-leagues .pbe-all-access-link.active { filter: brightness(1.08); color: #17120a !important; }
+/* SIGN IN: the account action beside the premium pill. Outlined, never gold-filled, so ALL ACCESS stays the CTA. */
+.masthead-leagues .pbe-signin-link {
+  color: var(--paper) !important; background: transparent; border: 1px solid rgba(247,242,232,.5); border-radius: 999px; padding: 6px 11px !important;
+  font-weight: 800 !important; letter-spacing: .08em; text-transform: uppercase; font-size: 10px !important; white-space: nowrap; flex: 0 0 auto;
+}
+.masthead-leagues .pbe-signin-link:hover, .masthead-leagues .pbe-signin-link:focus-visible { color: var(--gold-bright) !important; border-color: var(--gold-bright); }
+/* Room for SIGN IN without touching the league links or the centered logo: compact the search
+   trigger and the two membership pills as the left rail narrows (measured 881-1560px). */
+@media (max-width: 1760px) and (min-width: 1561px) {
+  .masthead-inner .masthead-search kbd { display: none !important; }
+  .masthead-inner .masthead-left { gap: 4px !important; }
+}
+@media (max-width: 1560px) and (min-width: 1321px) {
+  .masthead-inner .masthead-search .pbe-search-label { display: none !important; }
+  .masthead-inner .masthead-search { width: 34px; min-width: 34px; padding-left: 7px !important; padding-right: 7px !important; }
+  .masthead-inner .masthead-left { gap: 3px !important; }
+  .masthead-leagues .pbe-all-access-link { padding-left: 9px !important; padding-right: 9px !important; }
+  .masthead-leagues .pbe-signin-link { padding-left: 8px !important; padding-right: 8px !important; }
+}
+@media (max-width: 1320px) and (min-width: 881px) {
+  .masthead-inner .masthead-left { padding-right: 6px !important; }
+  .masthead-leagues .pbe-all-access-link { padding: 7px 9px !important; font-size: 9px !important; letter-spacing: .06em; margin-left: 4px; }
+  .masthead-leagues .pbe-signin-link { padding: 6px 7px !important; font-size: 9px !important; letter-spacing: .06em; }
+}
+@media (max-width: 1180px) and (min-width: 1041px) {
+  .masthead-leagues .pbe-all-access-link { padding: 7px 7px !important; font-size: 8.5px !important; letter-spacing: .04em; margin-left: 2px; }
+  .masthead-leagues .pbe-signin-link { padding: 6px 6px !important; font-size: 8.5px !important; letter-spacing: .04em; }
+  .masthead-inner .masthead-left { padding-right: 0 !important; }
+}
+@media (max-width: 1100px) and (min-width: 1041px) {
+  .masthead-leagues .pbe-all-access-link { padding-left: 6px !important; padding-right: 6px !important; }
+  .masthead-leagues .pbe-signin-link { padding-left: 5px !important; padding-right: 5px !important; }
+}
 .footer-badge-gold { background: var(--gold); color: #17120a; }
 
 /* ---------------------------------------------------------------- responsive */
