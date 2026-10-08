@@ -7,8 +7,10 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import {
   KALSHI_PARTNER_CLIENT_SHA256, PARTNER_CONFIG_URL, HOME_PARTNER_CONTEXT, articlePartnerContext, articlePartnerSlot,
-  partnerOfferHtml, mountPartnerOffer,
+  partnerOfferHtml, mountPartnerOffer, partnerVariant, brandPartnerHtml, HOME_PARTNER_VARIANT, ARTICLE_PARTNER_VARIANT,
+  KALSHI_LOGO_SRC,
 } from '../src/kalshi-partner-offer.js';
+import { articleMarketHtml } from '../src/article-market.js';
 import { PARTNER_DISABLED, PARTNER_GENERIC_CTA, PARTNER_DISCLOSURE, PARTNER_REL, normalizeConfig } from '../src/vendor/kalshi/kalshi-partner.js';
 import { renderMarketPulseLaunch } from '../src/market-pulse-launch.js';
 
@@ -129,4 +131,127 @@ test('nav: no permanent promo bar, ONE News control, ONE intelligence selector, 
   assert.match(css, /\.pbe-fight-week\[data-yield-breaking\] \{ display: none !important; \}/, 'Breaking outranks Fight Week');
   assert.match(css, /\.masthead\.pbe-nav2 \.pbe-signin-link \{[^}]*background: transparent !important/, 'Sign In is never gold');
   assert.match(read('src/main.js'), /import '\.\/styles\/pbe-nav-v2\.css';\s*import \{ initBackgroundSelector \}/, 'nav stylesheet is the last stylesheet import');
+});
+
+// ── Branded partner unit (owner 2026-10-08): article = compact card, homepage = subordinate strip, official wordmark ──
+const ART = articlePartnerContext({ sport: 'mlb' });
+const count = (html, re) => (html.match(re) || []).length;
+
+test('presentation: article uses card, homepage stays short', () => {
+  assert.equal(ARTICLE_PARTNER_VARIANT, 'card');
+  assert.equal(HOME_PARTNER_VARIANT, 'short');
+  assert.equal(partnerVariant(ART), 'card');
+  assert.equal(partnerVariant(HOME_PARTNER_CONTEXT), 'short');
+  assert.equal(partnerVariant({}), 'short', 'unknown placements get the quiet variant');
+});
+
+test('article card: one unit, official Kalshi wordmark, canonical copy, sponsored link, disclosure', () => {
+  const html = partnerOfferHtml(normalizeConfig(VERIFIED), ART);
+  assert.match(html, /^<aside class="kxo kxo--card" aria-label="Kalshi partner offer"/);
+  assert.equal(count(html, /<aside /g), 1);
+  assert.equal(count(html, /<a /g), 1, 'the CTA is the only link: the logo is not a separate outbound link');
+  assert.equal(count(html, /<img /g), 1);
+  assert.ok(html.includes(`<img class="pbe-kxo-logo" src="${KALSHI_LOGO_SRC}" alt="Kalshi" width="772" height="226"`));
+  // the wordmark sits first inside the aside, before any offer copy
+  assert.ok(html.indexOf('pbe-kxo-logo') < html.indexOf('kxo__kicker'));
+  // "KALSHI" is not repeated beside the wordmark; the rest of the canonical copy is untouched (fixture terms)
+  assert.match(html, /<span class="kxo__kicker">PARTNER OFFER<\/span>/);
+  assert.match(html, /<span class="kxo__title">Trade \$75 in Perpetual Futures<\/span>/);
+  assert.match(html, /<span class="kxo__sub">Get 15% Off Fees for 2 Months<\/span>/);
+  assert.match(html, /<span class="kxo__note">New customers only\.<\/span>/);
+  assert.ok(html.includes(`<a class="kxo__cta" href="/go/kalshi-perps?placement=propbetedge_article_footer&amp;product=propbetedge&amp;sport=mlb" target="_blank" rel="${PARTNER_REL}">CLAIM OFFER`));
+  assert.ok(html.includes(PARTNER_DISCLOSURE));
+  assert.doesNotMatch(html, /kalshi\.com/);
+});
+
+test('homepage strip: compact (no title/sub/note), one unit, small wordmark, same infrastructure', () => {
+  const html = partnerOfferHtml(normalizeConfig(VERIFIED), HOME_PARTNER_CONTEXT);
+  assert.match(html, /kxo--short/);
+  assert.doesNotMatch(html, /kxo__title|kxo__sub|kxo__note/);
+  assert.equal(count(html, /<aside /g), 1);
+  assert.equal(count(html, /<img /g), 1);
+  assert.match(html, /<span class="kxo__kicker">PERPS OFFER<\/span>/);
+  assert.match(html, /href="\/go\/kalshi-perps\?placement=propbetedge_home_market_pulse&amp;product=propbetedge"/);
+  assert.ok(html.includes(PARTNER_DISCLOSURE));
+});
+
+test('stale terms in the branded unit: wordmark + generic CTA, no numbers anywhere', () => {
+  for (const ctx of [ART, HOME_PARTNER_CONTEXT]) {
+    const html = partnerOfferHtml(normalizeConfig(STALE), ctx);
+    assert.match(html, /kxo--generic/);
+    assert.match(html, /alt="Kalshi"/);
+    assert.ok(html.includes(PARTNER_GENERIC_CTA));
+    assert.match(html, /<span class="kxo__kicker">PARTNER<\/span>/);
+    // drop the wordmark's intrinsic size attributes, then no economics may remain
+    assert.doesNotMatch(html.replace(/ width="772" height="226"/, ''), /\$\d|\d%|\d+ ?(month|year)|kxo__title|kxo__sub/i);
+  }
+});
+
+test('kill switch: no logo, no card, no reserved space (hidden slot is display:none)', async () => {
+  assert.equal(brandPartnerHtml(''), '');
+  for (const cfg of [PARTNER_DISABLED, normalizeConfig(KILLED), normalizeConfig(null)]) {
+    assert.equal(partnerOfferHtml(cfg, ART), '');
+    const slot = { dataset: {}, hidden: true, innerHTML: '', isConnected: true };
+    await mountPartnerOffer(slot, ART, { load: async () => cfg });
+    assert.equal(slot.hidden, true);
+    assert.equal(slot.innerHTML, '');
+  }
+  const css = read('src/styles/pbe-nav-v2.css').replace(/\r\n/g, '\n');
+  assert.match(css, /\.pbe-kxo-slot\[hidden\] \{ display: none !important; \}/);
+  // the card surface lives on the injected <aside>, so an empty hidden slot has no box at all
+  assert.match(css, /\.pbe-article-partner \.kxo--card,\n\.pbe-article-partner \.kxo--generic \{[^}]*background:/);
+});
+
+test('escaping + validation: context/config cannot inject markup through the branded wrapper', () => {
+  const html = partnerOfferHtml(normalizeConfig(VERIFIED), articlePartnerContext({ sport: '"><script>alert(1)</script>' }));
+  assert.doesNotMatch(html, /<script|sport=/);
+  const bad = normalizeConfig({ ...VERIFIED, offer: { ...VERIFIED.offer, qualifying_volume: '<img src=x onerror=alert(1)>' } });
+  const out = partnerOfferHtml(bad, ART);
+  assert.doesNotMatch(out, /onerror/);
+  assert.match(out, /kxo--generic/, 'invalid terms fall back to generic copy');
+  assert.equal(count(out, /<img /g), 1, 'only our wordmark');
+  // the wrapper only touches the opening tag and the kicker
+  const canonical = '<aside class="kxo kxo--card" aria-label="Kalshi partner offer" data-kxo-placement="x"><span class="kxo__kicker">KALSHI PARTNER OFFER</span><span class="kxo__title">KALSHI X</span></aside>';
+  assert.match(brandPartnerHtml(canonical), /<span class="kxo__title">KALSHI X<\/span>/);
+});
+
+test('official Kalshi wordmark asset: local, unaltered white SVG with recorded provenance', () => {
+  assert.equal(KALSHI_LOGO_SRC, '/assets/partners/kalshi/kalshi-wordmark-white.svg');
+  const svg = read('public/assets/partners/kalshi/kalshi-wordmark-white.svg');
+  assert.match(svg, /viewBox="0 0 772 226"/);
+  assert.equal(count(svg, /<path /g), 1);
+  assert.match(svg, /fill="#ffffff"/);
+  assert.doesNotMatch(svg, /<script|\son\w+=|href=|<image|filter|opacity/i);
+  assert.match(read('docs/kalshi-partner-logo.md'), /https:\/\/kalshi\.com\/brandkit/);
+  assert.doesNotMatch(read('src/kalshi-partner-offer.js'), /src="https?:/, 'never hotlinked');
+});
+
+test('CSS: partner rules are scoped per placement; the wordmark is never faded or filtered', () => {
+  const css = read('src/styles/pbe-nav-v2.css').replace(/\r\n/g, '\n');
+  const block = css.slice(css.indexOf('Kalshi partner unit'), css.indexOf('@media (prefers-reduced-motion: reduce) {\n  .pbe-kxo-slot'));
+  const rules = block.slice(block.indexOf('*/') + 2).replace(/\/\*[\s\S]*?\*\//g, '');
+  const selectors = [];
+  for (const m of rules.matchAll(/([^{}]+)\{/g)) {
+    const sel = m[1].trim();
+    if (!sel.startsWith('@')) selectors.push(...sel.split(',').map((x) => x.trim()).filter(Boolean));
+  }
+  assert.ok(selectors.length > 10, String(selectors.length));
+  for (const sel of selectors) assert.match(sel, /^\.(pbe-kxo-slot|pbe-article-partner|pbe-market-pulse-partner)\b/, sel);
+  for (const f of fs.readdirSync(new URL('../src/styles/', import.meta.url))) {
+    for (const m of read(`src/styles/${f}`).replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{/g)) {
+      for (const sel of m[1].split(',').map((x) => x.trim())) {
+        if (/\.kxo\b/.test(sel)) assert.match(sel, /^\.(pbe-kxo-slot|pbe-article-partner|pbe-market-pulse-partner)\b/, `unscoped ${sel} in ${f}`);
+      }
+    }
+  }
+  assert.match(css, /\.pbe-kxo-slot \.pbe-kxo-logo \{[^}]*height: auto;[^}]*opacity: 1; filter: none;/);
+  assert.match(css, /\.pbe-kxo-slot \.kxo__cta:focus-visible \{ outline: 2px solid/);
+});
+
+test('direct markets: Article Market "Open on Kalshi" links stay kalshi.com/markets, never the partner redirect', () => {
+  const html = articleMarketHtml(JSON.parse(read('tests/fixtures/article-market-nfl-401872965.json')));
+  const kalshi = html.match(/href="https:\/\/kalshi\.com[^"]*"/g) || [];
+  assert.ok(kalshi.length >= 1);
+  for (const h of kalshi) assert.match(h, /^href="https:\/\/kalshi\.com\/markets\/[a-z0-9/-]+"$/, h);
+  assert.doesNotMatch(html, /go\/kalshi-perps|kxo|referral|[?&](placement|product)=/);
 });
