@@ -15,7 +15,8 @@ test('institutional / editorial pages render the editorial header mode; sports p
   }
   const header = read('src/components/header.js');
   assert.match(header, /\$\{editorial \? '' : renderScoreStripShell\(\)\}/);
-  assert.match(header, /\$\{editorial \? '' : ad_header_banner\(/);
+  // owner 2026-10-07: the campaign / Free Picks proof bar is no longer a permanent header layer on any page
+  assert.doesNotMatch(header, /ad_header_banner/);
   assert.match(header, /\$\{editorial \? '' : renderUfcFightWeekShell\(\)\}/);
 });
 

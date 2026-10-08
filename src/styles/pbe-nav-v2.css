@@ -1,0 +1,382 @@
+/* Global nav cleanup (owner 2026-10-07). Imported LAST in src/main.js so it settles the legacy header layers.
+   Persistent chrome, at most three full-width layers:
+     1. live score ticker (~34px)   2. masthead (~72px desktop / ~56px mobile)   3. ONE contextual rail (~34px),
+        priority BREAKING > LIVE EVENT / FIGHT WEEK > nothing.
+   The Free Picks proof is a homepage module now, not a bar above the masthead.
+   Warm palette only (main.css tokens). No destination removed: links moved into News / More menus. */
+
+/* ─── 1. Ticker ───────────────────────────────────────────────────────── */
+#pbe-score-strip {
+  height: 34px !important;
+  min-height: 34px !important;
+  box-shadow: none !important;
+}
+#pbe-score-strip .pss-filter { padding: 0 6px !important; }
+/* One compact scores filter pill at every width (the full league button row read as a second league selector). */
+#pbe-score-strip .pss-filter-row { display: none !important; }
+#pbe-score-strip .pss-filter-trigger {
+  display: flex !important;
+  min-width: 46px !important;
+  min-height: 22px !important;
+  height: 22px !important;
+  padding: 0 7px !important;
+  font-size: 9px !important;
+}
+#pbe-score-strip .pss-filter-dropdown.open { display: flex !important; }
+#pbe-score-strip .pss-date { padding: 0 10px !important; font-size: 9px !important; }
+
+#pbe-score-strip .pss-tile {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 100% !important;
+  padding: 0 14px 0 12px !important;
+}
+#pbe-score-strip .pss-tile-accent { width: 2px !important; }
+#pbe-score-strip .pss-sport-tag {
+  position: static !important;
+  order: -1;
+  font-size: 8px !important;
+  color: var(--paper-faint) !important;
+}
+#pbe-score-strip .pss-tile-top {
+  width: auto !important;
+  max-width: 120px !important;
+  padding-right: 0 !important;
+  font-size: 9px !important;
+}
+#pbe-score-strip .pss-team-row {
+  width: auto !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  gap: 5px !important;
+  font-size: 12px !important;
+  justify-content: flex-start !important;
+}
+#pbe-score-strip .pss-team-id { flex: none !important; gap: 4px !important; }
+#pbe-score-strip .pss-team-logo,
+#pbe-score-strip .pss-team-logo-placeholder { width: 14px !important; height: 14px !important; font-size: 6px !important; }
+#pbe-score-strip .pss-team-record { display: none !important; }
+#pbe-score-strip .pss-team-score { min-width: 0 !important; font-size: 12.5px !important; }
+#pbe-score-strip .pss-team-row[data-side="away"]::after {
+  content: '·';
+  color: var(--paper-faint);
+  margin-left: 2px;
+}
+/* The whole tile already opens the game's PBEcast (title attribute names it). */
+#pbe-score-strip .pss-tile-bottom { display: none !important; }
+
+/* ─── 2. Masthead ─────────────────────────────────────────────────────── */
+.masthead.pbe-nav2 { position: relative; z-index: 95; }
+.masthead.pbe-nav2::after { width: 56px; }
+
+@media (min-width: 881px) {
+  .masthead.pbe-nav2 .masthead-inner {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 18px !important;
+    height: 72px;
+    min-height: 0 !important;
+    padding: 0 clamp(16px, 2vw, 32px) !important;
+  }
+  .masthead.pbe-nav2 .masthead-left,
+  .masthead.pbe-nav2 .masthead-right {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    gap: 2px !important;
+    min-width: 0;
+  }
+  .masthead.pbe-nav2 .masthead-left { justify-content: flex-start !important; }
+  .masthead.pbe-nav2 .masthead-right { justify-content: flex-end !important; gap: 8px !important; }
+
+  .masthead.pbe-nav2 .masthead-logo {
+    order: 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    gap: 3px !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+  }
+  .masthead.pbe-nav2 .masthead-mark { height: 42px !important; width: auto !important; max-width: none !important; }
+  .masthead.pbe-nav2 .masthead-logo .tagline {
+    display: block !important;
+    margin: 0 !important;
+    font-size: 7.5px !important;
+    letter-spacing: .3em !important;
+    line-height: 1 !important;
+    white-space: nowrap;
+  }
+
+  .masthead.pbe-nav2 .nav-link {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px;
+    height: 34px !important;
+    min-height: 0 !important;
+    padding: 0 10px !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 6px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--paper-dim) !important;
+    font: 700 11px/1 var(--font-mono) !important;
+    letter-spacing: .12em !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+    cursor: pointer;
+  }
+  .masthead.pbe-nav2 .nav-link:hover,
+  .masthead.pbe-nav2 .nav-link.active { color: var(--paper) !important; }
+  .masthead.pbe-nav2 .nav-link.active::after { bottom: 3px; left: 10px; right: 10px; }
+  .masthead.pbe-nav2 .pbe-sports-switcher,
+  .masthead.pbe-nav2 .pbe-stats-switcher { position: relative; flex: none; }
+  .masthead.pbe-nav2 summary.nav-link { list-style: none; }
+  .masthead.pbe-nav2 summary.nav-link::-webkit-details-marker { display: none; }
+  .masthead.pbe-nav2 .pbe-sports-chevron,
+  .masthead.pbe-nav2 .pbe-stats-chevron { font-size: 12px; line-height: 1; opacity: .7; transform: translateY(-2px); }
+  .masthead.pbe-nav2 .pbe-news-menu { left: 0 !important; right: auto !important; }
+  .masthead.pbe-nav2 .edges-bolt { color: var(--gold); font-size: 11px; }
+  .masthead.pbe-nav2 .edges-count:empty { display: none; }
+
+  /* ONE sport / intelligence selector: quiet outline control, never a gold slab. */
+  .masthead.pbe-nav2 .pbe-intel-summary {
+    min-height: 0 !important;
+    height: 34px !important;
+    padding: 0 11px !important;
+    gap: 7px !important;
+    border: 1px solid var(--line-strong, rgba(255,245,220,.18)) !important;
+    border-radius: 8px !important;
+    background: rgba(255,245,220,.03) !important;
+    color: var(--paper) !important;
+    box-shadow: none !important;
+    font: 800 10px/1 var(--font-mono) !important;
+    letter-spacing: .12em !important;
+  }
+  .masthead.pbe-nav2 .pbe-intel-summary:hover,
+  .masthead.pbe-nav2 .pbe-intel-switcher[open] .pbe-intel-summary {
+    border-color: rgba(212,175,55,.55) !important;
+    background: rgba(212,175,55,.07) !important;
+    color: var(--gold-bright) !important;
+    transform: none !important;
+  }
+  .masthead.pbe-nav2 .pbe-intel-live-dot { background: var(--gold) !important; box-shadow: 0 0 0 3px rgba(212,175,55,.14) !important; }
+  .masthead.pbe-nav2 .pbe-intel-chevron { font-size: 12px !important; transform: translateY(-2px); }
+
+  /* All Access = the strongest conversion control (one gold pill). Sign In = outline. */
+  .masthead.pbe-nav2 .pbe-all-access-link {
+    height: 32px !important;
+    padding: 0 14px !important;
+    border-radius: 999px !important;
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold)) !important;
+    color: #17120a !important;
+    font-weight: 800 !important;
+    letter-spacing: .1em !important;
+  }
+  .masthead.pbe-nav2 .pbe-all-access-link:hover { color: #17120a !important; filter: brightness(1.06); }
+  .masthead.pbe-nav2 .pbe-all-access-link.active::after { display: none; }
+  .masthead.pbe-nav2 .pbe-signin-link {
+    height: 32px !important;
+    padding: 0 12px !important;
+    border: 1px solid var(--line-strong, rgba(255,245,220,.22)) !important;
+    border-radius: 999px !important;
+    background: transparent !important;
+    color: var(--paper) !important;
+  }
+  .masthead.pbe-nav2 .pbe-signin-link:hover { border-color: rgba(212,175,55,.6) !important; color: var(--gold-bright) !important; }
+
+  /* Search: a restrained icon control. Background chooser: icon only. */
+  .masthead.pbe-nav2 .masthead-search,
+  .masthead.pbe-nav2 .pbe-scene-trigger {
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    border: 1px solid var(--line, rgba(255,245,220,.1)) !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--paper-dim) !important;
+  }
+  .masthead.pbe-nav2 .masthead-search:hover,
+  .masthead.pbe-nav2 .pbe-scene-trigger:hover { color: var(--gold-bright) !important; border-color: rgba(212,175,55,.45) !important; }
+  .masthead.pbe-nav2 .masthead-search-icon { font-size: 16px; line-height: 1; letter-spacing: 0; }
+  .masthead.pbe-nav2 .masthead-search kbd,
+  .masthead.pbe-nav2 .masthead-search .pbe-search-label,
+  .masthead.pbe-nav2 .pbe-scene-trigger-label,
+  .masthead.pbe-nav2 .pbe-scene-trigger-value,
+  .masthead.pbe-nav2 .pbe-scene-chevron { display: none !important; }
+  .masthead.pbe-nav2 .pbe-scene-trigger-icon { font-size: 13px; }
+  .masthead.pbe-nav2 .pbe-scene-control { order: 9; }
+  .masthead.pbe-nav2 .pbe-scene-panel { right: 0 !important; left: auto !important; transform: none !important; }
+}
+
+/* Narrow desktop: the logo moves left, Predictions stays one tap away inside Intelligence. */
+@media (min-width: 881px) and (max-width: 1240px) {
+  .masthead.pbe-nav2 .masthead-inner { grid-template-columns: auto minmax(0, 1fr) auto !important; gap: 14px !important; }
+  .masthead.pbe-nav2 .masthead-logo { order: -1 !important; }
+  .masthead.pbe-nav2 .masthead-logo .tagline { display: none !important; }
+  .masthead.pbe-nav2 .masthead-mark { height: 38px !important; }
+  .masthead.pbe-nav2 .masthead-left { justify-content: flex-start !important; }
+  .masthead.pbe-nav2 .pbe-predictions-link { display: none !important; }
+  .masthead.pbe-nav2::after { display: none; }
+  .masthead.pbe-nav2 .nav-link { padding: 0 8px !important; letter-spacing: .1em !important; }
+}
+@media (min-width: 881px) and (max-width: 1080px) {
+  .masthead.pbe-nav2 .edges-bolt { display: none; }
+  .masthead.pbe-nav2 .pbe-intel-summary-sport { display: none; }
+  .masthead.pbe-nav2 .nav-link { padding: 0 7px !important; font-size: 10.5px !important; letter-spacing: .08em !important; }
+  .masthead.pbe-nav2 .masthead-right { gap: 6px !important; }
+}
+
+/* Mobile / tablet: logo + essential actions in ONE row; everything else lives behind More. */
+@media (max-width: 880px) {
+  .masthead.pbe-nav2 .masthead-inner {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    height: 56px;
+    padding: 0 12px !important;
+  }
+  .masthead.pbe-nav2 .masthead-logo {
+    width: auto !important;
+    min-height: 0 !important;
+    flex: 0 1 auto !important;
+    justify-content: flex-start !important;
+  }
+  .masthead.pbe-nav2 .masthead-mark { height: 36px !important; max-width: 110px !important; }
+  .masthead.pbe-nav2 .pbe-mobile-nav {
+    position: static !important;
+    width: auto !important;
+    flex: 0 0 auto;
+    justify-content: flex-end !important;
+    gap: 0 !important;
+  }
+  .masthead.pbe-nav2 .pbe-mobile-nav-link { min-height: 44px; }
+  .masthead.pbe-nav2 .pbe-mobile-search { width: 40px; flex-basis: 40px; font-size: 0 !important; }
+  .masthead.pbe-nav2::after { display: none; }
+  .masthead.pbe-nav2 .pbe-mobile-more-panel { top: calc(100% + 1px) !important; }
+}
+@media (max-width: 359px) {
+  .masthead.pbe-nav2 .masthead-mark { height: 30px !important; max-width: 84px !important; }
+}
+
+/* ─── 3. One contextual rail ──────────────────────────────────────────── */
+/* Breaking outranks Fight Week: never two stacked full-width rails. */
+.pbe-fight-week[data-yield-breaking] { display: none !important; }
+body:has(#breaking-slot .breaking) .pbe-fight-week { display: none !important; }
+
+.pbe-fight-week-inner { min-height: 34px !important; padding-top: 3px !important; padding-bottom: 3px !important; }
+.pbe-fight-week-matchup { font-size: 13px !important; }
+.pbe-fight-week-matchup.has-faces { --pbe-fw-face: 22px !important; }
+.pbe-fight-week-cta { padding: 5px 9px !important; }
+
+@media (min-width: 701px) {
+  .breaking { padding: 0 !important; }
+  .breaking-inner { min-height: 34px; }
+  .breaking-tag { padding: 3px 9px !important; }
+  .breaking-text { font-size: 13.5px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+}
+
+/* Mobile / tablet: the rail is ONE line. The whole rail is the link, so the separate CTA chip drops. */
+@media (max-width: 880px) {
+  .pbe-fight-week { min-height: 0 !important; }
+  .pbe-fight-week-inner {
+    min-height: 36px !important;
+    padding: 3px 14px !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    grid-template-areas: 'kicker matchup' !important;
+    gap: 0 10px !important;
+  }
+  .pbe-fight-week-cta { display: none !important; }
+  .pbe-fight-week-matchup { justify-self: center !important; }
+}
+@media (max-width: 560px) {
+  .pbe-fight-week-matchup { justify-self: end !important; font-size: 11px !important; }
+}
+
+/* ─── Homepage Free Picks proof (moved out of the header) ─────────────── */
+.pbe-home-proof {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px 28px;
+  flex-wrap: wrap;
+  margin: 8px 0 44px;
+  padding: 18px 22px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: 12px;
+  background: rgba(255,245,220,.03);
+}
+.pbe-home-proof-copy { display: grid; gap: 6px; min-width: 0; max-width: 760px; }
+.pbe-home-proof-eyebrow { font: 800 10px/1.2 var(--font-mono); letter-spacing: .18em; text-transform: uppercase; color: var(--gold-bright); }
+.pbe-home-proof-headline { font: 800 20px/1.2 var(--font-serif); color: var(--paper); }
+.pbe-home-proof-sub { font: 500 14px/1.5 var(--font-sans); color: var(--paper-dim); }
+.pbe-home-proof-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.pbe-home-proof-cta {
+  display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px;
+  border: 1px solid rgba(212,175,55,.55); border-radius: 8px; color: var(--gold-bright);
+  font: 800 11px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; text-decoration: none;
+}
+.pbe-home-proof-cta:hover { background: rgba(212,175,55,.08); color: var(--gold-bright); }
+.pbe-home-proof-link { font: 700 11px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--paper-dim); text-decoration: none; }
+.pbe-home-proof-link:hover { color: var(--paper); }
+@media (max-width: 600px) {
+  .pbe-home-proof { padding: 16px; margin-bottom: 32px; }
+  .pbe-home-proof-headline { font-size: 18px; }
+}
+
+/* ─── Kalshi partner line (homepage Market Pulse foot + article footer) ─ */
+/* Markup comes only from the vendored kalshi-partner.js. Muted and small: never a banner, never beside a price. */
+.pbe-kxo-slot[hidden] { display: none !important; }
+.pbe-kxo-slot .kxo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+  row-gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--paper-dim);
+}
+.pbe-kxo-slot .kxo > span, .pbe-kxo-slot .kxo > a { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.pbe-kxo-slot .kxo__kicker { font: 800 9.5px/1.4 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--paper-faint); }
+.pbe-kxo-slot .kxo__title,
+.pbe-kxo-slot .kxo__sub,
+.pbe-kxo-slot .kxo__body,
+.pbe-kxo-slot .kxo__note { font: 500 13px/1.45 var(--font-sans); color: var(--paper-dim); }
+.pbe-kxo-slot .kxo__cta {
+  font: 600 12.5px/1.45 var(--font-sans);
+  color: var(--paper-2, #e8e1d4);
+  text-decoration: underline;
+  text-decoration-color: rgba(212,175,55,.45);
+  text-underline-offset: 3px;
+}
+.pbe-kxo-slot .kxo__cta:hover, .pbe-kxo-slot .kxo__cta:focus-visible { color: var(--gold-bright); text-decoration-color: var(--gold-bright); }
+.pbe-kxo-slot .kxo__share,
+.pbe-kxo-slot .kxo__disc { flex-basis: 100%; font: 400 10.5px/1.45 var(--font-sans); color: var(--paper-faint); }
+
+.pbe-market-pulse-partner {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.pbe-article-partner {
+  margin: 28px 0 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}

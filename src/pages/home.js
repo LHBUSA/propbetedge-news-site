@@ -36,7 +36,9 @@
  */
 
 import { api } from '../api.js';
-import { renderHeader } from '../components/header.js';
+import { renderHeader, syncContextRail } from '../components/header.js';
+import { ad_home_proof } from '../ads-config.js';
+import { mountPartnerOffer, HOME_PARTNER_CONTEXT } from '../kalshi-partner-offer.js';
 import { renderFooter } from '../components/footer.js';
 import { isLiveRoot } from '../route-integrity.js';
 import { renderHomeCloser } from '../components/home-closer.js';
@@ -95,6 +97,9 @@ export async function renderHome(root) {
         <!-- Kalshi prediction-market launch (static; live dots after load) -->
         ${renderMarketPulseLaunch()}
 
+        <!-- Free Picks public proof: an in-content module (no longer a permanent bar above the masthead) -->
+        ${ad_home_proof()}
+
         <!-- Latest grid -->
         <section class="latest-section">
           <div class="section-heading">
@@ -115,6 +120,8 @@ export async function renderHome(root) {
 
   // Progressive enhancement only: never blocks or reshapes the static module.
   mountMarketPulseLive(root);
+  // Kalshi partner line at the foot of Market Pulse: central config (kill switch / stale terms) decides; '' = nothing.
+  mountPartnerOffer(root.querySelector('[data-pbe-market-pulse] [data-pbe-kxo-slot]'), HOME_PARTNER_CONTEXT);
 
   // Initial load
   const data = await fetchHomeData();
@@ -240,6 +247,7 @@ function populateHome(data, opts = {}) {
   if (breakingSlot) {
     breakingSlot.innerHTML = breakingPick ? renderBreakingBanner(breakingPick) : '';
   }
+  syncContextRail();
 
   const all = data.homepage.articles || [];
   const leadSlot = document.getElementById('lead-slot');

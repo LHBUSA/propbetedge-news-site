@@ -18,6 +18,8 @@
     { "source": "/api/markets/v1/article-market/nfl/:id([0-9]+)", "destination": "https://propsports-markets.sales-fd3.workers.dev/v1/article-market/nfl/:id" },
     { "source": "/api/markets/v1/article-market/nba/:id([0-9]+)", "destination": "https://propsports-markets.sales-fd3.workers.dev/v1/article-market/nba/:id" },
     { "source": "/api/markets/v1/article-market/nhl/:id([0-9]+)", "destination": "https://propsports-markets.sales-fd3.workers.dev/v1/article-market/nhl/:id" },
+    { "source": "/go/kalshi-perps/config", "destination": "https://propsports-markets.sales-fd3.workers.dev/v1/partner/kalshi" },
+    { "source": "/go/kalshi-perps", "destination": "https://propsports-markets.sales-fd3.workers.dev/go/kalshi-perps" },
     { "source": "/news/:path*", "destination": "/index.html" },
     { "source": "/authors/:path*", "destination": "/index.html" },
     { "source": "/author/:path*", "destination": "/index.html" },

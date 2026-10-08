@@ -96,9 +96,9 @@ test('surfaces use the registry, not raw product URLs', () => {
   const header = read('../src/components/header.js');
   assert.match(header, /INTELLIGENCE_ORDER\.map/);
   assert.match(header, /placement: 'header_switcher'/);
-  assert.match(header, /More News/);
-  assert.match(header, /NEWS_PRIMARY/);
-  assert.match(header, /NEWS_MORE/);
+  // owner 2026-10-07: the old "MLB NFL NBA NHL + More News" row is ONE News control over every newsroom
+  assert.match(header, /NEWS_ORDER\.map/);
+  assert.doesNotMatch(header, /More News|NEWS_PRIMARY|NEWS_MORE/);
   assert.match(header, /placement: 'mobile_more'/);
 });
 

@@ -4,7 +4,7 @@
  */
 
 import { api } from '../api.js';
-import { renderHeader } from '../components/header.js';
+import { renderHeader, syncContextRail } from '../components/header.js';
 import { renderFooter } from '../components/footer.js';
 import { isLiveRoot } from '../route-integrity.js';
 import { renderArticleCard } from '../components/article-card.js';
@@ -119,6 +119,7 @@ export async function renderNewsIndex(root, requestedPage = 1) {
   if (breaking.articles?.length) {
     document.getElementById('breaking-slot').innerHTML = renderBreakingBanner(breaking.articles[0]);
   }
+  syncContextRail();
 
   const allFresh = [
     ...(mlb.articles || []),

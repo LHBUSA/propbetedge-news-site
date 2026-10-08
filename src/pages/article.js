@@ -23,6 +23,7 @@ import { ad_in_article_after_take, ad_in_article_mid, proxyImage } from '../ads-
 import { renderArticleVisuals, mountArticleVisuals } from '../article-visuals.js';
 import { renderPreferredSource } from '../components/preferred-source.js';
 import { articleMarketWithin, articleMarketSlot, mountArticleMarketSlot } from '../article-market.js';
+import { articlePartnerSlot, mountPartnerOffer, articlePartnerContext } from '../kalshi-partner-offer.js';
 import { isLiveRoot } from '../route-integrity.js';
 
 const PREFERRED_SOURCE_SPORTS = new Set(['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer']);
@@ -160,6 +161,7 @@ export async function renderArticle(root, sport, slug, setMeta) {
 
           ${renderPreferredSource({ surface: 'article', sport: preferredSourceSport(article.sport) })}
 
+          ${articlePartnerSlot()}
 
           <div id="related-slot"></div>
         </article>
@@ -179,6 +181,9 @@ export async function renderArticle(root, sport, slug, setMeta) {
 
   mountArticleVisuals(article, manifest);
   mountArticleMarketSlot(root, article, market);
+  // ONE restrained Kalshi partner row after the editorial body + Preferred Source, before Related Coverage.
+  // Commercial only: it reads nothing from the article but its sport and never touches the market module.
+  mountPartnerOffer(root.querySelector('[data-pbe-kxo-slot="article"]'), articlePartnerContext(article));
   loadRelated(article, manifest, graph, root);
   attachGameEntity(article, manifest, graph, root);
 }

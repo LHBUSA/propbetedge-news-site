@@ -39,31 +39,7 @@ function injectEnhancementStyles() {
   const style = document.createElement('style');
   style.id = 'pbe-site-enhancement-styles';
   style.textContent = `
-    /* Score strip: the v3.6 desktop 76px box cannot contain two 22px team rows,
-       status, CTA and vertical padding. Force a safe content height. */
-    #pbe-score-strip {
-      height: 100px !important;
-      min-height: 100px !important;
-      overflow: visible !important;
-    }
-    #pbe-score-strip .pss-tile {
-      min-height: 100px !important;
-      padding-top: 8px !important;
-      padding-bottom: 8px !important;
-    }
-    #pbe-score-strip .pss-rail,
-    #pbe-score-strip .pss-rail-wrap {
-      min-height: 100px !important;
-    }
-    @media (max-width: 699px) {
-      #pbe-score-strip,
-      #pbe-score-strip .pss-rail,
-      #pbe-score-strip .pss-rail-wrap,
-      #pbe-score-strip .pss-tile {
-        height: 98px !important;
-        min-height: 98px !important;
-      }
-    }
+    /* Score strip height: the one-line ticker (owner 2026-10-07, ~34px) lives in src/styles/pbe-nav-v2.css. */
 
     /* PBE-branded fallback treatment */
     .img-fallback[data-pbe-branded="1"] {

@@ -2,7 +2,7 @@
  * src/components/header.js
  * Editorial masthead with PBE chrome logo + header banner ad
  */
-import { ad_header_banner, PROPBET_LINKS } from '../ads-config.js';
+import { PROPBET_LINKS } from '../ads-config.js';
 import { renderScoreStripShell, mountScoreStrip } from './score-strip.js';
 import { INTELLIGENCE_SPORTS, INTELLIGENCE_ORDER, ctaAttrs } from '../intelligence-cta.js';
 
@@ -31,8 +31,8 @@ const INTELLIGENCE_BLURBS = Object.freeze({
   golf: 'Player DNA, Course DNA, tournaments and PBEcast',
 });
 
-const NEWS_PRIMARY = Object.freeze(['mlb', 'nfl', 'nba', 'nhl']);
-const NEWS_MORE = Object.freeze(['wnba', 'ufc', 'tennis', 'soccer', 'golf', 'f1']);
+// ONE News control (owner 2026-10-07): every newsroom in one dropdown, the four on-site desks first.
+const NEWS_ORDER = Object.freeze(['mlb', 'nfl', 'nba', 'nhl', 'wnba', 'ufc', 'tennis', 'soccer', 'golf', 'f1']);
 
 function newsHref(key) {
   return INTELLIGENCE_SPORTS[key]?.newsPath || '/news';
@@ -80,6 +80,7 @@ export function renderHeader({ mode = 'sports' } = {}) {
       if (document.getElementById('pbe-ufc-fight-week')) {
         mountUfcFightWeek().catch(err => console.warn('[header] UFC fight-week mount failed:', err));
       }
+      initNavMenus();
       if (!_edgeCountFetched) {
         _edgeCountFetched = true;
         fetchEdgeCount().catch(err => console.warn('[header] edge count fetch failed:', err));
@@ -89,20 +90,17 @@ export function renderHeader({ mode = 'sports' } = {}) {
 
   return `
     ${editorial ? '' : renderScoreStripShell()}
-    ${editorial ? '' : ad_header_banner(sport ? { sport } : {})}
-    <header class="masthead${editorial ? ' masthead--editorial' : ''}">
+    <header class="masthead pbe-nav2${editorial ? ' masthead--editorial' : ''}">
       <div class="container masthead-inner">
-        <div class="masthead-left masthead-leagues" aria-label="League coverage and search">
-          <button type="button" class="nav-link pbe-search-trigger masthead-search" data-pbe-search-open aria-label="Search PropBetEdge" aria-keyshortcuts="Control+K Meta+K /">
-            <span class="masthead-search-icon" aria-hidden="true">⌕</span><span class="pbe-search-label">Search</span><kbd>/</kbd>
-          </button>
-          <a href="/" class="nav-link masthead-home " aria-label="PropBetEdge home">Home</a>
-          <span class="masthead-nav-divider" aria-hidden="true"></span>
-          ${NEWS_PRIMARY.map(key => `<a href="${newsHref(key)}" class="nav-link ${sportPathActive(path, key) ? 'active' : ''}"${newsTargetAttrs(key)}>${INTELLIGENCE_SPORTS[key].label}</a>`).join('')}
-          ${renderMoreNewsSwitcher(sport)}
-          <a href="/pro" class="nav-link pbe-all-access-link ${path === '/pro' ? 'active' : ''}" data-pbe-placement="masthead_all_access">All Access</a>
-          <a href="${MEMBERS_SIGN_IN_URL}" class="nav-link pbe-signin-link" data-pbe-placement="masthead_sign_in" aria-label="Sign in to PropBetEdge Members">Sign In</a>
-        </div>
+        <nav class="masthead-left masthead-primary" aria-label="PropBetEdge sections">
+          ${renderNewsSwitcher(sport)}
+          <a href="/games" class="nav-link live-link ${isLive ? 'active' : ''}">PBEcast</a>
+          <a href="/odds" class="nav-link edges-link ${isOdds ? 'active' : ''}">
+            <span class="edges-bolt" aria-hidden="true">⚡</span><span class="edges-label">Free Picks</span><span class="edges-count" id="edges-count" aria-live="polite"></span>
+          </a>
+          ${renderStatsSwitcher(isLeaders, isStandings)}
+          <a href="https://predictions.propbetedge.ai/" class="nav-link pbe-predictions-link" data-pbe-placement="masthead_predictions">Predictions</a>
+        </nav>
         <a href="/" class="masthead-logo" aria-label="PropBetEdge home">
           <img
             src="/logo/pbe-mark-160.png"
@@ -114,15 +112,11 @@ export function renderHeader({ mode = 'sports' } = {}) {
           <span class="tagline">Sports News &middot; Prop-Bet Intelligence</span>
         </a>
         <nav class="pbe-mobile-nav" aria-label="PropBetEdge mobile navigation">
-          <a href="/news" class="pbe-mobile-nav-link ${path === '/news' ? 'active' : ''}">News</a>
-          <a href="/games" class="pbe-mobile-nav-link ${isLive ? 'active' : ''}">Scores</a>
-          <a href="/odds" class="pbe-mobile-nav-link ${isOdds ? 'active' : ''}">Picks</a>
-          <a href="/leaders" class="pbe-mobile-nav-link ${isLeaders || isStandings ? 'active' : ''}">Stats</a>
           <a href="/pro" class="pbe-mobile-nav-link pbe-mobile-all-access ${path === '/pro' ? 'active' : ''}" data-pbe-placement="mobile_nav_all_access" aria-label="PropBetEdge All Access membership">All Access</a>
           <a href="${MEMBERS_SIGN_IN_URL}" class="pbe-mobile-nav-link pbe-mobile-signin" data-pbe-placement="mobile_nav_sign_in" aria-label="Sign in to PropBetEdge Members"><span class="pbe-mobile-signin-chip">Sign In</span></a>
           <button type="button" class="pbe-mobile-nav-link pbe-mobile-search" data-pbe-search-open aria-label="Search PropBetEdge">Search</button>
           <details class="pbe-mobile-more">
-            <summary class="pbe-mobile-nav-link">More</summary>
+            <summary class="pbe-mobile-nav-link" aria-label="Open PropBetEdge navigation">More</summary>
             <div class="pbe-mobile-more-panel">
               <div class="pbe-mobile-more-group pbe-mobile-more-membership">
                 <span class="pbe-mobile-more-label">Membership</span>
@@ -132,10 +126,19 @@ export function renderHeader({ mode = 'sports' } = {}) {
                   <button type="button" class="pbe-mobile-more-search" data-pbe-search-open>Search</button>
                 </div>
               </div>
+              <div class="pbe-mobile-more-group pbe-mobile-more-sections">
+                <span class="pbe-mobile-more-label">Sections</span>
+                <div class="pbe-mobile-more-links">
+                  <a href="/news" class="${path === '/news' ? 'active' : ''}">All News</a>
+                  <a href="/games" class="${isLive ? 'active' : ''}">PBEcast · Scores</a>
+                  <a href="/odds" class="${isOdds ? 'active' : ''}">Free Picks</a>
+                  <a href="/leaders" class="${isLeaders ? 'active' : ''}">Stats</a>
+                </div>
+              </div>
               <div class="pbe-mobile-more-group">
                 <span class="pbe-mobile-more-label">News</span>
                 <div class="pbe-mobile-more-links">
-                  ${[...NEWS_PRIMARY, ...NEWS_MORE].map(key => `<a href="${newsHref(key)}"${newsTargetAttrs(key)}>${INTELLIGENCE_SPORTS[key].label}</a>`).join('')}
+                  ${NEWS_ORDER.map(key => `<a href="${newsHref(key)}"${newsTargetAttrs(key)}>${INTELLIGENCE_SPORTS[key].label}</a>`).join('')}
                 </div>
               </div>
               <div class="pbe-mobile-more-group">
@@ -155,18 +158,49 @@ export function renderHeader({ mode = 'sports' } = {}) {
             </div>
           </details>
         </nav>
-        <div class="masthead-right masthead-tools" aria-label="PropBetEdge tools">
-          <a href="/games" class="nav-link live-link ${isLive ? 'active' : ''}">PBEcast</a>
-          ${renderStatsSwitcher(isLeaders, isStandings)}
-          <a href="/odds" class="nav-link edges-link ${isOdds ? 'active' : ''}">
-            <span class="edges-bolt">⚡</span><span class="edges-label">Free Picks</span><span class="edges-count" id="edges-count" aria-live="polite"></span>
-          </a>
+        <div class="masthead-right masthead-tools" aria-label="PropBetEdge intelligence and account">
           ${renderIntelligenceSwitcher(sport, pageTypeFor(path), articleSlugFor(path))}
+          <a href="/pro" class="nav-link pbe-all-access-link ${path === '/pro' ? 'active' : ''}" data-pbe-placement="masthead_all_access">All Access</a>
+          <a href="${MEMBERS_SIGN_IN_URL}" class="nav-link pbe-signin-link" data-pbe-placement="masthead_sign_in" aria-label="Sign in to PropBetEdge Members">Sign In</a>
+          <button type="button" class="nav-link pbe-search-trigger masthead-search" data-pbe-search-open aria-label="Search PropBetEdge" aria-keyshortcuts="Control+K Meta+K /">
+            <span class="masthead-search-icon" aria-hidden="true">⌕</span>
+          </button>
         </div>
       </div>
     </header>
     ${editorial ? '' : renderUfcFightWeekShell()}
   `;
+}
+
+/**
+ * Contextual rail (owner 2026-10-07): at most ONE full-width rail under the masthead,
+ * priority BREAKING > LIVE EVENT / FIGHT WEEK > nothing. While a Breaking ribbon is on the
+ * page the UFC Fight Week rail yields (it stays mounted and returns when Breaking is gone).
+ */
+export function syncContextRail(doc = typeof document !== 'undefined' ? document : null) {
+  const rail = doc?.getElementById?.('pbe-ufc-fight-week');
+  if (!rail) return;
+  if (typeof rail.toggleAttribute !== 'function' || typeof doc.querySelector !== 'function') return;
+  rail.toggleAttribute('data-yield-breaking', Boolean(doc.querySelector('.breaking')));
+}
+
+// One open header menu at a time; outside click or Escape closes it.
+let _navMenusReady = false;
+function initNavMenus() {
+  if (_navMenusReady || typeof document === 'undefined' || typeof document.addEventListener !== 'function') return;
+  _navMenusReady = true;
+  document.addEventListener('toggle', (event) => {
+    const opened = event.target;
+    if (!opened?.matches?.('details[data-pbe-nav-menu]') || !opened.open) return;
+    document.querySelectorAll('details[data-pbe-nav-menu][open]').forEach((d) => { if (d !== opened) d.open = false; });
+  }, true);
+  document.addEventListener('click', (event) => {
+    document.querySelectorAll('details[data-pbe-nav-menu][open]').forEach((d) => { if (!d.contains(event.target)) d.open = false; });
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    document.querySelectorAll('details[data-pbe-nav-menu][open]').forEach((d) => { d.open = false; });
+  });
 }
 
 function renderUfcFightWeekShell() {
@@ -187,21 +221,22 @@ function renderUfcFightWeekShell() {
   `;
 }
 
-function renderMoreNewsSwitcher(activeSport) {
-  const active = NEWS_MORE.includes(activeSport);
+function renderNewsSwitcher(activeSport) {
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  const active = path === '/news' || path.startsWith('/news/');
   return `
-    <details class="pbe-sports-switcher pbe-news-switcher">
-      <summary class="nav-link pbe-sports-summary ${active ? 'active' : ''}" aria-label="Open more PropBetEdge newsrooms">
-        <span>More News</span><span class="pbe-sports-chevron" aria-hidden="true">⌄</span>
+    <details class="pbe-sports-switcher pbe-news-switcher" data-pbe-nav-menu>
+      <summary class="nav-link pbe-sports-summary ${active ? 'active' : ''}" aria-label="Open PropBetEdge newsrooms">
+        <span>News</span><span class="pbe-sports-chevron" aria-hidden="true">⌄</span>
       </summary>
-      <div class="pbe-sports-menu pbe-news-menu" role="menu" aria-label="More PropBetEdge newsrooms">
+      <div class="pbe-sports-menu pbe-news-menu" role="menu" aria-label="PropBetEdge newsrooms">
         <div class="pbe-sports-menu-head">
           <span>SPORT NEWSROOMS</span>
           <strong>Every sport has its own news desk</strong>
           <small>Open the dedicated newsroom for that sport.</small>
         </div>
         <div class="pbe-sports-grid pbe-news-grid">
-          ${NEWS_MORE.map(key => {
+          ${NEWS_ORDER.map(key => {
             const intel = INTELLIGENCE_SPORTS[key];
             return `
               <a class="pbe-sports-option${activeSport === key ? ' is-active' : ''}" href="${newsHref(key)}" role="menuitem"${newsTargetAttrs(key)}>
@@ -221,7 +256,7 @@ function renderMoreNewsSwitcher(activeSport) {
 function renderStatsSwitcher(isLeaders, isStandings) {
   const active = isLeaders || isStandings;
   return `
-    <details class="pbe-stats-switcher">
+    <details class="pbe-stats-switcher" data-pbe-nav-menu>
       <summary class="nav-link pbe-stats-summary ${active ? 'active' : ''}" aria-label="Open PropBetEdge stats navigation">
         <span>Stats</span><span class="pbe-stats-chevron" aria-hidden="true">⌄</span>
       </summary>
@@ -242,25 +277,24 @@ function renderStatsSwitcher(isLeaders, isStandings) {
 }
 
 function renderIntelligenceSwitcher(activeSport, pageType, slug) {
-  const selectedProduct = INTELLIGENCE_PRODUCTS.find(product => product.key === activeSport)
-    || INTELLIGENCE_PRODUCTS.find(product => product.key === 'nfl')
-    || INTELLIGENCE_PRODUCTS[0];
+  // ONE sport/intelligence selector for all 10 sports. Neutral "Intelligence" unless the page is about one sport.
+  const selectedProduct = INTELLIGENCE_PRODUCTS.find(product => product.key === activeSport) || null;
 
   return `
-    <details class="pbe-intel-switcher">
+    <details class="pbe-intel-switcher" data-pbe-nav-menu>
       <summary class="pbe-intel-summary" aria-label="Switch live PropBetEdge intelligence product">
         <span class="pbe-intel-live-dot" aria-hidden="true"></span>
-        <span class="pbe-intel-summary-sport" aria-hidden="true">${selectedProduct.emoji}</span>
-        <span>${selectedProduct.label}</span>
+        ${selectedProduct ? `<span class="pbe-intel-summary-sport" aria-hidden="true">${selectedProduct.emoji}</span>` : ''}
+        <span>${selectedProduct ? selectedProduct.label : 'Intelligence'}</span>
         <span class="pbe-intel-chevron" aria-hidden="true">⌄</span>
       </summary>
       <div class="pbe-intel-menu" role="menu" aria-label="Choose a live PropBetEdge intelligence product">
         <div class="pbe-intel-menu-head">
           <span>PROP BET EDGE NETWORK</span>
-          <strong>Switch live intelligence product</strong>
+          <strong>Intelligence for all 10 sports</strong>
         </div>
         ${INTELLIGENCE_PRODUCTS.map(product => `
-          <a class="pbe-intel-option${selectedProduct.key === product.key ? ' is-active' : ''}" href="${product.href}" role="menuitem" ${ctaAttrs(INTELLIGENCE_SPORTS[product.key], { placement: 'header_switcher', pageType, slug })}>
+          <a class="pbe-intel-option${selectedProduct?.key === product.key ? ' is-active' : ''}" href="${product.href}" role="menuitem" ${ctaAttrs(INTELLIGENCE_SPORTS[product.key], { placement: 'header_switcher', pageType, slug })}>
             <span class="pbe-intel-option-icon" aria-hidden="true">${product.emoji}</span>
             <span class="pbe-intel-option-copy">
               <strong>${product.label}</strong>
@@ -369,6 +403,7 @@ async function mountUfcFightWeek() {
   rail.setAttribute('aria-label', `${isFightWeek ? 'Open UFC Fight Week' : 'Explore the next UFC card'}: ${event.name || 'UFC'}`);
   rail.classList.toggle('is-fight-week', isFightWeek);
   rail.hidden = false;
+  syncContextRail();
 }
 
 // "[face] Joshua Van vs Alexandre Pantoja [face]". Faces are fixed-size chips so

@@ -529,6 +529,25 @@ export function ad_header_banner(ctx = {}) {
   });
 }
 
+// Homepage Free Picks public proof (owner 2026-10-07): the proof / track-record message lives in the homepage
+// content as one contained module, no longer as a permanent full-width bar above the masthead.
+export function ad_home_proof() {
+  const c = FREE_PICKS_CAMPAIGN;
+  return `
+    <section class="pbe-home-proof" aria-label="Free Picks public proof">
+      <div class="pbe-home-proof-copy">
+        <span class="pbe-home-proof-eyebrow">${c.eyebrow}</span>
+        <strong class="pbe-home-proof-headline">${c.headline}</strong>
+        <span class="pbe-home-proof-sub">${c.sub}</span>
+      </div>
+      <div class="pbe-home-proof-actions">
+        <a class="pbe-home-proof-cta" href="${withUtm(c.href, 'home_proof', c.key)}" data-pbe-placement="home_free_picks_proof">${c.cta} →</a>
+        <a class="pbe-home-proof-link" href="/odds/history" data-pbe-placement="home_track_record">Track record →</a>
+      </div>
+    </section>
+  `;
+}
+
 export function ad_in_article_after_take(articleContext = {}) {
   return ad_brand_family('after_take', articleContext);
 }

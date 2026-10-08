@@ -46,6 +46,7 @@ export function renderMarketPulseLaunch() {
         }).join('')}
       </nav>
       <p class="pbe-market-pulse-attribution">${esc(c.attribution)}</p>
+      <div class="pbe-kxo-slot pbe-market-pulse-partner" data-pbe-kxo-slot="home" hidden></div>
     </section>
   `;
 }

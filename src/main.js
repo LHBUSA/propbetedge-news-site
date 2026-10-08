@@ -27,6 +27,8 @@ import './styles/network-footer.css';
 import './styles/founder-profile.css';
 import './styles/editorial-standards.css';
 import './styles/research.css';
+// LAST: global nav cleanup (3 chrome layers) + Kalshi partner line styles.
+import './styles/pbe-nav-v2.css';
 import { initBackgroundSelector } from './background-selector.js';
 import { initNflLaunchPriority } from './nfl-launch-priority.js';
 import { initSiteEnhancements } from './site-enhancements.js';
