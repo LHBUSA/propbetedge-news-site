@@ -9,6 +9,8 @@
 .pbe-intl:lang(ja) :is(h1, h2, h3, p, span, a, strong, b, li, dt, dd, small, button, code),
 .pbe-intl:lang(ko) :is(h1, h2, h3, p, span, a, strong, b, li, dt, dd, small, button, code) { font-family: inherit; }
 .pbe-intl .pbe-pro-title, .pbe-intl .pbe-pro-section-head h2, .pbe-intl .pbe-pro-final h2 { word-break: keep-all; overflow-wrap: anywhere; }
+/* Japanese has no spaces: wrap headings at phrase boundaries where the browser supports it (Chrome 119+). */
+.pbe-intl:lang(ja) :is(.pbe-pro-title, h1, h2, h3) { word-break: auto-phrase; }
 
 .pbe-intl-top { position: sticky; top: 0; z-index: 20; background: rgba(20, 17, 13, .92); border-bottom: 1px solid var(--line); backdrop-filter: blur(8px); }
 .pbe-intl-top-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; }

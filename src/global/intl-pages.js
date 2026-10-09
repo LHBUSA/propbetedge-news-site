@@ -106,7 +106,7 @@ const COPY = {
     networkP: '各競技はそれぞれ専用に作られたプロダクトです。ライブ体験、データ、モデル、DNAリサーチを競技ごとに持ち、対応競技ではPBEcastも利用できます。All Accessはそれらをつなぐ層で、その上にCommand Center、Compare、Markets、Predictionsがあります。',
     featuredEyebrow: '日本のファンに',
     featuredH: 'MLB、F1、ゴルフから始めましょう。',
-    featuredP: '日本でもっとも見られている競技から。いずれもAll Accessに含まれています。',
+    featuredP: 'まずはこの3競技から。いずれもAll Accessに含まれています。',
     featured: ['mlb', 'f1', 'golf'],
     edges: {
       mlb: 'モデル、対戦分析、本塁打候補、奪三振分析、ライブの試合状況。',
@@ -197,8 +197,8 @@ const COPY = {
     networkH: '로고 10개를 붙인 하나의 제품이 아닙니다.',
     networkP: '각 종목은 그 종목을 위해 만든 별도의 프로덕트입니다. 라이브 경험, 데이터, 모델, DNA 리서치를 종목마다 갖추고 있으며, 지원 종목에서는 PBEcast도 이용할 수 있습니다. All Access는 이들을 연결하는 층이며, 그 위에 Command Center, Compare, Markets, Predictions가 있습니다.',
     featuredEyebrow: '한국 팬을 위해',
-    featuredH: 'MLB와 골프부터 시작하세요.',
-    featuredP: '한국에서 많이 보는 종목부터. 모두 All Access에 포함되어 있습니다.',
+    featuredH: 'MLB, 골프, 축구부터 시작하세요.',
+    featuredP: '먼저 이 세 종목부터 살펴보세요. 모두 All Access에 포함되어 있습니다.',
     featured: ['mlb', 'golf', 'soccer'],
     edges: {
       mlb: '모델, 매치업 분석, 홈런 후보, 탈삼진 분석, 라이브 경기 상황.',
