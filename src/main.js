@@ -21,6 +21,8 @@ import './styles/pbe-board-author.css';
 import './styles/pbe-entity-graph.css';
 import './styles/pbe-mobile-cleanup.css';
 import './styles/pbe-pro.css';
+import './vendor/pbe-locale/pbe-locale.css';
+import './styles/pbe-intl.css';
 import './styles/pbe-intelligence-cta.css';
 import './styles/pbe-preferred-source.css';
 import './styles/network-footer.css';

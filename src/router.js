@@ -26,6 +26,8 @@ import { renderDevelopers } from './pages/developers.js';
 import { renderAbout } from './pages/about.js';
 import { renderTrustPage } from './pages/trust.js';
 import { renderPro } from './pages/pro.js';
+import { renderIntlPage } from './pages/intl.js';
+import { intlRoute, documentLang } from './global/intl-pages.js';
 import { renderNotFound } from './pages/404.js';
 import { renderGamesHub } from './pages/games-hub.js';
 import { renderGameDetail } from './pages/game-detail.js';
@@ -98,6 +100,8 @@ function setOrCreateMeta(attr, name, value) {
   el.setAttribute('content', value);
 }
 
+let routedOnce = false;
+
 function clearAndRoute() {
   // Tear down homepage timers before every SPA route render. This prevents the
   // homepage carousel from writing into a later route that happens to reuse
@@ -106,6 +110,20 @@ function clearAndRoute() {
   stopSportLifecycle();
 
   const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  // Global #67: a page in another language is always a full load, so <html lang>
+  // and the server head (hreflang, canonical, JSON-LD) match the document.
+  // The first render adopts the language (the server already set it); later
+  // in-app navigations across languages reload instead of re-rendering.
+  const intl = intlRoute(path);
+  const lang = documentLang(path);
+  if (lang !== (document.documentElement.lang || 'en')) {
+    if (routedOnce) { window.location.replace(window.location.href); return; }
+    document.documentElement.lang = lang;
+  }
+  routedOnce = true;
+  if (path !== '/pro' && !intl) {
+    document.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
+  }
   // A new #app per route: a renderer still awaiting data for the previous route writes into a detached node.
   const root = freshRouteRoot();
   window.scrollTo({ top: 0, behavior: 'instant' });
@@ -238,6 +256,7 @@ function clearAndRoute() {
   if (authorMatch) return renderAuthor(root, authorMatch[1], setMeta);
 
   if (path === '/pro') return renderPro(root, setMeta);
+  if (intl) return renderIntlPage(root, intl, setMeta);
 
   if (path === '/about') return renderAbout(root, setMeta);
 
@@ -303,7 +322,7 @@ export function initRouter() {
     if (!a) return;
     const href = a.getAttribute('href');
     if (!href) return;
-    if (a.target === '_blank' || a.hasAttribute('download')) return;
+    if (a.target === '_blank' || a.hasAttribute('download') || a.hasAttribute('data-pbe-reload')) return;
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
     if (href.startsWith('http://') || href.startsWith('https://')) {
       if (!href.startsWith('https://propbetedge.ai')) return;

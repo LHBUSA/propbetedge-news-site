@@ -3,6 +3,7 @@ import { renderFooter } from '../components/footer.js';
 import { renderShareBar, mountShareBars } from '../entity-graph/share-bar.js';
 import { buildProHtml, checkoutSucceeded, memberStateFrom, ALL_ACCESS } from '../pro-content.js';
 import { proHeadMeta, proSocialTags, proJsonLd, PRO_CANONICAL, PRO_SHARE_TITLE } from '../pro-seo.js';
+import { proAlternates } from '../global/intl-pages.js';
 
 /* /pro — PropBetEdge All Access, the network membership page.
  * ?checkout=success is Stripe's success redirect for the live payment link.
@@ -80,6 +81,16 @@ function applyHeadContract(head) {
     document.head.appendChild(script);
   }
   script.textContent = JSON.stringify(proJsonLd());
+  // Reciprocal hreflang with /ja/pro and /ko/pro (Global #67), as the server emits it.
+  document.querySelectorAll('link[rel="alternate"][hreflang]').forEach((el) => el.remove());
+  if (head.robots === 'noindex, follow') return;
+  for (const a of proAlternates()) {
+    const link = document.createElement('link');
+    link.rel = 'alternate';
+    link.hreflang = a.hreflang;
+    link.href = a.url;
+    document.head.appendChild(link);
+  }
 }
 
 function upsertMeta(attr, name, value) {

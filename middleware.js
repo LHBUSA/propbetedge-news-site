@@ -17,6 +17,7 @@
 import { next } from '@vercel/edge';
 
 import { proHeadMeta, proSocialTags, proJsonLd, proServerHtml, isCheckoutSuccess, proHeroPreloads } from './src/pro-seo.js';
+import { intlRoute, intlHead, intlHtml, viaFrom, proAlternates } from './src/global/intl-pages.js';
 import { assessArticleIntegrity, applyArticlePublicationPolicy, filterPublicArticles } from './news-integrity.js';
 import { buildEntityManifest } from './src/entity-graph/manifest.js';
 import { enrichManifestWithGame } from './src/entity-graph/games.js';
@@ -406,6 +407,17 @@ async function resolveMeta(pathname, search = '') {
   // One contract for crawler bytes and hydration: src/pro-seo.js. The Stripe
   // success return is a transactional state of the same page: canonical stays
   // /pro and it is noindex,follow so it never becomes a second search result.
+  // Global #67: Japanese and Korean All Access pages and the regional seller
+  // disclosures (src/global/intl-pages.js, shared with the client router).
+  const intl = intlRoute(pathname);
+  if (intl) {
+    return {
+      ...intlHead(intl),
+      ssrHtml: intlHtml(intl, { via: viaFrom(search) }),
+      preloadImages: intl.kind === 'pro' ? proHeroPreloads() : undefined,
+    };
+  }
+
   if (pathname === '/pro') {
     const checkoutSuccess = isCheckoutSuccess(search);
     const head = proHeadMeta({ checkoutSuccess });
@@ -419,6 +431,7 @@ async function resolveMeta(pathname, search = '') {
       jsonLd: proJsonLd(),
       ssrHtml: proServerHtml({ checkoutSuccess }),
       preloadImages: proHeroPreloads(),
+      alternates: checkoutSuccess ? [] : proAlternates(),
     };
   }
 
@@ -548,6 +561,18 @@ function injectMeta(html, meta) {
     } else {
       html = html.replace(/<body\b([^>]*)>/i, `<body$1 data-pbe-scene="${escapeAttr(meta.sport)}">`);
     }
+  }
+
+  // Document language (Global #67): only localized pages change it.
+  if (meta.lang && meta.lang !== 'en') {
+    html = html.replace(/<html\b([^>]*)\blang="[^"]*"/i, `<html$1lang="${escapeAttr(meta.lang)}"`);
+  }
+  // Reciprocal hreflang alternates, for a page that exists in more than one language.
+  if (Array.isArray(meta.alternates) && meta.alternates.length) {
+    const links = meta.alternates.map((a) =>
+      `  <link rel="alternate" hreflang="${escapeAttr(a.hreflang)}" href="${escapeAttr(a.url)}" />`
+    ).join('\n');
+    html = html.replace(/<\/head>/i, `${links}\n</head>`);
   }
 
   // Replace canonical

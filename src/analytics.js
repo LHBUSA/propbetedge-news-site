@@ -85,6 +85,7 @@ function handleClick(event) {
   if (placed) {
     gtagEvent('network_cta_click', {
       placement: placed.dataset.pbePlacement || '',
+      page_locale: document.documentElement.lang || 'en',
       link_url: href,
       link_text: cleanText(anchor.textContent),
       destination: destinationFor(href),

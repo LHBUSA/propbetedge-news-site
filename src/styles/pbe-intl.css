@@ -1,0 +1,57 @@
+/* Global #67: /ja/pro, /ko/pro and the regional disclosures (src/global/intl-pages.js).
+   The page body reuses the /pro design (pbe-pro.css); this file adds the slim language bar,
+   the subscription terms, the footer and the disclosure table. Warm palette tokens only.
+   CJK typography (fonts, kinsoku, keep-all, no Latin capitals) comes from the shared
+   pbe-locale.css; here the Latin display faces give way to the CJK stack so headings
+   never fall back glyph by glyph. */
+
+.pbe-intl { min-height: 100vh; background: var(--ink); color: var(--paper); }
+.pbe-intl:lang(ja) :is(h1, h2, h3, p, span, a, strong, b, li, dt, dd, small, button, code),
+.pbe-intl:lang(ko) :is(h1, h2, h3, p, span, a, strong, b, li, dt, dd, small, button, code) { font-family: inherit; }
+.pbe-intl .pbe-pro-title, .pbe-intl .pbe-pro-section-head h2, .pbe-intl .pbe-pro-final h2 { word-break: keep-all; overflow-wrap: anywhere; }
+
+.pbe-intl-top { position: sticky; top: 0; z-index: 20; background: rgba(20, 17, 13, .92); border-bottom: 1px solid var(--line); backdrop-filter: blur(8px); }
+.pbe-intl-top-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; }
+.pbe-intl-brand { color: var(--paper); font-weight: 800; font-size: 17px; letter-spacing: -.01em; text-decoration: none; }
+.pbe-intl-langs { display: flex; gap: 6px; }
+.pbe-intl-langs a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--paper-dim); font-size: 13px; text-decoration: none; }
+.pbe-intl-langs a[aria-current="page"] { color: var(--gold-bright); border-color: rgba(212, 175, 55, .55); }
+.pbe-intl-langs a:hover { color: var(--paper); }
+.pbe-intl a:focus-visible, .pbe-intl button:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 3px; }
+
+.pbe-intl-currency { margin: 10px 0 0; font-size: 13px; line-height: 1.6; color: var(--paper-dim); }
+.pbe-intl-featured-list { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+
+.pbe-intl-terms { max-width: 640px; margin: 22px auto 26px; padding: 18px 20px; text-align: left; border: 1px solid var(--line-strong); border-radius: 12px; background: rgba(255, 245, 220, .03); }
+.pbe-intl-terms h2 { margin: 0 0 10px; font-size: 16px !important; line-height: 1.4; color: var(--paper); }
+.pbe-intl-terms dl { margin: 0; display: grid; gap: 8px; }
+.pbe-intl-terms dl > div { display: grid; grid-template-columns: 9em minmax(0, 1fr); gap: 12px; }
+.pbe-intl-terms dt { font-weight: 700; font-size: 13px; color: var(--gold-bright); }
+.pbe-intl-terms dd { margin: 0; font-size: 13px; line-height: 1.65; color: var(--paper-dim); }
+
+.pbe-intl-foot { border-top: 1px solid var(--line); padding: 28px 0 40px; }
+.pbe-intl-foot-links { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.pbe-intl-foot-links a { display: inline-flex; align-items: center; min-height: 44px; color: var(--paper-dim); font-size: 13px; text-decoration: none; }
+.pbe-intl-foot-links a:hover { color: var(--gold-bright); }
+.pbe-intl-responsible { max-width: 760px; margin: 12px 0 0; font-size: 12.5px; line-height: 1.7; color: var(--paper-faint); }
+.pbe-intl-operator { margin: 8px 0 0; font-size: 12px; color: var(--paper-faint); }
+
+.pbe-intl-legal { padding: 48px 0 64px; }
+.pbe-intl-legal-inner { max-width: 920px; }
+.pbe-intl-legal h1 { margin: 0 0 12px; font-size: clamp(26px, 5vw, 40px); line-height: 1.3; }
+.pbe-intl-legal-intro { margin: 0 0 24px; color: var(--paper-dim); line-height: 1.7; }
+.pbe-intl-legal-table { margin: 0; border: 1px solid var(--line-strong); border-radius: 12px; overflow: hidden; }
+.pbe-intl-legal-table > div { display: grid; grid-template-columns: 13em minmax(0, 1fr); border-top: 1px solid var(--line); }
+.pbe-intl-legal-table > div:first-child { border-top: 0; }
+.pbe-intl-legal-table dt { padding: 14px 16px; font-weight: 700; font-size: 14px; color: var(--paper); background: rgba(255, 245, 220, .035); }
+.pbe-intl-legal-table dd { margin: 0; padding: 14px 16px; font-size: 14px; line-height: 1.75; color: var(--paper-dim); }
+.pbe-intl-legal-table a, .pbe-intl-legal-inner > p a { color: var(--gold-bright); }
+.pbe-intl-legal-note { margin: 18px 0 8px; font-size: 13px; color: var(--paper-faint); }
+
+@media (max-width: 720px) {
+  .pbe-intl-featured-list { grid-template-columns: 1fr !important; }
+  .pbe-intl-terms dl > div, .pbe-intl-legal-table > div { grid-template-columns: 1fr; gap: 2px; }
+  .pbe-intl-legal-table dt { padding-bottom: 6px; }
+  .pbe-intl-legal-table dd { padding-top: 6px; }
+  .pbe-intl-langs a { padding: 0 10px; }
+}
