@@ -72,5 +72,6 @@ summary must quote it.
 | `05_failed_payments.sql` | Failed charges by card country × failure code (payment-method fit by market) |
 | `06_retention_cohorts.sql` | First-renewal and month-k retention by cohort × billing country |
 | `07_focus_markets.sql` | One-page snapshot for JP, KR, ES, MX, BR, FR, DE, US (+ rest of world) |
+| `08_locale_attribution.sql` | Checkout Sessions started/completed (and still active) per localized page and referring sport, from the `client_reference_id` tag `pbe-<lang>-pro[-<via>]` (live 2026-10-09) |
 
 `PRODUCT_MAP.md` lists every Stripe product, price and payment link found in the code (brand classification).
