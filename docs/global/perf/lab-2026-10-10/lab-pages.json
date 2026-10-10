@@ -1,0 +1,45 @@
+{
+  "schema": "pbe-perf-lab-pages/1",
+  "note": "Commercial / acquisition pages measured from LOCAL production builds of each repo's origin/main (see README.md). dir = the lab worktree that holds the built dist/.",
+  "sites": [
+    { "id": "root",   "repo": "LHBUSA/propbetedge-news-site", "dir": "E:/wt/propbetedge-news-site-lab", "dist": "dist", "port": 4301, "build": "npm ci --ignore-scripts && npm run build" },
+    { "id": "golf",   "repo": "LHBUSA/golf",                  "dir": "E:/wt/golf-lab",                  "dist": "dist", "port": 4302, "build": "npm ci --ignore-scripts && npm run build" },
+    { "id": "mlb",    "repo": "LHBUSA/propbetedge-v2",        "dir": "E:/wt/propbetedge-v2-lab",        "dist": "dist", "port": 4303, "build": "npm ci --ignore-scripts && npm run build" },
+    { "id": "f1",     "repo": "LHBUSA/f1",                    "dir": "E:/wt/f1-lab",                    "dist": "dist", "port": 4304, "build": "npm ci --ignore-scripts && F1_DATASET_TOKEN=<from D:/Workers/secrets/f1-dataset-token> npm run build (publish-projection self-skips: VERCEL_ENV unset)" },
+    { "id": "soccer", "repo": "LHBUSA/soccer",                "dir": "E:/wt/soccer-lab",                "dist": "dist", "port": 4305, "build": "npm ci --ignore-scripts && npm run build" }
+  ],
+  "pages": [
+    { "id": "root-en-pro",        "site": "root", "lang": "en", "path": "/pro" },
+    { "id": "root-ja-pro",        "site": "root", "lang": "ja", "path": "/ja/pro", "en": "root-en-pro" },
+    { "id": "root-ko-pro",        "site": "root", "lang": "ko", "path": "/ko/pro", "en": "root-en-pro" },
+    { "id": "root-es-pro-soccer", "site": "root", "lang": "es", "path": "/pro?lang=es&via=soccer", "en": "root-en-pro" },
+
+    { "id": "golf-en-all-access", "site": "golf", "lang": "en", "path": "/all-access" },
+    { "id": "golf-es-all-access", "site": "golf", "lang": "es", "path": "/es/all-access", "en": "golf-en-all-access" },
+    { "id": "golf-ja-all-access", "site": "golf", "lang": "ja", "path": "/ja/all-access", "en": "golf-en-all-access" },
+    { "id": "golf-ko-all-access", "site": "golf", "lang": "ko", "path": "/ko/all-access", "en": "golf-en-all-access" },
+    { "id": "golf-en-home",       "site": "golf", "lang": "en", "path": "/" },
+    { "id": "golf-es-home",       "site": "golf", "lang": "es", "path": "/es/", "en": "golf-en-home" },
+    { "id": "golf-ja-home",       "site": "golf", "lang": "ja", "path": "/ja/", "en": "golf-en-home" },
+    { "id": "golf-ko-home",       "site": "golf", "lang": "ko", "path": "/ko/", "en": "golf-en-home" },
+
+    { "id": "mlb-en-sharp-tools", "site": "mlb", "lang": "en", "path": "/sharp-tools" },
+    { "id": "mlb-ja-sharp-tools", "site": "mlb", "lang": "ja", "path": "/ja/sharp-tools", "en": "mlb-en-sharp-tools" },
+    { "id": "mlb-ko-sharp-tools", "site": "mlb", "lang": "ko", "path": "/ko/sharp-tools", "en": "mlb-en-sharp-tools" },
+    { "id": "mlb-en-games",       "site": "mlb", "lang": "en", "path": "/games" },
+    { "id": "mlb-ja-games",       "site": "mlb", "lang": "ja", "path": "/ja/games", "en": "mlb-en-games" },
+    { "id": "mlb-ko-games",       "site": "mlb", "lang": "ko", "path": "/ko/games", "en": "mlb-en-games" },
+    { "id": "mlb-ja-home",        "site": "mlb", "lang": "ja", "path": "/ja/", "en": "mlb-en-sharp-tools" },
+    { "id": "mlb-ko-home",        "site": "mlb", "lang": "ko", "path": "/ko/", "en": "mlb-en-sharp-tools" },
+
+    { "id": "f1-en-home",         "site": "f1", "lang": "en", "path": "/" },
+    { "id": "f1-ja-home",         "site": "f1", "lang": "ja", "path": "/ja", "en": "f1-en-home" },
+    { "id": "f1-en-all-access",   "site": "f1", "lang": "en", "path": "/all-access" },
+    { "id": "f1-en-pbecast-sgp",  "site": "f1", "lang": "en", "path": "/pbecast/2026-singapore-grand-prix" },
+
+    { "id": "soccer-en-all-access", "site": "soccer", "lang": "en", "path": "/all-access" },
+    { "id": "soccer-es-all-access", "site": "soccer", "lang": "es", "path": "/es/all-access", "en": "soccer-en-all-access" },
+    { "id": "soccer-en-home",       "site": "soccer", "lang": "en", "path": "/" },
+    { "id": "soccer-es-home",       "site": "soccer", "lang": "es", "path": "/es/", "en": "soccer-en-home" }
+  ]
+}
