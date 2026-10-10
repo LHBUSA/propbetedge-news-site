@@ -57,7 +57,7 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image: url('https://images.unsplash.com/photo-1666366330282-b11566b272cf?w=2400&q=70&auto=format&fit=crop');
+  background-image: url('/backgrounds/photo/wrigley-field-2200.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

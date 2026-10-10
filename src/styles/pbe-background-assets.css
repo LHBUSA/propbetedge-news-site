@@ -8,7 +8,7 @@
 
 /* --- Full-page scene authority --- */
 body[data-pbe-scene='wrigley'] {
-  --pbe-scene-image: url('https://images.unsplash.com/photo-1666366330282-b11566b272cf?w=2200&q=72&auto=format&fit=crop');
+  --pbe-scene-image: url('/backgrounds/photo/wrigley-field-2200.webp');
   --pbe-scene-position: center 48%;
   --pbe-scene-opacity: .35;
   --pbe-scene-filter: grayscale(6%) sepia(3%) saturate(94%) brightness(.90) contrast(1.07);
@@ -100,7 +100,7 @@ body[data-pbe-scene='nhl-blueline'] {
 /* --- Selector card image authority ---
    These rules intentionally load after the old preview fallback layer. */
 .pbe-scene-option[data-scene='wrigley'] .pbe-scene-preview {
-  background-image: url('https://images.unsplash.com/photo-1666366330282-b11566b272cf?w=900&q=72&auto=format&fit=crop') !important;
+  background-image: url('/backgrounds/photo/wrigley-field-640.webp') !important;
   background-position: center 50% !important;
   filter: grayscale(6%) sepia(4%) saturate(92%) brightness(.82) contrast(1.08) !important;
 }
@@ -204,5 +204,32 @@ body[data-pbe-scene='nhl-blueline'] {
 @media (max-width: 520px) {
   .pbe-scene-preview {
     height: 126px !important;
+  }
+}
+
+/* --- Self-hosted Unsplash scenes (assets-src/backgrounds/PROVENANCE.md) ---
+   The default network scene and the original Wrigley photo: AVIF where the
+   browser supports image-set() types (WebP otherwise, declared above), and a
+   phone-sized file on narrow screens. Same photographs, crops and filters. */
+@supports (background-image: image-set(url('/backgrounds/photo/network-night-2200.avif') type('image/avif'))) {
+  body[data-pbe-scene='network'] {
+    --pbe-scene-image: image-set(url('/backgrounds/photo/network-night-2200.avif') type('image/avif'), url('/backgrounds/photo/network-night-2200.webp') type('image/webp'));
+  }
+  body[data-pbe-scene='wrigley'] {
+    --pbe-scene-image: image-set(url('/backgrounds/photo/wrigley-field-2200.avif') type('image/avif'), url('/backgrounds/photo/wrigley-field-2200.webp') type('image/webp'));
+  }
+}
+
+@media (max-width: 720px) {
+  body[data-pbe-scene='network'] { --pbe-scene-image: url('/backgrounds/photo/network-night-1280.webp'); }
+  body[data-pbe-scene='wrigley'] { --pbe-scene-image: url('/backgrounds/photo/wrigley-field-1280.webp'); }
+
+  @supports (background-image: image-set(url('/backgrounds/photo/network-night-1280.avif') type('image/avif'))) {
+    body[data-pbe-scene='network'] {
+      --pbe-scene-image: image-set(url('/backgrounds/photo/network-night-1280.avif') type('image/avif'), url('/backgrounds/photo/network-night-1280.webp') type('image/webp'));
+    }
+    body[data-pbe-scene='wrigley'] {
+      --pbe-scene-image: image-set(url('/backgrounds/photo/wrigley-field-1280.avif') type('image/avif'), url('/backgrounds/photo/wrigley-field-1280.webp') type('image/webp'));
+    }
   }
 }
