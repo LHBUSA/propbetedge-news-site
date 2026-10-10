@@ -142,7 +142,7 @@ export default async function middleware(request) {
   const meta = await resolveMeta(pathname, url.search);
   if (!meta) return next();
 
-  const response = await fetch(request);
+  const response = await fetchShell(request, meta.shell);
   const contentType = response.headers.get('content-type') || '';
 
   if (!contentType.includes('text/html')) {
@@ -156,6 +156,8 @@ export default async function middleware(request) {
     ...Object.fromEntries(response.headers.entries()),
     'content-type': 'text/html; charset=utf-8',
   };
+  // A lean shell file is noindex as a file (vercel.json); the page's robots come from meta alone.
+  if (meta.shell) delete headers['x-robots-tag'];
   if (meta.robots?.includes('noindex')) headers['x-robots-tag'] = 'noindex, follow';
   if (meta.status === 503) headers['retry-after'] = '300';
 
@@ -163,6 +165,23 @@ export default async function middleware(request) {
     status: meta.status || response.status,
     headers,
   });
+}
+
+/* The All Access sales pages (/pro, /ja/pro, /ko/pro) are served from lean
+ * shells built by vite.pro.config.js: the same head as index.html, but a small
+ * page entry instead of the full newsroom SPA. If a shell is unavailable the
+ * page falls back to the full app shell, which renders the same page. */
+const PRO_SHELL = '/_shell/pro.html';
+const INTL_PRO_SHELL = '/_shell/intl-pro.html';
+
+async function fetchShell(request, shell) {
+  if (shell) {
+    try {
+      const res = await fetch(new Request(new URL(shell, request.url), { headers: request.headers }));
+      if (res.ok && (res.headers.get('content-type') || '').includes('text/html')) return res;
+    } catch { /* fall through to the app shell */ }
+  }
+  return fetch(request);
 }
 
 async function resolveMeta(pathname, search = '') {
@@ -416,6 +435,7 @@ async function resolveMeta(pathname, search = '') {
       ...intlHead(intl),
       ssrHtml: intlHtml(intl, { via: viaFrom(search) }),
       preloadImages: intl.kind === 'pro' ? proHeroPreloads() : undefined,
+      shell: intl.kind === 'pro' ? INTL_PRO_SHELL : undefined,
     };
   }
   // A prepared translation (e.g. /es/pro) is never served before it is ready:
@@ -436,6 +456,7 @@ async function resolveMeta(pathname, search = '') {
       ssrHtml: proServerHtml({ checkoutSuccess, attribution: enProAttributionFrom(search) }),
       preloadImages: proHeroPreloads(),
       alternates: checkoutSuccess ? [] : proAlternates(),
+      shell: PRO_SHELL,
     };
   }
 

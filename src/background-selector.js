@@ -3,7 +3,7 @@ const STORAGE_AUTO = 'pbe_background_auto_v2';
 const VALID_SPORTS = new Set(['mlb', 'wnba', 'nfl', 'nba', 'nhl', 'ufc']);
 
 const ASSET_ROOT = '/backgrounds/pbe/';
-const ORIGINAL_WRIGLEY = 'https://images.unsplash.com/photo-1666366330282-b11566b272cf?w=1800&q=72&auto=format&fit=crop';
+const ORIGINAL_WRIGLEY = '/backgrounds/photo/wrigley-field-640.webp';
 const LEGACY_BALLPARK = 'https://images.unsplash.com/photo-1778050203444-90920c7a5652?auto=format&fit=crop&w=1200&q=70';
 
 // Put the signature venue first, then the four league anchors, then alternate

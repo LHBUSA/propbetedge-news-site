@@ -7,7 +7,7 @@
 
 /* ---------- Additional scenes ---------- */
 body[data-pbe-scene='network'] {
-  --pbe-scene-image: url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=2200&q=74');
+  --pbe-scene-image: url('/backgrounds/photo/network-night-2200.webp');
   --pbe-scene-position: center 48%;
   --pbe-scene-opacity: .26;
   --pbe-scene-filter: grayscale(50%) saturate(52%) brightness(.84) contrast(1.09);
@@ -25,7 +25,7 @@ body[data-pbe-scene='mlb-summer'] {
 }
 
 body[data-pbe-scene='nfl-gridiron'] {
-  --pbe-scene-image: url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=2200&q=76');
+  --pbe-scene-image: url('/backgrounds/photo/network-night-2200.webp');
   --pbe-scene-position: center 58%;
   --pbe-scene-opacity: .255;
   --pbe-scene-filter: grayscale(48%) sepia(10%) saturate(68%) brightness(.68) contrast(1.17);
@@ -63,7 +63,7 @@ body[data-pbe-scene='blackout'] {
 .pbe-scene-option[data-scene='network'] .pbe-scene-preview {
   background-image:
     linear-gradient(135deg, rgba(212,175,55,.22), transparent 45%),
-    url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=680&q=64');
+    url('/backgrounds/photo/network-night-640.webp');
   filter: grayscale(72%) saturate(38%) brightness(.64) contrast(1.12);
 }
 
@@ -74,7 +74,7 @@ body[data-pbe-scene='blackout'] {
 }
 
 .pbe-scene-option[data-scene='nfl-gridiron'] .pbe-scene-preview {
-  background-image: url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=680&q=70');
+  background-image: url('/backgrounds/photo/network-night-640.webp');
   filter: grayscale(45%) sepia(10%) saturate(72%) brightness(.72) contrast(1.14);
   background-position: center 62%;
 }

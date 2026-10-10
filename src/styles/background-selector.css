@@ -28,7 +28,7 @@ body[data-pbe-scene='mlb'] {
 }
 
 body[data-pbe-scene='nfl'] {
-  --pbe-scene-image: url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=2200&q=74');
+  --pbe-scene-image: url('/backgrounds/photo/network-night-2200.webp');
   --pbe-scene-position: center 44%;
   --pbe-scene-opacity: .30;
   --pbe-scene-filter: grayscale(28%) saturate(70%) brightness(.86) contrast(1.08);
@@ -264,7 +264,7 @@ body.pbe-scene-transition::before {
 }
 
 .pbe-scene-option[data-scene='nfl'] .pbe-scene-preview {
-  background-image: url('https://images.unsplash.com/photo-1781650104690-a5309d91a26b?auto=format&fit=crop&w=680&q=66');
+  background-image: url('/backgrounds/photo/network-night-640.webp');
 }
 
 .pbe-scene-option[data-scene='nba'] .pbe-scene-preview {
