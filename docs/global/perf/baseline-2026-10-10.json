@@ -1,0 +1,2339 @@
+{
+  "schema": "pbe-perf-results/1",
+  "captured_at": null,
+  "status": "UNKNOWN",
+  "status_detail": "Capture attempted 2026-10-10T14:16Z-14:21Z. PageSpeed Insights API v5 (keyless) returned HTTP 429 \"Quota exceeded for quota metric Queries and limit Queries per day of service pagespeedonline.googleapis.com for consumer project_number:583797351490\" (the shared keyless consumer) on the first request and on a confirmation request at 14:20:37Z. Per the method constraints no API key was requested and production was not polled from this machine. Every metric is null (UNKNOWN). Re-run scripts/perf-capture.mjs after the daily quota resets (Pacific midnight, 07:00Z) and commit its output as this file.",
+  "method": {
+    "tool": "PageSpeed Insights API v5 (keyless)",
+    "category": "performance",
+    "strategies": [
+      "mobile",
+      "desktop"
+    ],
+    "runs": 1,
+    "key_runs": 3,
+    "aggregate": "per-metric median of successful runs"
+  },
+  "results": [
+    {
+      "id": "root-en-pro",
+      "site": "propbetedge.ai",
+      "lang": "en",
+      "url": "https://propbetedge.ai/pro",
+      "en": null,
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "root-en-pro",
+      "site": "propbetedge.ai",
+      "lang": "en",
+      "url": "https://propbetedge.ai/pro",
+      "en": null,
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "root-ja-pro",
+      "site": "propbetedge.ai",
+      "lang": "ja",
+      "url": "https://propbetedge.ai/ja/pro",
+      "en": "root-en-pro",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "root-ja-pro",
+      "site": "propbetedge.ai",
+      "lang": "ja",
+      "url": "https://propbetedge.ai/ja/pro",
+      "en": "root-en-pro",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "root-ko-pro",
+      "site": "propbetedge.ai",
+      "lang": "ko",
+      "url": "https://propbetedge.ai/ko/pro",
+      "en": "root-en-pro",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "root-ko-pro",
+      "site": "propbetedge.ai",
+      "lang": "ko",
+      "url": "https://propbetedge.ai/ko/pro",
+      "en": "root-en-pro",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "root-ja-tokushoho",
+      "site": "propbetedge.ai",
+      "lang": "ja",
+      "url": "https://propbetedge.ai/ja/legal/tokushoho",
+      "en": null,
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "root-ja-tokushoho",
+      "site": "propbetedge.ai",
+      "lang": "ja",
+      "url": "https://propbetedge.ai/ja/legal/tokushoho",
+      "en": null,
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "root-ko-business",
+      "site": "propbetedge.ai",
+      "lang": "ko",
+      "url": "https://propbetedge.ai/ko/legal/business",
+      "en": null,
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "root-ko-business",
+      "site": "propbetedge.ai",
+      "lang": "ko",
+      "url": "https://propbetedge.ai/ko/legal/business",
+      "en": null,
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-en-home",
+      "site": "golf.propbetedge.ai",
+      "lang": "en",
+      "url": "https://golf.propbetedge.ai/",
+      "en": null,
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-en-home",
+      "site": "golf.propbetedge.ai",
+      "lang": "en",
+      "url": "https://golf.propbetedge.ai/",
+      "en": null,
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-en-all-access",
+      "site": "golf.propbetedge.ai",
+      "lang": "en",
+      "url": "https://golf.propbetedge.ai/all-access",
+      "en": null,
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-en-all-access",
+      "site": "golf.propbetedge.ai",
+      "lang": "en",
+      "url": "https://golf.propbetedge.ai/all-access",
+      "en": null,
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-es-home",
+      "site": "golf.propbetedge.ai",
+      "lang": "es",
+      "url": "https://golf.propbetedge.ai/es/",
+      "en": "golf-en-home",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-es-home",
+      "site": "golf.propbetedge.ai",
+      "lang": "es",
+      "url": "https://golf.propbetedge.ai/es/",
+      "en": "golf-en-home",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-es-all-access",
+      "site": "golf.propbetedge.ai",
+      "lang": "es",
+      "url": "https://golf.propbetedge.ai/es/all-access",
+      "en": "golf-en-all-access",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-es-all-access",
+      "site": "golf.propbetedge.ai",
+      "lang": "es",
+      "url": "https://golf.propbetedge.ai/es/all-access",
+      "en": "golf-en-all-access",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-ja-home",
+      "site": "golf.propbetedge.ai",
+      "lang": "ja",
+      "url": "https://golf.propbetedge.ai/ja/",
+      "en": "golf-en-home",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-ja-home",
+      "site": "golf.propbetedge.ai",
+      "lang": "ja",
+      "url": "https://golf.propbetedge.ai/ja/",
+      "en": "golf-en-home",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-ja-all-access",
+      "site": "golf.propbetedge.ai",
+      "lang": "ja",
+      "url": "https://golf.propbetedge.ai/ja/all-access",
+      "en": "golf-en-all-access",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-ja-all-access",
+      "site": "golf.propbetedge.ai",
+      "lang": "ja",
+      "url": "https://golf.propbetedge.ai/ja/all-access",
+      "en": "golf-en-all-access",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-ko-home",
+      "site": "golf.propbetedge.ai",
+      "lang": "ko",
+      "url": "https://golf.propbetedge.ai/ko/",
+      "en": "golf-en-home",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-ko-home",
+      "site": "golf.propbetedge.ai",
+      "lang": "ko",
+      "url": "https://golf.propbetedge.ai/ko/",
+      "en": "golf-en-home",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-ko-all-access",
+      "site": "golf.propbetedge.ai",
+      "lang": "ko",
+      "url": "https://golf.propbetedge.ai/ko/all-access",
+      "en": "golf-en-all-access",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "golf-ko-all-access",
+      "site": "golf.propbetedge.ai",
+      "lang": "ko",
+      "url": "https://golf.propbetedge.ai/ko/all-access",
+      "en": "golf-en-all-access",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "mlb-en-home",
+      "site": "mlb.propbetedge.ai",
+      "lang": "en",
+      "url": "https://mlb.propbetedge.ai/",
+      "en": null,
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "mlb-en-home",
+      "site": "mlb.propbetedge.ai",
+      "lang": "en",
+      "url": "https://mlb.propbetedge.ai/",
+      "en": null,
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "mlb-en-sharp-tools",
+      "site": "mlb.propbetedge.ai",
+      "lang": "en",
+      "url": "https://mlb.propbetedge.ai/sharp-tools",
+      "en": null,
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "mlb-en-sharp-tools",
+      "site": "mlb.propbetedge.ai",
+      "lang": "en",
+      "url": "https://mlb.propbetedge.ai/sharp-tools",
+      "en": null,
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "mlb-ja-home",
+      "site": "mlb.propbetedge.ai",
+      "lang": "ja",
+      "url": "https://mlb.propbetedge.ai/ja/",
+      "en": "mlb-en-home",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "mlb-ja-home",
+      "site": "mlb.propbetedge.ai",
+      "lang": "ja",
+      "url": "https://mlb.propbetedge.ai/ja/",
+      "en": "mlb-en-home",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "mlb-ko-home",
+      "site": "mlb.propbetedge.ai",
+      "lang": "ko",
+      "url": "https://mlb.propbetedge.ai/ko/",
+      "en": "mlb-en-home",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "mlb-ko-home",
+      "site": "mlb.propbetedge.ai",
+      "lang": "ko",
+      "url": "https://mlb.propbetedge.ai/ko/",
+      "en": "mlb-en-home",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "f1-en-home",
+      "site": "f1.propbetedge.ai",
+      "lang": "en",
+      "url": "https://f1.propbetedge.ai/",
+      "en": null,
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "f1-en-home",
+      "site": "f1.propbetedge.ai",
+      "lang": "en",
+      "url": "https://f1.propbetedge.ai/",
+      "en": null,
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "f1-en-standings",
+      "site": "f1.propbetedge.ai",
+      "lang": "en",
+      "url": "https://f1.propbetedge.ai/standings",
+      "en": null,
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "f1-en-standings",
+      "site": "f1.propbetedge.ai",
+      "lang": "en",
+      "url": "https://f1.propbetedge.ai/standings",
+      "en": null,
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "f1-ja-home",
+      "site": "f1.propbetedge.ai",
+      "lang": "ja",
+      "url": "https://f1.propbetedge.ai/ja",
+      "en": "f1-en-home",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "f1-ja-home",
+      "site": "f1.propbetedge.ai",
+      "lang": "ja",
+      "url": "https://f1.propbetedge.ai/ja",
+      "en": "f1-en-home",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "f1-ja-standings",
+      "site": "f1.propbetedge.ai",
+      "lang": "ja",
+      "url": "https://f1.propbetedge.ai/ja/standings",
+      "en": "f1-en-standings",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "f1-ja-standings",
+      "site": "f1.propbetedge.ai",
+      "lang": "ja",
+      "url": "https://f1.propbetedge.ai/ja/standings",
+      "en": "f1-en-standings",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-en-home",
+      "site": "soccer.propbetedge.ai",
+      "lang": "en",
+      "url": "https://soccer.propbetedge.ai/",
+      "en": null,
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-en-home",
+      "site": "soccer.propbetedge.ai",
+      "lang": "en",
+      "url": "https://soccer.propbetedge.ai/",
+      "en": null,
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-en-matches",
+      "site": "soccer.propbetedge.ai",
+      "lang": "en",
+      "url": "https://soccer.propbetedge.ai/matches",
+      "en": null,
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-en-matches",
+      "site": "soccer.propbetedge.ai",
+      "lang": "en",
+      "url": "https://soccer.propbetedge.ai/matches",
+      "en": null,
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-en-all-access",
+      "site": "soccer.propbetedge.ai",
+      "lang": "en",
+      "url": "https://soccer.propbetedge.ai/all-access",
+      "en": null,
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-en-all-access",
+      "site": "soccer.propbetedge.ai",
+      "lang": "en",
+      "url": "https://soccer.propbetedge.ai/all-access",
+      "en": null,
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-en-article",
+      "site": "soccer.propbetedge.ai",
+      "lang": "en",
+      "url": "https://soccer.propbetedge.ai/news/premier-league/erling-haaland-scoring-run-2026-09-20-be6e54",
+      "en": null,
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-en-article",
+      "site": "soccer.propbetedge.ai",
+      "lang": "en",
+      "url": "https://soccer.propbetedge.ai/news/premier-league/erling-haaland-scoring-run-2026-09-20-be6e54",
+      "en": null,
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-es-home",
+      "site": "soccer.propbetedge.ai",
+      "lang": "es",
+      "url": "https://soccer.propbetedge.ai/es/",
+      "en": "soccer-en-home",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-es-home",
+      "site": "soccer.propbetedge.ai",
+      "lang": "es",
+      "url": "https://soccer.propbetedge.ai/es/",
+      "en": "soccer-en-home",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-es-matches",
+      "site": "soccer.propbetedge.ai",
+      "lang": "es",
+      "url": "https://soccer.propbetedge.ai/es/matches",
+      "en": "soccer-en-matches",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-es-matches",
+      "site": "soccer.propbetedge.ai",
+      "lang": "es",
+      "url": "https://soccer.propbetedge.ai/es/matches",
+      "en": "soccer-en-matches",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-es-all-access",
+      "site": "soccer.propbetedge.ai",
+      "lang": "es",
+      "url": "https://soccer.propbetedge.ai/es/all-access",
+      "en": "soccer-en-all-access",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-es-all-access",
+      "site": "soccer.propbetedge.ai",
+      "lang": "es",
+      "url": "https://soccer.propbetedge.ai/es/all-access",
+      "en": "soccer-en-all-access",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-es-article",
+      "site": "soccer.propbetedge.ai",
+      "lang": "es",
+      "url": "https://soccer.propbetedge.ai/es/news/premier-league/erling-haaland-scoring-run-2026-09-20-be6e54",
+      "en": "soccer-en-article",
+      "strategy": "mobile",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    },
+    {
+      "id": "soccer-es-article",
+      "site": "soccer.propbetedge.ai",
+      "lang": "es",
+      "url": "https://soccer.propbetedge.ai/es/news/premier-league/erling-haaland-scoring-run-2026-09-20-be6e54",
+      "en": "soccer-en-article",
+      "strategy": "desktop",
+      "runs_attempted": 0,
+      "runs_ok": 0,
+      "lab": {
+        "perf_score": null,
+        "lcp_ms": null,
+        "cls": null,
+        "tbt_ms": null,
+        "fcp_ms": null,
+        "si_ms": null,
+        "ttfb_ms": null,
+        "bytes": null,
+        "requests": null,
+        "transfer": {
+          "document": null,
+          "script": null,
+          "stylesheet": null,
+          "image": null,
+          "font": null,
+          "other": null,
+          "third_party": null
+        }
+      },
+      "lab_runs": [],
+      "field": null,
+      "origin_field": null,
+      "final_url": null,
+      "doc_status": null,
+      "lighthouse_version": null,
+      "warnings": [],
+      "errors": [
+        "UNKNOWN: not measured - PSI keyless daily quota exhausted"
+      ]
+    }
+  ]
+}
