@@ -1,0 +1,39 @@
+{
+  "schema": "pbe-perf-pages/1",
+  "note": "Every public non-English page on 2026-10-10 plus its English equivalent. Source of each list is cited in README.md.",
+  "pages": [
+    { "id": "root-en-pro", "site": "propbetedge.ai", "lang": "en", "url": "https://propbetedge.ai/pro", "key": true },
+    { "id": "root-ja-pro", "site": "propbetedge.ai", "lang": "ja", "url": "https://propbetedge.ai/ja/pro", "en": "root-en-pro", "key": true },
+    { "id": "root-ko-pro", "site": "propbetedge.ai", "lang": "ko", "url": "https://propbetedge.ai/ko/pro", "en": "root-en-pro", "key": true },
+    { "id": "root-ja-tokushoho", "site": "propbetedge.ai", "lang": "ja", "url": "https://propbetedge.ai/ja/legal/tokushoho" },
+    { "id": "root-ko-business", "site": "propbetedge.ai", "lang": "ko", "url": "https://propbetedge.ai/ko/legal/business" },
+
+    { "id": "golf-en-home", "site": "golf.propbetedge.ai", "lang": "en", "url": "https://golf.propbetedge.ai/", "key": true },
+    { "id": "golf-en-all-access", "site": "golf.propbetedge.ai", "lang": "en", "url": "https://golf.propbetedge.ai/all-access" },
+    { "id": "golf-es-home", "site": "golf.propbetedge.ai", "lang": "es", "url": "https://golf.propbetedge.ai/es/", "en": "golf-en-home", "key": true },
+    { "id": "golf-es-all-access", "site": "golf.propbetedge.ai", "lang": "es", "url": "https://golf.propbetedge.ai/es/all-access", "en": "golf-en-all-access" },
+    { "id": "golf-ja-home", "site": "golf.propbetedge.ai", "lang": "ja", "url": "https://golf.propbetedge.ai/ja/", "en": "golf-en-home", "key": true },
+    { "id": "golf-ja-all-access", "site": "golf.propbetedge.ai", "lang": "ja", "url": "https://golf.propbetedge.ai/ja/all-access", "en": "golf-en-all-access" },
+    { "id": "golf-ko-home", "site": "golf.propbetedge.ai", "lang": "ko", "url": "https://golf.propbetedge.ai/ko/", "en": "golf-en-home", "key": true },
+    { "id": "golf-ko-all-access", "site": "golf.propbetedge.ai", "lang": "ko", "url": "https://golf.propbetedge.ai/ko/all-access", "en": "golf-en-all-access" },
+
+    { "id": "mlb-en-home", "site": "mlb.propbetedge.ai", "lang": "en", "url": "https://mlb.propbetedge.ai/", "key": true },
+    { "id": "mlb-en-sharp-tools", "site": "mlb.propbetedge.ai", "lang": "en", "url": "https://mlb.propbetedge.ai/sharp-tools" },
+    { "id": "mlb-ja-home", "site": "mlb.propbetedge.ai", "lang": "ja", "url": "https://mlb.propbetedge.ai/ja/", "en": "mlb-en-home", "key": true },
+    { "id": "mlb-ko-home", "site": "mlb.propbetedge.ai", "lang": "ko", "url": "https://mlb.propbetedge.ai/ko/", "en": "mlb-en-home", "key": true },
+
+    { "id": "f1-en-home", "site": "f1.propbetedge.ai", "lang": "en", "url": "https://f1.propbetedge.ai/", "key": true },
+    { "id": "f1-en-standings", "site": "f1.propbetedge.ai", "lang": "en", "url": "https://f1.propbetedge.ai/standings" },
+    { "id": "f1-ja-home", "site": "f1.propbetedge.ai", "lang": "ja", "url": "https://f1.propbetedge.ai/ja", "en": "f1-en-home", "key": true },
+    { "id": "f1-ja-standings", "site": "f1.propbetedge.ai", "lang": "ja", "url": "https://f1.propbetedge.ai/ja/standings", "en": "f1-en-standings" },
+
+    { "id": "soccer-en-home", "site": "soccer.propbetedge.ai", "lang": "en", "url": "https://soccer.propbetedge.ai/", "key": true },
+    { "id": "soccer-en-matches", "site": "soccer.propbetedge.ai", "lang": "en", "url": "https://soccer.propbetedge.ai/matches" },
+    { "id": "soccer-en-all-access", "site": "soccer.propbetedge.ai", "lang": "en", "url": "https://soccer.propbetedge.ai/all-access" },
+    { "id": "soccer-en-article", "site": "soccer.propbetedge.ai", "lang": "en", "url": "https://soccer.propbetedge.ai/news/premier-league/erling-haaland-scoring-run-2026-09-20-be6e54" },
+    { "id": "soccer-es-home", "site": "soccer.propbetedge.ai", "lang": "es", "url": "https://soccer.propbetedge.ai/es/", "en": "soccer-en-home", "key": true },
+    { "id": "soccer-es-matches", "site": "soccer.propbetedge.ai", "lang": "es", "url": "https://soccer.propbetedge.ai/es/matches", "en": "soccer-en-matches" },
+    { "id": "soccer-es-all-access", "site": "soccer.propbetedge.ai", "lang": "es", "url": "https://soccer.propbetedge.ai/es/all-access", "en": "soccer-en-all-access" },
+    { "id": "soccer-es-article", "site": "soccer.propbetedge.ai", "lang": "es", "url": "https://soccer.propbetedge.ai/es/news/premier-league/erling-haaland-scoring-run-2026-09-20-be6e54", "en": "soccer-en-article" }
+  ]
+}
