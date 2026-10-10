@@ -17,7 +17,8 @@
 import { next } from '@vercel/edge';
 
 import { proHeadMeta, proSocialTags, proJsonLd, proServerHtml, isCheckoutSuccess, proHeroPreloads } from './src/pro-seo.js';
-import { intlRoute, intlHead, intlHtml, viaFrom, proAlternates } from './src/global/intl-pages.js';
+import { intlRoute, intlHead, intlHtml, viaFrom, proAlternates, preparedIntlRoute } from './src/global/intl-pages.js';
+import { enProAttributionFrom } from './src/global/attribution.js';
 import { assessArticleIntegrity, applyArticlePublicationPolicy, filterPublicArticles } from './news-integrity.js';
 import { buildEntityManifest } from './src/entity-graph/manifest.js';
 import { enrichManifestWithGame } from './src/entity-graph/games.js';
@@ -417,6 +418,9 @@ async function resolveMeta(pathname, search = '') {
       preloadImages: intl.kind === 'pro' ? proHeroPreloads() : undefined,
     };
   }
+  // A prepared translation (e.g. /es/pro) is never served before it is ready:
+  // real 404 + noindex, no localized bytes, no hreflang.
+  if (preparedIntlRoute(pathname)) return notFoundMeta(pathname, 'Page not found');
 
   if (pathname === '/pro') {
     const checkoutSuccess = isCheckoutSuccess(search);
@@ -429,7 +433,7 @@ async function resolveMeta(pathname, search = '') {
       robots: head.robots,
       socialTags: proSocialTags(),
       jsonLd: proJsonLd(),
-      ssrHtml: proServerHtml({ checkoutSuccess }),
+      ssrHtml: proServerHtml({ checkoutSuccess, attribution: enProAttributionFrom(search) }),
       preloadImages: proHeroPreloads(),
       alternates: checkoutSuccess ? [] : proAlternates(),
     };

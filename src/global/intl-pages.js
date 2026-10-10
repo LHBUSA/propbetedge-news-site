@@ -7,6 +7,8 @@
  *
  * The routes are:
  *   /ja/pro, /ko/pro                All Access, the membership page
+ *   /es/pro                         PREPARED ONLY (not routed, 404 + noindex) until the
+ *                                   Spanish legal text (B1/B2) and native review clear
  *   /ja/legal/tokushoho             特定商取引法に基づく表記 (Japan, Act on Specified Commercial Transactions)
  *   /ko/legal/business              사업자 정보 (Korea, E-Commerce Act seller disclosure)
  *
@@ -30,14 +32,37 @@ export const SITE = 'https://propbetedge.ai';
 export const INTL_PRO_LANGS = Object.freeze(['ja', 'ko']);
 /* The shared network contract (pbe-locale/1.0.0). Only these two languages are public on propbetedge.ai. */
 const L = createLocale({ ready: INTL_PRO_LANGS, site: SITE });
-const HTML_LANG = Object.fromEntries(['en', ...INTL_PRO_LANGS].map((c) => [c, LOCALE_REGISTRY[c].htmlLang]));
-const OG_LOCALE = Object.fromEntries(INTL_PRO_LANGS.map((c) => [c, LOCALE_REGISTRY[c].og]));
-const IN_LANGUAGE = Object.fromEntries(INTL_PRO_LANGS.map((c) => [c, LOCALE_REGISTRY[c].intl]));
+const HTML_LANG = Object.fromEntries(['en', ...INTL_PRO_LANGS, 'es'].map((c) => [c, LOCALE_REGISTRY[c].htmlLang]));
+const OG_LOCALE = Object.fromEntries([...INTL_PRO_LANGS, 'es'].map((c) => [c, LOCALE_REGISTRY[c].og]));
+const IN_LANGUAGE = Object.fromEntries([...INTL_PRO_LANGS, 'es'].map((c) => [c, LOCALE_REGISTRY[c].intl]));
 
 export const DISCLOSURE_PATH = Object.freeze({ ja: '/ja/legal/tokushoho', ko: '/ko/legal/business' });
 
-/* Sources a sport site may name with ?via= (anything else is ignored). */
-export const VIA = Object.freeze(['golf', 'mlb', 'f1', 'soccer', 'ufc', 'nba', 'nfl', 'nhl', 'wnba', 'tennis', 'members', 'predictions', 'news']);
+/* Prepared but NOT public: /es/pro is built from the same template so it can be
+   reviewed, but it is not routed, not in hreflang, not in the sitemap and the
+   middleware answers it with a real 404 + noindex until it is ready. It becomes
+   public only when the owner moves 'es' into INTL_PRO_LANGS after the blockers
+   below are cleared (Issue #67). */
+export const PREPARED_PRO_LANGS = Object.freeze(['es']);
+export const PREPARED_BLOCKERS = Object.freeze({
+  es: Object.freeze([
+    'B1: refund / 14-day withdrawal wording (EU/UK and other consumer law) reviewed by counsel',
+    'B2: governing law and data-transfer statements reviewed by counsel',
+    'Native-speaker review of the Spanish copy',
+    'Owner approval to publish (route, hreflang, sitemap)',
+  ]),
+});
+
+/** A prepared (not yet public) localized page, or null. Never served while not ready. */
+export function preparedIntlRoute(pathname) {
+  const p = String(pathname || '').replace(/\/+$/, '');
+  const m = p.match(/^\/([a-z]{2})\/pro$/);
+  if (m && PREPARED_PRO_LANGS.includes(m[1]) && !INTL_PRO_LANGS.includes(m[1])) return { kind: 'pro', lang: m[1], path: p, ready: false };
+  return null;
+}
+
+export { VIA, viaFrom } from './attribution.js';
+import { attributedCheckoutUrl } from './attribution.js';
 
 /** Which localized page a path is, or null. */
 export function intlRoute(pathname) {
@@ -54,18 +79,10 @@ export function documentLang(pathname) {
   return HTML_LANG[intlRoute(pathname)?.lang || 'en'];
 }
 
-export function viaFrom(search) {
-  try {
-    const v = new URLSearchParams(String(search || '')).get('via');
-    return VIA.includes(v) ? v : null;
-  } catch { return null; }
-}
-
 /** Stripe Payment Link with the checkout language and the attribution tag.
  *  client_reference_id allows letters, digits, '-' and '_' only. */
 export function checkoutUrlFor(lang, via = null) {
-  const ref = `pbe-${lang}-pro${via ? `-${via}` : ''}`;
-  return `${ALL_ACCESS.checkoutUrl}?locale=${lang}&client_reference_id=${ref}`;
+  return attributedCheckoutUrl(ALL_ACCESS.checkoutUrl, lang, via);
 }
 
 /** Reciprocal hreflang for the All Access page in every public language. */
@@ -264,7 +281,110 @@ const COPY = {
     compareAlt: '경기장 바닥을 사이에 두고 마주한 파란색과 금색의 두 시장 화면.',
     predictionsAlt: '확률 곡선과 차트에 둘러싸여 빛나는 지구.',
   },
+  /* PREPARED, NOT PUBLIC (see PREPARED_PRO_LANGS). Neutral Spanish for readers in
+     the US, Latin America and Spain; native review owed. The consumer legal terms
+     (renewal/cancellation wording, refunds and the EU/UK 14-day withdrawal right,
+     governing law) are deliberately NOT written here: `legalPending` renders a
+     marked placeholder until counsel-reviewed text replaces it (B1/B2). */
+  es: {
+    title: 'PropBetEdge All Access | Membresía de análisis deportivo',
+    description: `Una sola membresía de ${PRICE} al mes para toda la red PropBetEdge: 10 deportes, incluidos fútbol, MLB y golf, más Predictions, Compare, Markets y el Command Center para miembros. Modelos propios y análisis en vivo.`,
+    breadcrumb: 'All Access',
+    kicker: 'PropBetEdge All Access',
+    h1a: 'Una sola membresía.',
+    h1b: 'Toda la red de análisis deportivo.',
+    dek: '10 deportes + Predictions + Compare + Markets. Datos en vivo, modelos propios, datos de mercados de predicción e investigación de cada deporte con una sola membresía.',
+    per: '/ mes',
+    cta: 'Suscribirme a All Access',
+    signIn: 'Iniciar sesión',
+    promo: `${ALL_ACCESS.promoPercent}% de descuento mientras mantengas tu membresía activa, con el código <strong>${ALL_ACCESS.promoCode}</strong>`,
+    currency: 'El precio está en dólares estadounidenses. El pago se realiza en la página segura de Stripe.',
+    unlockH: `Qué incluye por ${PRICE}`,
+    products: {
+      members: ['Command Center', 'Tu espacio de trabajo como miembro'],
+      compare: ['Compare', 'Precios de mercados de predicción, contrato por contrato'],
+      markets: ['Markets', 'Acciones, cripto, macro e IA'],
+      predictions: ['Predictions', 'Probabilidades de modelos con historial de resultados'],
+    },
+    sportsLine: `${SPORTS.length} productos deportivos`,
+    networkEyebrow: 'La red',
+    networkH: 'No es un solo producto con diez logotipos.',
+    networkP: 'Cada deporte es un producto creado para ese deporte, con su propia experiencia en vivo, sus datos, sus modelos y su investigación DNA, y PBEcast donde el deporte lo permite. All Access es la capa que los une, con Command Center, Compare, Markets y Predictions por encima.',
+    featuredEyebrow: 'Para la afición hispanohablante',
+    featuredH: 'Empieza por el fútbol, el golf y la MLB.',
+    featuredP: 'Fútbol y golf ya tienen edición en español. Los tres están incluidos en All Access.',
+    featured: ['soccer', 'golf', 'mlb'],
+    /* Sports with a public Spanish edition link to it. */
+    sportUrl: { soccer: 'https://soccer.propbetedge.ai/es/', golf: 'https://golf.propbetedge.ai/es/' },
+    edges: {
+      mlb: 'Modelos, enfrentamientos, candidatos a jonrón, análisis de ponches y contexto del partido en vivo.',
+      nfl: 'PBE Picks, Player DNA, enfrentamientos y análisis de fútbol americano en vivo.',
+      nba: 'Modelos de partido, análisis de jugadores, enfrentamientos, contexto en vivo e investigación.',
+      nhl: 'PBE Picks, análisis de porteros, análisis de jugadores y hockey en vivo.',
+      wnba: 'WinBA, Player DNA, análisis de estadísticas de jugadoras, cobertura en vivo y noticias propias.',
+      ufc: 'Análisis de combates, Fighter DNA, carteleras, récords y análisis de la semana del evento.',
+      tennis: 'Marcadores en vivo de la ATP y la WTA, Match DNA, rankings, enfrentamientos e investigación.',
+      soccer: 'Análisis de partidos de todo el mundo, Player DNA, investigación de equipos, partidos en vivo y modelos.',
+      golf: 'Player DNA, Course DNA, clima, enfrentamientos, torneos e historia de los majors.',
+      f1: 'Análisis de pilotos, constructores y circuitos, clasificaciones, enfrentamientos y clima.',
+    },
+    open: (label) => `Abrir ${label} →`,
+    productsEyebrow: 'Funciones de All Access',
+    productsH: 'Cuatro funciones premium por encima de los deportes.',
+    stories: {
+      compare: ['Mercados de predicción', 'Compare', 'Mira el precio y revisa el contrato.', 'Compara los precios de los mercados de predicción contrato por contrato y muestra en qué difieren sus condiciones, para no confundir una diferencia de precio real con un contrato que solo se parece.', 'Ver Compare'],
+      predictions: ['Modelos propios', 'Predictions', 'Probabilidades con fundamento y su historial.', 'Las probabilidades de nuestros modelos se comparan con los datos del mercado en vivo y se califican cuando se conoce el resultado.', 'Ver Predictions'],
+      markets: ['Análisis de mercados', 'Markets', 'Análisis de acciones, cripto, macro e IA: tres lecturas (alcista, bajista y cuantitativa) de los mismos datos en vivo, y un nowcast de BTC a 15 minutos que se califica contra el mercado en vivo.', 'Ver Markets', 'Nowcast de cripto ↗'],
+      members: ['Solo para miembros', 'Command Center', 'Partidos en vivo, análisis para miembros, multivista y navegación por toda la red en un solo espacio de trabajo. Con Platinum Direct, tus comentarios llegan directamente al equipo que desarrolla PropBetEdge.', 'Abrir Command Center'],
+    },
+    tapes: { markets: ['Acciones', 'Cripto', 'Macro', 'IA'], members: ['Partidos en vivo', 'Multivista', 'Live Market Wire', 'Platinum Direct'] },
+    sportsEyebrow: `Los ${SPORTS.length} deportes`,
+    sportsH: 'Cada deporte, con un producto hecho para ese deporte.',
+    whyEyebrow: 'Por qué PropBetEdge',
+    whyH: 'No es otro servicio de pronósticos.',
+    whyP: 'Una probabilidad expresa incertidumbre, no una promesa. PropBetEdge te muestra el análisis que hay detrás.',
+    why: [
+      ['Modelos propios', 'Motores desarrollados para cada deporte. No usamos un modelo genérico para los diez.'],
+      ['Historial transparente', 'Las selecciones oficiales se fijan antes del partido, se califican con el resultado y los aciertos y fallos quedan registrados.'],
+      ['Análisis de mercados de predicción', 'Comparamos los precios de los mercados de predicción contrato por contrato y los mostramos junto a las probabilidades de nuestros modelos.'],
+      ['Experiencia en vivo de cada deporte', 'Cada deporte conserva su propia experiencia en vivo, sus datos y su forma de uso, sin meterlo todo en un solo panel.'],
+      ['Investigación DNA', 'Según el deporte, DNA de jugadores, partidos, circuitos y campos: el perfil que hay detrás del número.'],
+      ['PBEcast', 'En los deportes compatibles, una experiencia en vivo que avanza con el partido.'],
+    ],
+    whyLast: ['Toda la red con una sola membresía', 'Todas las funciones de arriba y todos los deportes de abajo, con un solo inicio de sesión.'],
+    termsH: 'Lo que contratas',
+    terms: [
+      ['Servicio', 'PropBetEdge All Access (membresía digital de información y análisis deportivo)'],
+      ['Precio', `${PRICE} al mes, en dólares estadounidenses. Con el código ${ALL_ACCESS.promoCode}, ${ALL_ACCESS.promoPercent}% de descuento mientras mantengas tu membresía activa.`],
+    ],
+    /* B1/B2: renewal, cancellation, refund / right of withdrawal and governing-law
+       text for Spanish-speaking consumers. Replace with counsel-reviewed copy; the
+       page can never be made public while this is set (tests/global-intl.test.mjs). */
+    legalPending: { blockers: ['B1', 'B2'], text: 'PENDIENTE DE REVISIÓN LEGAL (B1/B2): renovación, cancelación, reembolsos y derecho de desistimiento, y ley aplicable. Este texto se sustituirá por la versión revisada antes de publicar la página.' },
+    finalH: 'La red sigue creciendo. Tu membresía ya la incluye.',
+    finalPrice: `${PRICE} al mes · una sola membresía All Access`,
+    copy: 'Copiar',
+    copied: 'Copiado',
+    copyAria: `Copiar el código promocional ${ALL_ACCESS.promoCode}`,
+    offerAria: 'Oferta de All Access',
+    offerLine: `${ALL_ACCESS.promoPercent}% de descuento mientras sigas activo`,
+    codeLabel: 'Código',
+    memberLink: '¿Ya eres miembro? Inicia sesión ↗',
+    manage: 'Gestionar o cancelar la suscripción ↗',
+    disclosureLink: null,
+    englishDocs: [['/terms', 'Términos de uso (en inglés)'], ['/privacy', 'Política de privacidad (en inglés)'], ['/support', 'Soporte (en inglés)']],
+    responsible: 'PropBetEdge es un servicio de información y análisis deportivo. No es una casa de apuestas ni invita a apostar. Las probabilidades de los modelos no garantizan resultados.',
+    langNav: 'Idioma',
+    heroAlt: 'Un estadio iluminado junto a una ciudad de noche, con gráficos de mercado en vivo flotando encima.',
+    networkAlt: 'Un estadio iluminado en el centro de una ciudad de noche, unido por líneas de luz.',
+    compareAlt: 'Dos pantallas de mercado, una azul y otra dorada, frente a frente sobre el campo de un estadio.',
+    predictionsAlt: 'Un globo terráqueo luminoso rodeado de curvas de probabilidad y gráficos.',
+  },
 };
+
+/** True when a language's page carries an unreviewed-legal placeholder. Such a page
+ *  must never be public: intlHead refuses to build an indexable head for it. */
+export const hasLegalPlaceholder = (lang) => Boolean(COPY[lang]?.legalPending);
 
 /* ------------------------------------------------------------- disclosure */
 /* Only facts PropBetEdge already publishes (operator, city, contact address,
@@ -331,15 +451,18 @@ export function intlHead(route) {
   const c = isPro ? COPY[lang] : DISCLOSURE[lang];
   const canonical = `${SITE}${route.path}`;
   const image = `${SITE}/social/all-access-1200x630.png?v=20260926t`;
+  // A prepared (not public) page, or one still carrying the legal placeholder, is
+  // never indexable and never announced as a translation, even if it were rendered.
+  const isPublic = INTL_PRO_LANGS.includes(lang) && route.ready !== false && !hasLegalPlaceholder(lang);
   return {
     lang: HTML_LANG[lang],
     title: c.title,
     description: c.description,
     canonical,
-    robots: 'index, follow, max-image-preview:large',
+    robots: isPublic ? 'index, follow, max-image-preview:large' : 'noindex, nofollow',
     image,
     // The disclosures exist in one language each, so they announce no alternates.
-    alternates: isPro ? proAlternates() : [],
+    alternates: isPro && isPublic ? proAlternates() : [],
     socialTags: [
       ['og:type', 'website'],
       ['og:site_name', 'PropBetEdge'],
@@ -398,12 +521,14 @@ function heroPicture(alt) {
     </picture>`;
 }
 
-const LANG_LABEL = { en: 'EN', ja: '日本語', ko: '한국어' };
+const LANG_LABEL = { en: 'EN', ja: '日本語', ko: '한국어', es: 'Español' };
 
 /* Language links reload the page (data-pbe-reload) so <html lang> and the head always match the document. */
 function topBar(lang, current) {
   const c = COPY[lang];
-  const links = ['en', 'ja', 'ko'].map((l) => {
+  // Public languages only; a prepared page also lists itself (it is never linked from the public ones).
+  const langs = ['en', ...INTL_PRO_LANGS, ...(INTL_PRO_LANGS.includes(lang) ? [] : [lang])];
+  const links = langs.map((l) => {
     const href = l === 'en' ? '/pro' : `/${l}/pro`;
     const here = current === 'pro' && l === lang;
     return `<a href="${href}" hreflang="${l}" lang="${l}" data-pbe-reload${here ? ' aria-current="page"' : ''}>${LANG_LABEL[l]}</a>`;
@@ -421,7 +546,7 @@ function footer(lang) {
   return `<footer class="pbe-intl-foot">
       <div class="pbe-pro-wrap">
         <nav class="pbe-intl-foot-links" aria-label="PropBetEdge">
-          <a href="${DISCLOSURE_PATH[lang]}" data-pbe-reload>${esc(c.disclosureLink)}</a>
+          ${DISCLOSURE_PATH[lang] ? `<a href="${DISCLOSURE_PATH[lang]}" data-pbe-reload>${esc(c.disclosureLink)}</a>` : ''}
           ${c.englishDocs.map(([href, label]) => `<a href="${href}" data-pbe-reload>${esc(label)}</a>`).join('')}
           <a href="mailto:support@proptechusa.ai">support@proptechusa.ai</a>
         </nav>
@@ -432,13 +557,14 @@ function footer(lang) {
 }
 
 function cta(lang, via, label, extra = '') {
-  return `<a class="pbe-pro-cta ${extra}" href="${esc(checkoutUrlFor(lang, via))}" rel="noopener" data-pbe-placement="all_access_checkout" data-pbe-locale="${lang}" data-pbe-price="${ALL_ACCESS.priceId}" data-pbe-link="${ALL_ACCESS.paymentLinkId}">${esc(label)}<span class="pbe-pro-cta-arrow" aria-hidden="true">→</span></a>`;
+  return `<a class="pbe-pro-cta ${extra}" href="${esc(checkoutUrlFor(lang, via))}" rel="noopener" data-pbe-placement="all_access_checkout" data-pbe-locale="${lang}"${via ? ` data-pbe-via="${esc(via)}"` : ''} data-pbe-price="${ALL_ACCESS.priceId}" data-pbe-link="${ALL_ACCESS.paymentLinkId}">${esc(label)}<span class="pbe-pro-cta-arrow" aria-hidden="true">→</span></a>`;
 }
 
 function termsBox(c) {
   return `<section class="pbe-intl-terms" aria-labelledby="pbe-intl-terms-h">
           <h2 id="pbe-intl-terms-h">${esc(c.termsH)}</h2>
           <dl>${c.terms.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+          ${c.legalPending ? `<p class="pbe-intl-legal-pending" data-pbe-legal-placeholder="${esc(c.legalPending.blockers.join(','))}" role="note">${esc(c.legalPending.text)}</p>` : ''}
         </section>`;
 }
 
@@ -464,7 +590,7 @@ export function intlProHtml(lang, { via = null } = {}) {
   const [mEyebrow, mTitle, mBody, mAction, mCrypto] = c.stories.markets;
   const [hEyebrow, hTitle, hBody, hAction] = c.stories.members;
   const sportCard = (s) => `<li class="pbe-pro-sport" data-sport="${s.key}">
-          <a href="${s.url}" rel="noopener">
+          <a href="${c.sportUrl?.[s.key] || s.url}" rel="noopener">
             <span class="pbe-pro-sport-label">${esc(s.label)}</span>
             <span class="pbe-pro-sport-name">${esc(s.proName || s.name)}</span>
             <span class="pbe-pro-sport-edge">${esc(c.edges[s.key])}</span>
@@ -591,7 +717,7 @@ export function intlProHtml(lang, { via = null } = {}) {
         <div class="pbe-pro-final-links">
           <a href="${SIGN_IN_URL}">${esc(c.memberLink)}</a>
           <a href="${ALL_ACCESS.manageUrl}" target="_blank" rel="noopener noreferrer">${esc(c.manage)}</a>
-          <a href="${DISCLOSURE_PATH[lang]}" data-pbe-reload>${esc(c.disclosureLink)}</a>
+          ${DISCLOSURE_PATH[lang] ? `<a href="${DISCLOSURE_PATH[lang]}" data-pbe-reload>${esc(c.disclosureLink)}</a>` : ''}
         </div>
       </div>
     </section>

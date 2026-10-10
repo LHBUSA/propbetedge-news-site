@@ -6,6 +6,7 @@
  * provenance in assets-src/pro/). */
 
 import FAMILY from './network/family.js';
+import { attributedCheckoutUrl } from './global/attribution.js';
 
 export const ALL_ACCESS = Object.freeze({
   name: 'PropBetEdge All Access',
@@ -154,8 +155,16 @@ function memberBadge(member) {
     : `<span class="pbe-pro-member-badge"><b>◆ PLATINUM MEMBER</b><span>PropBetEdge All Access · active</span></span>`;
 }
 
-function ctaButton(label, extraClass = '') {
-  return `<a class="pbe-pro-cta ${extraClass}" href="${ALL_ACCESS.checkoutUrl}" rel="noopener" data-pbe-placement="all_access_checkout" data-pbe-price="${ALL_ACCESS.priceId}" data-pbe-link="${ALL_ACCESS.paymentLinkId}">${esc(label)}<span class="pbe-pro-cta-arrow" aria-hidden="true">→</span></a>`;
+/* Global #67 (M1): a reader sent from a Spanish edition (/pro?lang=es&via=<sport>)
+   gets the SAME Payment Link with locale + a non-personal client_reference_id
+   (src/global/attribution.js). Everyone else gets the plain link, unchanged. */
+export function checkoutHref(attribution = null) {
+  return attribution ? attributedCheckoutUrl(ALL_ACCESS.checkoutUrl, attribution.lang, attribution.via) : ALL_ACCESS.checkoutUrl;
+}
+
+function ctaButton(label, extraClass = '', attribution = null) {
+  const tags = attribution ? ` data-pbe-locale="${attribution.lang}"${attribution.via ? ` data-pbe-via="${attribution.via}"` : ''}` : '';
+  return `<a class="pbe-pro-cta ${extraClass}" href="${esc(checkoutHref(attribution))}" rel="noopener" data-pbe-placement="all_access_checkout"${tags} data-pbe-price="${ALL_ACCESS.priceId}" data-pbe-link="${ALL_ACCESS.paymentLinkId}">${esc(label)}<span class="pbe-pro-cta-arrow" aria-hidden="true">→</span></a>`;
 }
 
 function commandCenterButton(label, extraClass = '') {
@@ -173,11 +182,11 @@ function promoChip() {
 }
 
 /* 1 — hero */
-function hero(member, shareBar) {
+function hero(member, shareBar, attribution = null) {
   const actions = member
     ? `${commandCenterButton('Open Command Center', 'pbe-pro-cta-hero')}
           <a class="pbe-pro-cta-quiet" href="${ALL_ACCESS.manageUrl}" target="_blank" rel="noopener noreferrer">Manage membership ↗</a>`
-    : `${ctaButton('Get All Access', 'pbe-pro-cta-hero')}
+    : `${ctaButton('Get All Access', 'pbe-pro-cta-hero', attribution)}
           <a class="pbe-pro-cta-quiet" href="${SIGN_IN_URL}" rel="noopener" data-pbe-placement="all_access_sign_in">Member sign in</a>`;
   return `
     <section class="pbe-pro-hero" aria-labelledby="pbe-pro-title">
@@ -363,7 +372,7 @@ function whySection() {
 }
 
 /* 8 — final CTA */
-function finalSection(member) {
+function finalSection(member, attribution = null) {
   return `
     <section class="pbe-pro-wrap pbe-pro-final-wrap">
       <div class="pbe-pro-final">
@@ -372,7 +381,7 @@ function finalSection(member) {
           ? `<p class="pbe-pro-final-price">${memberBadge(member)}</p>
         ${commandCenterButton('Open your Command Center', 'pbe-pro-cta-hero')}`
           : `<p class="pbe-pro-final-price">$${ALL_ACCESS.priceUsd}/month · one All Access membership</p>
-        ${ctaButton('Get All Access', 'pbe-pro-cta-hero')}
+        ${ctaButton('Get All Access', 'pbe-pro-cta-hero', attribution)}
         ${promoChip()}`}
         <div class="pbe-pro-final-links">
           ${member ? `<a href="${ALL_ACCESS.manageUrl}" target="_blank" rel="noopener noreferrer">Manage membership ↗</a>` : `<a href="${SIGN_IN_URL}">Already a member? Sign in ↗</a>`}
@@ -411,10 +420,11 @@ function successHero(shareBar = '') {
 }
 
 /**
- * @param {{checkoutSuccess?: boolean, shareBar?: string, member?: 'all_access'|'owner'|null}} opts
+ * @param {{checkoutSuccess?: boolean, shareBar?: string, member?: 'all_access'|'owner'|null, attribution?: {lang: string, via: string|null}|null}} opts
+ *   attribution must come from enProAttributionFrom(location.search) (src/global/attribution.js).
  *   member must come from memberStateFrom(<server verdict>) — never from the URL, storage or plan text.
  */
-export function buildProHtml({ checkoutSuccess = false, shareBar = '', member = null } = {}) {
+export function buildProHtml({ checkoutSuccess = false, shareBar = '', member = null, attribution = null } = {}) {
   if (checkoutSuccess) {
     return `
     <div class="pbe-pro pbe-pro-is-success" data-pbe-page="pro">
@@ -424,13 +434,13 @@ export function buildProHtml({ checkoutSuccess = false, shareBar = '', member = 
   }
   return `
     <div class="pbe-pro${member ? ' pbe-pro-is-member' : ''}" data-pbe-page="pro"${member ? ` data-pbe-member="${member}"` : ''}>
-      ${hero(member, shareBar)}
+      ${hero(member, shareBar, attribution)}
       ${unlockSection(member)}
       ${networkSection()}
       ${productsSection()}
       ${proofSection()}
       ${sportsSection(false)}
       ${whySection()}
-      ${finalSection(member)}
+      ${finalSection(member, attribution)}
     </div>`;
 }

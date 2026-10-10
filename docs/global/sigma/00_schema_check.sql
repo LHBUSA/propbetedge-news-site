@@ -10,3 +10,7 @@ select * from prices limit 0;
 select * from products limit 0;
 select * from refunds limit 0;
 select * from disputes limit 0;
+-- 08 reads Checkout Sessions: confirm client_reference_id, payment_link_id (or the column that holds the Payment Link
+-- id), status, subscription_id, customer_id and created exist; if a name differs, adjust 08 only.
+select * from checkout_sessions limit 0;
+-- invoices: Sigma names the invoice timestamp `date` (not `created`); 01/03/04/06 alias it.

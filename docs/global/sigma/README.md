@@ -72,6 +72,16 @@ summary must quote it.
 | `05_failed_payments.sql` | Failed charges by card country × failure code (payment-method fit by market) |
 | `06_retention_cohorts.sql` | First-renewal and month-k retention by cohort × billing country |
 | `07_focus_markets.sql` | One-page snapshot for JP, KR, ES, MX, BR, FR, DE, US (+ rest of world) |
-| `08_locale_attribution.sql` | Checkout Sessions started/completed (and still active) per localized page and referring sport, from the `client_reference_id` tag `pbe-<lang>-pro[-<via>]` (live 2026-10-09) |
+| `08_locale_attribution.sql` | Checkout Sessions started/completed (and still active) per localized page and referring sport, from the `client_reference_id` tag `pbe-<lang>-pro[-<via>]` (ja/ko live 2026-10-09; es tags `pbe-es-pro-golf` / `pbe-es-pro-soccer` from the es-attribution changes, live only once released). Run `00_schema_check.sql` first: it now includes `checkout_sessions`. |
 
 `PRODUCT_MAP.md` lists every Stripe product, price and payment link found in the code (brand classification).
+
+### Schema notes (2026-10-10)
+
+- Sigma `invoices` has `date`, not `created`: 01/03/04/06 now read `i.date` (aliased `created` inside the CTE). Found by the
+  2026-10-09 read-only Sigma run of 01; 02/05/07 do not read invoice timestamps.
+- `00_schema_check.sql` now also lists `checkout_sessions` (used only by 08). 08 assumes the columns
+  `client_reference_id`, `payment_link_id`, `status`, `subscription_id`, `customer_id`, `created`; if Sigma names any
+  differently, adjust 08 only.
+- None of these queries has been run end to end in this environment (no Stripe/Sigma access). Do not report their
+  output as revenue until reconciled.

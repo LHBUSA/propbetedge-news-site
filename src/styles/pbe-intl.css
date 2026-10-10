@@ -28,6 +28,7 @@
 .pbe-intl-terms h2 { margin: 0 0 10px; font-size: 16px !important; line-height: 1.4; color: var(--paper); }
 .pbe-intl-terms dl { margin: 0; display: grid; gap: 8px; }
 .pbe-intl-terms dl > div { display: grid; grid-template-columns: 9em minmax(0, 1fr); gap: 12px; }
+.pbe-intl-legal-pending { margin: 12px 0 0; padding: 10px 12px; border: 1px dashed #c98a1a; border-radius: 8px; color: #f3c46b; font-size: 13px; line-height: 1.5; } /* Global #67: unreviewed-legal placeholder, prepared pages only */
 .pbe-intl-terms dt { font-weight: 700; font-size: 13px; color: var(--gold-bright); }
 .pbe-intl-terms dd { margin: 0; font-size: 13px; line-height: 1.65; color: var(--paper-dim); }
 

@@ -152,3 +152,110 @@ test('vendored pbe-locale is byte-identical to the shared contract (LF-normalize
     assert.equal(got, sha, `${file} drifted from propbetedge-workers shared/pbe-locale`);
   }
 });
+
+/* ---------------------------------------------------------------- Spanish (es) */
+import * as A from '../src/global/attribution.js';
+import { buildProHtml } from '../src/pro-content.js';
+import { proServerHtml } from '../src/pro-seo.js';
+
+test('es attribution on English /pro: ?lang=es[&via] tags the SAME Payment Link; everyone else gets the plain link', () => {
+  assert.deepEqual(A.enProAttributionFrom('?lang=es&via=golf'), { lang: 'es', via: 'golf' });
+  assert.deepEqual(A.enProAttributionFrom('?lang=es'), { lang: 'es', via: null });
+  for (const q of ['', '?via=golf', '?lang=fr&via=golf', '?lang=ja', '?lang=es%3Cscript%3E', '?lang=ES']) assert.equal(A.enProAttributionFrom(q), null, q);
+  assert.deepEqual(A.enProAttributionFrom('?lang=es&via=a@b.com'), { lang: 'es', via: null }, 'never personal data');
+
+  const tagged = buildProHtml({ attribution: A.enProAttributionFrom('?lang=es&via=soccer') });
+  const ctas = hrefs(tagged).filter((h) => h.startsWith('https://buy.stripe.com/'));
+  assert.equal(ctas.length, 2, 'hero + final checkout buttons');
+  for (const h of ctas) {
+    const u = new URL(h);
+    assert.equal(`${u.origin}${u.pathname}`, ALL_ACCESS.checkoutUrl, 'same Payment Link');
+    assert.deepEqual([...u.searchParams.entries()], [['locale', 'es'], ['client_reference_id', 'pbe-es-pro-soccer']]);
+  }
+  assert.ok(tagged.includes('data-pbe-locale="es" data-pbe-via="soccer"'), 'GA4 network_cta_click carries checkout_locale + via');
+
+  const plain = buildProHtml({});
+  assert.deepEqual(hrefs(plain).filter((h) => h.startsWith('https://buy.stripe.com/')), [ALL_ACCESS.checkoutUrl, ALL_ACCESS.checkoutUrl], 'untagged /pro unchanged');
+  assert.ok(!plain.includes('data-pbe-via'));
+
+  assert.ok(proServerHtml({ attribution: { lang: 'es', via: 'golf' } }).includes(`${ALL_ACCESS.checkoutUrl}?locale=es&amp;client_reference_id=pbe-es-pro-golf`));
+  assert.ok(proServerHtml({}).includes(`href="${ALL_ACCESS.checkoutUrl}"`));
+  assert.throws(() => A.clientReferenceId('es', 'bad tag'), /invalid client_reference_id/);
+  for (const via of A.VIA) assert.match(A.clientReferenceId('es', via), /^[A-Za-z0-9_-]{1,200}$/);
+});
+
+test('/es/pro is PREPARED, not public: not routed, not in hreflang/sitemap/language links, middleware 404 + noindex', () => {
+  assert.equal(G.intlRoute('/es/pro'), null);
+  assert.equal(G.documentLang('/es/pro'), 'en');
+  assert.deepEqual(G.preparedIntlRoute('/es/pro/'), { kind: 'pro', lang: 'es', path: '/es/pro', ready: false });
+  assert.equal(G.preparedIntlRoute('/ja/pro'), null);
+  assert.equal(G.INTL_PRO_LANGS.includes('es'), false);
+  assert.equal(G.proAlternates().some((a) => a.hreflang === 'es'), false);
+  for (const [path, html] of PAGES) assert.equal(/href="\/es\//.test(html), false, `${path} must not link /es/`);
+  assert.equal(read('api/sitemap.js').includes('/es/'), false, 'not in the sitemap');
+  const mw = read('middleware.js');
+  assert.match(mw, /if \(preparedIntlRoute\(pathname\)\) return notFoundMeta\(pathname, 'Page not found'\);/);
+  assert.ok(mw.indexOf('preparedIntlRoute(pathname)') < mw.indexOf("if (pathname === '/pro')"));
+  // Even if rendered, its head is noindex and announces no translations.
+  const h = G.intlHead(G.preparedIntlRoute('/es/pro'));
+  assert.equal(h.robots, 'noindex, nofollow');
+  assert.deepEqual(h.alternates, []);
+});
+
+test('/es/pro never goes public with an unreviewed legal placeholder (B1/B2)', () => {
+  assert.equal(G.hasLegalPlaceholder('es'), true, 'reviewed legal text is still owed');
+  for (const lang of G.INTL_PRO_LANGS) assert.equal(G.hasLegalPlaceholder(lang), false, `${lang} is public, so it must carry no placeholder`);
+  const html = G.intlProHtml('es', { via: 'golf' });
+  assert.match(html, /data-pbe-legal-placeholder="B1,B2"/);
+  assert.match(html, /PENDIENTE DE REVISIÓN LEGAL/);
+  // No invented consumer terms: no refund / withdrawal / governing-law promises in the copy.
+  const t = text(html).toLowerCase();
+  for (const w of ['no reembolsable', 'no se reembolsa', 'sin reembolso', '14 días', 'minnesota', 'jurisdicción']) assert.equal(t.includes(w), false, w);
+  const termsAt = html.indexOf('pbe-intl-terms'), lastCta = html.lastIndexOf('all_access_checkout');
+  assert.ok(termsAt > 0 && termsAt < lastCta, 'terms (with placeholder) precede the final checkout button');
+});
+
+test('/es/pro content: same price and Payment Link, es attribution, every sport, no sportsbook/referral links, no English UI', () => {
+  const html = G.intlProHtml('es', { via: 'golf' });
+  assert.ok(html.includes('US$29'));
+  assert.ok(html.includes('lang="es"') && html.includes('data-pbe-locale="es"'));
+  const stripe = hrefs(html).filter((h) => h.startsWith('https://buy.stripe.com/'));
+  assert.deepEqual(stripe, [G.checkoutUrlFor('es', 'golf'), G.checkoutUrlFor('es', 'golf')]);
+  assert.equal(G.checkoutUrlFor('es', 'golf'), `${ALL_ACCESS.checkoutUrl}?locale=es&client_reference_id=pbe-es-pro-golf`);
+  for (const s of SPORTS) assert.ok(html.includes(`data-sport="${s.key}"`), s.key);
+  assert.ok(html.includes('https://soccer.propbetedge.ai/es/') && html.includes('https://golf.propbetedge.ai/es/'), 'Spanish editions linked');
+  const lower = html.toLowerCase();
+  for (const word of ['kalshi', 'polymarket', 'sportsbook', 'draftkings', 'fanduel', '/go/', '1-800', 'gambler', 'odds', 'wager', 'cuotas', 'apuesta ya']) assert.equal(lower.includes(word), false, word);
+  for (const href of hrefs(html)) {
+    const ok = href.startsWith('/') || href.startsWith('#') || href.startsWith('mailto:support@proptechusa.ai')
+      || /^https:\/\/([a-z0-9-]+\.)?propbetedge\.ai(\/|$)/.test(href) || href.startsWith('https://buy.stripe.com/') || href.startsWith('https://billing.stripe.com/');
+    assert.ok(ok, `unexpected link ${href}`);
+  }
+  const ES_ALLOWED = new Set([...ALLOWED_LATIN, 'IA', 'ATP', 'WTA', 'DNA', 'Español', 'nowcast', 'majors', 'rankings', 'multivista', 'Multivista', 'Cripto', 'cripto', 'Macro', 'macro', 'Player', 'Course']);
+  // Spanish is Latin script, so check for common English UI words instead of any Latin word.
+  const ENGLISH_UI = ['the', 'and', 'with', 'your', 'get', 'sign', 'open', 'view', 'month', 'membership', 'copy', 'copied', 'code', 'language', 'terms', 'privacy', 'support', 'members', 'live'];
+  const words = text(html).match(/[A-Za-zÁÉÍÓÚÑáéíóúñü][A-Za-zÁÉÍÓÚÑáéíóúñü0-9']*/g) || [];
+  const stray = [...new Set(words.filter((w) => ENGLISH_UI.includes(w.toLowerCase()) && !ES_ALLOWED.has(w)))];
+  assert.deepEqual(stray, [], stray.join(', '));
+});
+
+test('Sigma pack: 08 parses every tag this code emits (es included); schema gaps fixed', () => {
+  const s08 = read('docs/global/sigma/08_locale_attribution.sql');
+  assert.match(s08, /split_part\(cs\.client_reference_id, '-', 2\)/);
+  assert.match(s08, /split_part\(cs\.client_reference_id, '-', 4\)/);
+  for (const tag of ['pbe-es-pro-golf', 'pbe-es-pro-soccer']) assert.ok(s08.includes(tag), `08 documents ${tag}`);
+  // split_part semantics: page_lang = part 2, via = part 4. No via or lang may contain '-'.
+  for (const lang of ['ja', 'ko', 'es']) {
+    for (const via of [null, ...A.VIA]) {
+      const parts = A.clientReferenceId(lang, via).split('-');
+      assert.equal(parts[1], lang);
+      assert.equal(parts[2], 'pro');
+      assert.equal(parts[3], via ?? undefined);
+      assert.equal(parts.length, via ? 4 : 3);
+    }
+  }
+  assert.match(read('docs/global/sigma/00_schema_check.sql'), /select \* from checkout_sessions limit 0;/);
+  for (const f of ['01_product_catalog', '03_active_subscriptions', '04_new_subscribers', '06_retention_cohorts']) {
+    assert.equal(/\bi\.created\b/.test(read(`docs/global/sigma/${f}.sql`)), false, `${f}: Sigma invoices has date, not created`);
+  }
+});

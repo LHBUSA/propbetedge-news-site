@@ -4,7 +4,7 @@
 with
 brand_prices (price_id, brand) as (values ('price_1UJCF1F3CaVzg4ORSIohWTca', 'PBE All Access')),  -- add legacy and other-brand prices from PRODUCT_MAP.md
 paid as (
-  select i.customer_id, i.created, i.billing_reason, i.charge_id, coalesce(bp.brand, 'unclassified') as brand
+  select i.customer_id, i.date as created, i.billing_reason, i.charge_id, coalesce(bp.brand, 'unclassified') as brand
   from invoices i
   join invoice_line_items li on li.invoice_id = i.id
   join prices pr on pr.id = li.price_id
