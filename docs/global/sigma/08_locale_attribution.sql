@@ -1,8 +1,16 @@
--- 08 LOCALIZED-PAGE CONVERSION (Global #67, measurement M1). Live since 2026-10-09 (news-site 0a24935).
--- Each checkout button on /ja/pro and /ko/pro opens the All Access Payment Link with
---   client_reference_id = pbe-<lang>-pro[-<via>]
--- where via is the sport site that sent the reader (golf, mlb, f1, ...). The tag is not personal.
--- Sessions without a tag are every other surface (English /pro and the sport sites).
+-- 08 LOCALIZED-PAGE CONVERSION (Global #67, measurement M1). ja/ko live since 2026-10-09 (news-site 0a24935).
+-- Every tagged checkout button opens the SAME All Access Payment Link with
+--   locale=<lang> & client_reference_id = pbe-<lang>-pro[-<via>]
+-- where via is the sport site that sent the reader (golf, mlb, f1, soccer, ...). The tag is not personal.
+-- Where the tags come from:
+--   pbe-ja-pro[-via], pbe-ko-pro[-via]  /ja/pro and /ko/pro
+--   pbe-es-pro-golf                     English /pro reached from Golf's Spanish pages (/pro?lang=es&via=golf)
+--   pbe-es-pro-soccer                   Soccer's Spanish pages: their own checkout buttons (direct to the Payment Link)
+--                                       and their network link to English /pro (/pro?lang=es&via=soccer)
+--   pbe-es-pro                          English /pro?lang=es without a known via
+--   (/es/pro is PREPARED, not public; once published its buttons use the same pbe-es-pro[-via] tags)
+-- es tags start when the es-attribution changes deploy (owner release; not before 2026-10-10).
+-- Sessions without a tag are every other surface (English /pro and the English sport sites).
 -- This query counts Checkout Sessions started and completed per tag, with the subscriptions those
 -- completions created that are still active or past due today. Aggregate only.
 -- Run 00_schema_check.sql first: Sigma's checkout_sessions columns must match the names used here.
@@ -11,7 +19,7 @@ with
 tagged as (
   select
     coalesce(cs.client_reference_id, '(untagged)')                              as tag,
-    case when cs.client_reference_id like 'pbe-%' then split_part(cs.client_reference_id, '-', 2) else 'en/other' end as page_lang,
+    case when cs.client_reference_id like 'pbe-%' then split_part(cs.client_reference_id, '-', 2) else 'en/other' end as page_lang,   -- ja | ko | es
     case when cs.client_reference_id like 'pbe-%-pro-%' then split_part(cs.client_reference_id, '-', 4) else '(direct)' end as via,
     cs.id, cs.status, cs.subscription_id, cs.customer_id
   from checkout_sessions cs

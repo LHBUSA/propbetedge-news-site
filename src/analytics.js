@@ -86,6 +86,10 @@ function handleClick(event) {
     gtagEvent('network_cta_click', {
       placement: placed.dataset.pbePlacement || '',
       page_locale: document.documentElement.lang || 'en',
+      // Global #67: the checkout language and source sport the CTA carries (the
+      // same values as its client_reference_id tag); never personal data.
+      checkout_locale: anchor.dataset.pbeLocale || placed.dataset.pbeLocale || '',
+      via: anchor.dataset.pbeVia || placed.dataset.pbeVia || '',
       link_url: href,
       link_text: cleanText(anchor.textContent),
       destination: destinationFor(href),

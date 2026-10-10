@@ -3,7 +3,7 @@
 with
 brand_prices (price_id, brand) as (values ('price_1UJCF1F3CaVzg4ORSIohWTca', 'PBE All Access')),  -- add legacy and other-brand prices from PRODUCT_MAP.md
 paid as (
-  select i.subscription_id, max_by(i.charge_id, i.created) as last_charge_id
+  select i.subscription_id, max_by(i.charge_id, i.date) as last_charge_id   -- Sigma invoices has `date`, not `created`
   from invoices i
   where i.status = 'paid' and i.amount_paid > 0 and i.subscription_id is not null
   group by 1

@@ -10,7 +10,7 @@
  * coupon-required launch discount and is described only in visible copy and
  * descriptions, never as the listed price. */
 
-import { ALL_ACCESS, SPORTS, PREDICTIONS, NETWORK_PRODUCTS, ALL_ACCESS_LINE, artSrcset, HERO_MOBILE_MEDIA, HERO_DESKTOP_MEDIA } from './pro-content.js';
+import { ALL_ACCESS, SPORTS, PREDICTIONS, NETWORK_PRODUCTS, ALL_ACCESS_LINE, artSrcset, HERO_MOBILE_MEDIA, HERO_DESKTOP_MEDIA, checkoutHref } from './pro-content.js';
 
 import { PROPBETEDGE_X_HANDLE } from './social.js';
 import { ownedImage, imageObject } from './image-metadata.js';
@@ -217,14 +217,14 @@ export function proJsonLd() {
 
 /** Crawler-readable copy of the actual page: the same product the hydrated
  *  page renders, in semantic HTML, without hidden SEO paragraphs. */
-export function proServerHtml({ checkoutSuccess = false } = {}) {
+export function proServerHtml({ checkoutSuccess = false, attribution = null } = {}) {
   const sports = SPORTS.map((s) => `<li><a href="${s.url}/">${s.name}</a> — ${escapeHtml(s.edge)}</li>`).join('\n        ');
   const intro = checkoutSuccess
     ? `<p>Your PropBetEdge All Access membership is active. Start in Command Center and use the email you used at checkout.</p>`
     : `<p>One membership. The entire intelligence network: ${escapeHtml(ALL_ACCESS_LINE)}.</p>
       <p>Live intelligence, proprietary models, prediction markets and sport-native research under one membership — ${NETWORK_PRODUCTS.map((p) => `<a href="${p.url}">${escapeHtml(p.label)}</a>`).join(', ')} and all ten sport products.</p>
       <p><strong>$${ALL_ACCESS.priceUsd} / month.</strong> Launch offer: ${ALL_ACCESS.promoPercent}% off for as long as you stay active with code <strong>${ALL_ACCESS.promoCode}</strong>.</p>
-      <p><a href="${ALL_ACCESS.checkoutUrl}" rel="noopener">Get All Access</a></p>
+      <p><a href="${escapeHtml(checkoutHref(attribution))}" rel="noopener">Get All Access</a></p>
       <p>Digital sports intelligence membership. Charges are non-refundable once access is activated, except where required by law. Cancellation stops future renewal. <a href="/terms">Terms</a> · <a href="/support">Support</a>.</p>`;
   return `<main class="pbe-ssr-pro" data-server-rendered="1">
     <nav aria-label="Breadcrumb"><a href="/">PropBetEdge</a> &rsaquo; All Access</nav>

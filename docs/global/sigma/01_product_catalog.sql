@@ -2,7 +2,7 @@
 -- (PropBetEdge All Access / legacy PropBetEdge sport SKUs / PropData / PropSports / other) and fill brand_prices.
 -- Small counts are suppressed (k_min = 5).
 with paid_lines as (
-  select li.price_id, i.customer_id, i.created
+  select li.price_id, i.customer_id, i.date as created   -- Sigma invoices has `date`, not `created`
   from invoice_line_items li
   join invoices i on i.id = li.invoice_id
   where i.status = 'paid' and i.amount_paid > 0

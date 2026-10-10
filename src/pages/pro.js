@@ -4,6 +4,7 @@ import { renderShareBar, mountShareBars } from '../entity-graph/share-bar.js';
 import { buildProHtml, checkoutSucceeded, memberStateFrom, ALL_ACCESS } from '../pro-content.js';
 import { proHeadMeta, proSocialTags, proJsonLd, PRO_CANONICAL, PRO_SHARE_TITLE } from '../pro-seo.js';
 import { proAlternates } from '../global/intl-pages.js';
+import { enProAttributionFrom } from '../global/attribution.js';
 
 /* /pro — PropBetEdge All Access, the network membership page.
  * ?checkout=success is Stripe's success redirect for the live payment link.
@@ -21,6 +22,8 @@ import { proAlternates } from '../global/intl-pages.js';
  * describe one product. */
 export function renderPro(root, setMeta) {
   const checkoutSuccess = checkoutSucceeded(window.location.search);
+  // Global #67: readers from a Spanish edition keep their attribution tag on checkout.
+  const attribution = enProAttributionFrom(window.location.search);
   const head = proHeadMeta({ checkoutSuccess });
   setMeta?.({ title: head.title, description: head.description, canonical: head.canonical, ogImage: head.image.url });
   applyHeadContract(head);
@@ -29,7 +32,7 @@ export function renderPro(root, setMeta) {
   root.innerHTML = `
     ${renderHeader()}
     <main class="pbe-pro-main">
-      ${buildProHtml({ checkoutSuccess, shareBar })}
+      ${buildProHtml({ checkoutSuccess, shareBar, attribution })}
     </main>
     ${renderFooter()}
   `;
@@ -41,7 +44,7 @@ export function renderPro(root, setMeta) {
   readMembership().then((member) => {
     const page = root.querySelector('.pbe-pro');
     if (!member || !page || !page.isConnected) return;
-    page.outerHTML = buildProHtml({ shareBar, member });
+    page.outerHTML = buildProHtml({ shareBar, member, attribution });
     mountShareBars(root);
     wireCopyButtons(root);
   });
